@@ -14,4 +14,6 @@ urlpatterns = [
     path('visitor/', include('visitor_app.urls', namespace='visitor')),
     # личный профиль партнера
     path('partner/', include('partner_app.urls', namespace='partner')),
+    # Путь для создания мероприятия.
+    path('event/create/', views.create_event, name='create_event'), 
 ] 

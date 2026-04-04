@@ -12,6 +12,9 @@ class CustomUser(AbstractUser):
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='visitor')
     
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
     
 User = get_user_model()
 
@@ -49,9 +52,14 @@ class Event(models.Model):
     def __str__(self):
         return self.title
 
-class TicketType(models.Model):
+    class Meta:
+        verbose_name = 'Мероприятие'
+        verbose_name_plural = 'Мероприятия'
+        ordering = ['-date_time']
+        
+class Ticket(models.Model):
     """Модель для типа билета (VIP, Стандарт)."""
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ticket_types')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ticket')
     name = models.CharField(max_length=50, verbose_name='Название билета')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
     quantity = models.PositiveIntegerField(verbose_name='Количество мест')
@@ -59,12 +67,20 @@ class TicketType(models.Model):
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 
+    class Meta:
+        verbose_name = 'Тип билета'
+        verbose_name_plural = 'Типы билетов'
+
 class Order(models.Model):
     """Модель для заказа (покупки)."""
     participant_data = models.JSONField(verbose_name='Данные участника') # Хранит имя, email и т.д.
-    ticket_type = models.ForeignKey(TicketType, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, verbose_name='Билет')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Общая стоимость')
 
     def __str__(self):
-        return f"Заказ #{self.id} - {self.ticket_type.name}"
+        return f"Заказ #{self.id} - {self.ticket.name}"
+    
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
