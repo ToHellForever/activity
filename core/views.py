@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
 
 def login_view(request):
@@ -45,3 +46,15 @@ def register_view(request):
         form = CustomUserCreationForm()
     
     return render(request, 'registration/register.html', {'form': form})
+
+
+def custom_logout(request):
+    """
+    Кастомная функция для выхода из системы.
+    Гарантирует редирект на страницу входа.
+    """
+    # Выполняем стандартное действие выхода
+    auth_logout(request)
+    
+    # Редиректим на страницу входа по имени URL
+    return redirect('login')
