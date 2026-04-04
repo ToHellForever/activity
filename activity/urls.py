@@ -7,6 +7,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # регистраиця
     path('login/', views.login_view, name='login'), # Страница входа
+    # выход
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.register_view, name='register'), # Страница регистрации
     # личный профиль пользователя
     path('visitor/', include('visitor_app.urls', namespace='visitor')),

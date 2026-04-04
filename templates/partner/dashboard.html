@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кабинет Партнера</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 8px; max-width: 600px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h1 { color: #28a745; text-align: center; }
+        .info { text-align: center; color: #333; margin-bottom: 2rem; }
+        .logout-btn {
+            display: block;
+            width: 50%;
+            margin: 2rem auto 0 auto;
+            padding: 0.7rem;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .logout-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Партнерский кабинет</h1>
+        <div class="info">
+            <p>Приветствуем, <strong>{{ username }}</strong>!</p>
+            <p>Это черновик личного кабинета для <strong>Партнеров</strong>.</p>
+            <p>Здесь будет ваша статистика, выплаты и управление товарами/услугами.</p>
+        </div>
+        
+        <a href="{% url 'logout' %}" class="logout-btn">Выйти</a>
+    </div>
+</body>
+</html>

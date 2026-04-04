@@ -1,6 +1,8 @@
-# visitor_app/urls.py
-
 from django.urls import path
-app_name = 'partner'
+from . import views
 
-urlpatterns = []
+app_name = 'partner' 
+
+urlpatterns = [
+    path('dashboard/', views.partner_dashboard, name='dashboard'),
+]
