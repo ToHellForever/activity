@@ -2,13 +2,15 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
-
+from django.views.decorators.cache import never_cache
 # core/views.py
 
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
 
+
+@never_cache
 def login_view(request):
     if request.user.is_authenticated:
         # Если пользователь уже вошел, сразу редиректим его в нужный кабинет
@@ -31,7 +33,7 @@ def login_view(request):
     
     return render(request, 'registration/login.html', {'form': form})
 
-
+@never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
     if request.method == 'POST':
