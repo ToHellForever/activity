@@ -4,6 +4,7 @@ from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from .forms import EventForm
 from core.forms import PartnerProfileForm, PasswordChangeForm
+from .tasks import process_event_video
 
 @login_required
 def partner_dashboard(request):
@@ -18,35 +19,33 @@ def partner_dashboard(request):
 def create_event(request):
     """
     View для создания нового мероприятия.
+    Видео обрабатывается в фоновом режиме через Celery.
     """
     if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES) # FILES нужно для загрузки изображений
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
-            # Сохраняем мероприятие, но пока не коммитим в БД
             event = form.save(commit=False)
-            # Привязываем организатора (текущего пользователя)
             event.organizer = request.user
-            
-            # Сохраняем событие, чтобы получить его ID для билетов
-            event.save()
-            
-            # --- Обрабатываем типы билетов ---
-            ticket_data = form.cleaned_data['ticket']
+
+            event.save() 
+
+            ticket_data = form.cleaned_data.get('ticket_types', '') 
             for line in ticket_data.split('\n'):
+                line = line.strip()
                 if ':' in line:
-                    name, price, quantity = [item.strip() for item in line.split(':', 2)]
                     try:
+                        name, price, quantity = [item.strip() for item in line.split(':', 2)]
                         Ticket.objects.create(
                             event=event,
                             name=name,
                             price=float(price.replace(',', '.')),
-                            quantity=int(quantity)
+                            available_quantity=int(quantity) 
                         )
                     except (ValueError, TypeError):
-                        # Если данные кривые, пропускаем строку или обрабатываем ошибку
                         continue
+
+            process_event_video.delay(event.id) 
             
-            # Перенаправляем на страницу списка мероприятий или дашборда
             return redirect('partner:dashboard') 
     else:
         form = EventForm()

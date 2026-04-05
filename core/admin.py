@@ -12,16 +12,21 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ('title', 'organizer', 'date_time', 'status', 'commission_rate')
     
     # По каким полям можно фильтровать список
-    list_filter = ('status', 'date_time')
+    list_filter = ('status', 'date_time', 'category') # Можно добавить фильтрацию по категории
     
     # Какие поля использовать для поиска
     search_fields = ('title', 'organizer__username')
+
+    # Группировка полей на странице редактирования
     fieldsets = (
         (None, {
             'fields': ('title', 'organizer', 'description_short', 'description_full', 'date_time', 'place')
         }),
-        ('Настройки', {
-            'fields': ('status', 'image', 'commission_rate', 'auto_close_sales_hours') # Добавь сюда
+        ('Медиа и Файлы', {
+            'fields': ('image', 'video_url', 'program_file')
+        }),
+        ('Настройки и Категории', {
+            'fields': ('status', 'category', 'tags', 'allow_booking_without_payment', 'commission_rate', 'auto_close_sales_hours')
         }),
     )
 

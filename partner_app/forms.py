@@ -4,8 +4,10 @@ from django import forms
 class EventForm(forms.ModelForm):
     """Форма для создания и редактирования мероприятия."""
     
-    # Создаем поле для типов билетов. Мы будем добавлять их динамически.
-    # Это поле не связано напрямую с моделью Event, оно нужно для формы.
+    # Поле для загрузки видео с компьютера
+    video_url = forms.FileField(required=False, label="Видео (загрузить файл)")
+    
+    # Поле для типов билетов (как и было)
     ticket = forms.CharField(
         widget=forms.Textarea,
         label="Типы билетов (Название:Цена:Количество), каждый с новой строки",
@@ -15,15 +17,18 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        # Поля, которые партнер будет заполнять в форме
         fields = [
             'title', 
             'description_short', 
             'description_full', 
             'date_time', 
-            'place', 
+            'place',
+            'category',
             'image',
-            'auto_close_sales_hours'
+            'video_url',
+            'program_file',
+            'allow_booking_without_payment',
+            'auto_close_sales_hours',
         ]
         
     def clean_ticket(self):

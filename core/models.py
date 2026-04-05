@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-
+from taggit.managers import TaggableManager
 
 class CustomUser(AbstractUser):
     """Модель для пользователя."""
@@ -21,6 +21,19 @@ class CustomUser(AbstractUser):
     
 User = get_user_model()
 
+class Category(models.Model):
+    """Модель для категорий мероприятий."""
+    name = models.CharField(max_length=100, unique=True, verbose_name='Название категории')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['name']
+        
+        
 class Event(models.Model):
     """Модель для мероприятия."""
     STATUS_CHOICES = [
@@ -45,6 +58,17 @@ class Event(models.Model):
     )
     image = models.ImageField(upload_to='event_images/', blank=True, null=True, verbose_name='Изображение')
     
+    category = models.ForeignKey(
+        Category, 
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True, 
+        verbose_name='Категория'
+    )
+    tags = TaggableManager(verbose_name='Теги', blank=True)
+    video_url = models.FileField(upload_to='event_videos/', blank=True, null=True, verbose_name='Видео (загрузить)')
+    program_file = models.FileField(upload_to='event_programs/', blank=True, null=True, verbose_name='Программа (PDF)')
+    allow_booking_without_payment = models.BooleanField(default=False, verbose_name='Разрешить бронирование без оплаты')
     # Автоматическое закрытие продаж (в часах)
     auto_close_sales_hours = models.PositiveIntegerField(
         default=0, 
