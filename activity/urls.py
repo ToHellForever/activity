@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
+from partner_app import views as partner_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,4 +17,6 @@ urlpatterns = [
     path('partner/', include('partner_app.urls', namespace='partner')),
     # Путь для создания мероприятия.
     path('event/create/', views.create_event, name='create_event'), 
+    # путь для просмотра мероприятий
+    path('events/', partner_views.event_list, name='event_list'),
 ] 

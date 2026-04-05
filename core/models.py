@@ -59,7 +59,7 @@ class Event(models.Model):
         
 class Ticket(models.Model):
     """Модель для типа билета (VIP, Стандарт)."""
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ticket')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets', verbose_name='Мероприятие')
     name = models.CharField(max_length=50, verbose_name='Название билета')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
     quantity = models.PositiveIntegerField(verbose_name='Количество мест')
