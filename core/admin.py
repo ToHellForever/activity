@@ -23,7 +23,7 @@ class TicketAdmin(admin.ModelAdmin):
     """
     Настройка отображения типов билетов.
     """
-    list_display = ('name', 'event', 'price', 'quantity')
+    list_display = ('name', 'event', 'price', 'available_quantity')
     search_fields = ('name', 'event__title')
 
 

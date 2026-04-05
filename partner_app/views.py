@@ -27,7 +27,7 @@ def event_list(request):
         # Суммируем количество проданных билетов по всем типам этого мероприятия
         sold = sum(ticket.orders.count() for ticket in event.tickets.all())
         # Суммируем общее количество доступных билетов
-        total = sum(ticket.available_quantity + sold for ticket in event.tickets.all())
+        total = sum(ticket.available_quantity for ticket in event.tickets.all())
         
         event_data.append({
             'event': event,

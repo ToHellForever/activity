@@ -88,7 +88,7 @@ def create_event(request):
                 if ':' in line:
                     name, price, quantity = [item.strip() for item in line.split(':', 2)]
                     try:
-                        TicketType.objects.create(
+                        Ticket.objects.create(
                             event=event,
                             name=name,
                             price=float(price.replace(',', '.')),

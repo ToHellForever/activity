@@ -62,7 +62,7 @@ class Ticket(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets', verbose_name='Мероприятие')
     name = models.CharField(max_length=50, verbose_name='Название билета')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
-    quantity = models.PositiveIntegerField(verbose_name='Количество мест')
+    available_quantity = models.PositiveIntegerField(verbose_name='Количество мест')
     
     def __str__(self):
         return f"{self.name} ({self.event.title})"
@@ -74,7 +74,7 @@ class Ticket(models.Model):
 class Order(models.Model):
     """Модель для заказа (покупки)."""
     participant_data = models.JSONField(verbose_name='Данные участника') # Хранит имя, email и т.д.
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, verbose_name='Билет')
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='orders', verbose_name='Билет')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Общая стоимость')
 
