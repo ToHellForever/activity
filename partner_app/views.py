@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from core.models import Event, Ticket, Order
-from django.db.models import Sum, Count, Avg
+from core.models import Event, Ticket, Order, PayoutRequest
+from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from .forms import EventForm
+
 
 @login_required
 def partner_dashboard(request):
@@ -121,3 +122,32 @@ def participant_list(request, event_id):
         'orders': orders,
     }
     return render(request, 'partner/participant_list.html', context)
+
+
+
+
+@login_required
+def finances(request):
+    orders = Order.objects.filter(ticket__event__organizer=request.user)
+    
+    # Считаем общую выручку
+    total_revenue = orders.aggregate(total=Sum('total_price'))['total'] or 0
+
+    commission_sum = orders.annotate(
+        event_commission=ExpressionWrapper(
+            F('total_price') * (F('ticket__event__commission_rate') / 100),
+            output_field=DecimalField()
+        )
+    ).aggregate(total_commission=Sum('event_commission'))['total_commission'] or 0
+    commission_amount = commission_sum
+    payout_amount = total_revenue - commission_sum
+
+    payout_history = PayoutRequest.objects.filter(organizer=request.user).order_by('-created_at')
+
+    context = {
+        'total_revenue': total_revenue,
+        'commission_amount': commission_amount,
+        'payout_amount': payout_amount,
+        'payout_history': payout_history,
+    }
+    return render(request, 'partner/finances.html', context)

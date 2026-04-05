@@ -1,0 +1,49 @@
+{% block content %}
+<h1>Финансы и выплаты</h1>
+
+<div style="display: flex; gap: 20px; margin-bottom: 20px;">
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>Общая выручка</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ total_revenue }} ₽</p>
+    </div>
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>Комиссия платформы (10%)</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ commission_amount }} ₽</p>
+    </div>
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>К выплате</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ payout_amount }} ₽</p>
+        <button class="btn btn-success">Запросить выплату</button>
+    </div>
+</div>
+
+<h2>История выплат</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Сумма</th>
+      <th>Статус</th>
+      <th>Дата запроса</th>
+      <th>Реквизиты</th>
+      <th>Действия</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for payout in payout_history %}
+    <tr>
+      <td>{{ payout.id }}</td>
+      <td>{{ payout.amount }} ₽</td>
+      <td>{{ payout.get_status_display }}</td>
+      <td>{{ payout.created_at|date:"d.m.Y" }}</td>
+      <td><!-- Тут будут реквизиты --></td>
+      <td><!-- Кнопки действий --></td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6">История выплат пуста.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

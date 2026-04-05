@@ -48,7 +48,12 @@ class Event(models.Model):
         verbose_name='Закрыть продажи за (часов)',
         help_text='0 - не закрывать автоматически'
     )
-
+    commission_rate = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        default=10.00, # Ставим дефолтное значение
+        verbose_name='Комиссия (%)'
+    )
     def __str__(self):
         return self.title
 
@@ -84,3 +89,27 @@ class Order(models.Model):
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
+        
+        
+
+class PayoutRequest(models.Model):
+    """Модель для запроса выплаты партнером."""
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('processing', 'В обработке'),
+        ('paid', 'Выплачено'),
+        ('rejected', 'Отклонено'),
+    ]
+
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Сумма к выплате')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    payout_method = models.JSONField(verbose_name='Реквизиты для выплаты') # Хранит номер счета, ИНН и т.д.
+    
+    def __str__(self):
+        return f"Запрос #{self.id} - {self.get_status_display()}"
+    
+    class Meta:
+        verbose_name = 'Запрос на выплату'
+        verbose_name_plural = 'Запросы на выплату'

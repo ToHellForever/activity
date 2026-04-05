@@ -9,14 +9,21 @@ class EventAdmin(admin.ModelAdmin):
     Настройка отображения модели Event в админке.
     """
     # Какие поля показывать в списке всех мероприятий
-    list_display = ('title', 'organizer', 'date_time', 'status')
+    list_display = ('title', 'organizer', 'date_time', 'status', 'commission_rate')
     
     # По каким полям можно фильтровать список
     list_filter = ('status', 'date_time')
     
     # Какие поля использовать для поиска
     search_fields = ('title', 'organizer__username')
-
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'organizer', 'description_short', 'description_full', 'date_time', 'place')
+        }),
+        ('Настройки', {
+            'fields': ('status', 'image', 'commission_rate', 'auto_close_sales_hours') # Добавь сюда
+        }),
+    )
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
@@ -49,3 +56,5 @@ class CustomUserAdmin(UserAdmin):
     """
     list_display = UserAdmin.list_display + ('user_type',)
     list_filter = UserAdmin.list_filter + ('user_type',)
+    
+    
