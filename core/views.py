@@ -7,7 +7,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
 from .models import Event, Ticket
-from .forms import EventForm
 from django.contrib.auth.decorators import login_required
 
 @never_cache
@@ -64,45 +63,5 @@ def custom_logout(request):
     
     # Редиректим на страницу входа по имени URL
     return redirect('login')
-
-
-@login_required
-def create_event(request):
-    """
-    View для создания нового мероприятия.
-    """
-    if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES) # FILES нужно для загрузки изображений
-        if form.is_valid():
-            # Сохраняем мероприятие, но пока не коммитим в БД
-            event = form.save(commit=False)
-            # Привязываем организатора (текущего пользователя)
-            event.organizer = request.user
-            
-            # Сохраняем событие, чтобы получить его ID для билетов
-            event.save()
-            
-            # --- Обрабатываем типы билетов ---
-            ticket_data = form.cleaned_data['ticket']
-            for line in ticket_data.split('\n'):
-                if ':' in line:
-                    name, price, quantity = [item.strip() for item in line.split(':', 2)]
-                    try:
-                        Ticket.objects.create(
-                            event=event,
-                            name=name,
-                            price=float(price.replace(',', '.')),
-                            quantity=int(quantity)
-                        )
-                    except (ValueError, TypeError):
-                        # Если данные кривые, пропускаем строку или обрабатываем ошибку
-                        continue
-            
-            # Перенаправляем на страницу списка мероприятий или дашборда
-            return redirect('partner:dashboard') 
-    else:
-        form = EventForm()
-    
-    return render(request, 'events/event_form.html', {'form': form})
 
 

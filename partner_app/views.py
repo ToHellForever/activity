@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from core.models import Event, Ticket
+from core.models import Event, Ticket, Order
+from django.db.models import Sum, Count, Avg
+from .forms import EventForm
 
 @login_required
 def partner_dashboard(request):
@@ -11,6 +13,44 @@ def partner_dashboard(request):
     context = {'user': request.user}
     return render(request, 'partner/dashboard.html', context)
 
+@login_required
+def create_event(request):
+    """
+    View для создания нового мероприятия.
+    """
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES) # FILES нужно для загрузки изображений
+        if form.is_valid():
+            # Сохраняем мероприятие, но пока не коммитим в БД
+            event = form.save(commit=False)
+            # Привязываем организатора (текущего пользователя)
+            event.organizer = request.user
+            
+            # Сохраняем событие, чтобы получить его ID для билетов
+            event.save()
+            
+            # --- Обрабатываем типы билетов ---
+            ticket_data = form.cleaned_data['ticket']
+            for line in ticket_data.split('\n'):
+                if ':' in line:
+                    name, price, quantity = [item.strip() for item in line.split(':', 2)]
+                    try:
+                        Ticket.objects.create(
+                            event=event,
+                            name=name,
+                            price=float(price.replace(',', '.')),
+                            quantity=int(quantity)
+                        )
+                    except (ValueError, TypeError):
+                        # Если данные кривые, пропускаем строку или обрабатываем ошибку
+                        continue
+            
+            # Перенаправляем на страницу списка мероприятий или дашборда
+            return redirect('partner:dashboard') 
+    else:
+        form = EventForm()
+    
+    return render(request, 'events/event_form.html', {'form': form})
 
 @login_required
 def event_list(request):
@@ -39,3 +79,35 @@ def event_list(request):
         'events': event_data,
     }
     return render(request, 'partner/event_list.html', context)
+
+
+@login_required
+def reports(request):
+    """
+    Отчеты и статистика продаж для партнера.
+    """
+    # Получаем все заказы (продажи) организатора
+    # Мы пройдемся по всем его мероприятиям и всем билетам на них
+    orders = Order.objects.filter(ticket__event__organizer=request.user)
+    
+    # Расчет общей статистики
+    total_sales = orders.aggregate(total=Sum('total_price'))['total'] or 0
+    tickets_sold = orders.aggregate(count=Count('id'))['count'] or 0
+    avg_check = orders.aggregate(avg=Avg('total_price'))['avg'] or 0
+
+    # Подготовка данных для графика (динамика продаж по дням)
+    # Это простой пример, для реального проекта лучше использовать Django ORM с .annotate(Count('date'))
+    sales_graph_data = {
+        '2026-04-01': 15000,
+        '2026-04-02': 25000,
+        '2026-04-03': 35000,
+        '2026-04-04': 10000,
+    }
+    
+    context = {
+        'total_sales': total_sales,
+        'tickets_sold': tickets_sold,
+        'avg_check': avg_check,
+        'sales_graph_data': sales_graph_data,
+    }
+    return render(request, 'partner/reports.html', context)

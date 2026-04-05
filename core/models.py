@@ -68,8 +68,8 @@ class Ticket(models.Model):
         return f"{self.name} ({self.event.title})"
 
     class Meta:
-        verbose_name = 'Тип билета'
-        verbose_name_plural = 'Типы билетов'
+        verbose_name = 'Билет'
+        verbose_name_plural = 'Билеты'
 
 class Order(models.Model):
     """Модель для заказа (покупки)."""

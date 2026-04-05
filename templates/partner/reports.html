@@ -1,0 +1,52 @@
+{% load static %}
+{% block content %}
+<h1>Отчёты и продажи</h1>
+
+<div style="display: flex; gap: 20px; margin-bottom: 20px;">
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>Общая выручка</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ total_sales }} ₽</p>
+    </div>
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>Продано билетов</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ tickets_sold }} шт.</p>
+    </div>
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+        <h3>Средний чек</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ avg_check }} ₽</p>
+    </div>
+</div>
+
+<h2>График продаж</h2>
+<div style="width: 80%; margin: auto;">
+    <canvas id="salesChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Данные передаются из Django в переменную sales_graph_data
+const data = {{ sales_graph_data|safe }};
+const labels = Object.keys(data);
+const values = Object.values(data);
+
+new Chart(document.getElementById('salesChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Выручка по дням',
+            data: values,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

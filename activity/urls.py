@@ -6,17 +6,11 @@ from partner_app import views as partner_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('partner/', include('partner_app.urls', namespace='partner')), 
+    path('visitor/', include('visitor_app.urls', namespace='visitor')), 
     # регистраиця
     path('login/', views.login_view, name='login'), # Страница входа
     # выход
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register_view, name='register'), # Страница регистрации
-    # личный профиль пользователя
-    path('visitor/', include('visitor_app.urls', namespace='visitor')),
-    # личный профиль партнера
-    path('partner/', include('partner_app.urls', namespace='partner')),
-    # Путь для создания мероприятия.
-    path('event/create/', views.create_event, name='create_event'), 
-    # путь для просмотра мероприятий
-    path('events/', partner_views.event_list, name='event_list'),
 ] 
