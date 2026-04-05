@@ -60,8 +60,6 @@ def event_list(request):
     # Получаем все мероприятия, где организатор - это текущий пользователь
     events = Event.objects.filter(organizer=request.user).order_by('-date_time')
     
-    # Для каждого мероприятия нам нужно посчитать проданные билеты
-    # Чтобы не делать много запросов к БД, подготовим данные
     event_data = []
     for event in events:
         # Суммируем количество проданных билетов по всем типам этого мероприятия
@@ -86,8 +84,6 @@ def reports(request):
     """
     Отчеты и статистика продаж для партнера.
     """
-    # Получаем все заказы (продажи) организатора
-    # Мы пройдемся по всем его мероприятиям и всем билетам на них
     orders = Order.objects.filter(ticket__event__organizer=request.user)
     
     # Расчет общей статистики
@@ -95,8 +91,6 @@ def reports(request):
     tickets_sold = orders.aggregate(count=Count('id'))['count'] or 0
     avg_check = orders.aggregate(avg=Avg('total_price'))['avg'] or 0
 
-    # Подготовка данных для графика (динамика продаж по дням)
-    # Это простой пример, для реального проекта лучше использовать Django ORM с .annotate(Count('date'))
     sales_graph_data = {
         '2026-04-01': 15000,
         '2026-04-02': 25000,
@@ -111,3 +105,19 @@ def reports(request):
         'sales_graph_data': sales_graph_data,
     }
     return render(request, 'partner/reports.html', context)
+
+@login_required
+def participant_list(request, event_id):
+    """
+    Список участников для выбранного мероприятия.
+    """
+    # Получаем мероприятие или выдаем 404, если его нет или оно чужое
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    
+    orders = Order.objects.filter(ticket__event=event).select_related('ticket')
+
+    context = {
+        'event': event,
+        'orders': orders,
+    }
+    return render(request, 'partner/participant_list.html', context)

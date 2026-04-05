@@ -1,0 +1,32 @@
+{% block content %}
+<h1>Участники мероприятия: {{ event.title }}</h1>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Имя</th>
+      <th>E-mail</th>
+      <th>Тип билета</th>
+      <th>Статус оплаты</th>
+      <th>Дата покупки</th>
+      <th>Цена</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>{{ order.participant_data.name }}</td>
+      <td>{{ order.participant_data.email }}</td>
+      <td>{{ order.ticket.name }}</td>
+      <td>Оплачен</td> 
+      <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+      <td>{{ order.total_price }} ₽</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5">Пока нет купленных билетов на это мероприятие.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
