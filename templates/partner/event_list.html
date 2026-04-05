@@ -24,8 +24,8 @@
       <td>{{ item.event.status|title }}</td>
       <td>{{ item.sold }} / {{ item.total }}</td>
       <td>
-        <a href="#" class="btn btn-sm btn-warning">Редактировать</a>
-        <a href="#" class="btn btn-sm btn-info">Отчет</a>
+        <a href="{% url 'partner:edit_event' item.event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+        <a href="{% url 'partner:participant_list' item.event.id %}" class="btn btn-sm btn-info">Участники</a>
       </td>
     </tr>
     {% empty %}

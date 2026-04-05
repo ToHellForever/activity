@@ -1,30 +1,42 @@
+
 {% block content %}
-<h1>Участники мероприятия: {{ event.title }}</h1>
+<h1>Список участников: {{ event.title }}</h1>
 
 <table class="table table-striped">
   <thead>
     <tr>
+      <th>№</th>
       <th>Имя</th>
       <th>E-mail</th>
-      <th>Тип билета</th>
-      <th>Статус оплаты</th>
       <th>Дата покупки</th>
-      <th>Цена</th>
+      <th>Тип билета</th>
+      <th>Статус</th>
     </tr>
   </thead>
   <tbody>
     {% for order in orders %}
     <tr>
+      <!-- Нумерация строк -->
+      <td>{{ forloop.counter }}</td>
+      
+      <!-- Имя -->
       <td>{{ order.participant_data.name }}</td>
+      
+      <!-- E-mail -->
       <td>{{ order.participant_data.email }}</td>
-      <td>{{ order.ticket.name }}</td>
-      <td>Оплачен</td> 
+      
+      <!-- Дата покупки -->
       <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-      <td>{{ order.total_price }} ₽</td>
+      
+      <!-- Тип билета -->
+      <td>{{ order.ticket.name }}</td>
+      
+      <!-- Статус -->
+      <td>Оплачен</td> 
     </tr>
     {% empty %}
     <tr>
-      <td colspan="5">Пока нет купленных билетов на это мероприятие.</td>
+      <td colspan="6">Пока нет купленных билетов на это мероприятие.</td>
     </tr>
     {% endfor %}
   </tbody>

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
@@ -51,6 +51,28 @@ def create_event(request):
         form = EventForm()
     
     return render(request, 'events/event_form.html', {'form': form})
+
+
+
+def edit_event(request, event_id):
+    """
+    View для редактирования мероприятия.
+    """
+    # Получаем мероприятие по ID или выдаем 404 ошибку, если его нет
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            form.save()
+            return redirect('partner:event_list') # Перенаправляем на список после сохранения
+    else:
+        # При GET-запросе заполняем форму данными из БД
+        form = EventForm(instance=event)
+
+    return render(request, 'events/event_form.html', {'form': form, 'is_edit': True})
+
+
 
 @login_required
 def event_list(request):
