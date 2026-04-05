@@ -1,9 +1,26 @@
-<h1>Добавить новое мероприятие</h1>
+<!-- templates/events/event_form.html -->
+
+<!-- 1. Добавь эти строки в <head> или в начало блока контента -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- ... остальной код формы ... -->
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     
-    {{ form.as_p }}
-    
+    {{ form.as_p }} <!-- Здесь будет поле date_time -->
+
     <button type="submit">Сохранить мероприятие</button>
 </form>
+
+<script>
+    // Ждем, пока страница полностью загрузится
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr("#id_date_time", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today"
+        });
+    });
+</script>
