@@ -11,7 +11,10 @@ class CustomUser(AbstractUser):
         ('partner', 'Партнёр'),
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='visitor')
-    
+    company_name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Название компании')
+    phone_number = models.CharField(max_length=30, blank=True, null=True, verbose_name='Телефон')
+    logo = models.ImageField(upload_to='user_logos/', blank=True, null=True, verbose_name='Фото / Логотип')
+    social_links = models.TextField(blank=True, null=True, verbose_name='Соцсети')
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'

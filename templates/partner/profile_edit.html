@@ -1,0 +1,18 @@
+{% block content %}
+<h1>Настройки профиля</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <h2>Личные данные</h2>
+    {{ user_form.as_p }}
+    
+    <h2>Смена пароля</h2>
+    {{ password_form.as_p }}
+    
+    <button type="submit" class="btn btn-primary">Сохранить все изменения</button>
+</form>
+
+<!-- Ссылка на соглашение -->
+<p><a href="#" target="_blank">Пользовательское соглашение партнёра</a></p>
+{% endblock %}

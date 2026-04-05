@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from .forms import EventForm
-
+from core.forms import PartnerProfileForm, PasswordChangeForm
 
 @login_required
 def partner_dashboard(request):
@@ -151,3 +151,29 @@ def finances(request):
         'payout_history': payout_history,
     }
     return render(request, 'partner/finances.html', context)
+
+
+
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        # Обработка основной формы профиля
+        user_form = PartnerProfileForm(request.POST, request.FILES, instance=request.user)
+        if user_form.is_valid():
+            user_form.save()
+            
+            # Обработка формы смены пароля (если она была отправлена)
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, password_form.user) # Чтобы не разлогинить пользователя
+                return redirect('partner:profile_edit')
+    else:
+        user_form = PartnerProfileForm(instance=request.user)
+        password_form = PasswordChangeForm(user=request.user)
+
+    context = {
+        'user_form': user_form,
+        'password_form': password_form,
+    }
+    return render(request, 'partner/profile_edit.html', context)
