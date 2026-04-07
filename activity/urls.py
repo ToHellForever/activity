@@ -13,4 +13,6 @@ urlpatterns = [
     # выход
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register_view, name='register'), # Страница регистрации
+    path('support/send/', views.send_support_message, name='send_support_message'), # Страница отправки сообщения
+    path('support/', views.support_dashboard, name='support_dashboard'), # Страница поддержки
 ] 

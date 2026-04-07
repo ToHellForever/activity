@@ -140,3 +140,39 @@ class PayoutRequest(models.Model):
     class Meta:
         verbose_name = 'Запрос на выплату'
         verbose_name_plural = 'Запросы на выплату'
+        
+        
+        
+class SupportTicket(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новое'),
+        ('in_progress', 'В работе'),
+        ('closed', 'Закрыто'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.CharField(max_length=255, verbose_name='Тема')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Тикет #{self.id} - {self.subject}"
+    
+    # Это свойство поможет нам легко получить все сообщения чата
+    @property
+    def messages(self):
+        return self.supportmessage_set.all().order_by('created_at')
+
+
+class SupportMessage(models.Model):
+    """
+    Модель для одного сообщения в чате поддержки.
+    """
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE) # Кто отправил сообщение
+    is_from_user = models.BooleanField(default=True) # True - Пользователь, False - Модератор
+    text = models.TextField(verbose_name='Текст сообщения')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Сообщение к тикету #{self.ticket.id}"

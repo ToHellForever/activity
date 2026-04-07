@@ -1,9 +1,8 @@
-# core/forms.py
-
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import CustomUser
+from .models import SupportTicket
 
 # --- ФОРМА ВХОДА ---
 class CustomAuthenticationForm(forms.Form):
@@ -52,3 +51,12 @@ class PartnerProfileForm(forms.ModelForm):
             # Подсказка для соцсетей
             'social_links': forms.Textarea(attrs={'placeholder': 'Ссылки по одной на строку'}),
         }
+        
+        
+        
+class SupportTicketForm(forms.ModelForm):
+    """Форма для создания темы обращения."""
+    
+    class Meta:
+        model = SupportTicket
+        fields = ['subject']

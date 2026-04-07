@@ -1,7 +1,10 @@
-# core/admin.py
-
 from django.contrib import admin
 from .models import Event, Ticket, Order
+from .models import SupportTicket, SupportMessage
+from django import forms
+# masseges
+from django.contrib import messages
+
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
@@ -63,3 +66,64 @@ class CustomUserAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + ('user_type',)
     
     
+class SupportTicketAdminForm(forms.ModelForm):
+    moderator_response = forms.CharField(
+        widget=forms.Textarea,
+        required=False,
+        label='Ответ модератора',
+        help_text='Ответ будет добавлен в чат и виден пользователю.'
+    )
+    class Meta:
+        model = SupportTicket
+        fields = '__all__'
+
+@admin.register(SupportTicket)
+class SupportTicketAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'subject', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    readonly_fields = ('user', 'subject', 'created_at')
+    form = SupportTicketAdminForm
+
+    # Эта строка уже должна быть здесь
+    change_form_template = 'admin/supportticket_change_form.html' 
+
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'status')
+        }),
+        ('Тикет', {
+            'fields': ('subject', 'created_at')
+        }),
+        ('Ответ модератора', {
+            'fields': ('moderator_response',)
+        }),
+    )
+
+    # Этот метод тоже должен быть внутри этого единственного класса
+    def save_model(self, request, obj, form, change):
+        """
+        Этот метод вызывается при нажатии кнопки "Сохранить" в админке.
+        """
+        # 1. СНАЧАЛА сохраняем сам объект (тикет)
+        # Это нужно, чтобы у нас был корректный obj.id для связи с сообщением
+        obj.save()
+        
+        # 2. Теперь проверяем, ввел ли модератор ответ
+        response_text = form.cleaned_data.get('moderator_response')
+        if response_text:
+            # 3. Создаем сообщение в чате
+            SupportMessage.objects.create(
+                ticket=obj,
+                user=request.user,
+                is_from_user=False,
+                text=response_text
+            )
+            self.message_user(request, "Ответ успешно добавлен в чат.", level=messages.SUCCESS)
+            
+            # 4. Обновляем объект, чтобы он увидел новые сообщения в чате
+            obj.refresh_from_db()
+            
+            # 5. Меняем статус при необходимости
+            if obj.status == 'new':
+                obj.status = 'in_progress'
+                obj.save() # Сохраняем изменение статуса

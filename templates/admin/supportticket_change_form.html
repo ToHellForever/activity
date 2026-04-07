@@ -1,0 +1,32 @@
+{% extends "admin/change_form.html" %}
+{% load admin_urls %}
+
+{% block after_related_objects %}
+  <div class="module" id="chat-module">
+    <h2>История чата</h2>
+    
+    <!-- Блок для отображения сообщений -->
+    <div id="chat-history" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;">
+      {% for message in original.messages.all %}
+        <div style="margin: 10px 0; padding: 8px; border-radius: 5px; 
+                    background-color: {% if message.is_from_user %}#e6f7ff{% else %}#f0f0f0{% endif %};">
+          <strong style="color: {% if message.is_from_user %}#1890ff{% else %}#595959{% endif %};">
+            {{ message.user.get_full_name|default:message.user.username }}
+            <span style="color: #999;">({{ message.created_at|date:"d.m H:i" }})</span>:
+          </strong><br>
+          {{ message.text }}
+        </div>
+      {% empty %}
+        <div>Сообщений в чате нет.</div>
+      {% endfor %}
+    </div>
+
+    <!-- Поле для ответа (используем стандартное поле из формы) -->
+    {{ form.moderator_response }}
+
+    <p class="submit-row">
+      <input type="submit" value="Ответить и сохранить" class="default" name="_save">
+      <input type="submit" value="Ответить и продолжить редактирование" class="default" name="_continue">
+    </p>
+  </div>
+{% endblock %}
