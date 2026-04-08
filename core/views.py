@@ -11,51 +11,54 @@ from django.contrib.auth.decorators import login_required
 from core.forms import SupportTicketForm
 from .models import SupportTicket, SupportMessage
 from django import forms
+
 # require_POST
 from django.views.decorators.http import require_POST
+
 
 @never_cache
 def login_view(request):
     if request.user.is_authenticated:
         # Если пользователь уже вошел, сразу редиректим его в нужный кабинет
-        if request.user.user_type == 'partner':
-            return redirect('partner:dashboard')
+        if request.user.user_type == "partner":
+            return redirect("partner:dashboard")
         else:
-            return redirect('visitor:dashboard')
+            return redirect("visitor:dashboard")
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CustomAuthenticationForm(request.POST)
         if form.is_valid():
-            user = form.cleaned_data['user']
+            user = form.cleaned_data["user"]
             login(request, user)
-            if user.user_type == 'partner':
-                return redirect('partner:dashboard')
+            if user.user_type == "partner":
+                return redirect("partner:dashboard")
             else:
-                return redirect('visitor:dashboard')
+                return redirect("visitor:dashboard")
     else:
         form = CustomAuthenticationForm()
-    
-    return render(request, 'registration/login.html', {'form': form})
+
+    return render(request, "registration/login.html", {"form": form})
+
 
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save() # Сохраняем пользователя в БД
+            user = form.save()  # Сохраняем пользователя в БД
             # Сразу логиним пользователя после регистрации
             login(request, user)
-            
+
             # Редирект в зависимости от выбранной роли при регистрации
-            if user.user_type == 'partner':
-                return redirect('partner:dashboard')
+            if user.user_type == "partner":
+                return redirect("partner:dashboard")
             else:
-                return redirect('visitor:dashboard')
+                return redirect("visitor:dashboard")
     else:
         form = CustomUserCreationForm()
-    
-    return render(request, 'registration/register.html', {'form': form})
+
+    return render(request, "registration/register.html", {"form": form})
 
 
 def custom_logout(request):
@@ -65,9 +68,10 @@ def custom_logout(request):
     """
     # Выполняем стандартное действие выхода
     auth_logout(request)
-    
+
     # Редиректим на страницу входа по имени URL
-    return redirect('login')
+    return redirect("login")
+
 
 @login_required
 def support_dashboard(request):
@@ -75,65 +79,72 @@ def support_dashboard(request):
     Главная страница поддержки. Слева список тикетов, справа чат.
     """
     # --- НОВАЯ ЛОГИКА: Создание тикета на этой же странице ---
-    if request.method == 'POST':
+    if request.method == "POST":
         # Проверяем, пришли ли данные для создания НОВОГО тикета
-        new_subject = request.POST.get('new_subject')
-        new_message = request.POST.get('new_message')
-        
+        new_subject = request.POST.get("new_subject")
+        new_message = request.POST.get("new_message")
+
         if new_subject and new_message:
             # Создаем новый тикет
             ticket = SupportTicket.objects.create(
-                subject=new_subject,
-                user=request.user,
-                status='new'
+                subject=new_subject, user=request.user, status="new"
             )
             # Создаем первое сообщение в чате
             SupportMessage.objects.create(
-                ticket=ticket,
-                user=request.user,
-                is_from_user=True,
-                text=new_message
+                ticket=ticket, user=request.user, is_from_user=True, text=new_message
             )
             # Перенаправляем на эту же страницу, но с выбранным новым тикетом
-            return redirect(f'/support/?ticket_id={ticket.id}')
-    
+            return redirect(f"/support/?ticket_id={ticket.id}")
+
     # --- СТАРАЯ ЛОГИКА: Отображение страницы ---
-    tickets = SupportTicket.objects.filter(user=request.user).order_by('-created_at')
+    tickets = SupportTicket.objects.filter(user=request.user).order_by("-created_at")
     selected_ticket = None
     chat_messages = []
 
-    if request.GET.get('ticket_id'):
-        ticket_id = request.GET.get('ticket_id')
-        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+    if request.GET.get("ticket_id"):
+        ticket_id = request.GET.get("ticket_id")
+        selected_ticket = get_object_or_404(
+            SupportTicket, id=ticket_id, user=request.user
+        )
         chat_messages = selected_ticket.messages.all()
 
     context = {
-        'tickets': tickets,
-        'selected_ticket': selected_ticket,
-        'chat_messages': chat_messages,
+        "tickets": tickets,
+        "selected_ticket": selected_ticket,
+        "chat_messages": chat_messages,
     }
-    return render(request, 'support_dashboard.html', context)
+    return render(request, "support_dashboard.html", context)
 
 
-# --- VIEW для отправки сообщения (через POST) ---
 @require_POST
 @login_required
 def send_support_message(request):
-    """
-    Обрабатывает отправку сообщения в чат.
-    """
-    ticket_id = request.POST.get('ticket_id')
-    text = request.POST.get('text')
-    
-    if ticket_id and text:
+    ticket_id = request.POST.get("ticket_id")
+    text = request.POST.get("text")
+    file = request.FILES.get("attachment")  # Одно поле для файла
+
+    if ticket_id and (text or file):
         ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
-        SupportMessage.objects.create(
-            ticket=ticket,
-            user=request.user,
-            is_from_user=True,
-            text=text
+
+        # Создаем новое сообщение
+        message = SupportMessage.objects.create(
+            ticket=ticket, user=request.user, is_from_user=True, text=text, attachment=file
         )
-        return redirect(f'/support/?ticket_id={ticket_id}')
-    
+
+        return redirect(f"/support/?ticket_id={ticket_id}")
+
     messages.error(request, "Ошибка отправки сообщения.")
-    return redirect('support_dashboard')
+    return redirect("support_dashboard")
+
+def upload_image(request):
+    if request.method == "POST":
+        data_url = request.POST.get("data")
+        format, imgstr = data_url.split(";base64,")
+        ext = format.split("/")[1]
+        data = ContentFile(base64.b64decode(imgstr), name=f"image.{ext}")
+
+        # Создаем вложение и возвращаем его ID
+        attachment = Attachment.objects.create(file=data)
+        return JsonResponse({"attachment_id": attachment.id})
+
+    return HttpResponseBadRequest("Некорректный запрос")

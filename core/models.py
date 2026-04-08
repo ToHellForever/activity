@@ -171,8 +171,17 @@ class SupportMessage(models.Model):
     ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.CASCADE) # Кто отправил сообщение
     is_from_user = models.BooleanField(default=True) # True - Пользователь, False - Модератор
+    attachment = models.FileField(
+        upload_to='support_attachments/', 
+        blank=True, 
+        null=True,
+        verbose_name='Прикрепить файл'
+    )
     text = models.TextField(verbose_name='Текст сообщения')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Сообщение к тикету #{self.ticket.id}"
+    
+    
+    

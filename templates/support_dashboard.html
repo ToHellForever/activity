@@ -22,13 +22,16 @@
     <button id="new-ticket-btn" class="btn btn-block btn-primary mb-3">Новое обращение</button>
     
     <!-- НОВАЯ ФОРМА (спрятана по умолчанию) -->
-    <form id="new-ticket-form" method="post" style="display: none; margin-bottom: 20px;">
+    <form id="new-ticket-form" method="post" style="display: none; margin-bottom: 20px;" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="form-group">
         <input type="text" name="new_subject" class="form-control" placeholder="Тема обращения" required>
       </div>
       <div class="form-group">
         <textarea name="new_message" class="form-control" rows="3" placeholder="Ваше сообщение..." required></textarea>
+      </div>
+      <div class="form-group">
+        <input type="file" name="attachment" style="margin-right: 5px;">
       </div>
       <button type="submit" class="btn btn-success">Создать обращение</button>
       <button type="button" id="cancel-ticket-btn" class="btn btn-secondary">Отмена</button>
@@ -67,7 +70,14 @@
       {% if selected_ticket %}
         {% for message in chat_messages %}
           <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-            <strong>{{ message.user.get_full_name|default:message.user.username }} ({{ message.created_at|date:"H:i" }}):</strong><br>
+            <strong>{{ message.user.get_full_name|default:message.user.username }}
+  {% if message.attachment %}
+    <!-- Если файл есть, показываем ссылку -->
+    <a href="{{ message.attachment.url }}" target="_blank" 
+       style="margin-left: 10px; font-size: 0.9em; color: #1890ff;">
+       📎 Файл
+    </a>
+  {% endif %} ({{ message.created_at|date:"H:i" }}):</strong><br>
               {{ message.text }}
             </div>
           {% empty %}
@@ -78,12 +88,17 @@
 
       <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
       {% if selected_ticket %}
-      <form method="post" action="{% url 'send_support_message' %}" style="display: flex;">
-        {% csrf_token %}
-        <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-        <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
-        <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
-      </form>
+        <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex;">
+          {% csrf_token %}
+          <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+          
+          <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
+          
+          <!-- НОВОЕ ПОЛЕ: Прикрепить файл -->
+          <input type="file" name="attachment" style="margin-right: 5px;">
+          
+          <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
+        </form>
       {% endif %}
     </div>
   </div>

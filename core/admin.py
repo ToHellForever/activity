@@ -2,8 +2,10 @@ from django.contrib import admin
 from .models import Event, Ticket, Order
 from .models import SupportTicket, SupportMessage
 from django import forms
-# masseges
 from django.contrib import messages
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 
 @admin.register(Event)
@@ -127,3 +129,8 @@ class SupportTicketAdmin(admin.ModelAdmin):
             if obj.status == 'new':
                 obj.status = 'in_progress'
                 obj.save() # Сохраняем изменение статуса
+                
+                
+                
+if settings.DEBUG:
+    admin.site.add_view = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

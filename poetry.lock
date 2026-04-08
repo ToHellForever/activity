@@ -214,6 +214,39 @@ argon2 = ["argon2-cffi (>=23.1.0)"]
 bcrypt = ["bcrypt (>=4.1.1)"]
 
 [[package]]
+name = "django-bootstrap5"
+version = "26.2"
+description = "Bootstrap 5 for Django"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "django_bootstrap5-26.2-py3-none-any.whl", hash = "sha256:179af37c59f4e9b1070fc650f30961c5d903c2c0ad60280ad5b63ed394f68658"},
+    {file = "django_bootstrap5-26.2.tar.gz", hash = "sha256:12331059c8230ba372ffaad990a706151e1ad8f721a870aa2e862cf6746f0d33"},
+]
+
+[package.dependencies]
+django = ">=4.2"
+
+[package.extras]
+jinja = ["jinja2 (>=3.0,<4)"]
+
+[[package]]
+name = "django-crispy-forms"
+version = "2.6"
+description = "Best way to have Django DRY forms"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "django_crispy_forms-2.6-py3-none-any.whl", hash = "sha256:8ee0ae28b6b0ac41ff48a65944480c049fe8d1b0047086874fd7efabf4ec1374"},
+    {file = "django_crispy_forms-2.6.tar.gz", hash = "sha256:4921a1087c6cd4f9fa3c139654c1de1c1c385f8bd6729aaee530bc0121ab4b93"},
+]
+
+[package.dependencies]
+django = ">=5.2"
+
+[[package]]
 name = "django-taggit"
 version = "6.1.0"
 description = "django-taggit is a reusable Django application for simple tagging."
@@ -804,4 +837,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "8c985577e56525a03df35f54b810c3fbbf837a8c6407d1471e73a631753ee295"
+content-hash = "f4603f3d25a2458a64b9ac53631336837b1e59e5058eff583b25ca6380f2f543"

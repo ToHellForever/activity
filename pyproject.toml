@@ -14,7 +14,9 @@ dependencies = [
     "django-taggit (>=6.1.0,<7.0.0)",
     "celery (>=5.6.3,<6.0.0)",
     "redis (>=7.4.0,<8.0.0)",
-    "psycopg2-binary (>=2.9.11,<3.0.0)"
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "django-crispy-forms (>=2.6,<3.0)",
+    "django-bootstrap5 (>=26.2,<27.0)"
 ]
 
 

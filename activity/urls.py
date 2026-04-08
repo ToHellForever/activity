@@ -3,6 +3,9 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
 from partner_app import views as partner_views
+from django.conf.urls.static import static
+# settings
+from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,4 +18,5 @@ urlpatterns = [
     path('register/', views.register_view, name='register'), # Страница регистрации
     path('support/send/', views.send_support_message, name='send_support_message'), # Страница отправки сообщения
     path('support/', views.support_dashboard, name='support_dashboard'), # Страница поддержки
-] 
+    path('upload-image/', views.upload_image, name='upload_image'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
