@@ -1,0 +1,94 @@
+
+<style>
+  .container { display: flex; height: calc(100vh - 100px); }
+  .sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
+  .chat-window { width: 70%; padding: 20px; display: flex; flex-direction: column; }
+  .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; }
+  .message { margin: 10px 0; padding: 8px 12px; border-radius: 5px; max-width: 70%; line-height: 1.4;}
+  .user { background-color: #dcf8c6; margin-left: auto; }
+  .moderator { background-color: #ffffff; border: 1px solid #ddd; margin-right: auto; }
+</style>
+
+{% block content %}
+<div class="container">
+  
+  <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
+  <div class="sidebar">
+    <h2>Обращения в поддержке</h2>
+    
+    <!-- Фильтры по статусу -->
+    <div class="filters">
+      <a href="?status=new" class="btn btn-outline-primary mb-3">Новые</a>
+      <a href="?status=in_progress" class="btn btn-outline-primary mb-3">В работе</a>
+      <a href="?status=closed" class="btn btn-outline-primary mb-3">Закрытые</a>
+    </div>
+    
+    <!-- Список тикетов -->
+    {% for ticket in tickets %}
+      <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
+        <a href="?ticket_id={{ ticket.id }}">
+          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:30 }}
+          <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
+        </a>
+      </div>
+    {% empty %}
+      <div>Нет тикетов с таким статусом.</div>
+    {% endfor %}
+    
+  </div>
+{% if selected_ticket %}
+  <form method="post" action="{% url 'update_ticket_status' ticket_id=selected_ticket.id %}">
+    {% csrf_token %}
+    <select name="status">
+      <option value="new" {% if selected_ticket.status == 'new' %}selected{% endif %}>Новое</option>
+      <option value="in_progress" {% if selected_ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
+      <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>Закрыто</option>
+    </select>
+    <button type="submit">Сменить статус</button>
+  </form>
+{% endif %}
+  <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
+  <div class="chat-window">
+    
+    <!-- Заголовок чата -->
+    {% if selected_ticket %}
+      <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
+      <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
+      <hr>
+    {% else %}
+      <h3>Выберите тикет слева или выберите фильтр.</h3>
+      <div style="flex: 1"></div> <!-- Отступ, чтобы форма не поднималась вверх -->
+    {% endif %}
+
+    <!-- История сообщений -->
+    <div class="chat-history">
+      {% for message in chat_messages %}
+        <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
+          <strong>{{ message.user.get_full_name|default:message.user.username }} ({{ message.created_at|date:"H:i" }}):</strong><br>
+          {{ message.text }}
+
+          <!-- НОВЫЙ БЛОК: Отображение вложений -->
+          {% if message.attachment %}
+            <div class="attachments mt-2">
+              <a href="{{ message.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> Приложение</a>
+            </div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div>Сообщений в этом чате пока нет.</div>
+      {% endfor %}
+    </div>
+
+    <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
+    {% if selected_ticket %}
+      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex;">
+        {% csrf_token %}
+        <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+        <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
+        <input type="file" name="attachment" style="margin-right: 5px;">
+        <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

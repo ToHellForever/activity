@@ -16,7 +16,9 @@ urlpatterns = [
     # выход
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register_view, name='register'), # Страница регистрации
+    path('moderator/', views.moderator_dashboard, name='moderator_dashboard'), # Страница модератора
     path('support/send/', views.send_support_message, name='send_support_message'), # Страница отправки сообщения
     path('support/', views.support_dashboard, name='support_dashboard'), # Страница поддержки
-    path('upload-image/', views.upload_image, name='upload_image'),
+    path('upload-image/', views.upload_image, name='upload_image'), # Страница загрузки изображения
+    path('ticket/update-status/<int:ticket_id>/', views.update_ticket_status, name='update_ticket_status'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponseRedirect, reverse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
 from .models import Event, Ticket
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
 from .models import SupportTicket, SupportMessage
 from django import forms
@@ -119,19 +119,28 @@ def support_dashboard(request):
 @require_POST
 @login_required
 def send_support_message(request):
+    '''Обрабатывает отправку нового сообщения в рамках существующего тикета поддержки.'''
     ticket_id = request.POST.get("ticket_id")
     text = request.POST.get("text")
     file = request.FILES.get("attachment")  # Одно поле для файла
 
     if ticket_id and (text or file):
-        ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        ticket = get_object_or_404(SupportTicket, id=ticket_id)
 
         # Создаем новое сообщение
         message = SupportMessage.objects.create(
-            ticket=ticket, user=request.user, is_from_user=True, text=text, attachment=file
+            ticket=ticket,
+            user=request.user,
+            is_from_user=(not request.user.is_staff),  # Если staff — это модератор
+            text=text,
+            attachment=file  # Прикрепляем файл (если есть)
         )
 
-        return redirect(f"/support/?ticket_id={ticket_id}")
+        # Логика редиректа
+        if request.user.is_staff:  # Если модератор — не редиректим
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        else:  # Если пользователь — редиректим на страницу тикета
+            return redirect(f"/support/?ticket_id={ticket_id}")
 
     messages.error(request, "Ошибка отправки сообщения.")
     return redirect("support_dashboard")
@@ -148,3 +157,44 @@ def upload_image(request):
         return JsonResponse({"attachment_id": attachment.id})
 
     return HttpResponseBadRequest("Некорректный запрос")
+
+
+def is_moderator(user):
+    return user.is_superuser or user.groups.filter(name='Модераторы').exists()
+@user_passes_test(is_moderator, login_url='/login/')
+@login_required
+def moderator_dashboard(request):
+    """
+    Главная страница модератора. Слева список тикетов, справа чат.
+    """
+    # Определяем фильтр по статусу (новые, в работе, закрытые)
+    filter_status = request.GET.get('status', 'new')
+    
+    # Получаем тикеты по фильтру
+    tickets = SupportTicket.objects.filter(status=filter_status).order_by('-created_at')
+    
+    # По умолчанию чат пустой
+    selected_ticket = None
+    chat_messages = []
+
+    # Если выбран конкретный тикет для просмотра
+    if request.GET.get('ticket_id'):
+        ticket_id = request.GET.get('ticket_id')
+        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
+        chat_messages = selected_ticket.messages.all()
+
+    context = {
+        'tickets': tickets,
+        'selected_ticket': selected_ticket,
+        'chat_messages': chat_messages,
+        'filter_status': filter_status  # Передаем статус для фильтров
+    }
+    return render(request, 'moderator_dashboard.html', context)
+
+
+def update_ticket_status(request, ticket_id):
+    ticket = get_object_or_404(SupportTicket, id=ticket_id)
+    new_status = request.POST.get('status')
+    ticket.status = new_status
+    ticket.save()
+    return redirect(reverse('moderator_dashboard') + '?ticket_id=' + str(ticket_id))
