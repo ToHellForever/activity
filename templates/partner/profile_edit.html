@@ -13,6 +13,35 @@
     <button type="submit" class="btn btn-primary">Сохранить все изменения</button>
 </form>
 
+{% if request.user.verification_status == 'not_submitted' %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h2>Верификация</h2>
+    <p>Для получения статуса "Подтверждённый организатор" загрузите документы:</p>
+    {{ document_form.as_p }}
+    <button type="submit" name="upload_documents" class="btn btn-success">Подтвердить квалификацию</button>
+</form>
+{% elif request.user.verification_status == 'pending' %}
+<div class="alert alert-info">
+    Ваши документы на рассмотрении. Ожидайте решения модератора.
+</div>
+{% elif request.user.verification_status == 'rejected' %}
+<div class="alert alert-danger">
+    Ваши документы были отклонены. Вы можете загрузить их ещё раз.
+</div>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h2>Повторная верификация</h2>
+    <p>Попробуйте загрузить документы ещё раз:</p>
+    {{ document_form.as_p }}
+    <button type="submit" name="upload_documents" class="btn btn-warning">Загрузить документы повторно</button>
+</form>
+{% elif request.user.is_verified %}
+<div class="alert alert-success">
+    Ваш статус: Подтверждённый организатор ✓
+</div>
+{% endif %}
+
 <!-- Ссылка на соглашение -->
 <p><a href="#" target="_blank">Пользовательское соглашение партнёра</a></p>
 {% endblock %}
