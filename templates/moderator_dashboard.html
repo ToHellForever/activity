@@ -1,4 +1,3 @@
-
 <style>
   .container { display: flex; height: calc(100vh - 100px); }
   .sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
@@ -11,7 +10,7 @@
 
 {% block content %}
 <div class="container">
-  
+
   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
   <div class="sidebar">
     <h2>Обращения в поддержке</h2>
@@ -67,10 +66,14 @@
           <strong>{{ message.user.get_full_name|default:message.user.username }} ({{ message.created_at|date:"H:i" }}):</strong><br>
           {{ message.text }}
 
-          <!-- НОВЫЙ БЛОК: Отображение вложений -->
-          {% if message.attachment %}
-            <div class="attachments mt-2">
-              <a href="{{ message.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> Приложение</a>
+          <!-- Вложения -->
+          {% if message.attachments.all %}
+            <div class="attachments" style="margin-top: 8px;">
+              {% for attachment in message.attachments.all %}
+                <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-block; margin-right: 10px; font-size: 0.9em; color: #1890ff;">
+                  📎 {{ attachment.file.name|cut:"/" }}
+                </a>
+              {% endfor %}
             </div>
           {% endif %}
         </div>
@@ -85,10 +88,26 @@
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
         <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
-        <input type="file" name="attachment" style="margin-right: 5px;">
+        <input type="file" name="attachment" multiple id="file-upload" style="margin-right: 5px;">
         <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
       </form>
     {% endif %}
   </div>
 </div>
+
+<script>
+  // Решение для обработки вставки файлов
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.querySelector('input[name="text"]');
+    if (chatInput) {
+      chatInput.addEventListener('paste', function(e) {
+        if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+          e.preventDefault();
+          alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
+        }
+      });
+    }
+  });
+</script>
+
 {% endblock %}

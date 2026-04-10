@@ -164,6 +164,21 @@ class SupportTicket(models.Model):
         return self.supportmessage_set.all().order_by('created_at')
 
 
+class SupportAttachment(models.Model):
+    """
+    Модель для вложений в сообщениях поддержки.
+    """
+    message = models.ForeignKey('SupportMessage', on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(
+        upload_to='support_attachments/',
+        verbose_name='Файл'
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Вложение для сообщения #{self.message.id}"
+
+
 class SupportMessage(models.Model):
     """
     Модель для одного сообщения в чате поддержки.
@@ -171,12 +186,6 @@ class SupportMessage(models.Model):
     ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.CASCADE) # Кто отправил сообщение
     is_from_user = models.BooleanField(default=True) # True - Пользователь, False - Модератор
-    attachment = models.FileField(
-        upload_to='support_attachments/', 
-        blank=True, 
-        null=True,
-        verbose_name='Прикрепить файл'
-    )
     text = models.TextField(verbose_name='Текст сообщения')
     created_at = models.DateTimeField(auto_now_add=True)
 
