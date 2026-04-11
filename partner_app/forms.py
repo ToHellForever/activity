@@ -33,7 +33,6 @@ class EventForm(forms.ModelForm):
             "category",
             "tags",
             "allow_booking_without_payment",
-            "commission_rate",
             "auto_close_sales_hours",
         ]
         widgets = {
