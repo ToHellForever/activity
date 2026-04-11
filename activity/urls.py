@@ -9,6 +9,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("", views.landing_page, name="landing_page"),
     path('partner/', include('partner_app.urls', namespace='partner')), 
     path('visitor/', include('visitor_app.urls', namespace='visitor')), 
     # регистраиця
@@ -24,4 +25,6 @@ urlpatterns = [
     path("events/", views.event_list, name="event_list"),  # Страница списка событий
     path("events/<int:event_id>/", views.event_detail, name="event_detail"),  # Страница детального описания события
     path("events/<int:event_id>/buy/", views.buy_ticket, name="buy_ticket"),  # Страница покупки билета
+    path("activate/<int:pk>/", views.activate_account, name="activate_account"), # Страница активации аккаунта
+    path("buy/<int:event_id>/", views.buy_ticket, name="buy_ticket"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

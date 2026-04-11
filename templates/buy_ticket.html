@@ -1,0 +1,40 @@
+
+{% block content %}
+<div class="container">
+    <h1>Покупка билета на "{{ event.title }}"</h1>
+    
+    <p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
+    <p>Место: {{ event.place }}</p>
+    <p>Описание: {{ event.description_short }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="first_name">Имя:</label>
+            <input type="text" name="first_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Фамилия:</label>
+            <input type="text" name="last_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="ticket_id">Тип билета:</label>
+            <select name="ticket_id" required>
+                {% for ticket in event.tickets.all %}
+                    <option value="{{ ticket.id }}">{{ ticket.name }} - {{ ticket.price }} ₽</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Купить билет</button>
+    </form>
+</div>
+{% endblock %}

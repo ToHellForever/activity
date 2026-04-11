@@ -15,11 +15,19 @@ from .forms import CustomAuthenticationForm
 from .models import Event, Ticket
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
-from .models import SupportTicket, SupportMessage, SupportAttachment
+from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
 from django import forms
-
-# require_POST
 from django.views.decorators.http import require_POST
+from django.core.mail import send_mail
+from django.contrib.auth.hashers import make_password
+from django.views.decorators.http import require_http_methods
+import uuid
+
+
+def landing_page(request):
+    return render(request, "landing.html")
+
+
 
 
 @never_cache
@@ -226,7 +234,86 @@ def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
 
+@require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    # Здесь будет логика покупки билета
+
+
+    if request.method == "GET":
+        # Показываем форму покупки (пример; адаптируйте под ваш шаблон)
+        tickets = Ticket.objects.filter(event=event)
+        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+
+    # Обработка POST-запроса
+    email = (request.POST.get("email") or "").strip()
+    first_name = (request.POST.get("first_name") or "").strip()
+    last_name = (request.POST.get("last_name") or "").strip()
+    username_candidate = (
+        request.POST.get("username") or email or f"guest_{uuid4().hex[:8]}"
+    ).strip()
+
+    if not username_candidate:
+        return HttpResponseBadRequest("Username обязателен")
+
+    # Создаём или получаем пользователя с явным username
+    user, created = CustomUser.objects.get_or_create(
+        username=username_candidate,
+        defaults={
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "user_type": "guest",
+        },
+    )
+
+    if created:
+        # Гость без пароля
+        user.set_unusable_password()
+        user.save()
+
+    # Проверяем ticket_id и получаем билет, привязанный к этому событию
+    ticket_id = request.POST.get("ticket_id")
+    if not ticket_id:
+        return HttpResponseBadRequest("ticket_id обязателен")
+
+    ticket = get_object_or_404(Ticket, pk=ticket_id, event=event)
+
+    order = Order.objects.create(
+        ticket=ticket,
+        participant_data={"email": email},
+        total_price=ticket.price
+    )
+
+    # Отправляем уведомление (не критично для работы)
+    try:
+        send_ticket_notification(user, order)
+    except Exception:
+        pass
+
     return redirect("event_detail", event_id=event_id)
+
+
+def send_ticket_notification(user, order):
+    subject = "Ваш электронный билет"
+    message = f"""
+    Добро пожаловать на мероприятие "{order.ticket.event.title}"!
+    
+    Электронный билет: {order.ticket.name}
+    Сумма: {order.total_price} ₽
+    
+    Предложение активировать аккаунт:
+    Перейдите по ссылке и создайте пароль, чтобы управлять своими билетами:
+    {request.build_absolute_uri(reverse("activate_account", args=[user.pk]))}
+    """
+    send_mail(subject, message, "no-reply@example.com", [user.email])
+    
+    
+def activate_account(request, pk):
+    user = get_object_or_404(CustomUser, pk=pk)
+    if request.method == "POST":
+        password = request.POST.get("password")
+        user.set_password(password)
+        user.user_type = "visitor"  # Меняем статус на посетителя
+        user.save()
+        return redirect("login")
+    return render(request, "activate_account.html")
