@@ -5,7 +5,7 @@ from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from .forms import EventForm, DocumentUploadForm
 from core.forms import PartnerProfileForm, PasswordChangeForm
 from .tasks import process_event_video
-
+from django.core.mail import send_mail
 
 @login_required
 def partner_dashboard(request):
@@ -28,7 +28,7 @@ def create_event(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-
+            event.status = "on_moderation" 
             event.save()
 
             ticket_data = form.cleaned_data.get("ticket_types", "")
@@ -54,8 +54,12 @@ def create_event(request):
     else:
         form = EventForm()
 
-    return render(request, "events/event_form.html", {"form": form})
+    return render(request, "partner/event_form.html", {"form": form})
 
+def notify_organizer(event):
+    subject = f"Ваше мероприятие '{event.title}' одобрено!"
+    message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
+    send_mail(subject, message, "no-reply@example.com", [event.organizer.email])
 
 def edit_event(request, event_id):
     """
@@ -69,17 +73,17 @@ def edit_event(request, event_id):
         if form.is_valid():
             form.save()
             return redirect(
-                "partner:event_list"
+                "partner:partner_event_list"
             )  # Перенаправляем на список после сохранения
     else:
         # При GET-запросе заполняем форму данными из БД
         form = EventForm(instance=event)
 
-    return render(request, "events/event_form.html", {"form": form, "is_edit": True})
+    return render(request, "partner/event_form.html", {"form": form, "is_edit": True})
 
 
 @login_required
-def event_list(request):
+def partner_event_list(request):
     """
     Отображает список всех мероприятий текущего партнера.
     """
@@ -104,7 +108,7 @@ def event_list(request):
     context = {
         "events": event_data,
     }
-    return render(request, "partner/event_list.html", context)
+    return render(request, "partner/partner_event_list.html", context)
 
 
 @login_required

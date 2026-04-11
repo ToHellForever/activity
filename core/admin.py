@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
-
+from django.utils.html import mark_safe
 
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
@@ -50,14 +50,14 @@ class EventAdmin(admin.ModelAdmin):
     """
 
     # Какие поля показывать в списке всех мероприятий
-    list_display = ("title", "organizer", "date_time", "status", "commission_rate")
+    list_display = ("title", "organizer", "date_time", "status", "commission_rate",)
 
     # По каким полям можно фильтровать список
     list_filter = (
         "status",
         "date_time",
         "category",
-    )  # Можно добавить фильтрацию по категории
+    )  
 
     # Какие поля использовать для поиска
     search_fields = ("title", "organizer__username")
@@ -91,7 +91,28 @@ class EventAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        # Добавляем блок для отображения статуса
+        (
+            "Статусы",
+            {
+                "fields": ("approved_status",),
+            },
+        ),
     )
+
+    # Добавляем поле для отображения статуса в виде галочки
+    readonly_fields = ("approved_status",)
+
+    # Метод для отображения статуса в виде галочки
+    def approved_status(self, obj):
+        if obj.status == "active":
+            return True
+        elif obj.status == "on_moderation":
+            return False
+        return None
+
+    approved_status.boolean = True
+    approved_status.short_description = "Одобрено"
 
 
 @admin.register(Ticket)

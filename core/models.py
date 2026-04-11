@@ -97,7 +97,6 @@ class Event(models.Model):
     """Модель для мероприятия."""
 
     STATUS_CHOICES = [
-        ("draft", "Черновик"),
         ("on_moderation", "На модерации"),
         ("active", "Активно"),
         ("completed", "Завершено"),
@@ -113,7 +112,7 @@ class Event(models.Model):
     date_time = models.DateTimeField(verbose_name="Дата и время")
     place = models.CharField(max_length=255, verbose_name="Место проведения")
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="draft", verbose_name="Статус"
+        max_length=20, choices=STATUS_CHOICES, default="on_moderation", verbose_name="Статус"
     )
     image = models.ImageField(
         upload_to="event_images/", blank=True, null=True, verbose_name="Изображение"

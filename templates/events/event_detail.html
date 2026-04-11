@@ -1,0 +1,16 @@
+{% block content %}
+<h1>{{ event.title }}</h1>
+<p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
+<p>Место: {{ event.place }}</p>
+<p>Описание: {{ event.description_short }}</p>
+
+{% if event.image %}
+    <img src="{{ event.image.url }}" alt="Изображение мероприятия" style="max-width: 50%;">
+{% endif %}
+
+{% if event.tags.exists %}
+    <p>Теги: {{ event.tags.names|join:", " }}</p>
+{% endif %}
+
+<a href="{% url 'buy_ticket' event.id %}">Купить билет</a>
+{% endblock %}

@@ -216,3 +216,17 @@ def update_ticket_status(request, ticket_id):
     ticket.status = new_status
     ticket.save()
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
+
+
+def event_list(request):
+    active_events = Event.objects.filter(status="active").order_by("date_time")
+    return render(request, "events/event_list.html", {"events": active_events})
+
+def event_detail(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    return render(request, "events/event_detail.html", {"event": event})
+
+def buy_ticket(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    # Здесь будет логика покупки билета
+    return redirect("event_detail", event_id=event_id)
