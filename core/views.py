@@ -289,8 +289,14 @@ def buy_ticket(request, event_id):
             status=400,
         )
 
+    # Получаем количество билетов, если передано; по умолчанию 1
+    quantity = int(request.POST.get("quantity", 1) or 1)
+
     order = Order.objects.create(
-        ticket=ticket, participant_data={"email": email}, total_price=ticket.price
+        ticket=ticket,
+        participant_data={"email": email},
+        total_price=ticket.price * quantity,
+        quantity=quantity
     )
 
     try:
