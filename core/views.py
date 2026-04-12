@@ -5,6 +5,7 @@ from django.shortcuts import (
     HttpResponseRedirect,
     reverse,
 )
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
@@ -22,14 +23,13 @@ from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 import uuid
-# logger
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def landing_page(request):
     return render(request, "landing.html")
-
-
 
 
 @never_cache
@@ -232,14 +232,15 @@ def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
     return render(request, "events/event_list.html", {"events": active_events})
 
+
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
 
+
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-
 
     if request.method == "GET":
         # Показываем форму покупки (пример; адаптируйте под ваш шаблон)
@@ -280,18 +281,23 @@ def buy_ticket(request, event_id):
 
     ticket = get_object_or_404(Ticket, pk=ticket_id, event=event)
 
-    order = Order.objects.create(
-        ticket=ticket,
-        participant_data={"email": email},
-        total_price=ticket.price
-    )
+    # Проверяем, что билет ещё доступен для покупки (остаток > 0)
+    if not ticket.is_available():
+        sold = ticket.get_sold_count()
+        return HttpResponse(
+            f"Билеты типа: {ticket.name} закончились. Попробуйте выбрать другой тип билета.",
+            status=400,
+        )
 
+    order = Order.objects.create(
+        ticket=ticket, participant_data={"email": email}, total_price=ticket.price
+    )
 
     try:
         send_ticket_notification(user, order, request)
     except Exception as e:
         logger.exception("Ошибка отправки письма: %s", e)
-    
+
     return redirect("event_detail", event_id=event_id)
 
 
@@ -302,7 +308,6 @@ def send_ticket_notification(user, order, request=None):
         activation_link = request.build_absolute_uri(
             reverse("activate_account", args=[user.pk])
         )
-
 
     message = f"""
     Добро пожаловать на мероприятие "{order.ticket.event.title}"!
@@ -315,8 +320,8 @@ def send_ticket_notification(user, order, request=None):
     if activation_link:
         message += f"\nПерейдите по ссылке для активации: {activation_link}"
     send_mail(subject, message, "no-reply@example.com", [user.email])
-    
-    
+
+
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":

@@ -29,7 +29,13 @@
             <label for="ticket_id">Тип билета:</label>
             <select name="ticket_id" required>
                 {% for ticket in event.tickets.all %}
-                    <option value="{{ ticket.id }}">{{ ticket.name }} - {{ ticket.price }} ₽</option>
+                    {% if ticket.available_quantity > ticket.get_sold_count %}
+                        <option value="{{ ticket.id }}">{{ ticket.name }} - {{ ticket.price }} ₽</option>
+                    {% else %}
+                        <option value="{{ ticket.id }}" disabled style="color: #999;background-color: #f5f5f5;">
+                            {{ ticket.name }} - {{ ticket.price }} ₽ (раскуплено)
+                        </option>
+                    {% endif %}
                 {% endfor %}
             </select>
         </div>

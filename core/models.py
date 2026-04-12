@@ -20,7 +20,7 @@ class CustomUser(AbstractUser):
     is_verified = models.BooleanField(default=False, verbose_name="Подтверждён")
     verification_status = models.CharField(
         max_length=20,
-        choices=[ 
+        choices=[
             ("not_submitted", "Не отправлено"),
             ("pending", "На рассмотрении"),
             ("approved", "Подтверждено"),
@@ -114,7 +114,10 @@ class Event(models.Model):
     date_time = models.DateTimeField(verbose_name="Дата и время")
     place = models.CharField(max_length=255, verbose_name="Место проведения")
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="on_moderation", verbose_name="Статус"
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="on_moderation",
+        verbose_name="Статус",
     )
     image = models.ImageField(
         upload_to="event_images/", blank=True, null=True, verbose_name="Изображение"
@@ -180,6 +183,14 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.event.title})"
+
+    def is_available(self):
+        """Проверяет, доступен ли билет для покупки."""
+        return self.available_quantity > self.orders.count()
+
+    def get_sold_count(self):
+        """Возвращает количество проданных билетов данного типа."""
+        return self.orders.count()
 
     class Meta:
         verbose_name = "Билет"
