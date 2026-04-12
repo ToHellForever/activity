@@ -22,7 +22,9 @@ from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 import uuid
-
+# logger
+import logging
+logger = logging.getLogger(__name__)
 
 def landing_page(request):
     return render(request, "landing.html")
@@ -284,27 +286,34 @@ def buy_ticket(request, event_id):
         total_price=ticket.price
     )
 
-    # Отправляем уведомление (не критично для работы)
-    try:
-        send_ticket_notification(user, order)
-    except Exception:
-        pass
 
+    try:
+        send_ticket_notification(user, order, request)
+    except Exception as e:
+        logger.exception("Ошибка отправки письма: %s", e)
+    
     return redirect("event_detail", event_id=event_id)
 
 
-def send_ticket_notification(user, order):
+def send_ticket_notification(user, order, request=None):
     subject = "Ваш электронный билет"
+    activation_link = None
+    if request:
+        activation_link = request.build_absolute_uri(
+            reverse("activate_account", args=[user.pk])
+        )
+
+
     message = f"""
     Добро пожаловать на мероприятие "{order.ticket.event.title}"!
-    
+
     Электронный билет: {order.ticket.name}
     Сумма: {order.total_price} ₽
-    
+
     Предложение активировать аккаунт:
-    Перейдите по ссылке и создайте пароль, чтобы управлять своими билетами:
-    {request.build_absolute_uri(reverse("activate_account", args=[user.pk]))}
     """
+    if activation_link:
+        message += f"\nПерейдите по ссылке для активации: {activation_link}"
     send_mail(subject, message, "no-reply@example.com", [user.email])
     
     
