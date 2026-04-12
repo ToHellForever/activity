@@ -7,7 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
 from django.utils.html import mark_safe
-
+ 
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
     """
