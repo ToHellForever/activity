@@ -1,8 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from taggit.managers import TaggableManager
+
+
+def validate_video_duration(value):
+    """Валидация длительности видео (не более 5 минут)."""
+    max_duration = 5 * 60  # 5 минут в секундах
+    if hasattr(value, "duration"):
+        if value.duration > max_duration:
+            raise ValidationError(_("Видео не должно превышать 5 минут."))
 
 
 class CustomUser(AbstractUser):
@@ -37,6 +47,16 @@ class CustomUser(AbstractUser):
     )
     logo = models.ImageField(
         upload_to="user_logos/", blank=True, null=True, verbose_name="Фото / Логотип"
+    )
+    video_intro = models.FileField(
+        upload_to="partner_intros/",
+        blank=True,
+        null=True,
+        verbose_name="Видео-визитка",
+        validators=[
+            FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_video_duration,
+        ],
     )
     social_links = models.TextField(blank=True, null=True, verbose_name="Соцсети")
 

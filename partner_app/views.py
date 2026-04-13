@@ -2,10 +2,27 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
-from .forms import EventForm, DocumentUploadForm
-from core.forms import PartnerProfileForm, PasswordChangeForm
+from .forms import EventForm, DocumentUploadForm, PartnerProfileEditForm
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 from .tasks import process_event_video
 from django.core.mail import send_mail
+
+
+@login_required
+def change_password(request):
+    """Отдельная страница для смены пароля."""
+    if request.method == "POST":
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            return redirect("partner:profile_edit")
+    else:
+        password_form = PasswordChangeForm(user=request.user)
+
+    return render(request, "partner/change_password.html", {"form": password_form})
+
 
 @login_required
 def partner_dashboard(request):
@@ -28,7 +45,7 @@ def create_event(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-            event.status = "on_moderation" 
+            event.status = "on_moderation"
             event.save()
 
             ticket_data = form.cleaned_data.get("ticket_types", "")
@@ -56,10 +73,12 @@ def create_event(request):
 
     return render(request, "partner/event_form.html", {"form": form})
 
+
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
-    send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
+    send_mail(subject, message, None, [event.organizer.email])
+
 
 def edit_event(request, event_id):
     """
@@ -190,44 +209,35 @@ def finances(request):
 
 @login_required
 def profile_edit(request):
+    """Редактирование профиля партнёра."""
     if request.method == "POST":
         # Обработка основной формы профиля
-        user_form = PartnerProfileForm(
+        user_form = PartnerProfileEditForm(
             request.POST, request.FILES, instance=request.user
         )
         if user_form.is_valid():
             user_form.save()
 
-            # Обработка формы смены пароля (если она была отправлена)
-            password_form = PasswordChangeForm(user=request.user, data=request.POST)
-            if password_form.is_valid():
-                password_form.save()
-                update_session_auth_hash(
-                    request, password_form.user
-                )  # Чтобы не разлогинить пользователя
-
         # Обработка формы загрузки документов
         if "upload_documents" in request.POST:
             # Проверяем, что у пользователя нет документов на рассмотрении
-            if request.user.verification_status == 'not_submitted':
+            if request.user.verification_status == "not_submitted":
                 document_form = DocumentUploadForm(
                     request.POST, request.FILES, user=request.user
                 )
                 if document_form.is_valid():
                     document_form.save()
-                    request.user.verification_status = 'pending'
+                    request.user.verification_status = "pending"
                     request.user.save()
 
         return redirect("partner:profile_edit")
 
     else:
-        user_form = PartnerProfileForm(instance=request.user)
-        password_form = PasswordChangeForm(user=request.user)
+        user_form = PartnerProfileEditForm(instance=request.user)
         document_form = DocumentUploadForm(user=request.user)
 
     context = {
         "user_form": user_form,
-        "password_form": password_form,
         "document_form": document_form,
     }
     return render(request, "partner/profile_edit.html", context)
