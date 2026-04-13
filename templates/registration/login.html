@@ -9,7 +9,7 @@
         .login-box h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
         .form-group { margin-bottom: 1rem; text-align: left; }
         label { display: block; margin-bottom: 0.5rem; color: #555; }
-        input[type="text"], input[type="password"] {
+        input[type="email"], input[type="password"] {
             width: 100%;
             padding: 0.6rem;
             border: 1px solid #ddd;
@@ -51,8 +51,8 @@
         {% csrf_token %}
         
         <div class="form-group">
-            <label for="id_username">Логин</label>
-            {{ form.username }}
+            <label for="id_email">Email</label>
+            {{ form.email }}
         </div>
 
         <div class="form-group">

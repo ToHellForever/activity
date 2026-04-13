@@ -42,7 +42,7 @@ def login_view(request):
             return redirect("visitor:dashboard")
 
     if request.method == "POST":
-        form = CustomAuthenticationForm(request.POST)
+        form = CustomAuthenticationForm(request.POST, request=request)
         if form.is_valid():
             user = form.cleaned_data["user"]
             login(request, user)
@@ -63,6 +63,8 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()  # Сохраняем пользователя в БД
+            # Указываем бэкенд для пользователя (нужно при нескольких бэкендах)
+            user.backend = "core.backends.EmailBackend"
             # Сразу логиним пользователя после регистрации
             login(request, user)
 
@@ -251,23 +253,23 @@ def buy_ticket(request, event_id):
     email = (request.POST.get("email") or "").strip()
     first_name = (request.POST.get("first_name") or "").strip()
     last_name = (request.POST.get("last_name") or "").strip()
-    username_candidate = (
-        request.POST.get("username") or email or f"guest_{uuid4().hex[:8]}"
-    ).strip()
 
-    if not username_candidate:
-        return HttpResponseBadRequest("Username обязателен")
-
-    # Создаём или получаем пользователя с явным username
+    # Создаём или получаем пользователя по email
     user, created = CustomUser.objects.get_or_create(
-        username=username_candidate,
+        email=email,
         defaults={
-            "email": email,
             "first_name": first_name,
             "last_name": last_name,
             "user_type": "guest",
+            "username": email,  # Используем email как username
         },
     )
+
+    # Обновляем данные пользователя, если он уже существовал
+    if not created:
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
 
     if created:
         # Гость без пароля
@@ -296,7 +298,7 @@ def buy_ticket(request, event_id):
         ticket=ticket,
         participant_data={"email": email},
         total_price=ticket.price * quantity,
-        quantity=quantity
+        quantity=quantity,
     )
 
     try:

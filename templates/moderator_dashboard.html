@@ -63,7 +63,7 @@
     <div class="chat-history">
       {% for message in chat_messages %}
         <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-          <strong>{{ message.user.get_full_name|default:message.user.username }} ({{ message.created_at|date:"H:i" }}):</strong><br>
+          <strong>{{ message.user.get_full_name|default:message.user.email }} ({{ message.created_at|date:"H:i" }}):</strong><br>
           {{ message.text }}
 
           <!-- Вложения -->

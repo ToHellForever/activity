@@ -9,7 +9,7 @@
         .register-box h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
         .form-group { margin-bottom: 1rem; text-align: left; }
         label { display: block; margin-bottom: 0.5rem; color: #555; font-weight: 600; }
-        input[type="text"], input[type="password"] {
+        input[type="email"], input[type="password"] {
             width: 100%;
             padding: 0.6rem;
             border: 1px solid #ddd;
@@ -60,12 +60,11 @@
         {% csrf_token %}
 
         <div class="form-group">
-            <label for="id_username">Придумайте логин</label>
-            {{ form.username }}
-            <!-- Вывод ошибок конкретного поля -->
-            {% if form.username.errors %}
+            <label for="id_email">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
                 <div class="error-list">
-                    {{ form.username.errors }}
+                    {{ form.email.errors }}
                 </div>
             {% endif %}
         </div>
@@ -92,6 +91,7 @@
 
         <div class="form-group radio-group">
             <label>Регистрация как:</label><br>
+            {% comment %} без типа как гость {% endcomment %}
             {{ form.user_type }}
         </div>
 
