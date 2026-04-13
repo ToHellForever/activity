@@ -6,13 +6,13 @@
     
     <h2>Личные данные</h2>
     {{ user_form.as_p }}
-    
-    <h2>Смена пароля</h2>
-    {{ password_form.as_p }}
+
     
     <button type="submit" class="btn btn-primary">Сохранить все изменения</button>
 </form>
 
+<h1>Смена пароля</h1>
+<a href="{% url 'change_password' %}">смена пароля</a>
 {% if request.user.verification_status == 'not_submitted' %}
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}

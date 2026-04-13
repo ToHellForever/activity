@@ -18,6 +18,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
 from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
 from django import forms
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
@@ -30,6 +32,22 @@ logger = logging.getLogger(__name__)
 
 def landing_page(request):
     return render(request, "landing.html")
+
+
+
+@login_required
+def change_password(request):
+    """Отдельная страница для смены пароля."""
+    if request.method == "POST":
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            return redirect("partner:profile_edit")
+    else:
+        password_form = PasswordChangeForm(user=request.user)
+
+    return render(request, "change_password.html", {"form": password_form})
 
 
 @never_cache

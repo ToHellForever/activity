@@ -26,5 +26,6 @@ urlpatterns = [
     path("events/<int:event_id>/", views.event_detail, name="event_detail"),  # Страница детального описания события
     path("events/<int:event_id>/buy/", views.buy_ticket, name="buy_ticket"),  # Страница покупки билета
     path("activate/<int:pk>/", views.activate_account, name="activate_account"), # Страница активации аккаунта
-    path("buy/<int:event_id>/", views.buy_ticket, name="buy_ticket"),
+    path("buy/<int:event_id>/", views.buy_ticket, name="buy_ticket"), # Страница покупки билета
+    path("change_password/", views.change_password, name="change_password"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

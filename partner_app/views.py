@@ -7,6 +7,7 @@ from core.forms import PartnerProfileForm, PasswordChangeForm
 from .tasks import process_event_video
 from django.core.mail import send_mail
 
+
 @login_required
 def partner_dashboard(request):
     if request.user.user_type != "partner":
