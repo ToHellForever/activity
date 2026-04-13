@@ -72,17 +72,3 @@ class DocumentUploadForm(forms.ModelForm):
         return instance
 
 
-class PartnerProfileEditForm(forms.ModelForm):
-    """
-    Расширенная форма для редактирования профиля партнёра с видео-визиткой.
-    """
-
-    class Meta:
-        model = User
-        fields = [
-            "first_name", "last_name", "email", "phone_number",
-            "company_name", "logo", "social_links", "video_intro"
-        ]
-        widgets = {
-            "social_links": forms.Textarea(attrs={"placeholder": "Ссылки на соцсети, каждая с новой строки"}),
-        }

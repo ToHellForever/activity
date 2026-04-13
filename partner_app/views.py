@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
-from .forms import EventForm, DocumentUploadForm, PartnerProfileEditForm
+from .forms import EventForm, DocumentUploadForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .tasks import process_event_video
