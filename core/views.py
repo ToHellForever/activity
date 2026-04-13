@@ -325,7 +325,7 @@ def send_ticket_notification(user, order, request=None):
     """
     if activation_link:
         message += f"\nПерейдите по ссылке для активации: {activation_link}"
-    send_mail(subject, message, "no-reply@example.com", [user.email])
+    send_mail(subject, message, "dim.anosoff2018@yandex.ru", [user.email])
 
 
 def activate_account(request, pk):

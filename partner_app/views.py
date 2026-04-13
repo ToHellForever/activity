@@ -59,7 +59,7 @@ def create_event(request):
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
-    send_mail(subject, message, "no-reply@example.com", [event.organizer.email])
+    send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
 
 def edit_event(request, event_id):
     """
