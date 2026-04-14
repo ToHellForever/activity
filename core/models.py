@@ -40,11 +40,34 @@ class CustomUser(AbstractUser):
         upload_to="user_logos/", blank=True, null=True, verbose_name="Фото / Логотип"
     )
     social_links = models.TextField(blank=True, null=True, verbose_name="Соцсети")
-
+    video_url = models.FileField(
+        upload_to="partner_video/",
+        blank=True,
+        null=True,
+        verbose_name="Видео (загрузить)",
+        validators=[
+            FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_and_compress_video,
+        ],
+    )
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
-
+    def save(self, *args, **kwargs):
+        """
+        Сохранение модели с обработкой сжатого видео.
+        """
+        # Если есть сжатое видео, сохраняем его перед сохранением модели
+        if hasattr(self, '_compressed_path') and self._compressed_path:
+            from core.utils import compress_and_replace_video_field
+            compress_and_replace_video_field(self, self._compressed_path)
+            # Удаляем временный файл после сохранения
+            try:
+                import os
+                os.unlink(self._compressed_path)
+            except:
+                pass
+            delattr(self, '_compressed_path')
 
 User = get_user_model()
 

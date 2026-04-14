@@ -13,7 +13,6 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
     """
     Админка для управления документами партнёров.
     """
-
     list_display = ("user", "document", "uploaded_at", "is_approved", "reviewer")
     list_filter = ("is_approved", "uploaded_at")
     search_fields = ("user__username", "user__company_name")
@@ -159,6 +158,9 @@ class CustomUserAdmin(UserAdmin):
         "is_verified",
         "verification_status",
     )
+    fieldsets = (
+        ("Видео-визитка", {"fields": ("video_url",)}),
+    )
 
 
 @admin.register(SupportTicket)
@@ -170,3 +172,5 @@ class SupportTicketAdmin(admin.ModelAdmin):
         (None, {"fields": ("user", "status")}),
         ("Тикет", {"fields": ("subject", "created_at")}),
     )
+    
+# video_business_card
