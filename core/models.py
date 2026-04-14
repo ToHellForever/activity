@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
-from core.validators import validate_video_duration
+from core.validators import validate_and_compress_video
 from taggit.managers import TaggableManager
 
 
@@ -139,7 +139,7 @@ class Event(models.Model):
         verbose_name="Видео (загрузить)",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
-            validate_video_duration,
+            validate_and_compress_video,
         ],
     )
     program_file = models.FileField(
@@ -166,6 +166,24 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        """
+        Сохранение модели с обработкой сжатого видео.
+        """
+        # Если есть сжатое видео, сохраняем его перед сохранением модели
+        if hasattr(self, '_compressed_path') and self._compressed_path:
+            from core.utils import compress_and_replace_video_field
+            compress_and_replace_video_field(self, self._compressed_path)
+            # Удаляем временный файл после сохранения
+            try:
+                import os
+                os.unlink(self._compressed_path)
+            except:
+                pass
+            delattr(self, '_compressed_path')
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Мероприятие"
