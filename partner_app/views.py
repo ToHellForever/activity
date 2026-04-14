@@ -4,7 +4,6 @@ from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from .forms import EventForm, DocumentUploadForm
 from core.forms import PartnerProfileForm, PasswordChangeForm
-from .tasks import process_event_video
 from django.core.mail import send_mail
 
 
@@ -48,9 +47,6 @@ def create_event(request):
                         )
                     except (ValueError, TypeError):
                         continue
-
-            process_event_video.delay(event.id)
-
             return redirect("partner:dashboard")
     else:
         form = EventForm()
