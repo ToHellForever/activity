@@ -1,3 +1,8 @@
+# Ignore all MP4 files
+*.mp4
+
+# Database
+.db.sqlite3
+
+# Environment files
 .env
-db.sqlite3
-media/event_videos/tmpde2z2qzw.mp4
