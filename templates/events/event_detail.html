@@ -8,6 +8,10 @@
     <img src="{{ event.image.url }}" alt="Изображение мероприятия" style="max-width: 50%;">
 {% endif %}
 
+{% if event.video_url %}
+    <iframe width="560" height="315" src="{{ event.video_url }}" frameborder="0" allowfullscreen></iframe>
+{% endif %}
+
 {% if event.tags.exists %}
     <p>Теги: {{ event.tags.names|join:", " }}</p>
 {% endif %}
