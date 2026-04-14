@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
+from core.validators import validate_video_duration
 from taggit.managers import TaggableManager
 
 
@@ -136,6 +137,10 @@ class Event(models.Model):
         blank=True,
         null=True,
         verbose_name="Видео (загрузить)",
+        validators=[
+            FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_video_duration,
+        ],
     )
     program_file = models.FileField(
         upload_to="event_programs/",
