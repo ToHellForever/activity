@@ -20,7 +20,7 @@ def compress_video(input_path, output_path):
     original_size = os.path.getsize(input_path) / (1024 * 1024)  # в МБ
     duration = clip.duration
     width, height = clip.size
-
+ 
     print(
         f"DEBUG: Original video - Size: {original_size:.2f}MB, Duration: {duration:.1f}s, Resolution: {width}x{height}"
     )
