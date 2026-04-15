@@ -4,7 +4,6 @@ from django.contrib.auth import views as auth_views
 from core import views
 from partner_app import views as partner_views
 from django.conf.urls.static import static
-# settings
 from django.conf import settings
 
 urlpatterns = [

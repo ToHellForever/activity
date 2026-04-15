@@ -89,7 +89,7 @@ class PartnerProfileForm(forms.ModelForm):
             "phone_number",
             "company_name",
             "logo",
-            "video_url",
+            "video_business_card",
             "social_links",
         ]
 
@@ -98,7 +98,7 @@ class PartnerProfileForm(forms.ModelForm):
             "social_links": forms.Textarea(
                 attrs={"placeholder": "Ссылки по одной на строку"}
             ),
-            "video_url": forms.ClearableFileInput(
+            "video_business_card": forms.ClearableFileInput(
                 attrs={
                     "accept": "video/mp4,video/quicktime,video/x-msvideo",
                     "help_text": "Максимальная длительность видео: 5 минут",

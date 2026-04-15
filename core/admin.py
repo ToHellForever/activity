@@ -159,7 +159,7 @@ class CustomUserAdmin(UserAdmin):
         "verification_status",
     )
     fieldsets = (
-        ("Видео-визитка", {"fields": ("video_url",)}),
+        ("Видео-визитка", {"fields": ("video_business_card",)}),
     )
 
 
