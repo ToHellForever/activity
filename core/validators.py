@@ -70,10 +70,6 @@ def validate_and_compress_video(value):
         if not hasattr(value, "file") or not value.file:
             return
 
-        # Проверяем, что это не админка (чтобы не сжимать видео повторно)
-        if hasattr(value, "instance") and value.instance.pk:
-            return
-
         # Сбрасываем указатель файла на начало перед проверкой длительности
         value.file.seek(0)
 
@@ -124,18 +120,23 @@ def validate_and_compress_video(value):
             finally:
                 if os.path.exists(tmp_file_path):
                     os.unlink(tmp_file_path)
-            # Сохраняем путь к сжатому видео во временном атрибуте экземпляра модели
-            # Это позволит корректно сохранить файл при вызове model.save()
+
+            # Сохраняем путь к сжатому видео во временном атрибуте экземпляра модели,
+            # чтобы корректно сохранить файл при вызове model.save()
             from django.core.files.uploadedfile import TemporaryUploadedFile
 
-            if isinstance(value.instance, TemporaryUploadedFile):
-                # Если это TemporaryUploadedFile, сохраняем путь в экземпляре модели
+            if hasattr(value, "instance") and hasattr(
+                value.instance, "_compressed_path"
+            ):
                 value.instance._compressed_path = compressed_path
+            elif isinstance(value, TemporaryUploadedFile):
+                value._compressed_path = compressed_path
             else:
-                # Иначе используем стандартную логику
                 from core.utils import compress_and_replace_video_field
 
-                compress_and_replace_video_field(value.instance, compressed_path)
+                # Определяем имя поля, в которое нужно сохранить видео
+                field_name = "video_business_card" if hasattr(value.instance, "video_business_card") else "video_url"
+                compress_and_replace_video_field(value.instance, compressed_path, field_name)
         finally:
             # Удаляем временный файл
             if os.path.exists(temp_compressed_path):
