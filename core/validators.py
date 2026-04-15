@@ -70,25 +70,34 @@ def validate_and_compress_video(value):
         if not hasattr(value, "file") or not value.file:
             return
 
+        # Проверяем, что это не админка (чтобы не сжимать видео повторно)
+        if hasattr(value, "instance") and value.instance.pk:
+            return
+
         # Сбрасываем указатель файла на начало перед проверкой длительности
         value.file.seek(0)
 
         # --- ШАГ 1: Проверка длительности ---
         # Используем контекстный менеджер для автоматического закрытия клипа
-        with VideoFileClip(
-            value.file.temporary_file_path()
-            if hasattr(value.file, "temporary_file_path")
-            else value.file.temporary_file_path()
-        ) as clip:
-            duration = clip.duration
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            for chunk in value.file.chunks():
+                tmp_file.write(chunk)
+            tmp_file_path = tmp_file.name
 
-            if duration > 300:
-                raise ValidationError(
-                    _(
-                        "Длительность видео не должна превышать 5 минут (текущая: %d секунд)."
+        try:
+            with VideoFileClip(tmp_file_path) as clip:
+                duration = clip.duration
+
+                if duration > 300:
+                    raise ValidationError(
+                        _(
+                            "Длительность видео не должна превышать 5 минут (текущая: %d секунд)."
+                        )
+                        % int(duration)
                     )
-                    % int(duration)
-                )
+        finally:
+            if os.path.exists(tmp_file_path):
+                os.unlink(tmp_file_path)
 
         # --- ШАГ 2: Сжатие и замена файла ---
         # Сбрасываем указатель файла на начало перед сжатием
@@ -103,10 +112,18 @@ def validate_and_compress_video(value):
         try:
             # Сбрасываем указатель файла на начало перед сжатием
             value.file.seek(0)
-            # Сжимаем видео
-            compressed_path = compress_video(
-                value.file.temporary_file_path(), temp_compressed_path
-            )
+            # Сохраняем файл во временный путь
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                for chunk in value.file.chunks():
+                    tmp_file.write(chunk)
+                tmp_file_path = tmp_file.name
+
+            try:
+                # Сжимаем видео
+                compressed_path = compress_video(tmp_file_path, temp_compressed_path)
+            finally:
+                if os.path.exists(tmp_file_path):
+                    os.unlink(tmp_file_path)
             # Сохраняем путь к сжатому видео во временном атрибуте экземпляра модели
             # Это позволит корректно сохранить файл при вызове model.save()
             from django.core.files.uploadedfile import TemporaryUploadedFile
