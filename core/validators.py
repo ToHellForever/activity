@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 import os
 import tempfile
 import shutil
+import time
 from moviepy import VideoFileClip
 from core.utils import compress_and_replace_video_field
 
@@ -20,7 +21,7 @@ def compress_video(input_path, output_path):
     original_size = os.path.getsize(input_path) / (1024 * 1024)  # в МБ
     duration = clip.duration
     width, height = clip.size
- 
+
     print(
         f"DEBUG: Original video - Size: {original_size:.2f}MB, Duration: {duration:.1f}s, Resolution: {width}x{height}"
     )
@@ -75,7 +76,7 @@ def validate_and_compress_video(value):
 
         # --- ШАГ 1: Проверка длительности ---
         # Используем контекстный менеджер для автоматического закрытия клипа
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
             for chunk in value.file.chunks():
                 tmp_file.write(chunk)
             tmp_file_path = tmp_file.name
@@ -92,37 +93,43 @@ def validate_and_compress_video(value):
                         % int(duration)
                     )
         finally:
-            if os.path.exists(tmp_file_path):
-                os.unlink(tmp_file_path)
+            try:
+                if os.path.exists(tmp_file_path):
+                    os.unlink(tmp_file_path)
+            except:
+                pass
 
         # --- ШАГ 2: Сжатие и замена файла ---
         # Сбрасываем указатель файла на начало перед сжатием
         value.file.seek(0)
 
-        # Создаем временный файл для сжатого видео
-        with tempfile.NamedTemporaryFile(
-            suffix=".mp4", delete=False
-        ) as temp_compressed:
-            temp_compressed_path = temp_compressed.name
+        # Создаем временный файл для исходного видео
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
+            for chunk in value.file.chunks():
+                tmp_file.write(chunk)
+            tmp_file_path = tmp_file.name
 
         try:
-            # Сбрасываем указатель файла на начало перед сжатием
-            value.file.seek(0)
-            # Сохраняем файл во временный путь
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                for chunk in value.file.chunks():
-                    tmp_file.write(chunk)
-                tmp_file_path = tmp_file.name
+            # --- Изменение: Сжимаем видео и заменяем исходный файл ---
+            # Получаем текущий путь к загруженному файлу, если он есть
+            current_field = (
+                "video_business_card"
+                if hasattr(value.instance, "video_business_card")
+                else "video_url"
+            )
+            current_file = getattr(value.instance, current_field)
 
-            try:
-                # Сжимаем видео
-                compressed_path = compress_video(tmp_file_path, temp_compressed_path)
-            finally:
-                if os.path.exists(tmp_file_path):
-                    os.unlink(tmp_file_path)
+            # Если файл уже существует и это не новая загрузка, пропускаем сжатие
+            if current_file and not value.file:
+                return
 
-            # Сохраняем путь к сжатому видео во временном атрибуте экземпляра модели,
-            # чтобы корректно сохранить файл при вызове model.save()
+            # Создаем временный файл для сжатого видео
+            temp_compressed_path = tmp_file_path + "_compressed.mp4"
+
+            # Сжимаем видео и заменяем исходный файл
+            compressed_path = compress_video(tmp_file_path, temp_compressed_path)
+
+            # Сохраняем путь к сжатому видео во временном атрибуте, если это новая загрузка
             from django.core.files.uploadedfile import TemporaryUploadedFile
 
             if hasattr(value, "instance") and hasattr(
@@ -134,13 +141,31 @@ def validate_and_compress_video(value):
             else:
                 from core.utils import compress_and_replace_video_field
 
-                # Определяем имя поля, в которое нужно сохранить видео
-                field_name = "video_business_card" if hasattr(value.instance, "video_business_card") else "video_url"
-                compress_and_replace_video_field(value.instance, compressed_path, field_name)
+                compress_and_replace_video_field(
+                    value.instance, compressed_path, current_field
+                )
+
+        except ValidationError:
+            # Пробрасываем ошибку валидации дальше
+            raise
+        except Exception as e:
+            # Ловим все остальные ошибки (IOError, проблемы с ffmpeg и т.д.)
+            raise ValidationError(_("Ошибка при обработке видео: %s") % str(e))
+
         finally:
             # Удаляем временный файл
-            if os.path.exists(temp_compressed_path):
-                os.unlink(temp_compressed_path)
+            try:
+                if os.path.exists(tmp_file_path):
+                    os.unlink(tmp_file_path)
+            except:
+                pass
+
+            # Удаляем временный сжатый файл, если он существует
+            try:
+                if os.path.exists(temp_compressed_path):
+                    os.unlink(temp_compressed_path)
+            except:
+                pass
 
     except ValidationError:
         # Пробрасываем ошибку валидации дальше
