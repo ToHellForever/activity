@@ -143,6 +143,62 @@ def partner_event_list(request):
 
 
 @login_required
+def duplicate_event(request, event_id):
+    """
+    Дублирует мероприятие.
+    """
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    # Создаем копию мероприятия
+    new_event = Event(
+        organizer=event.organizer,
+        title=f"Копия: {event.title}",
+        description_short=event.description_short,
+        description_full=event.description_full,
+        date_time=event.date_time,
+        place=event.place,
+        status="on_moderation",  # Новое мероприятие должно пройти модерацию
+        image=event.image,
+        category=event.category,
+        video_url=event.video_url,
+        program_file=event.program_file,
+        allow_booking_without_payment=event.allow_booking_without_payment,
+        auto_close_sales_hours=event.auto_close_sales_hours,
+        commission_rate=event.commission_rate,
+    )
+    new_event.save()
+
+    # Копируем билеты
+    for ticket in event.tickets.all():
+        Ticket.objects.create(
+            event=new_event,
+            name=ticket.name,
+            price=ticket.price,
+            available_quantity=ticket.available_quantity,
+        )
+
+    return redirect("partner:partner_event_list")
+
+
+@login_required
+def delete_event(request, event_id):
+    """
+    Удаляет мероприятие.
+    """
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    if request.method == "POST":
+        event.delete()
+        return redirect("partner:partner_event_list")
+
+    return render(
+        request,
+        "partner/event_confirm_delete.html",
+        {"event": event},
+    )
+
+
+@login_required
 def reports(request):
     """
     Отчеты и статистика продаж для партнера.

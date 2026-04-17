@@ -27,8 +27,10 @@
       <td>
         <a href="{% url 'partner:edit_event' item.event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
         <a href="{% url 'partner:participant_list' item.event.id %}" class="btn btn-sm btn-info">Участники</a>
-        <td>{{ item.event.commission_rate }}</td>
+        <a href="{% url 'partner:duplicate_event' item.event.id %}" class="btn btn-sm btn-secondary">Дублировать</a>
+        <a href="{% url 'partner:delete_event' item.event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить это мероприятие?')">Удалить</a>
       </td>
+      <td>{{ item.event.commission_rate }}</td>
     </tr>
     {% empty %}
     <tr>

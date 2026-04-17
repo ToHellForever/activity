@@ -1,0 +1,13 @@
+
+{% block content %}
+<h1>Удаление мероприятия</h1>
+
+<p>Вы уверены, что хотите удалить мероприятие "{{ event.title }}"? Это действие нельзя будет отменить.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Удалить</button>
+    <a href="{% url 'partner:partner_event_list' %}" class="btn btn-secondary">Отмена</a>
+</form>
+
+{% endblock %}
