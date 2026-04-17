@@ -183,11 +183,19 @@ def duplicate_event(request, event_id):
 @login_required
 def delete_event(request, event_id):
     """
-    Удаляет мероприятие.
+    Удаляет мероприятие и связанные медиафайлы.
     """
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
     if request.method == "POST":
+        # Удаляем медиафайлы, если они существуют
+        if event.image:
+            event.image.delete()
+        if event.video_url:
+            event.video_url.delete()
+        if event.program_file:
+            event.program_file.delete()
+
         event.delete()
         return redirect("partner:partner_event_list")
 
