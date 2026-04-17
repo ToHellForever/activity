@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
     )
     user_type = models.CharField(
         max_length=10, choices=USER_TYPE_CHOICES, default="guest"
-    )
+    ) 
     username = models.CharField(max_length=150, unique=True, verbose_name="Логин")
     is_verified = models.BooleanField(default=False, verbose_name="Подтверждён")
     verification_status = models.CharField(
