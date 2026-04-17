@@ -69,6 +69,14 @@ class EventAdmin(admin.ModelAdmin):
     # Какие поля использовать для поиска
     search_fields = ("title", "organizer__username")
 
+    # Добавляем действия для пакетного изменения статусов
+    actions = [
+        "reject_events",
+        "to_moderation",
+        "to_active",
+        "to_completed",
+    ]
+
     # Группировка полей на странице редактирования
     fieldsets = (
         (
@@ -120,6 +128,37 @@ class EventAdmin(admin.ModelAdmin):
 
     approved_status.boolean = True
     approved_status.short_description = "Одобрено"
+
+    # Действие для одобрения выбранных мероприятий
+
+
+    # Действие для отклонения выбранных мероприятий
+    def reject_events(self, request, queryset):
+        updated = queryset.update(status="rejected")
+        self.message_user(request, f"{updated} мероприятий отклонено.")
+
+    reject_events.short_description = "Отклонить"
+
+    # Действие для установки статуса "На модерации"
+    def to_moderation(self, request, queryset):
+        updated = queryset.update(status="on_moderation")
+        self.message_user(request, f"{updated} мероприятий переведено на модерацию.")
+
+    to_moderation.short_description = "На модерации"
+
+    # Действие для установки статуса "Активно"
+    def to_active(self, request, queryset):
+        updated = queryset.update(status="active")
+        self.message_user(request, f"{updated} мероприятий активировано.")
+
+    to_active.short_description = "Активно"
+
+    # Действие для установки статуса "Завершено"
+    def to_completed(self, request, queryset):
+        updated = queryset.update(status="completed")
+        self.message_user(request, f"{updated} мероприятий помечено как завершённые.")
+
+    to_completed.short_description = "Завершено"
 
 
 @admin.register(Ticket)

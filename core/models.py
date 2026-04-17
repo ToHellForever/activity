@@ -119,7 +119,7 @@ class Event(models.Model):
         ("on_moderation", "На модерации"),
         ("active", "Активно"),
         ("completed", "Завершено"),
-        ("archived", "Архив"),
+        ("rejected", "Отклонено"),
     ]
 
     organizer = models.ForeignKey(
