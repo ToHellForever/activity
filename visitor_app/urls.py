@@ -6,4 +6,5 @@ app_name = "visitor"
 urlpatterns = [
     path("dashboard/", views.visitor_dashboard, name="dashboard"),
     path("refund/<int:order_id>/", views.refund_ticket, name="refund_ticket"),
+    path("change-password/", views.change_password, name="change_password"),
 ]

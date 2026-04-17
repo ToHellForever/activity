@@ -80,7 +80,17 @@
         <div class="info">
             <p>Приветствуем, <strong>{{ user.get_full_name|default:user.email }}</strong>!</p>
         </div>
-
+        
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{% url 'visitor:change_password' %}" class="btn btn-outline-primary">
+                Сменить пароль
+            </a>
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{% url 'support_dashboard' %}" class="btn btn-outline-primary">
+                Служба поддержки
+            </a>
+        </div>
         <div class="d-flex justify-content-between mb-4">
             <h2>Мои билеты</h2>
         </div>

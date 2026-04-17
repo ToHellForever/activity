@@ -26,6 +26,8 @@ from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 import uuid
 import logging
+import random
+import string
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,56 @@ def login_view(request):
         form = CustomAuthenticationForm()
 
     return render(request, "registration/login.html", {"form": form})
+
+
+def generate_temporary_password(length=10):
+    """Генерация временного пароля."""
+    characters = string.ascii_letters + string.digits
+    return "".join(random.choice(characters) for _ in range(length))
+
+
+@never_cache
+def forgot_password(request):
+    """Обработка запроса на восстановление пароля."""
+    if request.method == "POST":
+        email = request.POST.get("email")
+        try:
+            user = CustomUser.objects.get(email=email)
+            # Генерируем временный пароль
+            temp_password = generate_temporary_password()
+            # Устанавливаем временный пароль
+            user.set_password(temp_password)
+            user.save()
+            # Формируем ссылку на страницу входа
+            login_url = request.build_absolute_uri(reverse("login"))
+
+            # Отправляем письмо с временным паролем и ссылкой на вход
+            subject = "Восстановление пароля"
+            message = f"""
+                Здравствуйте!
+                
+                Ваш временный пароль: {temp_password}.
+                
+                Вы можете войти, используя этот пароль, по следующей ссылке: {login_url}
+                
+                Пожалуйста, измените пароль после входа в систему.
+            """
+            send_mail(
+                subject,
+                message,
+                "dim.anosoff2018@yandex.ru",
+                [user.email],
+                fail_silently=False,
+            )
+            return render(
+                request, "registration/forgot_password_success.html", {"email": email}
+            )
+        except CustomUser.DoesNotExist:
+            # Не показываем, существует ли пользователь с таким email
+            return render(
+                request, "registration/forgot_password_success.html", {"email": email}
+            )
+    return render(request, "registration/forgot_password.html")
 
 
 @never_cache

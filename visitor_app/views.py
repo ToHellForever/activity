@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from core.models import Order, Ticket
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 
 
 @login_required
@@ -22,6 +24,22 @@ def visitor_dashboard(request):
     # Логика для посетителя
     context = {"user": request.user, "user_orders": user_orders, "now": timezone.now()}
     return render(request, "visitor/dashboard.html", context)
+
+
+@login_required
+def change_password(request):
+    """Отдельная страница для смены пароля в личном кабинете посетителя."""
+    if request.method == "POST":
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            messages.success(request, "Пароль успешно изменён!")
+            return redirect("visitor:dashboard")
+    else:
+        password_form = PasswordChangeForm(user=request.user)
+
+    return render(request, "change_password.html", {"form": password_form})
 
 
 @login_required
