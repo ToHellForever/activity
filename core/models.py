@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
@@ -153,7 +154,9 @@ class Event(models.Model):
         verbose_name="Срок возврата билетов (часы до начала)",
         help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет",
     )
-    image = models.ImageField(upload_to="event_images/", verbose_name="Изображение", blank=True, null=True)
+    image = models.ImageField(
+        upload_to="event_images/", verbose_name="Изображение", blank=True, null=True
+    )
 
     category = models.ForeignKey(
         Category,
@@ -203,6 +206,12 @@ class Event(models.Model):
         """
 
         super().save(*args, **kwargs)
+
+    def get_refund_deadline(self):
+        """
+        Возвращает крайний срок возврата билета.
+        """
+        return self.date_time - timezone.timedelta(hours=self.refund_deadline_hours)
 
     class Meta:
         verbose_name = "Мероприятие"
