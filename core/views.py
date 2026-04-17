@@ -337,17 +337,100 @@ def send_ticket_notification(user, order, request=None):
             reverse("activate_account", args=[user.pk])
         )
 
+    # Формируем ссылку на скачивание билета
+    ticket_download_url = ""
+    if request:
+        ticket_download_url = request.build_absolute_uri(
+            reverse("event_detail", args=[order.ticket.event.id])
+        )
+
+    # Формируем ссылку на личный кабинет
+    dashboard_url = "#"
+    if request and user.user_type != "guest":
+        dashboard_url = request.build_absolute_uri(reverse("visitor:dashboard"))
+
+    # Определяем текст и ссылку для кнопки в зависимости от типа пользователя
+    if user.user_type == "guest":
+        button_text = "Создайте пароль, чтобы просматривать ваши заказы"
+        button_url = activation_link or "#"
+        button_color = "#3498db"
+    else:
+        button_text = "Перейти в личный кабинет для просмотра билета"
+        button_url = dashboard_url
+        button_color = "#9b59b6"
+
+    # Определяем ссылку на поддержку
+    support_url = "#"
+    if hasattr(user, "is_authenticated") and user.is_authenticated:
+        support_url = (
+            request.build_absolute_uri(reverse("support_dashboard")) if request else "#"
+        )
+    else:
+        if request:
+            register_url = request.build_absolute_uri(reverse("register"))
+            support_url = f"{register_url}?email={user.email}&next={request.build_absolute_uri(reverse('support_dashboard'))}"
+
     message = f"""
-    Добро пожаловать на мероприятие "{order.ticket.event.title}"!
-
-    Электронный билет: {order.ticket.name}
-    Сумма: {order.total_price} ₽
-
-    Предложение активировать аккаунт:
+    <html>
+    <body>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Здравствуйте, {user.get_full_name() or user.email}!</h2>
+            
+            <p>Благодарим вас за покупку билета на мероприятие:</p>
+            <h3 style="color: #3498db;">{order.ticket.event.title}</h3>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Тип билета:</strong> {order.ticket.name}</p>
+                <p><strong>Количество:</strong> {order.quantity}</p>
+                <p><strong>Сумма:</strong> {order.total_price} ₽</p>
+                <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+                <p><strong>Место проведения:</strong> {order.ticket.event.place}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{ticket_download_url}" style="
+                    display: inline-block;
+                    padding: 12px 24px;
+                    background-color: #2ecc71;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: bold;
+                ">Скачать билет (PDF)</a>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{button_url}" style="
+                    display: inline-block;
+                    padding: 12px 24px;
+                    background-color: {button_color};
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: bold;
+                ">{button_text}</a>
+            </div>
+            
+            <div style="
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                font-size: 12px;
+                color: #7f8c8d;
+            ">
+                <p>Если у вас возникли вопросы, обратитесь в нашу <a href="{support_url}">службу поддержки</a>.</p>
+                <p>
+                    <a href="#" style="color: #7f8c8d; text-decoration: none; margin: 0 10px;">Политика конфиденциальности</a> |
+                    <a href="#" style="color: #7f8c8d; text-decoration: none; margin: 0 10px;">Поддержка</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
     """
-    if activation_link:
-        message += f"\nПерейдите по ссылке для активации: {activation_link}"
-    send_mail(subject, message, "dim.anosoff2018@yandex.ru", [user.email])
+    send_mail(
+        subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
+    )
 
 
 def activate_account(request, pk):
