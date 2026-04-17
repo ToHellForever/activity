@@ -124,10 +124,23 @@ class Event(models.Model):
     organizer = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name="Организатор"
     )
-    title = models.CharField(max_length=255, verbose_name="Название")
-    description_short = models.TextField(verbose_name="Краткое описание")
-    description_full = models.TextField(verbose_name="Полное описание")
-    date_time = models.DateTimeField(verbose_name="Дата и время")
+    title = models.CharField(
+        max_length=100, verbose_name="Название", help_text="Максимум 100 символов"
+    )
+    description_short = models.TextField(
+        verbose_name="Краткое описание",
+        help_text="Максимум 300 символов",
+        max_length=500,
+    )
+    description_full = models.TextField(
+        verbose_name="Полное описание",
+        help_text="Максимум 3000 символов",
+        max_length=5000,
+    )
+    date_time = models.DateTimeField(
+        verbose_name="Дата и время",
+        help_text="Мероприятие должно быть не ранее чем через 24 часа от текущего момента",
+    )
     place = models.CharField(max_length=255, verbose_name="Место проведения")
     status = models.CharField(
         max_length=20,
@@ -138,11 +151,9 @@ class Event(models.Model):
     refund_deadline_hours = models.PositiveIntegerField(
         default=24,  # По умолчанию 24 часа до начала мероприятия
         verbose_name="Срок возврата билетов (часы до начала)",
-        help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет"
+        help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет",
     )
-    image = models.ImageField(
-        upload_to="event_images/", blank=True, null=True, verbose_name="Изображение"
-    )
+    image = models.ImageField(upload_to="event_images/", verbose_name="Изображение", blank=True, null=True)
 
     category = models.ForeignKey(
         Category,

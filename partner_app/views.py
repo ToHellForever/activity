@@ -31,18 +31,23 @@ def create_event(request):
             event.status = "on_moderation"
             event.save()
 
-            ticket_data = form.cleaned_data.get("ticket_types", "")
-            for line in ticket_data.split("\n"):
-                line = line.strip()
-                if ":" in line:
+            # Обрабатываем данные о билетах из таблицы
+            ticket_names = request.POST.getlist("ticket_name[]")
+            ticket_prices = request.POST.getlist("ticket_price[]")
+            ticket_quantities = request.POST.getlist("ticket_quantity[]")
+
+            for name, price, quantity in zip(
+                ticket_names, ticket_prices, ticket_quantities
+            ):
+                if name and price and quantity:  # Проверяем, что все поля заполнены
                     try:
-                        name, price, quantity = [
-                            item.strip() for item in line.split(":", 2)
-                        ]
-                        Ticket.objects.create(
-                            event=event,
+                        event.tickets.create(
                             name=name,
-                            price=float(price.replace(",", ".")),
+                            price=(
+                                float(price.replace(",", "."))
+                                if "," in price
+                                else float(price)
+                            ),
                             available_quantity=int(quantity),
                         )
                     except (ValueError, TypeError):
@@ -51,7 +56,7 @@ def create_event(request):
     else:
         form = EventForm()
 
-    return render(request, "partner/event_form.html", {"form": form})
+    return render(request, "partner/event_form.html", {"form": form, "is_edit": False})
 
 
 def notify_organizer(event):

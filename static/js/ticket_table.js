@@ -57,6 +57,30 @@ function validateIntegerInput(input) {
     }
 }
 
+// Функция для проверки наличия хотя бы одного типа билета
+function validateTicketTypes() {
+    const rows = document.querySelectorAll('#ticketTable tbody tr');
+    let hasValidTicket = false;
+    
+    rows.forEach(row => {
+        const nameInput = row.querySelector('input[name="ticket_name[]"]');
+        const priceInput = row.querySelector('input[name="ticket_price[]"]');
+        const quantityInput = row.querySelector('input[name="ticket_quantity[]"]');
+        
+        if (nameInput && priceInput && quantityInput) {
+            const name = nameInput.value.trim();
+            const price = priceInput.value.trim();
+            const quantity = quantityInput.value.trim();
+            
+            if (name && price && quantity) {
+                hasValidTicket = true;
+            }
+        }
+    });
+    
+    return hasValidTicket;
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     // Добавляем обработчик для кнопки добавления строки
@@ -110,9 +134,14 @@ function validateForm(event) {
         }
     });
     
+    // Проверяем наличие хотя бы одного типа билета
+    if (!validateTicketTypes()) {
+        isValid = false;
+        alert('Вы должны добавить хотя бы один тип билета со всеми заполненными полями');
+    }
+    
     if (!isValid) {
         event.preventDefault();
-        alert('Пожалуйста, введите целые числа для цены и количества билетов');
     }
 }
 

@@ -10,21 +10,34 @@ class EventForm(forms.ModelForm):
     Форма для создания и редактирования мероприятия.
     """
 
-    ticket_types = forms.CharField(
-        required=False,
-        label='Типы билетов (по одному на строку, формат: "Название:Цена:Количество")',
-        widget=forms.Textarea(
-            attrs={"placeholder": "Пример:\nVIP:1000:50\nСтандарт:500:200"}
-        ),
-        help_text="Укажите каждый тип билета на отдельной строке",
-    )
-
     video_changed = forms.BooleanField(
         widget=forms.HiddenInput(), required=False, initial=False
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Делаем поля обязательными
+        self.fields["title"].required = True
+        self.fields["description_short"].required = True
+        self.fields["description_full"].required = True
+        self.fields["date_time"].required = True
+        self.fields["place"].required = True
+        self.fields["image"].required = True
+        self.fields["refund_deadline_hours"].required = True
+
+        # Кастомные сообщения об ошибках
+        self.fields["date_time"].error_messages = {
+            "required": "Пожалуйста, укажите дату и время проведения мероприятия."
+        }
+
+        # Добавляем обработчик для поля video_url
+        if "video_url" in self.fields:
+            self.fields["video_url"].widget.attrs.update(
+                {
+                    "onchange": 'document.getElementById("id_video_changed").value = "True"'
+                }
+            )
 
     class Meta:
         model = Event
@@ -43,6 +56,11 @@ class EventForm(forms.ModelForm):
             "auto_close_sales_hours",
             "refund_deadline_hours",
         ]
+        widgets = {
+            "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "description_short": forms.Textarea(attrs={"rows": 3}),
+            "description_full": forms.Textarea(attrs={"rows": 5}),
+        }
         widgets = {
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description_short": forms.Textarea(attrs={"rows": 3}),
