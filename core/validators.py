@@ -119,9 +119,19 @@ def validate_and_compress_video(value):
             )
             current_file = getattr(value.instance, current_field)
 
-            # Если файл уже существует и это не новая загрузка, пропускаем сжатие
-            if current_file and not value.file:
-                return
+            # Проверяем, это редактирование существующей записи или создание новой
+            if hasattr(value, "instance") and value.instance.pk:
+                # Это редактирование - проверяем флаг изменения видео
+                if (
+                    hasattr(value.instance, "_video_changed")
+                    and not value.instance._video_changed
+                ):
+                    return
+
+                # Если флага нет, но и нового файла нет - пропускаем
+                if not value.file:
+                    return
+            # Для новых записей всегда выполняем сжатие
 
             # Создаем временный файл для сжатого видео
             temp_compressed_path = tmp_file_path + "_compressed.mp4"

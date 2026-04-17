@@ -69,6 +69,13 @@ def edit_event(request, event_id):
 
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES, instance=event)
+
+        # Устанавливаем флаг изменения видео на основе данных формы
+        if "video_changed" in request.POST and request.POST["video_changed"] == "True":
+            event._video_changed = True
+        else:
+            event._video_changed = False
+
         if form.is_valid():
             # Сохраняем основные данные мероприятия
             event = form.save()

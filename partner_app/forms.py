@@ -19,6 +19,21 @@ class EventForm(forms.ModelForm):
         help_text="Укажите каждый тип билета на отдельной строке",
     )
 
+    video_changed = forms.BooleanField(
+        widget=forms.HiddenInput(), required=False, initial=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Добавляем обработчик для поля video_url
+        if "video_url" in self.fields:
+            self.fields["video_url"].widget.attrs.update(
+                {
+                    "onchange": 'document.getElementById("id_video_changed").value = "True"'
+                }
+            )
+
     class Meta:
         model = Event
         fields = [
