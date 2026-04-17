@@ -6,6 +6,10 @@ from .forms import EventForm, DocumentUploadForm
 from core.forms import PartnerProfileForm, PasswordChangeForm
 from django.core.mail import send_mail
 
+# The above code is a Python script that includes a comment indicating the purpose of the code
+# ("date"). However, the code itself is missing and only contains comment lines.
+from datetime import datetime
+
 
 @login_required
 def partner_dashboard(request):
@@ -121,10 +125,29 @@ def edit_event(request, event_id):
 @login_required
 def partner_event_list(request):
     """
-    Отображает список всех мероприятий текущего партнера.
+    Отображает список всех мероприятий текущего партнера с возможностью фильтрации.
     """
-    # Получаем все мероприятия, где организатор - это текущий пользователь
-    events = Event.objects.filter(organizer=request.user).order_by("-date_time")
+    # Получаем параметры фильтрации из GET-запроса
+    title_query = request.GET.get("title", None)
+    date_query = request.GET.get("date", None)
+
+    # Базовый фильтр: только мероприятия текущего пользователя
+    events = Event.objects.filter(organizer=request.user)
+
+    # Применяем фильтры
+    if title_query:
+        events = events.filter(title__icontains=title_query)
+    if date_query:
+        # Преобразуем строку даты в объект date для фильтрации
+        try:
+            query_date = datetime.fromisoformat(date_query)
+            events = events.filter(date_time__date=query_date)
+        except (ValueError, TypeError):
+            # Если дата некорректна, игнорируем этот фильтр
+            pass
+
+    # Сортируем по дате (новые сверху)
+    events = events.order_by("-date_time")
 
     event_data = []
     for event in events:
