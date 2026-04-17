@@ -9,7 +9,19 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     
-    {{ form.as_p }} <!-- Здесь будет поле date_time -->
+    {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {% if field.name == 'date_time' and is_edit and form.instance.date_time %}
+                <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" class="form-control">
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text }}</small>
+            {% endif %}
+        </div>
+    {% endfor %}
 
     <button type="submit">Сохранить мероприятие</button>
 </form>
