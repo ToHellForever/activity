@@ -7,12 +7,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
 from django.utils.html import mark_safe
- 
+
+
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
     """
     Админка для управления документами партнёров.
     """
+
     list_display = ("user", "document", "uploaded_at", "is_approved", "reviewer")
     list_filter = ("is_approved", "uploaded_at")
     search_fields = ("user__username", "user__company_name")
@@ -49,14 +51,20 @@ class EventAdmin(admin.ModelAdmin):
     """
 
     # Какие поля показывать в списке всех мероприятий
-    list_display = ("title", "organizer", "date_time", "status", "commission_rate",)
+    list_display = (
+        "title",
+        "organizer",
+        "date_time",
+        "status",
+        "commission_rate",
+    )
 
     # По каким полям можно фильтровать список
     list_filter = (
         "status",
         "date_time",
         "category",
-    )  
+    )
 
     # Какие поля использовать для поиска
     search_fields = ("title", "organizer__username")
@@ -120,8 +128,27 @@ class TicketAdmin(admin.ModelAdmin):
     Настройка отображения типов билетов.
     """
 
-    list_display = ("name", "event", "price", "available_quantity")
+    list_display = (
+        "name",
+        "event",
+        "price",
+        "available_quantity",
+        "get_sold_count",
+        "get_available_count",
+    )
     search_fields = ("name", "event__title")
+
+    def get_sold_count(self, obj):
+        """Возвращает количество проданных билетов."""
+        return sum(order.quantity for order in obj.orders.all())
+
+    get_sold_count.short_description = "Продано"
+
+    def get_available_count(self, obj):
+        """Возвращает количество доступных билетов."""
+        return obj.get_available_count()
+
+    get_available_count.short_description = "Доступно"
 
 
 @admin.register(Order)
@@ -158,9 +185,7 @@ class CustomUserAdmin(UserAdmin):
         "is_verified",
         "verification_status",
     )
-    fieldsets = (
-        ("Видео-визитка", {"fields": ("video_business_card",)}),
-    )
+    fieldsets = (("Видео-визитка", {"fields": ("video_business_card",)}),)
 
 
 @admin.register(SupportTicket)
@@ -172,5 +197,6 @@ class SupportTicketAdmin(admin.ModelAdmin):
         (None, {"fields": ("user", "status")}),
         ("Тикет", {"fields": ("subject", "created_at")}),
     )
-    
+
+
 # video_business_card

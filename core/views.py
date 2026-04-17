@@ -24,6 +24,7 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 import uuid
 import logging
 import random
@@ -47,8 +48,7 @@ def change_password(request):
             return redirect("partner:profile_edit")
     else:
         password_form = PasswordChangeForm(user=request.user)
-
-    return render(request, "change_password.html", {"form": password_form})
+    return render(request, "change_password.html", {"password_form": password_form})
 
 
 @never_cache
@@ -309,13 +309,14 @@ def event_detail(request, event_id):
     return render(request, "events/event_detail.html", {"event": event})
 
 
+
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
     if request.method == "GET":
-        # Показываем форму покупки (пример; адаптируйте под ваш шаблон)
-        tickets = Ticket.objects.filter(event=event)
+        # Показываем форму покупки
+        tickets = event.tickets.all()
         return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
 
     # Обработка POST-запроса
@@ -345,33 +346,53 @@ def buy_ticket(request, event_id):
         user.set_unusable_password()
         user.save()
 
-    # Проверяем ticket_id и получаем билет, привязанный к этому событию
-    ticket_id = request.POST.get("ticket_id")
-    if not ticket_id:
-        return HttpResponseBadRequest("ticket_id обязателен")
+    # Получаем все билеты события для проверки
+    tickets = event.tickets.all()
+    ticket_quantities = {}
+    total_price = 0
+    error_message = None
 
-    ticket = get_object_or_404(Ticket, pk=ticket_id, event=event)
+    # Собираем информацию о выбранных билетах
+    for ticket in tickets:
+        quantity_key = f"quantity_{ticket.id}"
+        quantity = int(request.POST.get(quantity_key, 0) or 0)
 
-    # Проверяем, что билет ещё доступен для покупки (остаток > 0)
-    if not ticket.is_available():
-        sold = ticket.get_sold_count()
-        return HttpResponse(
-            f"Билеты типа: {ticket.name} закончились. Попробуйте выбрать другой тип билета.",
-            status=400,
+        if quantity > 0:
+            # Проверяем доступность
+            if not ticket.is_available(quantity):
+                error_message = f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
+                break
+
+            ticket_quantities[ticket] = quantity
+            total_price += ticket.price * quantity
+
+    # Если есть ошибка или не выбрано ни одного билета
+    if error_message:
+        messages.error(request, error_message)
+        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+
+    if not ticket_quantities:
+        messages.error(request, "Пожалуйста, выберите хотя бы один билет")
+        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+
+    # Создаем заказы для каждого типа билетов
+    orders = []
+    for ticket, quantity in ticket_quantities.items():
+        order = Order.objects.create(
+            ticket=ticket,
+            participant_data={
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+            },
+            total_price=ticket.price * quantity,
+            quantity=quantity,
         )
+        orders.append(order)
 
-    # Получаем количество билетов, если передано; по умолчанию 1
-    quantity = int(request.POST.get("quantity", 1) or 1)
-
-    order = Order.objects.create(
-        ticket=ticket,
-        participant_data={"email": email},
-        total_price=ticket.price * quantity,
-        quantity=quantity,
-    )
-
+    # Отправляем одно уведомление с информацией о всех билетах
     try:
-        send_ticket_notification(user, order, request)
+        send_multiple_tickets_notification(user, orders, request)
     except Exception as e:
         logger.exception("Ошибка отправки письма: %s", e)
 
@@ -379,6 +400,104 @@ def buy_ticket(request, event_id):
 
     url = reverse("landing_page") + "?success=ticket_purchased"
     return redirect(url)
+
+
+def send_multiple_tickets_notification(user, orders, request=None):
+    subject = "Ваши электронные билеты"
+    activation_link = None
+    if request:
+        activation_link = request.build_absolute_uri(
+            reverse("activate_account", args=[user.pk])
+        )
+
+    # Формируем ссылку на личный кабинет
+    dashboard_url = "#"
+    if request and user.user_type != "guest":
+        dashboard_url = request.build_absolute_uri(reverse("visitor:dashboard"))
+
+    # Определяем текст и ссылку для кнопки в зависимости от типа пользователя
+    if user.user_type == "guest":
+        button_text = "Создайте пароль, чтобы просматривать ваши заказы"
+        button_url = activation_link or "#"
+        button_color = "#3498db"
+    else:
+        button_text = "Перейти в личный кабинет для просмотра билетов"
+        button_url = dashboard_url
+        button_color = "#9b59b6"
+
+    # Определяем ссылку на поддержку
+    support_url = "#"
+    if hasattr(user, "is_authenticated") and user.is_authenticated:
+        support_url = (
+            request.build_absolute_uri(reverse("support_dashboard")) if request else "#"
+        )
+    else:
+        if request:
+            register_url = request.build_absolute_uri(reverse("register"))
+            support_url = f"{register_url}?email={user.email}&next={request.build_absolute_uri(reverse('support_dashboard'))}"
+
+    # Формируем информацию о всех билетах
+    tickets_info = ""
+    total_amount = 0
+    for order in orders:
+        tickets_info += f"""
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Тип билета:</strong> {order.ticket.name}</p>
+            <p><strong>Количество:</strong> {order.quantity}</p>
+            <p><strong>Сумма:</strong> {order.total_price} ₽</p>
+            <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+            <p><strong>Место проведения:</strong> {order.ticket.event.place}</p>
+        </div>
+        """
+        total_amount += order.total_price
+
+    message = f"""
+    <html>
+    <body>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Здравствуйте, {user.get_full_name() or user.email}!</h2>
+            
+            <p>Благодарим вас за покупку билетов на мероприятие:</p>
+            <h3 style="color: #3498db;">{orders[0].ticket.event.title}</h3>
+            
+            {tickets_info}
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Итого к оплате:</strong> {total_amount} ₽</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{button_url}" style="
+                    display: inline-block;
+                    padding: 12px 24px;
+                    background-color: {button_color};
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: bold;
+                ">{button_text}</a>
+            </div>
+            
+            <div style="
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                font-size: 12px;
+                color: #7f8c8d;
+            ">
+                <p>Если у вас возникли вопросы, обратитесь в нашу <a href="{support_url}">службу поддержки</a>.</p>
+                <p>
+                    <a href="#" style="color: #7f8c8d; text-decoration: none; margin: 0 10px;">Политика конфиденциальности</a> |
+                    <a href="#" style="color: #7f8c8d; text-decoration: none; margin: 0 10px;">Поддержка</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    send_mail(
+        subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
+    )
 
 
 def send_ticket_notification(user, order, request=None):
@@ -483,8 +602,7 @@ def send_ticket_notification(user, order, request=None):
     send_mail(
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
-
-
+    
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":
@@ -494,3 +612,4 @@ def activate_account(request, pk):
         user.save()
         return redirect("login")
     return render(request, "activate_account.html")
+ 

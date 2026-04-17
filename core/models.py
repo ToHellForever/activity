@@ -235,13 +235,15 @@ class Ticket(models.Model):
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 
-    def is_available(self):
-        """Проверяет, доступен ли билет для покупки."""
-        return self.available_quantity > self.orders.count()
+    def is_available(self, quantity=1):
+        """Проверяет, доступно ли указанное количество билетов для покупки."""
+        sold = sum(order.quantity for order in self.orders.all())
+        return self.available_quantity >= sold + quantity
 
-    def get_sold_count(self):
-        """Возвращает количество проданных билетов данного типа."""
-        return self.orders.count()
+    def get_available_count(self):
+        """Возвращает количество доступных билетов данного типа."""
+        sold = sum(order.quantity for order in self.orders.all())
+        return self.available_quantity - sold
 
     class Meta:
         verbose_name = "Билет"
