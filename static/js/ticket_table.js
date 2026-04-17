@@ -5,8 +5,8 @@ function addTicketRow() {
     
     newRow.innerHTML = `
         <td><input type="text" name="ticket_name[]" class="form-control" required></td>
-        <td><input type="number" name="ticket_price[]" step="0.01" min="0" class="form-control" required></td>
-        <td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>
+        <td><input type="text" name="ticket_price[]" class="form-control" required></td>
+        <td><input type="text" name="ticket_quantity[]" class="form-control" required></td>
         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
     `;
     
@@ -43,6 +43,20 @@ function updateTicketTypesHiddenField() {
     console.log("Updated ticket data:", document.getElementById('ticketTypesHidden').value);
 }
 
+// Функция для валидации целых чисел
+function validateIntegerInput(input) {
+    const value = input.value.trim();
+    const numericValue = parseFloat(value);
+    
+    if (value === '' || (Number.isInteger(numericValue) && numericValue >= 0)) {
+        input.classList.remove('is-invalid');
+        return true;
+    } else {
+        input.classList.add('is-invalid');
+        return false;
+    }
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     // Добавляем обработчик для кнопки добавления строки
@@ -56,6 +70,17 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             this.closest('tr').remove();
             updateTicketTypesHiddenField();
+        });
+    });
+    
+    // Добавляем обработчики валидации для полей цены и количества
+    document.querySelectorAll('#ticketTable tbody').forEach(tbody => {
+        tbody.addEventListener('input', function(e) {
+            const target = e.target;
+            if (target.matches('input[name="ticket_price[]"], input[name="ticket_quantity[]"]')) {
+                validateIntegerInput(target);
+                updateTicketTypesHiddenField();
+            }
         });
     });
     
@@ -73,3 +98,26 @@ document.addEventListener('DOMContentLoaded', function() {
         addTicketRow();
     }
 });
+
+// Функция для проверки перед отправкой формы
+function validateForm(event) {
+    let isValid = true;
+    
+    // Проверяем все поля цены и количества
+    document.querySelectorAll('input[name="ticket_price[]"], input[name="ticket_quantity[]"]').forEach(input => {
+        if (!validateIntegerInput(input)) {
+            isValid = false;
+        }
+    });
+    
+    if (!isValid) {
+        event.preventDefault();
+        alert('Пожалуйста, введите целые числа для цены и количества билетов');
+    }
+}
+
+// Добавляем обработчик для проверки перед отправкой формы
+const form = document.querySelector('form');
+if (form) {
+    form.addEventListener('submit', validateForm);
+}

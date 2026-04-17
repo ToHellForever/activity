@@ -34,7 +34,6 @@ def landing_page(request):
     return render(request, "landing.html")
 
 
-
 @login_required
 def change_password(request):
     """Отдельная страница для смены пароля."""
@@ -324,7 +323,10 @@ def buy_ticket(request, event_id):
     except Exception as e:
         logger.exception("Ошибка отправки письма: %s", e)
 
-    return redirect("event_detail", event_id=event_id)
+    from django.urls import reverse
+
+    url = reverse("landing_page") + "?success=ticket_purchased"
+    return redirect(url)
 
 
 def send_ticket_notification(user, order, request=None):
