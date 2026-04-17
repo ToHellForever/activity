@@ -28,7 +28,7 @@ def create_event(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-            event.status = "on_moderation" 
+            event.status = "on_moderation"
             event.save()
 
             ticket_data = form.cleaned_data.get("ticket_types", "")
@@ -53,10 +53,12 @@ def create_event(request):
 
     return render(request, "partner/event_form.html", {"form": form})
 
+
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
     send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
+
 
 def edit_event(request, event_id):
     """
@@ -68,10 +70,35 @@ def edit_event(request, event_id):
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
-            form.save()
-            return redirect(
-                "partner:partner_event_list"
-            )  # Перенаправляем на список после сохранения
+            # Сохраняем основные данные мероприятия
+            event = form.save()
+
+            # Обрабатываем данные о билетах из таблицы
+            ticket_names = request.POST.getlist("ticket_name[]")
+            ticket_prices = request.POST.getlist("ticket_price[]")
+            ticket_quantities = request.POST.getlist("ticket_quantity[]")
+
+            # Очищаем существующие билеты и создаем новые
+            event.tickets.all().delete()
+
+            for name, price, quantity in zip(
+                ticket_names, ticket_prices, ticket_quantities
+            ):
+                if name and price and quantity:  # Проверяем, что все поля заполнены
+                    try:
+                        event.tickets.create(
+                            name=name,
+                            price=(
+                                float(price.replace(",", "."))
+                                if "," in price
+                                else float(price)
+                            ),
+                            available_quantity=int(quantity),
+                        )
+                    except (ValueError, TypeError):
+                        continue
+
+            return redirect("partner:partner_event_list")
     else:
         # При GET-запросе заполняем форму данными из БД
         form = EventForm(instance=event)
@@ -206,13 +233,13 @@ def profile_edit(request):
         # Обработка формы загрузки документов
         if "upload_documents" in request.POST:
             # Проверяем, что у пользователя нет документов на рассмотрении
-            if request.user.verification_status == 'not_submitted':
+            if request.user.verification_status == "not_submitted":
                 document_form = DocumentUploadForm(
                     request.POST, request.FILES, user=request.user
                 )
                 if document_form.is_valid():
                     document_form.save()
-                    request.user.verification_status = 'pending'
+                    request.user.verification_status = "pending"
                     request.user.save()
 
         return redirect("partner:profile_edit")
