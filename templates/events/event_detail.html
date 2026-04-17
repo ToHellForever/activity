@@ -9,7 +9,10 @@
 {% endif %}
 
 {% if event.video_url %}
-    <iframe width="560" height="315" src="{{ event.video_url }}" frameborder="0" allowfullscreen></iframe>
+    <video width="560" height="315" controls>
+        <source src="{{ event.video_url.url }}" type="video/mp4">
+        Ваш браузер не поддерживает видео.
+    </video>
 {% endif %}
 
 {% if event.tags.exists %}
