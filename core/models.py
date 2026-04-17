@@ -135,6 +135,11 @@ class Event(models.Model):
         default="on_moderation",
         verbose_name="Статус",
     )
+    refund_deadline_hours = models.PositiveIntegerField(
+        default=24,  # По умолчанию 24 часа до начала мероприятия
+        verbose_name="Срок возврата билетов (часы до начала)",
+        help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет"
+    )
     image = models.ImageField(
         upload_to="event_images/", blank=True, null=True, verbose_name="Изображение"
     )

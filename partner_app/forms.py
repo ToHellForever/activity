@@ -26,14 +26,6 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Добавляем обработчик для поля video_url
-        if "video_url" in self.fields:
-            self.fields["video_url"].widget.attrs.update(
-                {
-                    "onchange": 'document.getElementById("id_video_changed").value = "True"'
-                }
-            )
-
     class Meta:
         model = Event
         fields = [
@@ -49,6 +41,7 @@ class EventForm(forms.ModelForm):
             "tags",
             "allow_booking_without_payment",
             "auto_close_sales_hours",
+            "refund_deadline_hours",
         ]
         widgets = {
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
