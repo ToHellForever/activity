@@ -18,8 +18,8 @@
 </div>
 
 <h2>График продаж</h2>
-<div style="width: 80%; margin: auto;">
-    <canvas id="salesChart"></canvas>
+<div style="width: 80%; margin: auto; height: 400px;">
+    <canvas id="salesChart" style="width: 100%; height: 100%;"></canvas>
 </div>
 
 <!-- Список ранее сгенерированных отчётов -->
@@ -61,28 +61,66 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Данные передаются из Django в переменную sales_graph_data
-const data = {{ sales_graph_data|safe }};
-const labels = Object.keys(data);
-const values = Object.values(data);
+console.log("Chart.js loaded:", typeof Chart);
+document.addEventListener('DOMContentLoaded', function() {
+    // Данные передаются из Django в переменную sales_graph_data
+    const data = {{ sales_graph_data|safe }};
+    console.log("Sales graph data:", data);
+    const labels = Object.keys(data);
+    const values = Object.values(data);
 
-new Chart(document.getElementById('salesChart'), {
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Выручка по дням',
-            data: values,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
+    // Проверяем, есть ли данные для графика
+    if (labels.length > 0 && values.length > 0) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Выручка по дням (₽)',
+                    data: values,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' ₽';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString() + ' ₽';
+                            }
+                        }
+                    }
+                }
             }
-        }
+        });
+    } else {
+        // Если данных нет, показываем сообщение
+        const canvas = document.getElementById('salesChart');
+        const ctx = canvas.getContext('2d');
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText('Нет данных для отображения', canvas.width/2, canvas.height/2);
     }
 });
 </script>

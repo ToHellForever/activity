@@ -13,7 +13,7 @@ from django.core.mail import send_mail, EmailMessage
 from django.utils import timezone
 from datetime import datetime, timedelta
 import os
-
+import json
 # The above code is a Python script that includes a comment indicating the purpose of the code
 # ("date"). However, the code itself is missing and only contains comment lines.
 from datetime import datetime
@@ -26,25 +26,27 @@ def partner_dashboard(request):
 
     # Получаем активные мероприятия партнёра
     active_events = Event.objects.filter(
-        organizer=request.user,
-        status="active"
+        organizer=request.user, status="active"
     ).count()
 
     # Получаем продажи за текущий месяц
     from datetime import datetime
+
     current_month = datetime.now().month
     current_year = datetime.now().year
 
-    monthly_sales = Order.objects.filter(
-        ticket__event__organizer=request.user,
-        created_at__year=current_year,
-        created_at__month=current_month
-    ).aggregate(total=Sum("total_price"))["total"] or 0
+    monthly_sales = (
+        Order.objects.filter(
+            ticket__event__organizer=request.user,
+            created_at__year=current_year,
+            created_at__month=current_month,
+        ).aggregate(total=Sum("total_price"))["total"]
+        or 0
+    )
 
     # Получаем ожидающие выплаты
     pending_payouts = PayoutRequest.objects.filter(
-        organizer=request.user,
-        status="pending"
+        organizer=request.user, status="pending"
     ).count()
 
     context = {
@@ -187,7 +189,11 @@ def partner_event_list(request):
     event_data = []
     for event in events:
         # Суммируем количество проданных билетов по всем типам этого мероприятия
-        sold_tickets = sum(order.quantity for ticket in event.tickets.all() for order in ticket.orders.all())
+        sold_tickets = sum(
+            order.quantity
+            for ticket in event.tickets.all()
+            for order in ticket.orders.all()
+        )
         # Суммируем общее количество доступных билетов
         total = sum(ticket.available_quantity for ticket in event.tickets.all())
 
@@ -291,20 +297,22 @@ def reports(request):
         .order_by("date")
     )
 
-    # Преобразуем в формат для Chart.js
+    # Преобразуем в формат для Chart.js (конвертируем Decimal в float)
     sales_graph_data = {
-        item["date"].strftime("%Y-%m-%d"): item["total"]
+        item["date"].strftime("%Y-%m-%d"): float(item["total"])
         for item in sales_graph_data
     }
 
     # Получаем список ранее сгенерированных отчётов
-    user_reports = SalesReport.objects.filter(partner=request.user).order_by("-created_at")
+    user_reports = SalesReport.objects.filter(partner=request.user).order_by(
+        "-created_at"
+    )
 
     context = {
         "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
         "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
-        "sales_graph_data": sales_graph_data,
+        "sales_graph_data": json.dumps(sales_graph_data),
         "user_reports": user_reports,
     }
     return render(request, "partner/reports.html", context)
@@ -402,6 +410,7 @@ def profile_edit(request):
         "document_form": document_form,
     }
     return render(request, "partner/profile_edit.html", context)
+
 
 @login_required
 def generate_report(request):
