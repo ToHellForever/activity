@@ -451,10 +451,16 @@ def generate_report(request):
                 file_name = f"report_{period_start}_{period_end}.csv"
                 report.file_path.save(
                     file_name,
-                    ContentFile(report_file.getvalue().encode("utf-8")),
+                    ContentFile(report_file.read()),
+                )
+            elif report_type == "excel":
+                file_name = f"report_{period_start}_{period_end}.xlsx"
+                report.file_path.save(
+                    file_name,
+                    ContentFile(report_file.getvalue()),
                 )
             else:
-                file_name = f"report_{period_start}_{period_end}.{report_type}"
+                file_name = f"report_{period_start}_{period_end}.pdf"
                 report.file_path.save(
                     file_name,
                     ContentFile(report_file.getvalue()),
