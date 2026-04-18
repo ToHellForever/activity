@@ -1,10 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.core.files.base import ContentFile
 from core.models import Event, Ticket, Order, PayoutRequest
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import TruncDate
 from .forms import EventForm, DocumentUploadForm
+from .models import SalesReport
+from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
+from django.utils import timezone
+from datetime import datetime, timedelta
+import os
 
 # The above code is a Python script that includes a comment indicating the purpose of the code
 # ("date"). However, the code itself is missing and only contains comment lines.
@@ -246,18 +254,29 @@ def reports(request):
     tickets_sold = orders.aggregate(count=Count("id"))["count"] or 0
     avg_check = orders.aggregate(avg=Avg("total_price"))["avg"] or 0
 
+    # Получаем данные для графика продаж по дням
+    sales_graph_data = (
+        orders.annotate(date=TruncDate("created_at"))
+        .values("date")
+        .annotate(total=Sum("total_price"))
+        .order_by("date")
+    )
+
+    # Преобразуем в формат для Chart.js
     sales_graph_data = {
-        "2026-04-01": 15000,
-        "2026-04-02": 25000,
-        "2026-04-03": 35000,
-        "2026-04-04": 10000,
+        item["date"].strftime("%Y-%m-%d"): item["total"]
+        for item in sales_graph_data
     }
+
+    # Получаем список ранее сгенерированных отчётов
+    user_reports = SalesReport.objects.filter(partner=request.user).order_by("-created_at")
 
     context = {
         "total_sales": total_sales,
         "tickets_sold": tickets_sold,
         "avg_check": avg_check,
         "sales_graph_data": sales_graph_data,
+        "user_reports": user_reports,
     }
     return render(request, "partner/reports.html", context)
 
@@ -354,3 +373,70 @@ def profile_edit(request):
         "document_form": document_form,
     }
     return render(request, "partner/profile_edit.html", context)
+
+@login_required
+def generate_report(request):
+    """
+    Генерирует отчёт о продажах за указанный период в выбранном формате.
+    """
+    if request.method == "POST":
+        period_start = request.POST.get("period_start")
+        period_end = request.POST.get("period_end")
+        report_type = request.POST.get("report_type")
+
+        try:
+            period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
+            period_end = datetime.strptime(period_end, "%Y-%m-%d").date()
+        except ValueError:
+            return JsonResponse(
+                {"status": "error", "message": "Неверный формат даты"},
+                status=400,
+            )
+
+        try:
+            # Генерируем отчёт
+            report_file = generate_sales_report(
+                request.user, period_start, period_end, report_type
+            )
+
+            # Сохраняем отчёт в модели
+            report = SalesReport.objects.create(
+                partner=request.user,
+                period_start=period_start,
+                period_end=period_end,
+                report_type=report_type,
+                status="completed",
+            )
+
+            # Сохраняем файл
+            if report_type == "csv":
+                file_name = f"report_{period_start}_{period_end}.csv"
+                report.file_path.save(
+                    file_name,
+                    ContentFile(report_file.getvalue().encode("utf-8")),
+                )
+            else:
+                file_name = f"report_{period_start}_{period_end}.{report_type}"
+                report.file_path.save(
+                    file_name,
+                    ContentFile(report_file.getvalue()),
+                )
+
+            # Возвращаем ссылку на скачивание
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "download_url": report.file_path.url,
+                }
+            )
+
+        except Exception as e:
+            return JsonResponse(
+                {"status": "error", "message": str(e)},
+                status=500,
+            )
+
+    return JsonResponse(
+        {"status": "error", "message": "Неверный метод запроса"},
+        status=405,
+    )
