@@ -31,19 +31,19 @@
         <h2>Текущий раздел: Дашборд (Сводная информация)</h2>
         <p>Здесь будет отображаться информация по активным мероприятиям, продажам и статусам.</p>
 
-        <!-- Здесь будут графики и карточки -->
+<!-- Здесь будут графики и карточки -->
         <div style="display: flex; gap: 20px;">
             <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
                 <h3>Активные мероприятия</h3>
-                <p>Количество: <span id="active-events-count">0</span></p>
+                <p>Количество: <span>{{ active_events_count }}</span></p>
             </div>
             <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
                 <h3>Продажи за месяц</h3>
-                <p>Сумма: <span id="monthly-sales-sum">0 ₽</span></p>
+                <p>Сумма: <span>{{ monthly_sales_sum }} ₽</span></p>
             </div>
             <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
                 <h3>Статус выплат</h3>
-                <p>Ожидает выплаты: <span id="pending-payouts">0</span></p>
+                <p>Ожидает выплаты: <span>{{ pending_payouts_count }}</span></p>
             </div>
         </div>
 

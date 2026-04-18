@@ -24,8 +24,35 @@ def partner_dashboard(request):
     if request.user.user_type != "partner":
         return redirect("visitor:dashboard")
 
-    # Логика для партнера
-    context = {"user": request.user}
+    # Получаем активные мероприятия партнёра
+    active_events = Event.objects.filter(
+        organizer=request.user,
+        status="active"
+    ).count()
+
+    # Получаем продажи за текущий месяц
+    from datetime import datetime
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    monthly_sales = Order.objects.filter(
+        ticket__event__organizer=request.user,
+        created_at__year=current_year,
+        created_at__month=current_month
+    ).aggregate(total=Sum("total_price"))["total"] or 0
+
+    # Получаем ожидающие выплаты
+    pending_payouts = PayoutRequest.objects.filter(
+        organizer=request.user,
+        status="pending"
+    ).count()
+
+    context = {
+        "user": request.user,
+        "active_events_count": active_events,
+        "monthly_sales_sum": monthly_sales,
+        "pending_payouts_count": pending_payouts,
+    }
     return render(request, "partner/dashboard.html", context)
 
 
@@ -160,14 +187,14 @@ def partner_event_list(request):
     event_data = []
     for event in events:
         # Суммируем количество проданных билетов по всем типам этого мероприятия
-        sold = sum(ticket.orders.count() for ticket in event.tickets.all())
+        sold_tickets = sum(order.quantity for ticket in event.tickets.all() for order in ticket.orders.all())
         # Суммируем общее количество доступных билетов
         total = sum(ticket.available_quantity for ticket in event.tickets.all())
 
         event_data.append(
             {
                 "event": event,
-                "sold": sold,
+                "sold": sold_tickets,
                 "total": total,
             }
         )
