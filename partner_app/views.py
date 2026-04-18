@@ -278,8 +278,10 @@ def reports(request):
 
     # Расчет общей статистики
     total_sales = orders.aggregate(total=Sum("total_price"))["total"] or 0
-    tickets_sold = orders.aggregate(count=Count("id"))["count"] or 0
-    avg_check = orders.aggregate(avg=Avg("total_price"))["avg"] or 0
+    # Считаем реальное количество проданных билетов (не заказов)
+    tickets_sold = sum(order.quantity for order in orders)
+    # Средний чек = общая выручка / количество проданных билетов
+    avg_check = total_sales / tickets_sold if tickets_sold > 0 else 0
 
     # Получаем данные для графика продаж по дням
     sales_graph_data = (
@@ -299,9 +301,9 @@ def reports(request):
     user_reports = SalesReport.objects.filter(partner=request.user).order_by("-created_at")
 
     context = {
-        "total_sales": total_sales,
+        "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
-        "avg_check": avg_check,
+        "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
         "sales_graph_data": sales_graph_data,
         "user_reports": user_reports,
     }
