@@ -8,10 +8,17 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 from moviepy import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from io import BytesIO
 
 
-def add_watermark_to_image(input_image_path, watermark_image_path, output_image_path=None, position=(1, 1), opacity=0.3):
+def add_watermark_to_image(
+    input_image_path,
+    watermark_image_path,
+    output_image_path=None,
+    position=(1, 1),
+    opacity=0.3,
+):
     """
     Добавляет водяной знак (логотип) на изображение.
 
@@ -33,7 +40,10 @@ def add_watermark_to_image(input_image_path, watermark_image_path, output_image_
         # Создаем прозрачный слой для водяного знака
         watermark_layer = Image.new("RGBA", base_image.size, (0, 0, 0, 0))
         if position == (1, 1):  # Правый нижний угол
-            position = (base_width - watermark.width - 10, base_height - watermark.height - 10)
+            position = (
+                base_width - watermark.width - 10,
+                base_height - watermark.height - 10,
+            )
         watermark_layer.paste(watermark, position, watermark)
 
         # Накладываем водяной знак с заданной прозрачностью
@@ -52,7 +62,13 @@ def add_watermark_to_image(input_image_path, watermark_image_path, output_image_
         return False
 
 
-def add_watermark_to_video(input_video_path, watermark_image_path, output_video_path=None, position=(1, 1), opacity=0.7):
+def add_watermark_to_video(
+    input_video_path,
+    watermark_image_path,
+    output_video_path=None,
+    position=(1, 1),
+    opacity=0.7,
+):
     """
     Добавляет водяной знак (логотип) на видео.
 
@@ -76,16 +92,12 @@ def add_watermark_to_video(input_video_path, watermark_image_path, output_video_
         watermark_np = np.array(watermark)
         watermark_np = cv2.cvtColor(watermark_np, cv2.COLOR_RGBA2BGRA)
 
-        # Создаем клип для водяного знака
-        watermark_clip = (
-            TextClip("", fontsize=1, color="white", transparent=True)
-            .set_duration(video_clip.duration)
-            .set_position(lambda t: position)
-        )
+        # Не используем TextClip, так как он вызывает конфликт с аргументом font
+        # Водяной знак добавляется через make_frame
 
         # Используем функцию для наложения изображения
         def make_frame(t):
-            frame = video_clip.get_frame(t)
+            frame = video_clip.get_frame(t).copy()
             h, w = frame.shape[:2]
 
             # Позиционируем водяной знак
@@ -97,22 +109,36 @@ def add_watermark_to_video(input_video_path, watermark_image_path, output_video_
 
             # Накладываем водяной знак
             overlay = frame.copy()
-            overlay[y:y + watermark.height, x:x + watermark.width] = watermark_np[:, :, :3]
+            overlay[y : y + watermark.height, x : x + watermark.width] = watermark_np[
+                :, :, :3
+            ]
             alpha = watermark_np[:, :, 3] / 255.0
-            frame[y:y + watermark.height, x:x + watermark.width] = (
-                alpha * watermark_np[:, :, :3] + (1 - alpha) * frame[y:y + watermark.height, x:x + watermark.width]
-            )
+            for c in range(3):  # Обрабатываем только RGB-каналы
+                frame[y : y + watermark.height, x : x + watermark.width, c] = (
+                    alpha * watermark_np[:, :, c]
+                    + (1 - alpha)
+                    * frame[y : y + watermark.height, x : x + watermark.width, c]
+                )
 
             return frame
 
-        # Создаем финальное видео
-        final_clip = video_clip.fl(make_frame)
+        # Создаём новый клип из обработанных кадров
+        def frame_generator():
+            for t in np.arange(0, video_clip.duration, 1.0 / video_clip.fps):
+                yield make_frame(t)
+
+        final_clip = ImageSequenceClip(list(frame_generator()), fps=video_clip.fps)
+        final_clip.audio = video_clip.audio
 
         # Сохраняем результат
         if output_video_path:
-            final_clip.write_videofile(output_video_path, codec="libx264", audio_codec="aac")
+            final_clip.write_videofile(
+                output_video_path, codec="libx264", audio_codec="aac"
+            )
         else:
-            final_clip.write_videofile(input_video_path, codec="libx264", audio_codec="aac")
+            final_clip.write_videofile(
+                input_video_path, codec="libx264", audio_codec="aac"
+            )
 
         video_clip.close()
         final_clip.close()
