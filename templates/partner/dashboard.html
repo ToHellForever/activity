@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Партнерский кабинет</title>
-    <!-- Стили можно будет добавить позже -->
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
+{% block content %}
     <h1>Партнерский кабинет</h1>
-    
+
     <div>
         <p>Приветствуем, <strong>{{ user.email }}</strong>!</p>
-        
+
         <!-- Блок с навигацией по разделам -->
         <h2>Навигация</h2>
         <ul>
@@ -90,9 +85,16 @@
         </div>
     </div>
 
-    <script>
+    <!-- Кнопка выхода -->
+    <a href="{% url 'logout' %}" class="logout-btn" style="display: block; text-align: center; margin-top: 20px;">Выйти</a>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
         function openReportModal() {
             document.getElementById("report-modal").style.display = "flex";
+
         }
 
         function closeReportModal() {
@@ -132,10 +134,5 @@
                 submitBtn.textContent = "Сгенерировать";
             });
         });
-    </script>
-
-    <!-- Кнопка выхода -->
-    <a href="{% url 'logout' %}" class="logout-btn" style="display: block; text-align: center; margin-top: 20px;">Выйти</a>
-
-</body>
-</html>
+</script>
+{% endblock %}

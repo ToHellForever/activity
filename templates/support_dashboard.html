@@ -1,5 +1,7 @@
+{% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
 <style>
   .container { display: flex; height: calc(100vh - 100px); }
   .sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
@@ -106,38 +108,36 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const newBtn = document.getElementById('new-ticket-btn');
     const form = document.getElementById('new-ticket-form');
     const cancelBtn = document.getElementById('cancel-ticket-btn');
-    
+
     newBtn.onclick = function() {
       form.style.display = 'block';
       newBtn.style.display = 'none';
     };
-    
+
     cancelBtn.onclick = function() {
       form.style.display = 'none';
       newBtn.style.display = 'block';
       form.reset();
     };
   });
-</script>
 
-<script>
   // Решение для обработки вставки файлов
-  document.addEventListener('DOMContentLoaded', function() {
-    const chatInput = document.querySelector('input[name="text"]');
-    if (chatInput) {
-      chatInput.addEventListener('paste', function(e) {
-        if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-          e.preventDefault();
-          alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
-        }
-      });
-    }
-  });
+  const chatInput = document.querySelector('input[name="text"]');
+  if (chatInput) {
+    chatInput.addEventListener('paste', function(e) {
+      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        e.preventDefault();
+        alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
+      }
+    });
+  }
 </script>
-
 {% endblock %}

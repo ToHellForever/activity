@@ -1,4 +1,7 @@
 
+{% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
 <div class="container mt-4">
     <h1>Список участников: {{ event.title }}</h1>
@@ -97,9 +100,27 @@
                     </td>
                     <td class="text-center" style="width: 60px;">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                             alt="QR-код" class="img-fluid" style="width: 40px; height: 40px; opacity: 0.7;">
+                            alt="QR-код" class="img-fluid" style="width: 100px; height: 100px; opacity: 1;">
                     </td>
                 </tr>
+                <!-- Модальное окно для QR-кода текущего заказа -->
+                <div class="modal fade" id="qrModal{{ order.id }}" tabindex="-1" aria-labelledby="qrModalLabel{{ order.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="qrModalLabel{{ order.id }}">QR-код для {{ order.participant_data.name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                    alt="QR-код" class="img-fluid">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% empty %}
                 <tr>
                     <td colspan="8" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
@@ -108,5 +129,6 @@
             </tbody>
         </table>
     </div>
+
 </div>
 {% endblock %}

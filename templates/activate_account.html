@@ -1,6 +1,16 @@
-<form method="post">
-    {% csrf_token %}
-    <label for="password">Создайте пароль:</label>
-    <input type="password" name="password" required>
-    <button type="submit">Активировать аккаунт</button>
-</form>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4">Активация аккаунта</h2>
+    <form method="post" class="card p-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="password" class="form-label">Создайте пароль:</label>
+            <input type="password" class="form-control" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Активировать аккаунт</button>
+    </form>
+</div>
+{% endblock %}
