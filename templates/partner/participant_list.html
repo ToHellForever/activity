@@ -55,6 +55,7 @@
                 <th>№</th>
                 <th>Имя</th>
                 <th>E-mail</th>
+                <th>Телефон</th>
                 <th>Дата покупки</th>
                 <th>Тип билета</th>
                 <th>Статус посещения</th>
@@ -65,8 +66,9 @@
                 {% for order in orders %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ order.participant_data.name }}</td>
+                    <td>{{ order.participant_data.first_name }} {{ order.participant_data.last_name }}</td>
                     <td>{{ order.participant_data.email }}</td>
+                    <td>{{ order.participant_data.phone }}</td>
                     <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                     <td>{{ order.ticket.name }}</td>
                     <td>
@@ -100,7 +102,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
+                    <td colspan="8" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
                 </tr>
                 {% endfor %}
             </tbody>

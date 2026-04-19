@@ -383,7 +383,7 @@ def export_participant_list(orders, event, export_format):
         headers = [
             "Имя",
             "E-mail",
-            "Тел-н",
+            "Телефон",
             "Дата покупки",
             "Тип билета",
             "Статус",
@@ -472,7 +472,7 @@ def export_participant_list(orders, event, export_format):
             [
             "Имя",
             "E-mail",
-            "Тел-н",
+            "Телефон",
             "Дата покупки",
             "Тип билета",
             "Статус",
