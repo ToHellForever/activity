@@ -381,14 +381,13 @@ def export_participant_list(orders, event, export_format):
 
         # Заголовки
         headers = [
-            "№",
             "Имя",
             "E-mail",
+            "Тел-н",
             "Дата покупки",
             "Тип билета",
-            "Количество",
-            "Стоимость",
-            "Статус посещения",
+            "Статус",
+            "Цена",
         ]
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
@@ -397,22 +396,21 @@ def export_participant_list(orders, event, export_format):
 
         # Данные
         for row_num, order in enumerate(orders, 2):
-            ws.cell(row=row_num, column=1, value=row_num - 1)
-            ws.cell(row=row_num, column=2, value=order.participant_data.get("name", ""))
+            ws.cell(row=row_num, column=1, value=f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip())
             ws.cell(
-                row=row_num, column=3, value=order.participant_data.get("email", "")
+                row=row_num, column=2, value=order.participant_data.get("email", "")
+            )
+            ws.cell(
+                row=row_num, column=3, value=order.participant_data.get("phone", "")
             )
             ws.cell(
                 row=row_num, column=4, value=order.created_at.strftime("%d.%m.%Y %H:%M")
             )
             ws.cell(row=row_num, column=5, value=order.ticket.name)
-            ws.cell(row=row_num, column=6, value=order.quantity)
-            ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
             ws.cell(
-                row=row_num,
-                column=8,
-                value="Посетил" if order.attended else "Не посетил",
+                row=row_num, column=6, value="Оплачено" if order.attended else "Ожидает оплаты"
             )
+            ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
 
         # Автоподбор ширины столбцов
         for column in ws.columns:
@@ -472,33 +470,35 @@ def export_participant_list(orders, event, export_format):
         # Данные для таблицы
         data = [
             [
-                "№",
-                "Имя",
-                "E-mail",
-                "Дата покупки",
-                "Тип билета",
-                "Количество",
-                "Стоимость",
-                "Статус посещения",
+            "Имя",
+            "E-mail",
+            "Тел-н",
+            "Дата покупки",
+            "Тип билета",
+            "Статус",
+            "Цена",
             ]
         ]
 
         for index, order in enumerate(orders, 1):
             data.append(
                 [
-                    str(index),
-                    order.participant_data.get("name", ""),
+                    f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
                     order.participant_data.get("email", ""),
+                    order.participant_data.get("phone", ""),
                     order.created_at.strftime("%d.%m.%Y %H:%M"),
                     order.ticket.name,
-                    str(order.quantity),
+                    "Оплачено" if order.attended else "Ожидает оплаты",
                     f"{order.total_price:.2f} руб.",
-                    "Посетил" if order.attended else "Не посетил",
                 ]
             )
 
         # Создаем таблицу
         table = Table(data)
+        # Устанавливаем ширину столбцов (в порядке: №, Имя, E-mail, Дата покупки, Тип билета, Количество, Стоимость, Статус посещения)
+        column_widths = [80, 110, 100, 80, 70, 70, 80]
+        table._argW = column_widths
+
         table.setStyle(
             TableStyle(
                 [
@@ -506,11 +506,22 @@ def export_participant_list(orders, event, export_format):
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("FONTNAME", (0, 0), (-1, 0), "DejaVuSans-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 12),
+                    (
+                        "FONTSIZE",
+                        (0, 0),
+                        (-1, 0),
+                        8,
+                    ),  # Увеличен размер шрифта для заголовка
                     ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                     ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
                     ("GRID", (0, 0), (-1, -1), 1, colors.black),
                     ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
+                    (
+                        "FONTSIZE",
+                        (0, 1),
+                        (-1, -1),
+                        6,
+                    ),  # Увеличен размер шрифта для данных
                 ]
             )
         )

@@ -323,6 +323,7 @@ def buy_ticket(request, event_id):
     email = (request.POST.get("email") or "").strip()
     first_name = (request.POST.get("first_name") or "").strip()
     last_name = (request.POST.get("last_name") or "").strip()
+    phone = (request.POST.get("phone") or "").strip()
 
     # Создаём или получаем пользователя по email
     user, created = CustomUser.objects.get_or_create(
@@ -384,6 +385,7 @@ def buy_ticket(request, event_id):
                 "email": email,
                 "first_name": first_name,
                 "last_name": last_name,
+                "phone": phone,
             },
             total_price=ticket.price * quantity,
             quantity=quantity,
