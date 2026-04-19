@@ -4,15 +4,15 @@
 <div style="display: flex; gap: 20px; margin-bottom: 20px;">
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
         <h3>Общая выручка</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ total_revenue }} ₽</p>
+        <p style="font-size: 24px; font-weight: bold;">{{ total_revenue|floatformat }} ₽</p>
     </div>
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Комиссия платформы (10%)</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ commission_amount }} ₽</p>
+        <h3>Комиссия платформы</h3>
+        <p style="font-size: 24px; font-weight: bold;">{{ commission_amount|floatformat }} ₽</p>
     </div>
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
         <h3>К выплате</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ payout_amount }} ₽</p>
+        <p style="font-size: 24px; font-weight: bold;">{{ payout_amount|floatformat }} ₽</p>
         <button class="btn btn-success">Запросить выплату</button>
     </div>
 </div>

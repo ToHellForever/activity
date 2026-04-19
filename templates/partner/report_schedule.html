@@ -1,0 +1,222 @@
+
+{% load static %}
+
+{% block title %}Настройка расписания отчётов{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Настройка расписания отчётов</h2>
+        <a href="{% url 'partner:reports' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад к отчётам
+        </a>
+    </div>
+    
+    <div class="card report-card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-10">
+                    <h5 class="card-title mb-3">Автоматическая отправка отчётов</h5>
+                    <p class="card-text">На этой странице вы можете настроить автоматическую отправку отчётов о продажах на ваш email. Выберите частоту отправки, формат отчёта и период, за который нужно формировать отчёт.</p>
+                </div>
+                <div class="col-md-2 text-center">
+                    <i class="bi bi-calendar2-check display-4 text-primary"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <form method="post" id="reportScheduleForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Отладочная информация -->
+        {% if form.errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="bi bi-exclamation-triangle-fill"></i> Ошибки в форме:</strong>
+            <ul class="mb-0 mt-2">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        
+        {% if messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {% for message in messages %}
+            <i class="bi bi-check-circle-fill"></i> {{ message }}
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        
+        <div class="card report-card mb-4">
+            <div class="card-header">
+                Основные настройки
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                {{ form.is_active.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.frequency.id_for_label }}" class="form-label">
+                            {{ form.frequency.label }}
+                        </label>
+                        {{ form.frequency }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.report_format.id_for_label }}" class="form-label">
+                            {{ form.report_format.label }}
+                        </label>
+                        {{ form.report_format }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.period_type.id_for_label }}" class="form-label">
+                            {{ form.period_type.label }}
+                        </label>
+                        {{ form.period_type }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            {{ form.email.label }}
+                        </label>
+                        {{ form.email }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card report-card mb-4" id="dayOfWeekCard" style="display: none;">
+            <div class="card-header">
+                Настройки для еженедельной рассылки
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.day_of_week.id_for_label }}" class="form-label">
+                            {{ form.day_of_week.label }}
+                        </label>
+                        {{ form.day_of_week }}
+                        <div class="form-text">{{ form.day_of_week.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card report-card mb-4" id="dayOfMonthCard" style="display: none;">
+            <div class="card-header">
+                Настройки для ежемесячной рассылки
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.day_of_month.id_for_label }}" class="form-label">
+                            {{ form.day_of_month.label }}
+                        </label>
+                        {{ form.day_of_month }}
+                        <div class="form-text">{{ form.day_of_month.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card report-card mb-4" id="customPeriodCard" style="display: none;">
+            <div class="card-header">
+                Настройки для произвольного периода
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.custom_period_days.id_for_label }}" class="form-label">
+                            {{ form.custom_period_days.label }}
+                        </label>
+                        {{ form.custom_period_days }}
+                        <div class="form-text">{{ form.custom_period_days.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <button type="submit" class="btn btn-primary me-md-2" id="saveButton">
+                <i class="bi bi-save"></i> Сохранить настройки
+            </button>
+            <a href="{% url 'partner:reports' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i> Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const frequencyField = document.getElementById('{{ form.frequency.id_for_label }}');
+    const periodTypeField = document.getElementById('{{ form.period_type.id_for_label }}');
+    
+    // Показываем/скрываем карточки в зависимости от выбранных значений
+    function updateVisibility() {
+        const frequency = frequencyField.value;
+        const periodType = periodTypeField.value;
+        
+        // Скрываем все карточки с дополнительными настройками
+        document.getElementById('dayOfWeekCard').style.display = 'none';
+        document.getElementById('dayOfMonthCard').style.display = 'none';
+        document.getElementById('customPeriodCard').style.display = 'none';
+        
+        // Показываем нужные карточки
+        if (frequency === 'weekly') {
+            document.getElementById('dayOfWeekCard').style.display = 'block';
+        } else if (frequency === 'monthly') {
+            document.getElementById('dayOfMonthCard').style.display = 'block';
+        }
+        
+        if (periodType === 'custom') {
+            document.getElementById('customPeriodCard').style.display = 'block';
+        }
+    }
+    
+    // Обновляем видимость при загрузке страницы
+    updateVisibility();
+    
+    // Обновляем видимость при изменении значений
+    frequencyField.addEventListener('change', updateVisibility);
+    periodTypeField.addEventListener('change', updateVisibility);
+    
+    // Обработка отправки формы
+    document.getElementById('reportScheduleForm').addEventListener('submit', function(e) {
+        // Показываем индикатор загрузки
+        const saveButton = document.getElementById('saveButton');
+        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Сохранение...';
+        saveButton.disabled = true;
+    });
+});
+</script>
+{% endblock %}

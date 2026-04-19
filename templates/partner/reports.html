@@ -1,127 +1,261 @@
+
 {% load static %}
+
+{% block title %}Отчёты о продажах{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
 {% block content %}
-<h1>Отчёты и продажи</h1>
+<div class="container mt-5">
+<h2 class="mb-4">Отчёты о продажах</h2>
 
-<div style="display: flex; gap: 20px; margin-bottom: 20px;">
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Общая выручка</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ total_sales }} ₽</p>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card report-card statistics-card">
+            <div class="card-header">
+                Общая статистика
+            </div>
+            <div class="card-body">
+                <div class="stat-value mb-2">{{ total_sales }} ₽</div>
+                <div class="stat-label mb-1">Итого продаж</div>
+                
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <div class="stat-value mb-1">{{ tickets_sold }}</div>
+                        <div class="stat-label">Билетов продано</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-value mb-1">{{ avg_check }} ₽</div>
+                        <div class="stat-label">Средний чек</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Продано билетов</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ tickets_sold }} шт.</p>
+        
+        <div class="col-md-6">
+            <div class="card report-card schedule-settings">
+                <div class="card-header">
+                    Настройки отчётов
+                </div>
+                <div class="card-body">
+                    {% if report_schedule %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Текущие настройки:</span>
+                                <span class="badge {% if report_schedule.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if report_schedule.is_active %}Активна{% else %}Отключена{% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">Частота:</small>
+                                    <div>{{ report_schedule.get_frequency_display }}</div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">Формат:</small>
+                                    <div>{{ report_schedule.get_report_format_display }}</div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">Период:</small>
+                                    <div>{{ report_schedule.get_period_type_display }}</div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">Email:</small>
+                                    <div class="text-truncate">{{ report_schedule.email }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary w-100">
+                            <i class="bi bi-gear"></i> Редактировать настройки
+                        </a>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar2-event display-6 text-primary mb-3"></i>
+                            <h5 class="mb-3">Автоматическая отправка отчётов</h5>
+                            <p class="text-muted mb-4">Настройте расписание и получайте отчёты автоматически на ваш email</p>
+                            
+                            <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary w-100">
+                                <i class="bi bi-calendar-plus"></i> Настроить расписание
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Средний чек</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ avg_check }} ₽</p>
+    
+    <div class="card report-card mb-4">
+        <div class="card-header">
+            График продаж
+        </div>
+        <div class="card-body">
+            <canvas id="salesChart" height="300"></canvas>
+        </div>
     </div>
+    
+    <div class="card report-card mb-4 report-form">
+        <div class="card-header">
+            Сгенерировать отчёт
+        </div>
+        <div class="card-body">
+            <form id="generateReportForm">
+                {% csrf_token %}
+                <div class="row mb-3 g-3">
+                    <div class="col-md-3">
+                        <label for="periodStart" class="form-label">Начало периода</label>
+                        <input type="date" class="form-control" id="periodStart" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="periodEnd" class="form-label">Конец периода</label>
+                        <input type="date" class="form-control" id="periodEnd" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="reportType" class="form-label">Формат отчёта</label>
+                        <select class="form-select" id="reportType" required>
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="sendEmail">
+                            <label class="form-check-label" for="sendEmail">
+                                Отправить на email
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="generateButton">
+                    <i class="bi bi-file-earmark-arrow-down"></i> Сгенерировать отчёт
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    {% if user_reports %}
+    <div class="card report-card mb-4 report-table">
+        <div class="card-header">
+            Предыдущие отчёты
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Период</th>
+                            <th>Формат</th>
+                            <th>Дата создания</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in user_reports %}
+                        <tr>
+                            <td>{{ report.period_start|date:"d.m.Y" }} - {{ report.period_end|date:"d.m.Y" }}</td>
+                            <td>{{ report.get_report_type_display }}</td>
+                            <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if report.status == "completed" %}
+                                    <span class="badge bg-success">Готово</span>
+                                {% elif report.status == "pending" %}
+                                    <span class="badge bg-warning">В обработке</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Ошибка</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ report.file_path.url }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Скачать
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+{% endblock %}
 
-<h2>График продаж</h2>
-<div style="width: 80%; margin: auto; height: 400px;">
-    <canvas id="salesChart" style="width: 100%; height: 100%;"></canvas>
-</div>
-
-<!-- Список ранее сгенерированных отчётов -->
-<h2 style="margin-top: 30px;">Мои отчёты</h2>
-{% if user_reports %}
-<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="padding: 10px; text-align: left;">Период</th>
-                <th style="padding: 10px; text-align: left;">Формат</th>
-                <th style="padding: 10px; text-align: left;">Дата создания</th>
-                <th style="padding: 10px; text-align: left;">Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for report in user_reports %}
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 10px;">{{ report.period_start }} - {{ report.period_end }}</td>
-                <td style="padding: 10px;">{{ report.get_report_type_display }}</td>
-                <td style="padding: 10px;">{{ report.created_at|date:"d.m.Y H:i" }}</td>
-                <td style="padding: 10px;">
-                    <a
-                        href="{{ report.file_path.url }}"
-                        style="padding: 5px 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;"
-                        download
-                    >
-                        Скачать
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<p>У вас ещё нет сгенерированных отчётов.</p>
-{% endif %}
-
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-console.log("Chart.js loaded:", typeof Chart);
-document.addEventListener('DOMContentLoaded', function() {
-    // Данные передаются из Django в переменную sales_graph_data
-    const data = {{ sales_graph_data|safe }};
-    console.log("Sales graph data:", data);
-    const labels = Object.keys(data);
-    const values = Object.values(data);
+// График продаж
+const salesData = JSON.parse('{{ sales_graph_data|escapejs }}');
+const dates = Object.keys(salesData);
+const amounts = Object.values(salesData);
 
-    // Проверяем, есть ли данные для графика
-    if (labels.length > 0 && values.length > 0) {
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Выручка по дням (₽)',
-                    data: values,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString() + ' ₽';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y.toLocaleString() + ' ₽';
-                            }
-                        }
-                    }
-                }
+const ctx = document.getElementById('salesChart').getContext('2d');
+const salesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: dates,
+        datasets: [{
+            label: 'Продажи по дням (₽)',
+            data: amounts,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
             }
-        });
-    } else {
-        // Если данных нет, показываем сообщение
-        const canvas = document.getElementById('salesChart');
-        const ctx = canvas.getContext('2d');
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#666';
-        ctx.textAlign = 'center';
-        ctx.fillText('Нет данных для отображения', canvas.width/2, canvas.height/2);
+        }
     }
+});
+
+// Генерация отчёта
+document.getElementById('generateReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const periodStart = document.getElementById('periodStart').value;
+    const periodEnd = document.getElementById('periodEnd').value;
+    const reportType = document.getElementById('reportType').value;
+    const sendEmail = document.getElementById('sendEmail').checked;
+    
+    fetch('{% url "partner:generate_report" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: new URLSearchParams({
+            period_start: periodStart,
+            period_end: periodEnd,
+            report_type: reportType,
+            send_email: sendEmail
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = data.download_url;
+            if (data.email_sent) {
+                alert('Отчёт успешно сгенерирован и отправлен на ваш email!');
+            }
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при генерации отчёта');
+    });
 });
 </script>
 {% endblock %}

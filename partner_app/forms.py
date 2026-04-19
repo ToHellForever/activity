@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from core.models import Event, PartnerDocument
+from .models import ReportSchedule
 
 User = get_user_model()
 
@@ -61,11 +62,6 @@ class EventForm(forms.ModelForm):
             "description_short": forms.Textarea(attrs={"rows": 3}),
             "description_full": forms.Textarea(attrs={"rows": 5}),
         }
-        widgets = {
-            "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "description_short": forms.Textarea(attrs={"rows": 3}),
-            "description_full": forms.Textarea(attrs={"rows": 5}),
-        }
 
 
 class DocumentUploadForm(forms.ModelForm):
@@ -95,4 +91,124 @@ class DocumentUploadForm(forms.ModelForm):
         instance.user = self.user
         if commit:
             instance.save()
+        return instance
+
+
+class ReportScheduleForm(forms.ModelForm):
+    """
+    Форма для настройки расписания отправки отчётов.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.partner = kwargs.pop("partner", None)
+        super().__init__(*args, **kwargs)
+
+        # Настройка видимости полей в зависимости от выбранных опций
+        if self.instance and self.instance.frequency:
+            self.setup_field_visibility()
+
+        # Устанавливаем email партнёра по умолчанию
+        if self.partner and not self.instance.email:
+            self.fields["email"].initial = self.partner.email
+
+    def setup_field_visibility(self):
+        frequency = self.data.get(
+            "frequency", self.instance.frequency if self.instance else None
+        )
+        period_type = self.data.get(
+            "period_type", self.instance.period_type if self.instance else None
+        )
+
+        # Скрываем поля, которые не нужны для текущей частоты
+        if frequency == "daily":
+            self.fields["day_of_week"].widget = forms.HiddenInput()
+            self.fields["day_of_month"].widget = forms.HiddenInput()
+        elif frequency == "weekly":
+            self.fields["day_of_month"].widget = forms.HiddenInput()
+        elif frequency == "monthly":
+            self.fields["day_of_week"].widget = forms.HiddenInput()
+
+        # Скрываем custom_period_days если не выбран custom период
+        if period_type != "custom":
+            self.fields["custom_period_days"].widget = forms.HiddenInput()
+
+    class Meta:
+        model = ReportSchedule
+        fields = [
+            "is_active",
+            "frequency",
+            "report_format",
+            "period_type",
+            "email",
+            "day_of_week",
+            "day_of_month",
+            "custom_period_days",
+        ]
+        widgets = {
+            "day_of_week": forms.Select(
+                choices=[
+                    (0, "Понедельник"),
+                    (1, "Вторник"),
+                    (2, "Среда"),
+                    (3, "Четверг"),
+                    (4, "Пятница"),
+                    (5, "Суббота"),
+                    (6, "Воскресенье"),
+                ]
+            ),
+            "day_of_month": forms.NumberInput(attrs={"min": 1, "max": 31}),
+            "custom_period_days": forms.NumberInput(attrs={"min": 1}),
+        }
+        labels = {
+            "is_active": "Активировать рассылку",
+            "frequency": "Частота отправки",
+            "report_format": "Формат отчёта",
+            "period_type": "Период отчёта",
+            "email": "Email для отправки",
+            "day_of_week": "День недели",
+            "day_of_month": "День месяца",
+            "custom_period_days": "Количество дней для отчёта",
+        }
+        help_texts = {
+            "day_of_week": "Выберите день недели (0 - Понедельник, 6 - Воскресенье)",
+            "day_of_month": "Выберите день месяца (1-31)",
+            "custom_period_days": "Укажите количество дней для произвольного периода отчёта",
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        frequency = cleaned_data.get("frequency")
+        period_type = cleaned_data.get("period_type")
+
+        print("Cleaning form data:", cleaned_data)  # Отладочный вывод
+
+        # Проверка обязательных полей в зависимости от частоты
+        if frequency == "weekly" and "day_of_week" not in cleaned_data:
+            self.add_error(
+                "day_of_week", "Укажите день недели для еженедельной рассылки"
+            )
+
+        if frequency == "monthly" and "day_of_month" not in cleaned_data:
+            self.add_error(
+                "day_of_month", "Укажите день месяца для ежемесячной рассылки"
+            )
+
+        if period_type == "custom" and not cleaned_data.get("custom_period_days"):
+            self.add_error(
+                "custom_period_days",
+                "Укажите количество дней для произвольного периода",
+            )
+
+        print("Form errors after cleaning:", self.errors)  # Отладочный вывод
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.partner = self.partner
+
+        if commit:
+            instance.save()
+            print(
+                f"Saved schedule for {instance.partner.email}: {instance.frequency}, {instance.report_format}"
+            )  # Отладочный вывод
         return instance

@@ -2,21 +2,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.core.files.base import ContentFile
-from core.models import Event, Ticket, Order, PayoutRequest
-from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
-from django.db.models.functions import TruncDate
-from .forms import EventForm, DocumentUploadForm
-from .models import SalesReport
-from .utils import generate_sales_report
-from core.forms import PartnerProfileForm, PasswordChangeForm
 from django.core.mail import send_mail, EmailMessage
 from django.utils import timezone
+from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import TruncDate
+from django.contrib import messages
 from datetime import datetime, timedelta
 import os
 import json
-# The above code is a Python script that includes a comment indicating the purpose of the code
-# ("date"). However, the code itself is missing and only contains comment lines.
-from datetime import datetime
+
+from core.models import Event, Ticket, Order, PayoutRequest
+from .forms import EventForm, DocumentUploadForm, ReportScheduleForm
+from .models import SalesReport, ReportSchedule
+from .utils import generate_sales_report
+from core.forms import PartnerProfileForm, PasswordChangeForm
 
 
 @login_required
@@ -106,6 +105,7 @@ def notify_organizer(event):
     send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
 
 
+@login_required
 def edit_event(request, event_id):
     """
     View для редактирования мероприятия.
@@ -308,12 +308,19 @@ def reports(request):
         "-created_at"
     )
 
+    # Получаем текущие настройки расписания отчётов
+    try:
+        report_schedule = ReportSchedule.objects.get(partner=request.user)
+    except ReportSchedule.DoesNotExist:
+        report_schedule = None
+
     context = {
         "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
         "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
         "sales_graph_data": json.dumps(sales_graph_data),
         "user_reports": user_reports,
+        "report_schedule": report_schedule,
     }
     return render(request, "partner/reports.html", context)
 
@@ -421,6 +428,7 @@ def generate_report(request):
         period_start = request.POST.get("period_start")
         period_end = request.POST.get("period_end")
         report_type = request.POST.get("report_type")
+        send_email = request.POST.get("send_email", "false").lower() == "true"
 
         try:
             period_start = datetime.strptime(period_start, "%Y-%m-%d").date()
@@ -466,11 +474,25 @@ def generate_report(request):
                     ContentFile(report_file.getvalue()),
                 )
 
+            # Если нужно отправить на email
+            if send_email:
+                email = EmailMessage(
+                    subject=f"Отчёт о продажах с {period_start} по {period_end}",
+                    body=f"Добрый день!\n\nПрикрепляем отчёт о продажах за период с {period_start} по {period_end}.\n\nС уважением, ваша платформа мероприятий.",
+                    from_email=None,
+                    to=[request.user.email],
+                )
+                email.attach(
+                    file_name, report_file.getvalue(), f"application/{report_type}"
+                )
+                email.send()
+
             # Возвращаем ссылку на скачивание
             return JsonResponse(
                 {
                     "status": "success",
                     "download_url": report.file_path.url,
+                    "email_sent": send_email,
                 }
             )
 
@@ -484,3 +506,35 @@ def generate_report(request):
         {"status": "error", "message": "Неверный метод запроса"},
         status=405,
     )
+
+
+@login_required
+def report_schedule(request):
+    """
+    Настройка расписания отправки отчётов.
+    """
+    try:
+        # Получаем или создаём настройки расписания для текущего пользователя
+        schedule, created = ReportSchedule.objects.get_or_create(partner=request.user)
+
+        if request.method == "POST":
+            form = ReportScheduleForm(
+                request.POST, instance=schedule, partner=request.user
+            )
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Настройки расписания успешно сохранены!")
+                return redirect("partner:report_schedule")
+            else:
+                messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+        else:
+            form = ReportScheduleForm(instance=schedule, partner=request.user)
+
+        return render(request, "partner/report_schedule.html", {"form": form})
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.exception("Ошибка в представлении report_schedule: %s", str(e))
+        messages.error(request, f"Произошла ошибка: {str(e)}")
+        return redirect("partner:dashboard")
