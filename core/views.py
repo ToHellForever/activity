@@ -16,6 +16,7 @@ from .forms import CustomAuthenticationForm
 from .models import Event, Ticket
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
+from django.utils import timezone
 from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
@@ -309,7 +310,6 @@ def event_detail(request, event_id):
     return render(request, "events/event_detail.html", {"event": event})
 
 
-
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
@@ -317,7 +317,15 @@ def buy_ticket(request, event_id):
     if request.method == "GET":
         # Показываем форму покупки
         tickets = event.tickets.all()
-        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
 
     # Обработка POST-запроса
     email = (request.POST.get("email") or "").strip()
@@ -370,11 +378,33 @@ def buy_ticket(request, event_id):
     # Если есть ошибка или не выбрано ни одного билета
     if error_message:
         messages.error(request, error_message)
-        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
 
     if not ticket_quantities:
         messages.error(request, "Пожалуйста, выберите хотя бы один билет")
-        return render(request, "buy_ticket.html", {"event": event, "tickets": tickets})
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
+
+    # Проверяем, нужно ли оплачивать сразу или можно забронировать
+    is_booking_without_payment = (
+        event.allow_booking_without_payment
+        and request.POST.get("book_without_payment") == "on"
+    )
 
     # Создаем заказы для каждого типа билетов
     orders = []
@@ -389,7 +419,16 @@ def buy_ticket(request, event_id):
             },
             total_price=ticket.price * quantity,
             quantity=quantity,
+            is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
         )
+
+        # Устанавливаем дедлайн оплаты для бронирований без оплаты
+        if is_booking_without_payment:
+            # Дедлайн - за 24 часа до начала мероприятия
+            payment_deadline = event.date_time - timezone.timedelta(hours=24)
+            order.payment_deadline = payment_deadline
+            order.save()
+
         orders.append(order)
 
     # Отправляем одно уведомление с информацией о всех билетах
@@ -604,7 +643,8 @@ def send_ticket_notification(user, order, request=None):
     send_mail(
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
-    
+
+
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":
@@ -614,4 +654,3 @@ def activate_account(request, pk):
         user.save()
         return redirect("login")
     return render(request, "activate_account.html")
- 

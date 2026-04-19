@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
     )
     user_type = models.CharField(
         max_length=10, choices=USER_TYPE_CHOICES, default="guest"
-    ) 
+    )
     username = models.CharField(max_length=150, unique=True, verbose_name="Логин")
     is_verified = models.BooleanField(default=False, verbose_name="Подтверждён")
     verification_status = models.CharField(
@@ -264,8 +264,10 @@ class Order(models.Model):
         max_digits=10, decimal_places=2, verbose_name="Общая стоимость"
     )
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество билетов")
-    attended = models.BooleanField(
-        default=False, verbose_name="Посетил мероприятие"
+    attended = models.BooleanField(default=False, verbose_name="Посетил мероприятие")
+    is_paid = models.BooleanField(default=True, verbose_name="Оплачен")
+    payment_deadline = models.DateTimeField(
+        null=True, blank=True, verbose_name="Срок оплаты"
     )
 
     def __str__(self):

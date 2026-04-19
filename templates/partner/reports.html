@@ -95,7 +95,9 @@
             График продаж
         </div>
         <div class="card-body">
-            <canvas id="salesChart" height="300"></canvas>
+            <div style="height: 400px; width: 100%;">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
     
@@ -212,6 +214,7 @@ const salesChart = new Chart(ctx, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
             y: {
                 beginAtZero: true

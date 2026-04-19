@@ -19,11 +19,11 @@
                     <input type="text" class="form-control" id="searchEmail" name="email" value="{{ request.GET.email }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="searchStatus" class="form-label">Статус</label>
+                    <label for="searchStatus" class="form-label">Статус оплаты</label>
                     <select class="form-select" id="searchStatus" name="status">
                         <option value="">Все</option>
-                        <option value="attended" {% if request.GET.status == 'attended' %}selected{% endif %}>Посетил</option>
-                        <option value="not_attended" {% if request.GET.status == 'not_attended' %}selected{% endif %}>Не посетил</option>
+                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Оплачен</option>
+                        <option value="not_paid" {% if request.GET.status == 'not_paid' %}selected{% endif %}>Не оплачен</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
@@ -61,7 +61,7 @@
                 <th>Телефон</th>
                 <th>Дата покупки</th>
                 <th>Тип билета</th>
-                <th>Статус посещения</th>
+                <th>Статус </th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -75,10 +75,10 @@
                     <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                     <td>{{ order.ticket.name }}</td>
                     <td>
-                        {% if order.attended %}
-                            <span class="badge bg-success">Посетил</span>
+                        {% if order.is_paid %}
+                            <span class="badge bg-success">Оплачен</span>
                         {% else %}
-                            <span class="badge bg-secondary">Не посетил</span>
+                            <span class="badge bg-danger">Не оплачен</span>
                         {% endif %}
                     </td>
                     <td>

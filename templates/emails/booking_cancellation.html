@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Отмена бронирования</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+    <h2 style="color: #2c3e50;">Здравствуйте!</h2>
+    
+    <p>К сожалению, ваше бронирование на мероприятие "{{ event.title }}" было отменено, так как оплата не была произведена в установленный срок.</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Мероприятие:</strong> {{ event.title }}</p>
+        <p><strong>Дата и время:</strong> {{ event.date_time|date:"d.m.Y H:i" }}</p>
+        <p><strong>Тип билета:</strong> {{ ticket.name }}</p>
+        <p><strong>Количество:</strong> {{ order.quantity }}</p>
+        <p><strong>Стоимость:</strong> {{ order.total_price }} ₽</p>
+    </div>
+    
+    <p>Вы можете попробовать забронировать билеты снова на странице мероприятия.</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{% url 'event_detail' event.id %}" style="
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        ">Перейти к мероприятию</a>
+    </div>
+    
+    <div style="
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        font-size: 12px;
+        color: #7f8c8d;
+    ">
+        <p>Если у вас возникли вопросы, обратитесь в службу поддержки.</p>
+    </div>
+</body>
+</html>

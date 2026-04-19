@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "visitor_app",
     "partner_app",
     "core",
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
