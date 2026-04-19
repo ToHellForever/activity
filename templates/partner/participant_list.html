@@ -1,44 +1,110 @@
 
 {% block content %}
-<h1>Список участников: {{ event.title }}</h1>
-
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>№</th>
-      <th>Имя</th>
-      <th>E-mail</th>
-      <th>Дата покупки</th>
-      <th>Тип билета</th>
-      <th>Статус</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for order in orders %}
-    <tr>
-      <!-- Нумерация строк -->
-      <td>{{ forloop.counter }}</td>
-      
-      <!-- Имя -->
-      <td>{{ order.participant_data.name }}</td>
-      
-      <!-- E-mail -->
-      <td>{{ order.participant_data.email }}</td>
-      
-      <!-- Дата покупки -->
-      <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-      
-      <!-- Тип билета -->
-      <td>{{ order.ticket.name }}</td>
-      
-      <!-- Статус -->
-      <td>Оплачен</td> 
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="6">Пока нет купленных билетов на это мероприятие.</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="container mt-4">
+    <h1>Список участников: {{ event.title }}</h1>
+    
+    <!-- Форма поиска и фильтрации -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="searchName" class="form-label">Имя</label>
+                    <input type="text" class="form-control" id="searchName" name="name" value="{{ request.GET.name }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="searchEmail" class="form-label">E-mail</label>
+                    <input type="text" class="form-control" id="searchEmail" name="email" value="{{ request.GET.email }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="searchStatus" class="form-label">Статус</label>
+                    <select class="form-select" id="searchStatus" name="status">
+                        <option value="">Все</option>
+                        <option value="attended" {% if request.GET.status == 'attended' %}selected{% endif %}>Посетил</option>
+                        <option value="not_attended" {% if request.GET.status == 'not_attended' %}selected{% endif %}>Не посетил</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Поиск
+                    </button>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <a href="?" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x"></i> Сброс
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Кнопка экспорта -->
+    <div class="mb-3">
+        <a href="?export=excel{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-excel"></i> Экспортировать в Excel
+        </a>
+        <a href="?export=pdf{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Экспортировать в PDF
+        </a>
+    </div>
+    
+    <!-- Таблица участников -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-light">
+            <tr>
+                <th>№</th>
+                <th>Имя</th>
+                <th>E-mail</th>
+                <th>Дата покупки</th>
+                <th>Тип билета</th>
+                <th>Статус посещения</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ order.participant_data.name }}</td>
+                    <td>{{ order.participant_data.email }}</td>
+                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ order.ticket.name }}</td>
+                    <td>
+                        {% if order.attended %}
+                            <span class="badge bg-success">Посетил</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Не посетил</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <form method="post" action="{% url 'partner:mark_attendance' event.id order.id %}" class="me-2">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if order.attended %}btn-outline-success{% else %}btn-outline-warning{% endif %}">
+                                    {% if order.attended %}
+                                        <i class="bi bi-check-circle"></i> Отменить
+                                    {% else %}
+                                        <i class="bi bi-person-check"></i> Отметить
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#qrModal{{ order.id }}">
+                                <i class="bi bi-qr-code"></i> QR
+                            </button>
+                        </div>
+                    </td>
+                    <td class="text-center" style="width: 60px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                             alt="QR-код" class="img-fluid" style="width: 40px; height: 40px; opacity: 0.7;">
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

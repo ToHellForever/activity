@@ -22,4 +22,14 @@ urlpatterns = [
     ),
     path("finances/", views.finances, name="finances"),
     path("profile_edit/", views.profile_edit, name="profile_edit"),
+    path(
+        "mark_attendance/<int:event_id>/<int:order_id>/",
+        views.mark_attendance,
+        name="mark_attendance",
+    ),
+    path(
+        "check_ticket/<int:order_id>/",
+        views.check_ticket,
+        name="check_ticket",
+    ),
 ]

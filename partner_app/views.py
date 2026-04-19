@@ -328,18 +328,242 @@ def reports(request):
 @login_required
 def participant_list(request, event_id):
     """
-    Список участников для выбранного мероприятия.
+    Список участников для выбранного мероприятия с поиском, фильтрацией и экспортом.
     """
     # Получаем мероприятие или выдаем 404, если его нет или оно чужое
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
+    # Получаем параметры фильтрации из GET-запроса
+    search_name = request.GET.get("name", "")
+    search_email = request.GET.get("email", "")
+    search_status = request.GET.get("status", "")
+
+    # Базовый фильтр: только заказы для этого мероприятия
     orders = Order.objects.filter(ticket__event=event).select_related("ticket")
+
+    # Применяем фильтры
+    if search_name:
+        orders = orders.filter(participant_data__name__icontains=search_name)
+    if search_email:
+        orders = orders.filter(participant_data__email__icontains=search_email)
+    if search_status == "attended":
+        orders = orders.filter(attended=True)
+    elif search_status == "not_attended":
+        orders = orders.filter(attended=False)
+
+    # Обработка экспорта
+    export_format = request.GET.get("export")
+    if export_format:
+        return export_participant_list(orders, event, export_format)
 
     context = {
         "event": event,
         "orders": orders,
     }
     return render(request, "partner/participant_list.html", context)
+
+
+def export_participant_list(orders, event, export_format):
+    """
+    Экспортирует список участников в Excel или PDF.
+    """
+    import io
+    from django.http import HttpResponse
+
+    if export_format == "excel":
+        # Создаем Excel-файл
+        import openpyxl
+        from openpyxl.styles import Font, Alignment
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Участники {event.title}"
+
+        # Заголовки
+        headers = [
+            "№",
+            "Имя",
+            "E-mail",
+            "Дата покупки",
+            "Тип билета",
+            "Количество",
+            "Стоимость",
+            "Статус посещения",
+        ]
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+
+        # Данные
+        for row_num, order in enumerate(orders, 2):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+            ws.cell(row=row_num, column=2, value=order.participant_data.get("name", ""))
+            ws.cell(
+                row=row_num, column=3, value=order.participant_data.get("email", "")
+            )
+            ws.cell(
+                row=row_num, column=4, value=order.created_at.strftime("%d.%m.%Y %H:%M")
+            )
+            ws.cell(row=row_num, column=5, value=order.ticket.name)
+            ws.cell(row=row_num, column=6, value=order.quantity)
+            ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
+            ws.cell(
+                row=row_num,
+                column=8,
+                value="Посетил" if order.attended else "Не посетил",
+            )
+
+        # Автоподбор ширины столбцов
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Отправляем файл
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="Участники_{event.title}.xlsx"'
+        )
+
+        wb.save(response)
+        return response
+
+    elif export_format == "pdf":
+        # Создаем PDF-файл
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        import os
+
+        # Регистрируем шрифт DejaVuSans для поддержки кириллицы
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        font_path = os.path.join(base_dir, "DejaVuSans.ttf")
+        pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+
+        font_bold_path = os.path.join(base_dir, "DejaVuSans-Bold.ttf")
+        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", font_bold_path))
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+
+        # Стили
+        styles = getSampleStyleSheet()
+        styles["Title"].fontName = "DejaVuSans-Bold"
+        styles["Normal"].fontName = "DejaVuSans"
+
+        # Заголовок
+        elements.append(Paragraph(f"Список участников: {event.title}", styles["Title"]))
+
+        # Данные для таблицы
+        data = [
+            [
+                "№",
+                "Имя",
+                "E-mail",
+                "Дата покупки",
+                "Тип билета",
+                "Количество",
+                "Стоимость",
+                "Статус посещения",
+            ]
+        ]
+
+        for index, order in enumerate(orders, 1):
+            data.append(
+                [
+                    str(index),
+                    order.participant_data.get("name", ""),
+                    order.participant_data.get("email", ""),
+                    order.created_at.strftime("%d.%m.%Y %H:%M"),
+                    order.ticket.name,
+                    str(order.quantity),
+                    f"{order.total_price:.2f} руб.",
+                    "Посетил" if order.attended else "Не посетил",
+                ]
+            )
+
+        # Создаем таблицу
+        table = Table(data)
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 0), (-1, 0), "DejaVuSans-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 12),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                    ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
+                ]
+            )
+        )
+
+        elements.append(table)
+        doc.build(elements)
+
+        # Отправляем файл
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Участники_{event.title}.pdf"'
+        )
+        return response
+
+    return HttpResponse("Неверный формат экспорта", status=400)
+
+
+@login_required
+def mark_attendance(request, event_id, order_id):
+    """
+    Отмечает участника как посетившего мероприятие.
+    """
+    # Получаем мероприятие или выдаем 404, если его нет или оно чужое
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    # Получаем заказ
+    order = get_object_or_404(Order, id=order_id, ticket__event=event)
+
+    if request.method == "POST":
+        # Инвертируем статус посещения
+        order.attended = not order.attended
+        order.save()
+        messages.success(
+            request,
+            f"Статус посещения для {order.participant_data.get('name', 'участника')} обновлен!",
+        )
+
+    return redirect("partner:participant_list", event_id=event.id)
+
+
+@login_required
+def check_ticket(request, order_id):
+    """
+    Проверка билета по QR-коду.
+    """
+    order = get_object_or_404(Order, id=order_id)
+
+    context = {
+        "order": order,
+        "is_valid": True,
+    }
+    return render(request, "partner/ticket_check.html", context)
 
 
 @login_required

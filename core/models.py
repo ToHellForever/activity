@@ -264,6 +264,9 @@ class Order(models.Model):
         max_digits=10, decimal_places=2, verbose_name="Общая стоимость"
     )
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество билетов")
+    attended = models.BooleanField(
+        default=False, verbose_name="Посетил мероприятие"
+    )
 
     def __str__(self):
         return f"Заказ #{self.id} - {self.ticket.name}"
