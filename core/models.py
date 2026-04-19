@@ -202,10 +202,45 @@ class Event(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Сохранение модели с обработкой сжатого видео.
+        Сохранение модели с добавлением водяного знака на изображения и видео.
         """
+        import os
+        from django.conf import settings
+        from core.utils import add_watermark_to_image, add_watermark_to_video
 
         super().save(*args, **kwargs)
+
+        # Путь к логотипу для водяного знака
+        watermark_path = os.path.join(settings.BASE_DIR, "DejaVuSans-Bold.ttf")
+        # Замените на путь к вашему логотипу
+        actual_watermark_path = os.path.join(
+            settings.BASE_DIR, "media", "watermark.png"
+        )
+
+        # Если логотип водяного знака не существует, используем текстовый вариант
+        if not os.path.exists(actual_watermark_path):
+            from PIL import Image, ImageDraw, ImageFont
+
+            # Создаем временное изображение с текстом
+            watermark_img = Image.new("RGBA", (200, 50), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(watermark_img)
+            try:
+                font = ImageFont.truetype(watermark_path, 24)
+            except:
+                font = ImageFont.load_default()
+
+            draw.text((10, 10), "Logo", font=font, fill=(255, 255, 255, 128))
+            watermark_img.save(actual_watermark_path)
+
+        # Добавляем водяной знак на изображение
+        if self.image:
+            image_path = self.image.path
+            add_watermark_to_image(image_path, actual_watermark_path, image_path)
+
+        # Добавляем водяной знак на видео
+        if self.video_url:
+            video_path = self.video_url.path
+            add_watermark_to_video(video_path, actual_watermark_path, video_path)
 
     def get_refund_deadline(self):
         """
