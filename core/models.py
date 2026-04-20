@@ -51,15 +51,26 @@ class CustomUser(AbstractUser):
     )
 
     def save(self, *args, **kwargs):
-        """
-        Сохранение модели пользователя с обработкой сжатого видео.
-        """
+        import os
+        from django.conf import settings
+        from core.utils import add_watermark_to_video  # или другой модуль, где функция
 
         super().save(*args, **kwargs)
 
-    class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        # Путь к логотипу для водяного знака
+        actual_watermark_path = os.path.join(settings.BASE_DIR, "media", "watermark.png")
+
+        # Если логотип водяного знака не существует, можно создать его (аналогично Event)
+        # (код создания водяного знака можно скопировать из Event.save())
+
+        # Добавляем водяной знак на видео визитку
+        if self.video_business_card:
+            video_path = self.video_business_card.path
+            add_watermark_to_video(video_path, actual_watermark_path, video_path)
+
+        class Meta:
+            verbose_name = "Пользователь"
+            verbose_name_plural = "Пользователи"
 
 
 User = get_user_model()
