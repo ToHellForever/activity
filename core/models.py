@@ -4,9 +4,9 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
 from django.utils import timezone
+from core.mixins import VideoWatermarkMixin
 
-
-class CustomUser(AbstractUser):
+class CustomUser(AbstractUser, VideoWatermarkMixin):
     """Модель для пользователя."""
 
     USER_TYPE_CHOICES = (
@@ -49,28 +49,32 @@ class CustomUser(AbstractUser):
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
         ],
     )
-
+    processed_video_business_card_hash = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        verbose_name="Хэш обработанного видео визитки",
+    )
     def save(self, *args, **kwargs):
         import os
         from django.conf import settings
-        from core.utils import add_watermark_to_video  # или другой модуль, где функция
+        from core.utils import add_watermark_to_video
 
+        # Сначала сохраняем модель, чтобы получить доступ к полям
         super().save(*args, **kwargs)
 
-        # Путь к логотипу для водяного знака
-        actual_watermark_path = os.path.join(settings.BASE_DIR, "media", "watermark.png")
-
-        # Если логотип водяного знака не существует, можно создать его (аналогично Event)
-        # (код создания водяного знака можно скопировать из Event.save())
-
-        # Добавляем водяной знак на видео визитку
-        if self.video_business_card:
+        # Проверяем, нужно ли обрабатывать видео визитку
+        if self.video_business_card and self._should_process_video(self.video_business_card, self.processed_video_business_card_hash):
+            # Получаем путь к видео визитке
             video_path = self.video_business_card.path
+            
+            # Путь к логотипу для водяного знака
+            actual_watermark_path = os.path.join(settings.BASE_DIR, "media", "watermark.png")
             add_watermark_to_video(video_path, actual_watermark_path, video_path)
-
-        class Meta:
-            verbose_name = "Пользователь"
-            verbose_name_plural = "Пользователи"
+            
+            # Обновляем хэш обработанной видео визитки
+            self.processed_video_business_card_hash = self._get_video_hash(self.video_business_card)
+            super().save(update_fields=['processed_video_business_card_hash'])
 
 
 User = get_user_model()
@@ -123,7 +127,7 @@ class Category(models.Model):
         ordering = ["name"]
 
 
-class Event(models.Model):
+class Event(models.Model, VideoWatermarkMixin):
     """Модель для мероприятия."""
 
     STATUS_CHOICES = [
@@ -186,6 +190,12 @@ class Event(models.Model):
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
         ],
     )
+    processed_video_url_hash = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        verbose_name="Хэш обработанного видео мероприятия",
+    )
     program_file = models.FileField(
         upload_to="event_programs/",
         blank=True,
@@ -228,31 +238,20 @@ class Event(models.Model):
             settings.BASE_DIR, "media", "watermark.png"
         )
 
-        # Если логотип водяного знака не существует, используем текстовый вариант
-        if not os.path.exists(actual_watermark_path):
-            from PIL import Image, ImageDraw, ImageFont
-
-            # Создаем временное изображение с текстом
-            watermark_img = Image.new("RGBA", (200, 50), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(watermark_img)
-            try:
-                font = ImageFont.truetype(watermark_path, 24)
-            except:
-                font = ImageFont.load_default()
-
-            draw.text((10, 10), "Logo", font=font, fill=(255, 255, 255, 128))
-            watermark_img.save(actual_watermark_path)
-
         # Добавляем водяной знак на изображение
         if self.image:
             image_path = self.image.path
             add_watermark_to_image(image_path, actual_watermark_path, image_path)
 
         # Добавляем водяной знак на видео
-        if self.video_url:
+        if self.video_url and self._should_process_video(self.video_url, self.processed_video_url_hash):
+            # Получаем путь к видео
             video_path = self.video_url.path
             add_watermark_to_video(video_path, actual_watermark_path, video_path)
-
+            
+        self.processed_video_url_hash = self._get_video_hash(self.video_url)
+        super().save(update_fields=['processed_video_url_hash'])
+        
     def get_refund_deadline(self):
         """
         Возвращает крайний срок возврата билета.
