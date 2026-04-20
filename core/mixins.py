@@ -19,6 +19,12 @@ class VideoWatermarkMixin:
         """
         if not video_field:
             return None
+
+        import os
+
+        if not os.path.exists(video_field.path):
+            return None
+
         with open(video_field.path, "rb") as f:
             return hashlib.md5(f.read()).hexdigest()
 
@@ -32,4 +38,6 @@ class VideoWatermarkMixin:
             bool: True, если видео нужно обработать.
         """
         current_hash = self._get_video_hash(video_field)
+        if current_hash is None:
+            return False
         return current_hash != hash_field
