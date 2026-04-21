@@ -1,10 +1,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import os
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin
+from core.validators import validate_video_duration, compress_video
+
 
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     """Модель для пользователя."""
@@ -55,6 +58,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         null=True,
         verbose_name="Хэш обработанного видео визитки",
     )
+
     def save(self, *args, **kwargs):
         import os
         from django.conf import settings
@@ -64,17 +68,43 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         super().save(*args, **kwargs)
 
         # Проверяем, нужно ли обрабатывать видео визитку
-        if self.video_business_card and self._should_process_video(self.video_business_card, self.processed_video_business_card_hash):
+        if self.video_business_card and self._should_process_video(
+            self.video_business_card, self.processed_video_business_card_hash
+        ):
             # Получаем путь к видео визитке
             video_path = self.video_business_card.path
-            
-            # Путь к логотипу для водяного знака
-            actual_watermark_path = os.path.join(settings.BASE_DIR, "media", "watermark.png")
-            add_watermark_to_video(video_path, actual_watermark_path, video_path)
-            
+
+            try:
+                # Сжимаем видео
+                from core.validators import compress_video
+
+                compress_success = compress_video(video_path)
+                if not compress_success:
+                    print(f"Ошибка: не удалось сжать видео: {video_path}")
+                    return
+
+                # Добавляем водяной знак
+                actual_watermark_path = os.path.join(
+                    settings.BASE_DIR, "media", "watermark.png"
+                )
+                watermark_success = add_watermark_to_video(
+                    video_path, actual_watermark_path, video_path
+                )
+                if not watermark_success:
+                    print(
+                        f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
+                    )
+                    return
+
+            except Exception as e:
+                print(f"Исключение при обработке видео: {str(e)}")
+                raise
+
             # Обновляем хэш обработанной видео визитки
-            self.processed_video_business_card_hash = self._get_video_hash(self.video_business_card)
-            super().save(update_fields=['processed_video_business_card_hash'])
+            self.processed_video_business_card_hash = self._get_video_hash(
+                self.video_business_card
+            )
+            super().save(update_fields=["processed_video_business_card_hash"])
 
 
 User = get_user_model()
@@ -244,14 +274,43 @@ class Event(models.Model, VideoWatermarkMixin):
             add_watermark_to_image(image_path, actual_watermark_path, image_path)
 
         # Добавляем водяной знак на видео
-        if self.video_url and self._should_process_video(self.video_url, self.processed_video_url_hash):
+        if self.video_url and self._should_process_video(
+            self.video_url, self.processed_video_url_hash
+        ):
             # Получаем путь к видео
             video_path = self.video_url.path
-            add_watermark_to_video(video_path, actual_watermark_path, video_path)
-            
+
+            # Проверяем существование файла перед обработкой
+            if not os.path.exists(video_path):
+                print(f"Файл видео не найден: {video_path}")
+                return
+
+            try:
+                # Сжимаем видео
+                from core.validators import compress_video
+
+                compress_success = compress_video(video_path)
+                if not compress_success:
+                    print(f"Ошибка: не удалось сжать видео: {video_path}")
+                    return
+
+                # Добавляем водяной знак
+                watermark_success = add_watermark_to_video(
+                    video_path, actual_watermark_path, video_path
+                )
+                if not watermark_success:
+                    print(
+                        f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
+                    )
+                    return
+
+            except Exception as e:
+                print(f"Исключение при обработке видео: {str(e)}")
+                raise
+
         self.processed_video_url_hash = self._get_video_hash(self.video_url)
-        super().save(update_fields=['processed_video_url_hash'])
-        
+        super().save(update_fields=["processed_video_url_hash"])
+
     def get_refund_deadline(self):
         """
         Возвращает крайний срок возврата билета.

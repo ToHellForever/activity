@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     "visitor_app",
     "partner_app",
     "core",
-    'django_celery_beat',
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -101,8 +101,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 AUTHENTICATION_BACKENDS = [
-    'core.backends.EmailBackend',  
-    'django.contrib.auth.backends.ModelBackend',  
+    "core.backends.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 LANGUAGE_CODE = "ru"
 
@@ -133,3 +133,22 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
+# Настройка логирования
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "debug.log"),
+        },
+    },
+    "loggers": {
+        "core": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+        },
+    },
+}

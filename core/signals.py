@@ -1,55 +1,41 @@
-"""
-Сигналы для приложения core.
-"""
+# core/signals.py
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
 from django.conf import settings
-from .models import Order
-from .tasks import check_unpaid_bookings
-from django.utils import timezone
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from core.models import Event
+from core.tasks import process_video_task
+import os
+import logging
 
-User = get_user_model()
+logger = logging.getLogger(__name__)
 
-@receiver(post_save, sender=Order)
-def handle_unpaid_booking(sender, instance, created, **kwargs):
-    """
-    Обработчик для создания задачи проверки просроченных бронирований.
-    """
-    if created and not instance.is_paid and instance.payment_deadline:
-        # Проверяем, существует ли уже задача
-        schedule, created = IntervalSchedule.objects.get_or_create(
-            every=1,
-            period=IntervalSchedule.HOURS,
-        )
-        
-        # Создаем или обновляем периодическую задачу
-        PeriodicTask.objects.get_or_create(
-            name='check_unpaid_bookings',
-            interval=schedule,
-            task='core.tasks.check_unpaid_bookings',
-            defaults={
-                'enabled': True,
-            }
-        )
+def wait_for_file(file_path, max_attempts=20, delay=1):
+    for _ in range(max_attempts):
+        if os.path.exists(file_path):
+            return True
+        time.sleep(delay)
+    return False
 
-@receiver(post_save, sender=User)
-def set_default_user_type(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Event)
+def process_event_video(sender, instance, created, **kwargs):
     """
-    После создания пользователя автоматически назначаем тип:
-    - Если пользователь admin (is_staff=True), устанавливаем тип 'guest'.
-    - Если пользователь не admin, устанавливаем тип 'visitor'.
+    Сигнал для обработки видео мероприятия после сохранения.
     """
-    if created:
-        if instance.is_staff:
-            # Админы изначально будут с типом "Гость"
-            if instance.user_type not in ["visitor", "partner"]:
-                instance.user_type = "visitor"
-                instance.save()
-        else:
-            # Обычные пользователи получают тип "Посетитель"
-            if instance.user_type == "visitor":
-                instance.user_type = "guest"
-                instance.save()
+    if not created or not instance.video_url:
+        return
+
+    # Строим абсолютный путь к файлу
+    video_path = os.path.join(settings.MEDIA_ROOT, instance.video_url.name)
+
+    if not wait_for_file(video_path):
+        logger.error(f"Файл видео не найден после ожидания: {video_path}")
+        return
+
+    # Запускаем асинхронную задачу Celery для обработки видео
+    process_video_task.delay(
+        model_name='Event',
+        instance_id=instance.id,
+        video_field_name='video_url',
+        hash_field_name='processed_video_url_hash'
+    )
