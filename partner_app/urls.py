@@ -12,6 +12,7 @@ urlpatterns = [
         "duplicate_event/<int:event_id>/", views.duplicate_event, name="duplicate_event"
     ),
     path("delete_event/<int:event_id>/", views.delete_event, name="delete_event"),
+    path("bulk_delete_events/", views.bulk_delete_events, name="bulk_delete_events"),
     path("reports/", views.reports, name="reports"),
     path("reports/generate/", views.generate_report, name="generate_report"),
     path("report_schedule/", views.report_schedule, name="report_schedule"),
