@@ -4,33 +4,6 @@
 Сохранили файл во временную директорию: C:\Users\diman\AppData\Local\Temp\5MinutesTimer-Greenscreen.mp4
 Проверяем длительность видео по пути: C:\Users\diman\AppData\Local\Temp\5MinutesTimer-Greenscreen.mp4
 Длительность видео: 300.98 секунд
-Округленная длительность видео: 301 секунд
-Видео слишком длинное: 301 секунд
-Ошибка при проверке длительности видео: ['Длительность видео не должна превышать 5 минут.']
-Используем путь к файлу: D:\python\activity\media\Countdown_Overlay_Timer_10_Minutes.mp4
-Валидация видео: D:\python\activity\media\Countdown_Overlay_Timer_10_Minutes.mp4
-Файл видео не найден: D:\python\activity\media\Countdown_Overlay_Timer_10_Minutes.mp4
-Сохранили файл во временную директорию: C:\Users\diman\AppData\Local\Temp\Countdown_Overlay_Timer_10_Minutes.mp4
-Проверяем длительность видео по пути: C:\Users\diman\AppData\Local\Temp\Countdown_Overlay_Timer_10_Minutes.mp4
-Длительность видео: 600.4 секунд
-Округленная длительность видео: 600 секунд
-Видео слишком длинное: 600 секунд
-Ошибка при проверке длительности видео: ['Длительность видео не должна превышать 5 минут.']
-Используем путь к файлу: D:\python\activity\media\5MinutesTimer-Greenscreen.mp4
-Валидация видео: D:\python\activity\media\5MinutesTimer-Greenscreen.mp4
-Файл видео не найден: D:\python\activity\media\5MinutesTimer-Greenscreen.mp4
-Сохранили файл во временную директорию: C:\Users\diman\AppData\Local\Temp\5MinutesTimer-Greenscreen.mp4
-Проверяем длительность видео по пути: C:\Users\diman\AppData\Local\Temp\5MinutesTimer-Greenscreen.mp4
 Длительность видео: 300.98 секунд
-Округленная длительность видео: 301 секунд
-Видео слишком длинное: 301 секунд
-Ошибка при проверке длительности видео: ['Длительность видео не должна превышать 5 минут.']
-Используем путь к файлу: D:\python\activity\media\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer.mp4
-Валидация видео: D:\python\activity\media\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer.mp4
-Файл видео не найден: D:\python\activity\media\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer.mp4
-Сохранили файл во временную директорию: C:\Users\diman\AppData\Local\Temp\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer.mp4
-Проверяем длительность видео по пути: C:\Users\diman\AppData\Local\Temp\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer.mp4
-Длительность видео: 10.0 секунд
-Округленная длительность видео: 10 секунд
 Сжатие видео с битрейтом: 8000K
-Видео успешно сжато: D:\python\activity\media\event_videos\Green-Screen-Glitch-Grunge-Overlay-Effect-Layer_uNzB3SS.mp4
+Видео успешно сжато: D:\python\activity\media\event_videos\5MinutesTimer-Greenscreen.mp4

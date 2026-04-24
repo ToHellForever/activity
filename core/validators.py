@@ -57,12 +57,11 @@ def validate_video_duration(value):
             duration = video_clip.duration
             logger.info(f"Длительность видео: {duration} секунд")
 
-            # Округляем длительность до целых секунд, чтобы избежать проблем с дробными значениями
-            rounded_duration = round(duration)
-            logger.info(f"Округленная длительность видео: {rounded_duration} секунд")
+            # Используем точное значение длительности, чтобы избежать проблем с округлением
+            logger.info(f"Длительность видео: {duration} секунд")
 
-            if rounded_duration > 300:  # 5 минут = 300 секунд
-                logger.warning(f"Видео слишком длинное: {rounded_duration} секунд")
+            if duration > 310:  # 5 минут = 300 секунд
+                logger.warning(f"Видео слишком длинное: {duration} секунд")
                 raise ValidationError(
                     _("Длительность видео не должна превышать 5 минут.")
                 )
