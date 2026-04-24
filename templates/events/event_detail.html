@@ -53,7 +53,9 @@
                 </div>
             {% endif %}
         {% endwith %}
-        <div id="map"></div>
+        <div id="map" class="map-loading">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
     </div>
 {% endif %}
 
@@ -87,6 +89,11 @@
     });
 
     function initMap(coordinates, address, additionalInfo) {
+        // Убираем индикатор загрузки
+        const mapContainer = document.getElementById('map');
+        mapContainer.classList.remove('map-loading');
+        mapContainer.innerHTML = '';
+
         const map = new ymaps.Map("map", {
             center: coordinates,
             zoom: 15,
