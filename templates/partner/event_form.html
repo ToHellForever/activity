@@ -15,9 +15,22 @@
         width: 100%;
         height: 400px;
         margin: 20px 0;
+        min-height: 400px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
     }
     .map-container {
         margin: 20px 0;
+    }
+    .place-input-container {
+        margin-bottom: 15px;
+    }
+    .place-additional-info {
+        margin-top: 10px;
+    }
+    .map-loading {
+        text-align: center;
+        padding: 20px;
     }
 </style>
 {% endblock %}
@@ -28,7 +41,7 @@
     {% csrf_token %}
 
     {% for field in form %}
-        {% if field.name != 'ticket_types' %}
+        {% if field.name != 'ticket_types' and field.name != 'place_data' %}
         <div class="form-group">
             <label>
                 {{ field.label_tag }}
@@ -41,18 +54,10 @@
             {% elif field.name == 'refund_deadline_hours' %}
                 {{ field }}
                 <small class="form-text text-muted">Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.</small>
-            {% elif field.name == 'place' %}
-                {{ field }}
-                <small class="form-text text-muted">Укажите точный адрес для отображения на карте</small>
-                <div class="map-container" id="place-map-container">
-                    <h5>Предварительный просмотр местоположения:</h5>
-                    <div id="map"></div>
-                    <input type="hidden" id="id_place_coordinates" name="place_coordinates">
-                </div>
             {% else %}
                 {{ field }}
             {% endif %}
-            {% if field.help_text and field.name != 'refund_deadline_hours' and field.name != 'place' %}
+            {% if field.help_text and field.name != 'refund_deadline_hours' %}
                 <small class="form-text text-muted">{{ field.help_text }}</small>
             {% endif %}
             {% if field.errors %}
@@ -63,6 +68,23 @@
         </div>
         {% endif %}
     {% endfor %}
+
+    <!-- Контейнер для выбора местоположения -->
+    <div class="form-group place-input-container">
+        <label>Местоположение<span class="text-danger">*</span></label>
+        <div>
+            <p class="text-muted mb-2">Выберите место на карте, кликнув по нужному месту или используя поиск по карте</p>
+            <div class="place-additional-info mt-2">
+                <input type="text" id="place-additional-info" class="form-control" placeholder="Дополнительная информация (например: вход со двора, 3 этаж и т.д.)">
+            </div>
+        </div>
+        <div class="map-container">
+            <div id="map" class="map-loading">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+            <input type="hidden" id="id_place_data" name="place_data">
+        </div>
+    </div>
 
     <div class="form-group ticket-table-container">
         <label>Типы билетов<span class="text-danger">*</span></label>
@@ -128,78 +150,142 @@
             }
         });
 
-        // Инициализация карты при изменении поля с адресом
-        const placeInput = document.querySelector("#id_place");
-        if (placeInput) {
-            // Загрузка API Яндекс Карт
+        // Инициализация карты для выбора местоположения
+        const placeAdditionalInfoInput = document.getElementById('place-additional-info');
+        const placeDataInput = document.getElementById('id_place_data');
+
+        // Загрузка API Яндекс Карт
+        loadYandexMapsAPI();
+
+        function loadYandexMapsAPI() {
+            // Проверяем, не загружен ли API уже
+            if (window.ymaps) {
+                initMapWithData();
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
             script.onload = function() {
-                initMap(placeInput.value);
+                // Ждем полной загрузки API
+                ymaps.ready(function() {
+                    initMapWithData();
+                });
             };
             script.onerror = function() {
                 console.error('Не удалось загрузить Yandex Maps API');
-                document.getElementById('place-map-container').innerHTML = 
+                document.getElementById('map').innerHTML =
                     '<p class="text-danger">Не удалось загрузить карту. Проверьте подключение к интернету.</p>';
             };
             document.head.appendChild(script);
+        }
 
-            // Обновление карты при изменении адреса
-            placeInput.addEventListener('blur', function() {
-                if (typeof ymaps !== 'undefined') {
-                    initMap(this.value);
+        function initMapWithData() {
+            // Инициализируем карту
+            initMap();
+            initSearchControl();
+
+            // Если есть сохраненные данные, загружаем их
+            {% if form.instance.pk and form.instance.place_data %}
+                const savedData = {{ form.instance.place_data|safe }};
+                if (savedData && savedData.coordinates) {
+                    updateMapFromData(savedData);
+                    if (savedData.additional_info) {
+                        placeAdditionalInfoInput.value = savedData.additional_info;
+                    }
                 }
+            {% endif %}
+        }
+
+        // Инициализация карты
+        function initMap() {
+            // Убираем индикатор загрузки
+            const mapContainer = document.getElementById('map');
+            mapContainer.classList.remove('map-loading');
+            mapContainer.innerHTML = '';
+
+            window.eventMap = new ymaps.Map("map", {
+                center: [55.751244, 37.618423], // Центр по умолчанию - Москва
+                zoom: 10,
+                controls: ['zoomControl']
+            });
+
+            // Добавляем обработчик клика на карту
+            window.eventMap.events.add('click', function (e) {
+                const coords = e.get('coords');
+                getAddress(coords).then(function(address) {
+                    updatePlaceData(coords, address);
+                });
             });
         }
-    });
 
-    // Функция инициализации карты
-    function initMap(place) {
-        if (!place || typeof ymaps === 'undefined') {
-            return;
+        // Инициализация поиска по карте
+        function initSearchControl() {
+            const searchControl = new ymaps.control.SearchControl({
+                options: {
+                    provider: 'yandex#search',
+                    noPlacemark: true
+                }
+            });
+
+            searchControl.events.add('resultselect', function (e) {
+                const index = e.get('index');
+                searchControl.getResult(index).then(function(res) {
+                    const coords = res.geometry.getCoordinates();
+                    getAddress(coords).then(function(address) {
+                        updatePlaceData(coords, address);
+                        window.eventMap.setCenter(coords, 15);
+                    });
+                });
+            });
+
+            window.eventMap.controls.add(searchControl);
         }
 
-        // Удаляем предыдущую карту, если она была
-        if (window.eventMap) {
-            window.eventMap.destroy();
+        // Получение адреса по координатам
+        function getAddress(coords) {
+            return ymaps.geocode(coords, { kind: 'house', results: 1 }).then(function(res) {
+                const firstGeoObject = res.geoObjects.get(0);
+                return firstGeoObject ? firstGeoObject.getAddressLine() : coords.join(', ');
+            });
         }
 
-        // Создаем новую карту
-        window.eventMap = new ymaps.Map("map", {
-            center: [55.751244, 37.618423], // Центр по умолчанию - Москва
-            zoom: 10
-        });
+        // Обновление данных о месте
+        function updatePlaceData(coords, address) {
+            const additionalInfo = placeAdditionalInfoInput.value;
+            const placeData = {
+                coordinates: coords,
+                address: address,
+                additional_info: additionalInfo
+            };
 
-        // Геокодируем адрес
-        ymaps.geocode(place, {
-            results: 1
-        }).then(function (res) {
-            const firstGeoObject = res.geoObjects.get(0);
-            
-            if (firstGeoObject) {
-                // Устанавливаем центр карты по координатам найденного объекта
-                const coordinates = firstGeoObject.geometry.getCoordinates();
-                window.eventMap.setCenter(coordinates, 15);
-                
-                // Добавляем метку на карту
-                window.eventMap.geoObjects.add(new ymaps.Placemark(coordinates, {
-                    balloonContent: place
+            placeDataInput.value = JSON.stringify(placeData);
+
+            // Очищаем карту и ставим новую метку
+            window.eventMap.geoObjects.removeAll();
+            window.eventMap.geoObjects.add(new ymaps.Placemark(coords, {
+                balloonContent: address + (additionalInfo ? '<br>Дополнительно: ' + additionalInfo : '')
+            }, {
+                preset: 'islands#icon',
+                iconColor: '#3b5998'
+            }));
+        }
+
+        // Обновление карты из сохраненных данных
+        function updateMapFromData(data) {
+            if (data.coordinates && data.coordinates.length === 2) {
+                const coords = data.coordinates;
+                placeAdditionalInfoInput.value = data.additional_info || '';
+
+                window.eventMap.setCenter(coords, 15);
+                window.eventMap.geoObjects.add(new ymaps.Placemark(coords, {
+                    balloonContent: data.address + (data.additional_info ? '<br>Дополнительно: ' + data.additional_info : '')
                 }, {
                     preset: 'islands#icon',
                     iconColor: '#3b5998'
                 }));
-                
-                // Сохраняем координаты в скрытое поле
-                document.getElementById('id_place_coordinates').value = coordinates.join(',');
-            } else {
-                document.getElementById('map').innerHTML = 
-                    '<p class="text-danger">Не удалось найти указанное место на карте: ' + place + '</p>';
             }
-        }).catch(function (err) {
-            console.error('Ошибка при геокодировании: ', err);
-            document.getElementById('map').innerHTML = 
-                '<p class="text-danger">Ошибка при поиске места на карте</p>';
-        });
-    }
+        }
+    });
 </script>
 {% endblock %}

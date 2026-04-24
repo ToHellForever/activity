@@ -6,7 +6,7 @@
     <h1>Покупка билетов на "{{ event.title }}"</h1>
     
     <p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
-    <p>Место: {{ event.place }}</p>
+    <p>Место: {% with place=event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</p>
     <p>Описание: {{ event.description_short }}</p>
     
     <form method="post">

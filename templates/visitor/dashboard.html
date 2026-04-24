@@ -130,7 +130,7 @@
                         </div>
                         <div>
                             <div class="ticket-label">Место проведения:</div>
-                            <div>{{ order.ticket.event.place }}</div>
+                            <div>{% with place=order.ticket.event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</div>
                         </div>
                         {% if order.ticket.event.status == 'active' %}
                         <div>

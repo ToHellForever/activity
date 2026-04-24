@@ -88,7 +88,7 @@ class EventAdmin(admin.ModelAdmin):
                     "description_short",
                     "description_full",
                     "date_time",
-                    "place",
+                    "place_data",
                 )
             },
         ),
@@ -130,7 +130,6 @@ class EventAdmin(admin.ModelAdmin):
     approved_status.short_description = "Одобрено"
 
     # Действие для одобрения выбранных мероприятий
-
 
     # Действие для отклонения выбранных мероприятий
     def reject_events(self, request, queryset):

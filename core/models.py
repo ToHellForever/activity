@@ -189,13 +189,11 @@ class Event(models.Model, VideoWatermarkMixin):
         verbose_name="Дата и время",
         help_text="Мероприятие должно быть не ранее чем через 24 часа от текущего момента",
     )
-    place = models.CharField(max_length=255, verbose_name="Место проведения")
-    place_coordinates = models.CharField(
-        max_length=50,
-        verbose_name="Координаты места",
+    place_data = models.JSONField(
+        verbose_name="Данные о местоположении",
         blank=True,
         null=True,
-        help_text="Координаты в формате широта,долгота",
+        help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
     )
     status = models.CharField(
         max_length=20,
@@ -337,6 +335,13 @@ class Event(models.Model, VideoWatermarkMixin):
         verbose_name = "Мероприятие"
         verbose_name_plural = "Мероприятия"
         ordering = ["-date_time"]
+
+    @property
+    def get_place_address(self):
+        """Возвращает адрес места проведения для админки"""
+        if self.place_data and 'address' in self.place_data:
+            return self.place_data['address']
+        return "Не указано"
 
 
 class Ticket(models.Model):

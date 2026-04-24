@@ -267,7 +267,7 @@ def duplicate_event(request, event_id):
         description_short=event.description_short,
         description_full=event.description_full,
         date_time=event.date_time,
-        place=event.place,
+        place=event.place_data.get('address') if event.place_data else None,
         status="on_moderation",  # Новое мероприятие должно пройти модерацию
         image=event.image,
         category=event.category,

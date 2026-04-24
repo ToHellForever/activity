@@ -501,7 +501,7 @@ def send_multiple_tickets_notification(user, orders, request=None):
             <p><strong>Количество:</strong> {order.quantity}</p>
             <p><strong>Сумма:</strong> {order.total_price} ₽</p>
             <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
-            <p><strong>Место проведения:</strong> {order.ticket.event.place}</p>
+            <p><strong>Место проведения:</strong> {order.ticket.event.place_data.address if order.ticket.event.place_data else "Не указано"}</p>
         </div>
         """
         total_amount += order.total_price

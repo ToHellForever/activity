@@ -23,7 +23,7 @@ class EventForm(forms.ModelForm):
         self.fields["description_short"].required = True
         self.fields["description_full"].required = True
         self.fields["date_time"].required = True
-        self.fields["place"].required = True
+        self.fields["place_data"].required = False
         self.fields["image"].required = True
         self.fields["refund_deadline_hours"].required = True
 
@@ -32,14 +32,6 @@ class EventForm(forms.ModelForm):
             "required": "Пожалуйста, укажите дату и время проведения мероприятия."
         }
 
-        # Добавляем обработчик для поля video_url
-        if "video_url" in self.fields:
-            self.fields["video_url"].widget.attrs.update(
-                {
-                    "onchange": 'document.getElementById("id_video_changed").value = "True"'
-                }
-            )
-
     class Meta:
         model = Event
         fields = [
@@ -47,8 +39,7 @@ class EventForm(forms.ModelForm):
             "description_short",
             "description_full",
             "date_time",
-            "place",
-            "place_coordinates",
+            "place_data",
             "image",
             "video_url",
             "program_file",
