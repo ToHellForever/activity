@@ -39,6 +39,11 @@
             {% if field.help_text and field.name != 'refund_deadline_hours' %}
                 <small class="form-text text-muted">{{ field.help_text }}</small>
             {% endif %}
+            {% if field.errors %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger mt-1 p-2">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
         </div>
         {% endif %}
     {% endfor %}
@@ -55,7 +60,16 @@
                 </tr>
             </thead>
             <tbody>
-                {% if form.instance.pk and form.instance.tickets.exists %}
+                {% if ticket_data %}
+                    {% for ticket in ticket_data %}
+                    <tr>
+                        <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
+                        <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
+                        <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="0" class="form-control" required></td>
+                        <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
+                    </tr>
+                    {% endfor %}
+                {% elif form.instance.pk and form.instance.tickets.exists %}
                     {% for ticket in form.instance.tickets.all %}
                     <tr>
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>

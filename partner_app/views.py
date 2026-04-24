@@ -95,11 +95,41 @@ def create_event(request):
                         )
                     except (ValueError, TypeError):
                         continue
-            return redirect("partner:dashboard")
+            return redirect("partner:partner_event_list")
     else:
         form = EventForm()
 
-    return render(request, "partner/event_form.html", {"form": form, "is_edit": False})
+    ticket_data = []
+    if request.method == "POST" and not form.is_valid():
+        # Сохраняем данные о билетах для повторного отображения при ошибках валидации
+        ticket_data = [
+            {"name": name, "price": price, "quantity": quantity}
+            for name, price, quantity in zip(
+                request.POST.getlist("ticket_name[]"),
+                request.POST.getlist("ticket_price[]"),
+                request.POST.getlist("ticket_quantity[]"),
+            )
+            if name and price and quantity
+        ]
+
+    return render(
+        request,
+        "partner/event_form.html",
+        {
+            "form": form,
+            "is_edit": False,
+            "ticket_data": ticket_data,
+            "saved_media": (
+                {
+                    "image": request.FILES.get("image"),
+                    "video_url": request.FILES.get("video_url"),
+                    "program_file": request.FILES.get("program_file"),
+                }
+                if request.method == "POST"
+                else {}
+            ),
+        },
+    )
 
 
 def notify_organizer(event):
