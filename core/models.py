@@ -48,8 +48,10 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         blank=True,
         null=True,
         verbose_name="Видео (загрузить)",
+        help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_video_duration,
         ],
     )
     processed_video_business_card_hash = models.CharField(
@@ -216,8 +218,10 @@ class Event(models.Model, VideoWatermarkMixin):
         blank=True,
         null=True,
         verbose_name="Видео (загрузить)",
+        help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_video_duration,
         ],
     )
     processed_video_url_hash = models.CharField(

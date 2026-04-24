@@ -6,9 +6,12 @@ import os
 import tempfile
 from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.exceptions import ValidationError
 from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
 from core.models import Event, User
+from core.validators import validate_video_duration
+from unittest.mock import patch, MagicMock
 
 
 class WatermarkTestCase(TestCase):
@@ -100,3 +103,36 @@ class WatermarkTestCase(TestCase):
         """Удаляем временные файлы."""
         if os.path.exists(self.watermark_path):
             os.remove(self.watermark_path)
+
+    def test_validate_video_duration(self):
+        """Тест валидации длительности видео."""
+        # Создаем мок для VideoFileClip
+        mock_video_clip = MagicMock()
+        mock_video_clip.__enter__.return_value = mock_video_clip
+        mock_video_clip.duration = 301  # 5 минут и 1 секунда
+
+        # Создаем временный файл
+        test_video_path = tempfile.mktemp(suffix=".mp4")
+        with open(test_video_path, "wb") as f:
+            f.write(os.urandom(1024 * 1024))  # 1MB заглушка
+
+        # Создаем мок для SimpleUploadedFile
+        mock_file = MagicMock()
+        mock_file.path = test_video_path
+
+        # Проверяем, что валидатор выдает ошибку для видео длиннее 5 минут
+        with patch("moviepy.VideoFileClip", return_value=mock_video_clip):
+            with self.assertRaises(ValidationError):
+                validate_video_duration(mock_file)
+
+        # Проверяем, что валидатор не выдает ошибку для видео короче 5 минут
+        mock_video_clip.duration = 299  # 4 минуты и 59 секунд
+        with patch("moviepy.VideoFileClip", return_value=mock_video_clip):
+            try:
+                validate_video_duration(mock_file)
+            except ValidationError:
+                self.fail("validate_video_duration raised ValidationError unexpectedly!")
+
+        # Удаляем временный файл
+        if os.path.exists(test_video_path):
+            os.remove(test_video_path)

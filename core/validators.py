@@ -20,22 +20,49 @@ def validate_video_duration(value):
         if not value:
             return
 
-        video_path = value.path
+        # Используем временный путь, если файл еще не сохранен
+        if hasattr(value, 'temporary_file_path'):
+            video_path = value.temporary_file_path()
+            logger.info(f"Используем временный путь: {video_path}")
+        elif hasattr(value, 'path'):
+            video_path = value.path
+            logger.info(f"Используем путь к файлу: {video_path}")
+        else:
+            logger.warning(f"Не удалось определить путь к файлу для объекта: {value}")
+            return  # Пропускаем валидацию, если не можем определить путь
+
         logger.info(f"Валидация видео: {video_path}")
 
         # Проверяем существование файла перед обработкой
         if not os.path.exists(video_path):
             logger.warning(f"Файл видео не найден: {video_path}")
-            raise ValidationError(
-                _("Файл видео не найден. Пожалуйста, загрузите видео.")
-            )
+            # Попробуем сохранить файл во временную директорию и проверить еще раз
+            try:
+                import tempfile
+                temp_dir = tempfile.gettempdir()
+                temp_path = os.path.join(temp_dir, os.path.basename(video_path))
+                with open(temp_path, 'wb') as temp_file:
+                    for chunk in value.chunks():
+                        temp_file.write(chunk)
+                video_path = temp_path
+                logger.info(f"Сохранили файл во временную директорию: {video_path}")
+            except Exception as save_error:
+                logger.error(f"Не удалось сохранить файл во временную директорию: {save_error}")
+                raise ValidationError(
+                    _("Файл видео не найден. Пожалуйста, загрузите видео.")
+                )
 
+        logger.info(f"Проверяем длительность видео по пути: {video_path}")
         with VideoFileClip(video_path) as video_clip:
             duration = video_clip.duration
             logger.info(f"Длительность видео: {duration} секунд")
 
-            if duration > 300:  # 5 минут = 300 секунд
-                logger.warning(f"Видео слишком длинное: {duration} секунд")
+            # Округляем длительность до целых секунд, чтобы избежать проблем с дробными значениями
+            rounded_duration = round(duration)
+            logger.info(f"Округленная длительность видео: {rounded_duration} секунд")
+
+            if rounded_duration > 300:  # 5 минут = 300 секунд
+                logger.warning(f"Видео слишком длинное: {rounded_duration} секунд")
                 raise ValidationError(
                     _("Длительность видео не должна превышать 5 минут.")
                 )
