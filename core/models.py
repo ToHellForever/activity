@@ -190,6 +190,13 @@ class Event(models.Model, VideoWatermarkMixin):
         help_text="Мероприятие должно быть не ранее чем через 24 часа от текущего момента",
     )
     place = models.CharField(max_length=255, verbose_name="Место проведения")
+    place_coordinates = models.CharField(
+        max_length=50,
+        verbose_name="Координаты места",
+        blank=True,
+        null=True,
+        help_text="Координаты в формате широта,долгота",
+    )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

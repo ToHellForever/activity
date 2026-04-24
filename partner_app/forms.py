@@ -48,6 +48,7 @@ class EventForm(forms.ModelForm):
             "description_full",
             "date_time",
             "place",
+            "place_coordinates",
             "image",
             "video_url",
             "program_file",

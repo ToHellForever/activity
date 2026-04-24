@@ -1,6 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+    #map {
+        width: 100%;
+        height: 400px;
+        margin: 20px 0;
+    }
+    .event-map-container {
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1>{{ event.title }}</h1>
 <p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
@@ -22,5 +35,67 @@
     <p>Теги: {{ event.tags.names|join:", " }}</p>
 {% endif %}
 
+<div class="event-map-container">
+    <h3>Место проведения на карте:</h3>
+    <div id="map"></div>
+</div>
+
 <a href="{% url 'buy_ticket' event.id %}">Купить билет</a>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация карты после полной загрузки страницы
+        if (typeof ymaps !== 'undefined') {
+            initMap();
+        } else {
+            // Если API Яндекс Карт еще не загружен, ждем его загрузки
+            const script = document.createElement('script');
+            script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
+            script.onload = initMap;
+            document.head.appendChild(script);
+        }
+    });
+
+    function initMap() {
+        const place = "{{ event.place }}";
+        
+        // Создаем карту
+        const map = new ymaps.Map("map", {
+            center: [55.751244, 37.618423], // Центр по умолчанию - Москва
+            zoom: 10
+        });
+
+        // Геокодируем адрес мероприятия
+        ymaps.geocode(place, {
+            results: 1
+        }).then(function (res) {
+            // Получаем первый результат геокодирования
+            const firstGeoObject = res.geoObjects.get(0);
+            
+            if (firstGeoObject) {
+                // Устанавливаем центр карты по координатам найденного объекта
+                const coordinates = firstGeoObject.geometry.getCoordinates();
+                map.setCenter(coordinates, 15);
+                
+                // Добавляем метку на карту
+                map.geoObjects.add(new ymaps.Placemark(coordinates, {
+                    balloonContent: place
+                }, {
+                    preset: 'islands#icon',
+                    iconColor: '#3b5998'
+                }));
+            } else {
+                // Если адрес не найден, показываем сообщение
+                alert('Не удалось найти указанное место на карте: ' + place);
+            }
+        }, function (err) {
+            console.error('Ошибка при геокодировании: ', err);
+            alert('Ошибка при поиске места на карте');
+        });
+    }
+</script>
 {% endblock %}

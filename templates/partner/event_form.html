@@ -11,6 +11,14 @@
     .ticket-table-container {
         margin-bottom: 20px;
     }
+    #map {
+        width: 100%;
+        height: 400px;
+        margin: 20px 0;
+    }
+    .map-container {
+        margin: 20px 0;
+    }
 </style>
 {% endblock %}
 
@@ -33,10 +41,18 @@
             {% elif field.name == 'refund_deadline_hours' %}
                 {{ field }}
                 <small class="form-text text-muted">Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.</small>
+            {% elif field.name == 'place' %}
+                {{ field }}
+                <small class="form-text text-muted">Укажите точный адрес для отображения на карте</small>
+                <div class="map-container" id="place-map-container">
+                    <h5>Предварительный просмотр местоположения:</h5>
+                    <div id="map"></div>
+                    <input type="hidden" id="id_place_coordinates" name="place_coordinates">
+                </div>
             {% else %}
                 {{ field }}
             {% endif %}
-            {% if field.help_text and field.name != 'refund_deadline_hours' %}
+            {% if field.help_text and field.name != 'refund_deadline_hours' and field.name != 'place' %}
                 <small class="form-text text-muted">{{ field.help_text }}</small>
             {% endif %}
             {% if field.errors %}
@@ -82,7 +98,6 @@
             </tbody>
         </table>
         <button type="button" id="addTicketRow" class="btn btn-secondary">Добавить тип билета</button>
-        <!-- Удаляем скрытое поле ticket_types, так как теперь используем отдельные поля -->
     </div>
 
     <button type="submit" class="btn btn-primary">Сохранить мероприятие</button>
@@ -96,7 +111,7 @@
 <script>
     // Ждем, пока страница полностью загрузится
     document.addEventListener('DOMContentLoaded', function() {
-        // Настройка календаря с ограничением минимальной даты (не ранее чем через 24 часа)
+        // Настройка календаря с ограничением минимальной даты
         const minDate = new Date();
         minDate.setHours(minDate.getHours() + 24);
 
@@ -112,6 +127,79 @@
                 }
             }
         });
+
+        // Инициализация карты при изменении поля с адресом
+        const placeInput = document.querySelector("#id_place");
+        if (placeInput) {
+            // Загрузка API Яндекс Карт
+            const script = document.createElement('script');
+            script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
+            script.onload = function() {
+                initMap(placeInput.value);
+            };
+            script.onerror = function() {
+                console.error('Не удалось загрузить Yandex Maps API');
+                document.getElementById('place-map-container').innerHTML = 
+                    '<p class="text-danger">Не удалось загрузить карту. Проверьте подключение к интернету.</p>';
+            };
+            document.head.appendChild(script);
+
+            // Обновление карты при изменении адреса
+            placeInput.addEventListener('blur', function() {
+                if (typeof ymaps !== 'undefined') {
+                    initMap(this.value);
+                }
+            });
+        }
     });
+
+    // Функция инициализации карты
+    function initMap(place) {
+        if (!place || typeof ymaps === 'undefined') {
+            return;
+        }
+
+        // Удаляем предыдущую карту, если она была
+        if (window.eventMap) {
+            window.eventMap.destroy();
+        }
+
+        // Создаем новую карту
+        window.eventMap = new ymaps.Map("map", {
+            center: [55.751244, 37.618423], // Центр по умолчанию - Москва
+            zoom: 10
+        });
+
+        // Геокодируем адрес
+        ymaps.geocode(place, {
+            results: 1
+        }).then(function (res) {
+            const firstGeoObject = res.geoObjects.get(0);
+            
+            if (firstGeoObject) {
+                // Устанавливаем центр карты по координатам найденного объекта
+                const coordinates = firstGeoObject.geometry.getCoordinates();
+                window.eventMap.setCenter(coordinates, 15);
+                
+                // Добавляем метку на карту
+                window.eventMap.geoObjects.add(new ymaps.Placemark(coordinates, {
+                    balloonContent: place
+                }, {
+                    preset: 'islands#icon',
+                    iconColor: '#3b5998'
+                }));
+                
+                // Сохраняем координаты в скрытое поле
+                document.getElementById('id_place_coordinates').value = coordinates.join(',');
+            } else {
+                document.getElementById('map').innerHTML = 
+                    '<p class="text-danger">Не удалось найти указанное место на карте: ' + place + '</p>';
+            }
+        }).catch(function (err) {
+            console.error('Ошибка при геокодировании: ', err);
+            document.getElementById('map').innerHTML = 
+                '<p class="text-danger">Ошибка при поиске места на карте</p>';
+        });
+    }
 </script>
 {% endblock %}
