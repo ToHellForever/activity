@@ -85,21 +85,43 @@ def compress_video(input_path, output_path=None, target_size_mb=10):
 
         logger = logging.getLogger(__name__)
 
+        # Нормализуем путь для Windows
+        input_path = os.path.normpath(input_path)
+
+        # Если output_path не указан, создаем временный файл с правильным расширением
         if output_path is None:
-            output_path = input_path
+            base, ext = os.path.splitext(input_path)
+            output_path = f"{base}_compressed{ext}"
+        else:
+            # Нормализуем путь для Windows
+            output_path = os.path.normpath(output_path)
+            # Убедимся, что у временного файла правильное расширение
+            if output_path.endswith(".temp"):
+                base, _ = os.path.splitext(output_path)
+                output_path = f"{base}.mp4"
+
+        logger.info(f"Сжатие видео: {input_path} -> {output_path}")
 
         with VideoFileClip(input_path) as video_clip:
             bitrate = f"{target_size_mb * 800}K"
             logger.info(f"Сжатие видео с битрейтом: {bitrate}")
+
+            # Используем прямые слеши для MoviePy
+            output_path_unix = output_path.replace("\\", "/")
+
             video_clip.write_videofile(
-                output_path,
+                output_path_unix,
                 codec="libx264",
                 audio_codec="aac",
                 bitrate=bitrate,
                 logger=None,
+                threads=4,  # Используем несколько потоков для ускорения
+                preset="fast",  # Быстрее сжатие
             )
         logger.info(f"Видео успешно сжато: {output_path}")
         return True
     except Exception as e:
         logger.error(f"Ошибка при сжатии видео: {str(e)}")
+        logger.error(f"Путь к входному файлу: {input_path}")
+        logger.error(f"Путь к выходному файлу: {output_path}")
         return False

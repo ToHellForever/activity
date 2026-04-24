@@ -10,12 +10,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def wait_for_file(file_path, max_attempts=20, delay=1):
     for _ in range(max_attempts):
         if os.path.exists(file_path):
             return True
         time.sleep(delay)
     return False
+
 
 @receiver(post_save, sender=Event)
 def process_event_video(sender, instance, created, **kwargs):
@@ -33,9 +35,6 @@ def process_event_video(sender, instance, created, **kwargs):
         return
 
     # Запускаем асинхронную задачу Celery для обработки видео
-    process_video_task.delay(
-        model_name='Event',
-        instance_id=instance.id,
-        video_field_name='video_url',
-        hash_field_name='processed_video_url_hash'
-    )
+    from core.tasks import process_event_video_task
+
+    process_event_video_task.delay(instance.id)

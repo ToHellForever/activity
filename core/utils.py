@@ -82,6 +82,12 @@ def add_watermark_to_video(
     try:
         # Загружаем видео
         video_clip = VideoFileClip(input_video_path)
+
+        # Проверяем существование водяного знака
+        if not os.path.exists(watermark_image_path):
+            print(f"Файл водяного знака не найден: {watermark_image_path}")
+            return False
+
         watermark = Image.open(watermark_image_path).convert("RGBA")
 
         # Изменяем размер водяного знака
@@ -131,14 +137,29 @@ def add_watermark_to_video(
         final_clip.audio = video_clip.audio
 
         # Сохраняем результат
-        if output_video_path:
+        try:
+            output_path = output_video_path if output_video_path else input_video_path
+
+            # Нормализуем путь для Windows
+            output_path = os.path.normpath(output_path)
+            output_path = output_path.replace("\\", "/")
+
             final_clip.write_videofile(
-                output_video_path, codec="libx264", audio_codec="aac"
+                output_path,
+                codec="libx264",
+                audio_codec="aac",
+                threads=4,
+                preset="fast",
+                ffmpeg_params=[
+                    "-pix_fmt",
+                    "yuv420p",  # Для лучшей совместимости
+                    "-movflags",
+                    "+faststart",  # Для потокового воспроизведения
+                ],
             )
-        else:
-            final_clip.write_videofile(
-                input_video_path, codec="libx264", audio_codec="aac"
-            )
+        except Exception as e:
+            print(f"Ошибка при сохранении видео с водяным знаком: {str(e)}")
+            return False
 
         video_clip.close()
         final_clip.close()

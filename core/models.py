@@ -195,6 +195,20 @@ class Event(models.Model, VideoWatermarkMixin):
         null=True,
         help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
     )
+    VIDEO_PROCESSING_STATUS_CHOICES = (
+        ("pending", "Ожидает обработки"),
+        ("processing", "Обрабатывается"),
+        ("completed", "Обработка завершена"),
+        ("failed", "Ошибка обработки"),
+    )
+
+    video_processing_status = models.CharField(
+        max_length=20,
+        choices=VIDEO_PROCESSING_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус обработки видео",
+    )
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -267,11 +281,12 @@ class Event(models.Model, VideoWatermarkMixin):
 
     def save(self, *args, **kwargs):
         """
-        Сохранение модели с добавлением водяного знака на изображения и видео.
+        Сохранение модели с добавлением водяного знака на изображения.
+        Видео обрабатывается асинхронно через Celery.
         """
         import os
         from django.conf import settings
-        from core.utils import add_watermark_to_image, add_watermark_to_video
+        from core.utils import add_watermark_to_image
 
         super().save(*args, **kwargs)
 
@@ -287,44 +302,6 @@ class Event(models.Model, VideoWatermarkMixin):
             image_path = self.image.path
             add_watermark_to_image(image_path, actual_watermark_path, image_path)
 
-        # Добавляем водяной знак на видео
-        if self.video_url and self._should_process_video(
-            self.video_url, self.processed_video_url_hash
-        ):
-            # Получаем путь к видео
-            video_path = self.video_url.path
-
-            # Проверяем существование файла перед обработкой
-            if not os.path.exists(video_path):
-                print(f"Файл видео не найден: {video_path}")
-                return
-
-            try:
-                # Сжимаем видео
-                from core.validators import compress_video
-
-                compress_success = compress_video(video_path)
-                if not compress_success:
-                    print(f"Ошибка: не удалось сжать видео: {video_path}")
-                    return
-
-                # Добавляем водяной знак
-                watermark_success = add_watermark_to_video(
-                    video_path, actual_watermark_path, video_path
-                )
-                if not watermark_success:
-                    print(
-                        f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
-                    )
-                    return
-
-            except Exception as e:
-                print(f"Исключение при обработке видео: {str(e)}")
-                raise
-
-        self.processed_video_url_hash = self._get_video_hash(self.video_url)
-        super().save(update_fields=["processed_video_url_hash"])
-
     def get_refund_deadline(self):
         """
         Возвращает крайний срок возврата билета.
@@ -339,8 +316,8 @@ class Event(models.Model, VideoWatermarkMixin):
     @property
     def get_place_address(self):
         """Возвращает адрес места проведения для админки"""
-        if self.place_data and 'address' in self.place_data:
-            return self.place_data['address']
+        if self.place_data and "address" in self.place_data:
+            return self.place_data["address"]
         return "Не указано"
 
 

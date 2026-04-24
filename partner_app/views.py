@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import TruncDate
 from django.contrib import messages
+from django.shortcuts import redirect
 import logging
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,16 @@ def create_event(request):
                         )
                     except (ValueError, TypeError):
                         continue
+
+            # Запускаем асинхронную обработку видео
+            from core.tasks import process_event_video_task
+
+            process_event_video_task.delay(event.id)
+
+            messages.success(
+                request,
+                "Мероприятие успешно создано! Видео обрабатывается в фоновом режиме.",
+            )
             return redirect("partner:partner_event_list")
     else:
         form = EventForm()
@@ -267,7 +278,7 @@ def duplicate_event(request, event_id):
         description_short=event.description_short,
         description_full=event.description_full,
         date_time=event.date_time,
-        place=event.place_data.get('address') if event.place_data else None,
+        place=event.place_data.get("address") if event.place_data else None,
         status="on_moderation",  # Новое мероприятие должно пройти модерацию
         image=event.image,
         category=event.category,
