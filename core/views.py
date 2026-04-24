@@ -172,11 +172,15 @@ def support_dashboard(request):
         new_subject = request.POST.get("new_subject")
         new_message = request.POST.get("new_message")
         files = request.FILES.getlist("attachment")
+        event_id = request.POST.get("event_id")
 
         if new_subject and new_message:
             # Создаем новый тикет
             ticket = SupportTicket.objects.create(
-                subject=new_subject, user=request.user, status="new"
+                subject=new_subject,
+                user=request.user,
+                status="new",
+                event_id=event_id if event_id else None,
             )
             # Создаем первое сообщение в чате
             message = SupportMessage.objects.create(
@@ -202,10 +206,14 @@ def support_dashboard(request):
         )
         chat_messages = selected_ticket.messages.all()
 
+    # Получаем мероприятия пользователя с проданными билетами для формы создания тикета
+    user_events = Event.objects.filter(organizer=request.user, has_sold_tickets=True)
+
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
+        "events": user_events,
     }
     return render(request, "support_dashboard.html", context)
 
@@ -421,6 +429,12 @@ def buy_ticket(request, event_id):
             quantity=quantity,
             is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
         )
+        orders.append(order)
+
+    # Устанавливаем флаг has_sold_tickets для события, если билеты проданы
+    if not event.has_sold_tickets:
+        event.has_sold_tickets = True
+        event.save()
 
         # Устанавливаем дедлайн оплаты для бронирований без оплаты
         if is_booking_without_payment:

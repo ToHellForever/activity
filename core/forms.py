@@ -108,8 +108,31 @@ class PartnerProfileForm(forms.ModelForm):
 
 
 class SupportTicketForm(forms.ModelForm):
-    """Форма для создания темы обращения."""
+    """Форма для создания обращения в поддержку."""
 
     class Meta:
         model = SupportTicket
         fields = ["subject"]
+        widgets = {
+            "subject": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Тема обращения"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        self.events = kwargs.pop("events", None)
+        super().__init__(*args, **kwargs)
+
+        if self.events:
+            self.fields["event"] = forms.ChoiceField(
+                choices=[(None, "---")]
+                + [
+                    (event.id, event.title)
+                    for event in self.events
+                    if event.has_sold_tickets
+                ],
+                required=False,
+                widget=forms.Select(attrs={"class": "form-control"}),
+                label="Связанное мероприятие",
+            )

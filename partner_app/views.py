@@ -7,6 +7,9 @@ from django.utils import timezone
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import TruncDate
 from django.contrib import messages
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 import os
 import json
@@ -112,6 +115,15 @@ def edit_event(request, event_id):
     """
     # Получаем мероприятие по ID или выдаем 404 ошибку, если его нет
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    # Проверяем, можно ли редактировать мероприятие
+    if event.has_sold_tickets:
+        messages.error(
+            request,
+            "Редактирование этого мероприятия запрещено, так как на него уже проданы билеты. "
+            "Пожалуйста, обратитесь в техническую поддержку для внесения изменений.",
+        )
+        return redirect("partner:partner_event_list")
 
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES, instance=event)
@@ -274,6 +286,7 @@ def delete_event(request, event_id):
         {"event": event},
     )
 
+
 @login_required
 def bulk_delete_events(request):
     """
@@ -293,7 +306,9 @@ def bulk_delete_events(request):
                 # Получаем пути к файлам, чтобы удалить их напрямую
                 image_path = event.image.path if event.image else None
                 video_path = event.video_url.path if event.video_url else None
-                program_file_path = event.program_file.path if event.program_file else None
+                program_file_path = (
+                    event.program_file.path if event.program_file else None
+                )
 
                 # Удаляем объект без вызова save()
                 event_id = event.id
@@ -441,7 +456,11 @@ def export_participant_list(orders, event, export_format):
 
         # Данные
         for row_num, order in enumerate(orders, 2):
-            ws.cell(row=row_num, column=1, value=f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip())
+            ws.cell(
+                row=row_num,
+                column=1,
+                value=f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
+            )
             ws.cell(
                 row=row_num, column=2, value=order.participant_data.get("email", "")
             )
@@ -453,7 +472,9 @@ def export_participant_list(orders, event, export_format):
             )
             ws.cell(row=row_num, column=5, value=order.ticket.name)
             ws.cell(
-                row=row_num, column=6, value="Оплачено" if order.attended else "Ожидает оплаты"
+                row=row_num,
+                column=6,
+                value="Оплачено" if order.attended else "Ожидает оплаты",
             )
             ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
 
@@ -515,13 +536,13 @@ def export_participant_list(orders, event, export_format):
         # Данные для таблицы
         data = [
             [
-            "Имя",
-            "E-mail",
-            "Телефон",
-            "Дата покупки",
-            "Тип билета",
-            "Статус",
-            "Цена",
+                "Имя",
+                "E-mail",
+                "Телефон",
+                "Дата покупки",
+                "Тип билета",
+                "Статус",
+                "Цена",
             ]
         ]
 

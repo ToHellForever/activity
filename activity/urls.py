@@ -32,6 +32,7 @@ from core.views import (
     buy_ticket,
     activate_account,
     forgot_password,
+    update_ticket_status,
 )
 
 urlpatterns = [
@@ -49,6 +50,7 @@ urlpatterns = [
     path("buy-ticket/<int:event_id>/", buy_ticket, name="buy_ticket"),
     path("activate/<int:pk>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
+    path("update-ticket-status/<int:ticket_id>/", update_ticket_status, name="update_ticket_status"),
     path("partner/", include("partner_app.urls")),
     path("visitor/", include("visitor_app.urls")),
 ]

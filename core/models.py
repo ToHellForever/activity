@@ -247,6 +247,11 @@ class Event(models.Model, VideoWatermarkMixin):
         default=10.00,  # Ставим дефолтное значение
         verbose_name="Комиссия (%)",
     )
+    has_sold_tickets = models.BooleanField(
+        default=False,
+        verbose_name="Проданы билеты",
+        help_text="Флаг, указывающий, что на мероприятие проданы билеты",
+    )
 
     def __str__(self):
         return self.title
@@ -421,6 +426,14 @@ class SupportTicket(models.Model):
     subject = models.CharField(max_length=255, verbose_name="Тема")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     created_at = models.DateTimeField(auto_now_add=True)
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Связанное мероприятие",
+        help_text="Мероприятие, к которому относится обращение",
+    )
 
     def __str__(self):
         return f"Тикет #{self.id} - {self.subject}"
