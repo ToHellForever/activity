@@ -53,6 +53,9 @@ class EventForm(forms.ModelForm):
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description_short": forms.Textarea(attrs={"rows": 3}),
             "description_full": forms.Textarea(attrs={"rows": 5}),
+            "image": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
+            "video_url": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
+            "program_file": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
         }
 
 

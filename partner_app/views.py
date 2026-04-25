@@ -69,10 +69,25 @@ def create_event(request):
     """
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
+
+        # Обработка очистки медиафайлов при создании мероприятия
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
             event.status = "on_moderation"
+
+            # Очищаем медиафайлы, если были отмечены соответствующие флаги
+            for field_name in ["image", "video_url", "program_file"]:
+                clear_field_name = f"{field_name}-clear"
+                if clear_field_name in request.POST:
+                    # Получаем текущий файл
+                    current_file = getattr(event, field_name)
+                    # Удаляем файл из файловой системы, если он существует
+                    if current_file:
+                        current_file.delete()
+                    # Устанавливаем поле в None
+                    setattr(event, field_name, None)
+
             event.save()
 
             # Обрабатываем данные о билетах из таблицы
@@ -168,6 +183,18 @@ def edit_event(request, event_id):
 
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES, instance=event)
+
+        # Обработка очистки медиафайлов
+        for field_name in ["image", "video_url", "program_file"]:
+            clear_field_name = f"{field_name}-clear"
+            if clear_field_name in request.POST:
+                # Получаем текущий файл
+                current_file = getattr(event, field_name)
+                # Удаляем файл из файловой системы, если он существует
+                if current_file:
+                    current_file.delete()
+                # Устанавливаем поле в None
+                setattr(event, field_name, None)
 
         # Устанавливаем флаг изменения видео на основе данных формы
         if "video_changed" in request.POST and request.POST["video_changed"] == "True":
