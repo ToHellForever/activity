@@ -173,3 +173,77 @@ def process_video_task(
     except Exception as e:
         logger.error(f"Исключение при обработке видео: {str(e)}")
         return f"Исключение при обработке видео: {str(e)}"
+
+
+@shared_task(bind=True)
+def process_video_business_card_task(self, user_id):
+    """
+    Асинхронная задача для обработки видео-визитки пользователя.
+    """
+    try:
+        from core.models import CustomUser
+        from core.validators import compress_video
+
+        user = CustomUser.objects.get(pk=user_id)
+
+        video_field = user.video_business_card
+        if not video_field:
+            return "Видео-визитка не требует обработки"
+
+        video_path = video_field.path
+
+        # Проверяем существование файла
+        if not os.path.exists(video_path):
+            logger.error(f"Файл видео-визитки не найден: {video_path}")
+            return f"Файл не найден: {video_path}"
+
+        actual_watermark_path = os.path.join(
+            settings.BASE_DIR, "media", "watermark.png"
+        )
+
+        if not os.path.exists(actual_watermark_path):
+            logger.error(f"Файл водяного знака не найден: {actual_watermark_path}")
+            return f"Файл водяного знака не найден"
+
+        # Создаем временный путь для обработки
+        base, ext = os.path.splitext(video_path)
+        temp_video_path = f"{base}_processed{ext}"
+
+        # Сжимаем видео и сохраняем во временный файл
+        if not compress_video(video_path, temp_video_path):
+            return f"Ошибка: не удалось сжать видео-визитку: {video_path}"
+
+        # Добавляем водяной знак
+        try:
+            from core.utils import add_watermark_to_video
+
+            if not add_watermark_to_video(
+                temp_video_path, actual_watermark_path, temp_video_path
+            ):
+                logger.error(
+                    f"Ошибка: не удалось добавить водяной знак к видео-визитке: {temp_video_path}"
+                )
+                return f"Ошибка: не удалось добавить водяной знак к видео-визитке: {temp_video_path}"
+        except Exception as e:
+            logger.error(f"Исключение при добавлении водяного знака: {str(e)}")
+            return f"Исключение при добавлении водяного знака: {str(e)}"
+
+        # Заменяем оригинальный файл обработанным
+        try:
+            if os.path.exists(video_path):
+                os.remove(video_path)
+            os.rename(temp_video_path, video_path)
+        except Exception as e:
+            logger.error(f"Ошибка при замене файлов: {str(e)}")
+            return f"Ошибка при замене файлов: {str(e)}"
+
+        # Обновляем хэш обработанной видео-визитки
+        user.processed_video_business_card_hash = user._get_video_hash(
+            user.video_business_card
+        )
+        user.save(update_fields=["processed_video_business_card_hash"])
+
+        return f"Видео-визитка успешно обработана: {video_path}"
+    except Exception as e:
+        logger.error(f"Исключение при обработке видео-визитки: {str(e)}")
+        return f"Исключение при обработке видео-визитки: {str(e)}"

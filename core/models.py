@@ -62,51 +62,8 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
     )
 
     def save(self, *args, **kwargs):
-        import os
-        from django.conf import settings
-        from core.utils import add_watermark_to_video
-
         # Сначала сохраняем модель, чтобы получить доступ к полям
         super().save(*args, **kwargs)
-
-        # Проверяем, нужно ли обрабатывать видео визитку
-        if self.video_business_card and self._should_process_video(
-            self.video_business_card, self.processed_video_business_card_hash
-        ):
-            # Получаем путь к видео визитке
-            video_path = self.video_business_card.path
-
-            try:
-                # Сжимаем видео
-                from core.validators import compress_video
-
-                compress_success = compress_video(video_path)
-                if not compress_success:
-                    print(f"Ошибка: не удалось сжать видео: {video_path}")
-                    return
-
-                # Добавляем водяной знак
-                actual_watermark_path = os.path.join(
-                    settings.BASE_DIR, "media", "watermark.png"
-                )
-                watermark_success = add_watermark_to_video(
-                    video_path, actual_watermark_path, video_path
-                )
-                if not watermark_success:
-                    print(
-                        f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
-                    )
-                    return
-
-            except Exception as e:
-                print(f"Исключение при обработке видео: {str(e)}")
-                raise
-
-            # Обновляем хэш обработанной видео визитки
-            self.processed_video_business_card_hash = self._get_video_hash(
-                self.video_business_card
-            )
-            super().save(update_fields=["processed_video_business_card_hash"])
 
 
 User = get_user_model()

@@ -746,6 +746,7 @@ def profile_edit(request):
                     request.user.verification_status = "pending"
                     request.user.save()
 
+        messages.success(request, "Ваши изменения успешно сохранены!")
         return redirect("partner:profile_edit")
 
     else:
