@@ -55,9 +55,17 @@ class EventAdmin(admin.ModelAdmin):
         "title",
         "organizer",
         "date_time",
+        "get_duration",
         "status",
         "commission_rate",
     )
+
+    def get_duration(self, obj):
+        if obj.duration:
+            return obj.duration
+        return "-"
+
+    get_duration.short_description = "Длительность"
 
     # По каким полям можно фильтровать список
     list_filter = (
@@ -88,6 +96,7 @@ class EventAdmin(admin.ModelAdmin):
                     "description_short",
                     "description_full",
                     "date_time",
+                    "duration",
                     "place_data",
                 )
             },

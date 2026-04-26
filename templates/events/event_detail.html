@@ -23,6 +23,11 @@
 {% block content %}
 <h1>{{ event.title }}</h1>
 <p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
+{% if event.duration %}
+    <p>Длительность: {{ event.duration }}</p>
+{% else %}
+    <p>Длительность: -</p>
+{% endif %}
 <p>Описание: {{ event.description_short }}</p>
 
 {% if event.image %}

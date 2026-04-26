@@ -221,6 +221,13 @@ class Event(models.Model, VideoWatermarkMixin):
         verbose_name="Закрыть продажи за (часов)",
         help_text="0 - не закрывать автоматически",
     )
+    duration = models.CharField(
+        max_length=5,
+        blank=True,
+        null=True,
+        verbose_name="Длительность (ЧЧ:ММ)",
+        help_text="Формат: ЧЧ:ММ (например, 02:30 для 2 часов 30 минут)",
+    )
     commission_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,

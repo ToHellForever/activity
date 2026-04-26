@@ -26,11 +26,26 @@ class EventForm(forms.ModelForm):
         self.fields["place_data"].required = False
         self.fields["image"].required = True
         self.fields["refund_deadline_hours"].required = True
+        self.fields["duration"].required = False
 
         # Кастомные сообщения об ошибках
         self.fields["date_time"].error_messages = {
             "required": "Пожалуйста, укажите дату и время проведения мероприятия."
         }
+
+    def clean_duration(self):
+        duration = self.cleaned_data.get("duration")
+        if duration:
+            try:
+                hours, minutes = map(int, duration.split(":"))
+                if hours < 0 or minutes < 0 or minutes >= 60:
+                    raise ValueError("Некорректное значение")
+                return duration
+            except Exception:
+                raise forms.ValidationError(
+                    "Неверный формат. Используйте ЧЧ:ММ (например, 02:30)"
+                )
+        return None
 
     class Meta:
         model = Event
@@ -48,6 +63,7 @@ class EventForm(forms.ModelForm):
             "allow_booking_without_payment",
             "auto_close_sales_hours",
             "refund_deadline_hours",
+            "duration",
         ]
         widgets = {
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
@@ -55,7 +71,17 @@ class EventForm(forms.ModelForm):
             "description_full": forms.Textarea(attrs={"rows": 5}),
             "image": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
             "video_url": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
-            "program_file": forms.ClearableFileInput(attrs={"class": "form-control-file"}),
+            "program_file": forms.ClearableFileInput(
+                attrs={"class": "form-control-file"}
+            ),
+            "duration": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "ЧЧ:ММ",
+                    "pattern": "[0-9]{2}:[0-9]{2}",
+                    "title": "Формат: ЧЧ:ММ (например, 02:30)",
+                }
+            ),
         }
 
 
