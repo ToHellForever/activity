@@ -1,16 +1,12 @@
-# core/tasks.py
-
+# tasks.py
 from celery import shared_task
-from django.conf import settings
 from django.apps import apps
 import os
 import logging
-import time
-from core.models import Event,CustomUser
-from core.validators import compress_video
-from core.utils import add_watermark_to_video
-logger = logging.getLogger(__name__)
+# settings
+from django.conf import settings
 
+logger = logging.getLogger(__name__)
 
 def wait_for_file(file_path, max_attempts=20, delay=1):
     for _ in range(max_attempts):
@@ -19,229 +15,84 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
         time.sleep(delay)
     return False
 
-
-@shared_task(bind=True)
-def process_event_video_task(self, event_id):
-    """
-    Асинхронная задача для обработки видео мероприятия.
-    """
-    try:
-
-        event = Event.objects.get(pk=event_id)
-
-        # Обновляем статус обработки
-        event.video_processing_status = "processing"
-        event.save(update_fields=["video_processing_status"])
-
-        video_field = event.video_url
-        if not video_field:
-            event.video_processing_status = "completed"
-            event.save(update_fields=["video_processing_status"])
-            return "Видео не требует обработки"
-
-        video_path = video_field.path
-
-        # Проверяем существование файла
-        if not os.path.exists(video_path):
-            logger.error(f"Файл видео не найден: {video_path}")
-            event.video_processing_status = "failed"
-            event.save(update_fields=["video_processing_status"])
-            return f"Файл не найден: {video_path}"
-
-        # Создаем временный путь для обработки с правильным расширением
-        base, ext = os.path.splitext(video_path)
-        temp_video_path = f"{base}_compressed{ext}"
-
-        # Сжимаем видео и сохраняем во временный файл
-        if not compress_video(video_path, temp_video_path):
-            event.video_processing_status = "failed"
-            event.save(update_fields=["video_processing_status"])
-            return f"Ошибка: не удалось сжать видео: {video_path}"
-
-        # Добавляем водяной знак
-        actual_watermark_path = os.path.join(
-            settings.BASE_DIR, "media", "watermark.png"
-        )
-
-        if not os.path.exists(actual_watermark_path):
-            logger.error(f"Файл водяного знака не найден: {actual_watermark_path}")
-            event.video_processing_status = "failed"
-            event.save(update_fields=["video_processing_status"])
-            return f"Файл водяного знака не найден"
-
-        try:
-            from core.utils import add_watermark_to_video
-
-            if not add_watermark_to_video(
-                temp_video_path, actual_watermark_path, temp_video_path
-            ):
-                logger.error(
-                    f"Ошибка: не удалось добавить водяной знак к видео: {temp_video_path}"
-                )
-                event.video_processing_status = "failed"
-                event.save(update_fields=["video_processing_status"])
-                return f"Ошибка: не удалось добавить водяной знак к видео: {temp_video_path}"
-        except Exception as e:
-            logger.error(f"Исключение при добавлении водяного знака: {str(e)}")
-            event.video_processing_status = "failed"
-            event.save(update_fields=["video_processing_status"])
-            return f"Исключение при добавлении водяного знака: {str(e)}"
-
-        # Заменяем оригинальный файл обработанным
-        try:
-            if os.path.exists(video_path):
-                os.remove(video_path)
-            os.rename(temp_video_path, video_path)
-        except Exception as e:
-            logger.error(f"Ошибка при замене файлов: {str(e)}")
-            event.video_processing_status = "failed"
-            event.save(update_fields=["video_processing_status"])
-            return f"Ошибка при замене файлов: {str(e)}"
-
-        # Обновляем статус обработки
-        event.video_processing_status = "completed"
-        event.save(update_fields=["video_processing_status"])
-
-        return f"Видео успешно обработано: {video_path}"
-    except Exception as e:
-        logger.error(f"Исключение при обработке видео: {str(e)}")
-        event.video_processing_status = "failed"
-        event.save(update_fields=["video_processing_status"])
-        return f"Исключение при обработке видео: {str(e)}"
-
-
 @shared_task(bind=True)
 def process_video_task(
     self, model_name, instance_id, video_field_name, hash_field_name
 ):
-    """
-    Асинхронная задача для обработки видео (сжатие + водяной знак).
-    """
     try:
         model = apps.get_model("core", model_name)
         instance = model.objects.get(pk=instance_id)
-
+        
         video_field = getattr(instance, video_field_name)
         hash_field = getattr(instance, hash_field_name)
 
-        if not video_field or not instance._should_process_video(
-            video_field, hash_field
-        ):
-            return "Видео не требует обработки"
+        # Двойная проверка на случай гонки сигналов/задач Celery
+        if not video_field or not instance._should_process_video(video_field, hash_field):
+            return f"Видео не требует обработки: {model_name} {instance_id}"
 
         video_path = video_field.path
 
-        # Проверяем существование файла перед ожиданием
-        if not os.path.exists(video_path):
+        if not os.path.exists(video_path) and not wait_for_file(video_path):
             logger.error(f"Файл видео не найден: {video_path}")
             return f"Файл не найден: {video_path}"
 
-        if not wait_for_file(video_path):
-            logger.error(f"Файл видео не найден после ожидания: {video_path}")
-            return f"Файл не найден: {video_path}"
-
-        actual_watermark_path = os.path.join(
-            settings.BASE_DIR, "media", "watermark.png"
-        )
-
-        if not os.path.exists(actual_watermark_path):
-            logger.error(f"Файл водяного знака не найден: {actual_watermark_path}")
-            return f"Файл водяного знака не найден"
-
-        # Создаем временный путь для обработки
-        temp_video_path = f"{video_path}.temp"
+        # Пути для временных файлов (в той же директории для атомарности)
+        base_dir = os.path.dirname(video_path)
+        base_name = os.path.splitext(os.path.basename(video_path))[0]
+        temp_video_path = os.path.join(base_dir, f"{base_name}_temp.mp4")
+        watermarked_video_path = os.path.join(base_dir, f"{base_name}_watermarked.mp4")
 
         # Сжимаем видео и сохраняем во временный файл
+        from .validators import compress_video
         if not compress_video(video_path, temp_video_path):
             return f"Ошибка: не удалось сжать видео: {video_path}"
 
-        # Добавляем водяной знак на временный файл
+        # Добавляем водяной знак на временный файл и сохраняем в отдельный файл
+        from .utils import add_watermark_to_video
+        
+        watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+        if not os.path.exists(watermark_path):
+            logger.error(f"Файл водяного знака не найден по пути: {watermark_path}")
+            return f"Файл водяного знака не найден по пути: {watermark_path}"
+        
         if not add_watermark_to_video(
-            temp_video_path, actual_watermark_path, temp_video_path
+            temp_video_path,
+            watermark_path,
+            watermarked_video_path,
         ):
             return f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
 
-        # Заменяем оригинальный файл обработанным
-        if os.path.exists(video_path):
-            os.remove(video_path)
-        os.rename(temp_video_path, video_path)
+        # Атомарная замена файла (для избежания частичной записи при ошибке)
+        try:
+            # Сохраняем исходный файл как резервную копию (опционально для безопасности)
+            backup_path = f"{video_path}.bak"
+            if os.path.exists(backup_path):
+                os.remove(backup_path)  # Удаляем старую бакап если есть (редко нужно)
+            
+            os.replace(video_path, backup_path)  # Переименовываем исходный в бакап
 
-        setattr(instance, hash_field_name, instance._get_video_hash(video_field))
+            # Перемещаем обработанный файл на место исходного с правильным именем/расширением!
+            os.replace(watermarked_video_path, video_path) 
+            
+            # Удаляем временный файл сжатия и бакап (если всё ок)
+            for p in [temp_video_path]:
+                if os.path.exists(p):
+                    os.remove(p)
+            
+            # Удаляем бакап только если новый файл успешно записан и имеет ненулевой размер!
+            if os.path.exists(video_path) and os.path.getsize(video_path) > 0 and os.path.exists(backup_path):
+                os.remove(backup_path)
+
+        except Exception as e:
+            logger.error(f"Ошибка при замене файлов: {str(e)}")
+            return f"Ошибка при замене файлов: {str(e)}"
+
+        # Обновляем хэш обработанного видео в БД (только если всё прошло успешно!)
+        new_hash = instance._get_video_hash(video_field)
+        setattr(instance, hash_field_name, new_hash)
         instance.save(update_fields=[hash_field_name])
 
         return f"Видео успешно обработано: {video_path}"
     except Exception as e:
         logger.error(f"Исключение при обработке видео: {str(e)}")
         return f"Исключение при обработке видео: {str(e)}"
-
-
-@shared_task(bind=True)
-def process_video_business_card_task(self, user_id):
-    """
-    Асинхронная задача для обработки видео-визитки пользователя.
-    """
-    try:
-
-        user = CustomUser.objects.get(pk=user_id)
-
-        video_field = user.video_business_card
-        if not video_field:
-            return "Видео-визитка не требует обработки"
-
-        video_path = video_field.path
-
-        # Проверяем существование файла
-        if not os.path.exists(video_path):
-            logger.error(f"Файл видео-визитки не найден: {video_path}")
-            return f"Файл не найден: {video_path}"
-
-        actual_watermark_path = os.path.join(
-            settings.BASE_DIR, "media", "watermark.png"
-        )
-
-        if not os.path.exists(actual_watermark_path):
-            logger.error(f"Файл водяного знака не найден: {actual_watermark_path}")
-            return f"Файл водяного знака не найден"
-
-        # Создаем временный путь для обработки
-        base, ext = os.path.splitext(video_path)
-        temp_video_path = f"{base}_processed{ext}"
-
-        # Сжимаем видео и сохраняем во временный файл
-        if not compress_video(video_path, temp_video_path):
-            return f"Ошибка: не удалось сжать видео-визитку: {video_path}"
-
-        # Добавляем водяной знак
-        try:
-            from core.utils import add_watermark_to_video
-
-            if not add_watermark_to_video(
-                temp_video_path, actual_watermark_path, temp_video_path
-            ):
-                logger.error(
-                    f"Ошибка: не удалось добавить водяной знак к видео-визитке: {temp_video_path}"
-                )
-                return f"Ошибка: не удалось добавить водяной знак к видео-визитке: {temp_video_path}"
-        except Exception as e:
-            logger.error(f"Исключение при добавлении водяного знака: {str(e)}")
-            return f"Исключение при добавлении водяного знака: {str(e)}"
-
-        # Заменяем оригинальный файл обработанным
-        try:
-            if os.path.exists(video_path):
-                os.remove(video_path)
-            os.rename(temp_video_path, video_path)
-        except Exception as e:
-            logger.error(f"Ошибка при замене файлов: {str(e)}")
-            return f"Ошибка при замене файлов: {str(e)}"
-
-        # Обновляем хэш обработанной видео-визитки
-        user.processed_video_business_card_hash = user._get_video_hash(
-            user.video_business_card
-        )
-        user.save(update_fields=["processed_video_business_card_hash"])
-
-        return f"Видео-визитка успешно обработана: {video_path}"
-    except Exception as e:
-        logger.error(f"Исключение при обработке видео-визитки: {str(e)}")
-        return f"Исключение при обработке видео-визитки: {str(e)}"

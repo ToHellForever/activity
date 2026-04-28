@@ -8,10 +8,35 @@ from django.utils import timezone
 from core.mixins import VideoWatermarkMixin
 from core.validators import validate_video_duration, compress_video
 
+class VideoWatermarkMixin:
+    """Миксин для обработки видео с водяными знаками."""
 
+    def _get_video_hash(self, video_field):
+        if not video_field or not video_field.path:
+            return None
+        try:
+            with open(video_field.path, "rb") as f:
+                import hashlib
+                return hashlib.md5(f.read()).hexdigest()
+        except FileNotFoundError:
+            return None
+
+    def _should_process_video(self, video_field, hash_field):
+        current_hash = self._get_video_hash(video_field)
+        return current_hash != hash_field
+
+    def delete_old_video(self, video_field_name, hash_field_name):
+        """Удаляет старый файл видео и обнуляет хэш."""
+        video_field = getattr(self, video_field_name)
+        if video_field and os.path.exists(video_field.path):
+            try:
+                os.remove(video_field.path)
+            except Exception as e:
+                print(f"Ошибка удаления файла: {e}")
+        setattr(self, hash_field_name, None)
+        
+        
 class CustomUser(AbstractUser, VideoWatermarkMixin):
-    """Модель для пользователя."""
-
     USER_TYPE_CHOICES = (
         ("guest", "Гость"),
         ("visitor", "Посетитель"),
@@ -21,7 +46,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         max_length=10, choices=USER_TYPE_CHOICES, default="guest"
     )
     username = models.CharField(max_length=150, unique=True, verbose_name="Логин")
-    is_verified = models.BooleanField(default=False, verbose_name="Подтверждён")
+    is_verified = models.BooleanField(default=False)
     verification_status = models.CharField(
         max_length=20,
         choices=[
@@ -31,18 +56,11 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
             ("rejected", "Отклонено"),
         ],
         default="not_submitted",
-        verbose_name="Статус верификации",
     )
-    company_name = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name="Название компании"
-    )
-    phone_number = models.CharField(
-        max_length=30, blank=True, null=True, verbose_name="Телефон"
-    )
-    logo = models.ImageField(
-        upload_to="user_logos/", blank=True, null=True, verbose_name="Фото / Логотип"
-    )
-    social_links = models.TextField(blank=True, null=True, verbose_name="Соцсети")
+    company_name = models.CharField(max_length=255, blank=True, null=True)
+    phone_number = models.CharField(max_length=30, blank=True, null=True)
+    logo = models.ImageField(upload_to="user_logos/", blank=True, null=True)
+    social_links = models.TextField(blank=True, null=True)
     video_business_card = models.FileField(
         upload_to="partner_video/",
         blank=True,
@@ -55,14 +73,16 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         ],
     )
     processed_video_business_card_hash = models.CharField(
-        max_length=32,
-        blank=True,
-        null=True,
-        verbose_name="Хэш обработанного видео визитки",
+        max_length=32, blank=True, null=True
     )
 
     def save(self, *args, **kwargs):
-        # Сначала сохраняем модель, чтобы получить доступ к полям
+        # Проверяем замену видео-визитки
+        if self.pk:
+            old = CustomUser.objects.get(pk=self.pk)
+            if old.video_business_card != self.video_business_card:
+                self.delete_old_video('video_business_card', 'processed_video_business_card_hash')
+
         super().save(*args, **kwargs)
 
 
@@ -242,7 +262,15 @@ class Event(models.Model, VideoWatermarkMixin):
 
     def __str__(self):
         return self.title
-
+    
+    def save(self, *args, **kwargs):
+        # Проверяем замену видео мероприятия
+        if self.pk:
+            old = Event.objects.get(pk=self.pk)
+            if old.video_url != self.video_url:
+                self.delete_old_video('video_url', 'processed_video_url_hash')
+                self.video_processing_status = 'pending'
+                
     def save(self, *args, **kwargs):
         """
         Сохранение модели с добавлением водяного знака на изображения.

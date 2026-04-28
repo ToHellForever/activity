@@ -21,7 +21,6 @@ from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
 
-
 @login_required
 def partner_dashboard(request):
     if request.user.user_type != "partner":
@@ -65,12 +64,11 @@ def partner_dashboard(request):
 def create_event(request):
     """
     View для создания нового мероприятия.
-    Видео обрабатывается в фоновом режиме через Celery.
+    Видео обрабатывается автоматически через сигналы и Celery.
     """
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
 
-        # Обработка очистки медиафайлов при создании мероприятия
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
@@ -80,12 +78,9 @@ def create_event(request):
             for field_name in ["image", "video_url", "program_file"]:
                 clear_field_name = f"{field_name}-clear"
                 if clear_field_name in request.POST:
-                    # Получаем текущий файл
                     current_file = getattr(event, field_name)
-                    # Удаляем файл из файловой системы, если он существует
                     if current_file:
-                        current_file.delete()
-                    # Устанавливаем поле в None
+                        current_file.delete(save=False) # Не сохраняем модель здесь
                     setattr(event, field_name, None)
 
             event.save()
@@ -98,28 +93,21 @@ def create_event(request):
             for name, price, quantity in zip(
                 ticket_names, ticket_prices, ticket_quantities
             ):
-                if name and price and quantity:  # Проверяем, что все поля заполнены
+                if name and price and quantity:
                     try:
                         event.tickets.create(
                             name=name,
-                            price=(
-                                float(price.replace(",", "."))
-                                if "," in price
-                                else float(price)
-                            ),
+                            price=float(price.replace(",", ".")) if "," in price else float(price),
                             available_quantity=int(quantity),
                         )
                     except (ValueError, TypeError):
                         continue
 
-            # Запускаем асинхронную обработку видео
-            from core.tasks import process_event_video_task
-
-            process_event_video_task.delay(event.id)
-
+            # РЕДИРЕКТИМ пользователя. 
+            # Обработка видео начнется автоматически через сигнал post_save.
             messages.success(
                 request,
-                "Мероприятие успешно создано! Видео обрабатывается в фоновом режиме.",
+                "Мероприятие успешно создано! Видео будет обработано в фоновом режиме.",
             )
             return redirect("partner:partner_event_list")
     else:
@@ -127,7 +115,6 @@ def create_event(request):
 
     ticket_data = []
     if request.method == "POST" and not form.is_valid():
-        # Сохраняем данные о билетах для повторного отображения при ошибках валидации
         ticket_data = [
             {"name": name, "price": price, "quantity": quantity}
             for name, price, quantity in zip(
@@ -145,15 +132,6 @@ def create_event(request):
             "form": form,
             "is_edit": False,
             "ticket_data": ticket_data,
-            "saved_media": (
-                {
-                    "image": request.FILES.get("image"),
-                    "video_url": request.FILES.get("video_url"),
-                    "program_file": request.FILES.get("program_file"),
-                }
-                if request.method == "POST"
-                else {}
-            ),
         },
     )
 
@@ -168,64 +146,50 @@ def notify_organizer(event):
 def edit_event(request, event_id):
     """
     View для редактирования мероприятия.
+    Видео обрабатывается автоматически при замене файла.
     """
-    # Получаем мероприятие по ID или выдаем 404 ошибку, если его нет
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
-    # Проверяем, можно ли редактировать мероприятие
     if event.has_sold_tickets:
         messages.error(
             request,
-            "Редактирование этого мероприятия запрещено, так как на него уже проданы билеты. "
-            "Пожалуйста, обратитесь в техническую поддержку для внесения изменений.",
+            "Редактирование этого мероприятия запрещено, так как на него уже проданы билеты.",
         )
         return redirect("partner:partner_event_list")
 
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES, instance=event)
 
-        # Обработка очистки медиафайлов
-        for field_name in ["image", "video_url", "program_file"]:
+        # Обработка очистки медиафайлов (изображение, программа)
+        for field_name in ["image", "program_file"]:
             clear_field_name = f"{field_name}-clear"
             if clear_field_name in request.POST:
-                # Получаем текущий файл
                 current_file = getattr(event, field_name)
-                # Удаляем файл из файловой системы, если он существует
                 if current_file:
-                    current_file.delete()
-                # Устанавливаем поле в None
+                    current_file.delete(save=False)
                 setattr(event, field_name, None)
 
-        # Устанавливаем флаг изменения видео на основе данных формы
-        if "video_changed" in request.POST and request.POST["video_changed"] == "True":
-            event._video_changed = True
-        else:
-            event._video_changed = False
+        # ВАЖНО: Для видео (video_url) очистка и замена обрабатываются в модели Event.save()
+        # Флаг 'video_changed' больше не нужен.
 
         if form.is_valid():
-            # Сохраняем основные данные мероприятия
+            # Сохраняем модель. Логика обработки видео находится в методе save() модели.
             event = form.save()
 
-            # Обрабатываем данные о билетах из таблицы
+            # Обрабатываем данные о билетах (удаляем старые и создаем новые)
+            event.tickets.all().delete()
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
 
-            # Очищаем существующие билеты и создаем новые
-            event.tickets.all().delete()
-
             for name, price, quantity in zip(
                 ticket_names, ticket_prices, ticket_quantities
             ):
-                if name and price and quantity:  # Проверяем, что все поля заполнены
+                if name and price and quantity:
                     try:
                         event.tickets.create(
                             name=name,
-                            price=(
-                                float(price.replace(",", "."))
-                                if "," in price
-                                else float(price)
-                            ),
+                            price=float(price.replace(",", ".")) if "," in price else float(price),
                             available_quantity=int(quantity),
                         )
                     except (ValueError, TypeError):
@@ -233,10 +197,10 @@ def edit_event(request, event_id):
 
             return redirect("partner:partner_event_list")
     else:
-        # При GET-запросе заполняем форму данными из БД
         form = EventForm(instance=event)
 
     return render(request, "partner/event_form.html", {"form": form, "is_edit": True})
+
 
 
 @login_required
@@ -745,25 +709,27 @@ def finances(request):
 
 @login_required
 def profile_edit(request):
+    """
+    View для редактирования профиля партнера.
+    Включает обработку видео-визитки.
+    """
     if request.method == "POST":
-        # Обработка основной формы профиля
         user_form = PartnerProfileForm(
             request.POST, request.FILES, instance=request.user
         )
+        
+        # Обработка основной формы профиля (включая видео-визитку)
         if user_form.is_valid():
-            user_form.save()
+             user_form.save() # Сохранение здесь запустит сигнал для обработки видео
 
-            # Обработка формы смены пароля (если она была отправлена)
-            password_form = PasswordChangeForm(user=request.user, data=request.POST)
-            if password_form.is_valid():
-                password_form.save()
-                update_session_auth_hash(
-                    request, password_form.user
-                )  # Чтобы не разлогинить пользователя
+        # Обработка формы смены пароля
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+             password_form.save()
+             update_session_auth_hash(request, password_form.user)
 
         # Обработка формы загрузки документов
         if "upload_documents" in request.POST:
-            # Проверяем, что у пользователя нет документов на рассмотрении
             if request.user.verification_status == "not_submitted":
                 document_form = DocumentUploadForm(
                     request.POST, request.FILES, user=request.user
