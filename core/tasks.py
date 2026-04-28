@@ -6,7 +6,9 @@ from django.apps import apps
 import os
 import logging
 import time
-
+from core.models import Event,CustomUser
+from core.validators import compress_video
+from core.utils import add_watermark_to_video
 logger = logging.getLogger(__name__)
 
 
@@ -24,8 +26,6 @@ def process_event_video_task(self, event_id):
     Асинхронная задача для обработки видео мероприятия.
     """
     try:
-        from core.models import Event
-        from core.validators import compress_video
 
         event = Event.objects.get(pk=event_id)
 
@@ -181,8 +181,6 @@ def process_video_business_card_task(self, user_id):
     Асинхронная задача для обработки видео-визитки пользователя.
     """
     try:
-        from core.models import CustomUser
-        from core.validators import compress_video
 
         user = CustomUser.objects.get(pk=user_id)
 
