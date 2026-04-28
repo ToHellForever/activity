@@ -158,9 +158,26 @@ def edit_event(request, event_id):
         return redirect("partner:partner_event_list")
 
     if request.method == "POST":
+        # Передаем request.FILES, чтобы обработать загрузку нового видео
         form = EventForm(request.POST, request.FILES, instance=event)
 
-        # Обработка очистки медиафайлов (изображение, программа)
+        # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
+        # Эта логика удаляет старое видео с диска, если был загружен новый файл.
+        # Она должна выполняться ДО валидации и сохранения формы.
+        
+        # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_url'
+        new_video_file = request.FILES.get("video_url")
+        
+        # Если новый файл есть, и у события уже было старое видео...
+        if new_video_file and event.video_url:
+            # ...то удаляем старый файл с диска.
+            # Метод .delete() у FileField удаляет файл с диска.
+            # Параметр save=False важен: мы не хотим сохранять модель сейчас.
+            event.video_url.delete(save=False) 
+        
+        # --- КОНЕЦ БЛОГА ИЗМЕНЕНИЙ ---
+
+        # Очищаем медиафайлы (изображение, программа), если были отмечены флажки в форме
         for field_name in ["image", "program_file"]:
             clear_field_name = f"{field_name}-clear"
             if clear_field_name in request.POST:
@@ -169,14 +186,13 @@ def edit_event(request, event_id):
                     current_file.delete(save=False)
                 setattr(event, field_name, None)
 
-        # ВАЖНО: Для видео (video_url) очистка и замена обрабатываются в модели Event.save()
-        # Флаг 'video_changed' больше не нужен.
+        # Флаг 'video_changed' больше не нужен, так как мы удалили старый файл напрямую
 
         if form.is_valid():
-            # Сохраняем модель. Логика обработки видео находится в методе save() модели.
+            # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
 
-            # Обрабатываем данные о билетах (удаляем старые и создаем новые)
+            # Обработка данных о билетах: удаляем старые и создаем новые
             event.tickets.all().delete()
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
@@ -714,19 +730,36 @@ def profile_edit(request):
     Включает обработку видео-визитки.
     """
     if request.method == "POST":
+        # Инициализируем форму с данными и файлами
         user_form = PartnerProfileForm(
             request.POST, request.FILES, instance=request.user
         )
+
+        # --- НАЧАЛО БЛОКА ИЗМЕНЕНИЙ ---
+        # Эта логика удаляет старое видео-визитку с диска, если был загружен новый файл.
+        # Она должна выполняться ДО валидации и сохранения формы.
         
+        # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_business_card'
+        new_video_file = request.FILES.get("video_business_card")
+        
+        # Если новый файл есть, и у пользователя уже было старое видео...
+        if new_video_file and request.user.video_business_card:
+            # ...то удаляем старый файл с диска.
+            # Метод .delete() у FileField удаляет файл с диска.
+            # Параметр save=False важен: мы не хотим сохранять модель сейчас.
+            request.user.video_business_card.delete(save=False) 
+        # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
+
+
         # Обработка основной формы профиля (включая видео-визитку)
         if user_form.is_valid():
-             user_form.save() # Сохранение здесь запустит сигнал для обработки видео
+            user_form.save() # Сохранение здесь запустит сигнал для обработки нового видео
 
         # Обработка формы смены пароля
         password_form = PasswordChangeForm(user=request.user, data=request.POST)
         if password_form.is_valid():
-             password_form.save()
-             update_session_auth_hash(request, password_form.user)
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
 
         # Обработка формы загрузки документов
         if "upload_documents" in request.POST:

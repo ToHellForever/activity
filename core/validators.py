@@ -103,7 +103,7 @@ def compress_video(input_path, output_path=None, target_size_mb=10):
         logger.info(f"Сжатие видео: {input_path} -> {output_path}")
 
         with VideoFileClip(input_path) as video_clip:
-            bitrate = f"{target_size_mb * 800}K"
+            bitrate = f"{target_size_mb * 500}K"
             logger.info(f"Сжатие видео с битрейтом: {bitrate}")
 
             # Используем прямые слеши для MoviePy
@@ -115,8 +115,12 @@ def compress_video(input_path, output_path=None, target_size_mb=10):
                 audio_codec="aac",
                 bitrate=bitrate,
                 logger=None,
-                threads=4,  # Используем несколько потоков для ускорения
-                preset="fast",  # Быстрее сжатие
+                threads=2,  # Используем несколько потоков для ускорения
+                preset="veryfast",  # Быстрее сжатие
+                ffmpeg_params=[
+                    "-pix_fmt", "yuv420p",
+                    "-movflags", "+faststart"
+                ],
             )
         logger.info(f"Видео успешно сжато: {output_path}")
         return True
