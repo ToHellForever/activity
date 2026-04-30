@@ -41,7 +41,7 @@
     {% csrf_token %}
 
     {% for field in form %}
-        {% if field.name != 'ticket_types' and field.name != 'place_data' %}
+        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' %}
         <div class="form-group">
             <label>
                 {{ field.label_tag }}
@@ -68,6 +68,67 @@
         </div>
         {% endif %}
     {% endfor %}
+
+    <!-- Кастомные поля для медиафайлов -->
+    <div class="form-group">
+        <label>Изображение мероприятия</label>
+        <div id="image-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.image %}
+            <div class="media-preview">
+                <img src="{{ form.instance.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
+                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                        data-media-type="image" data-media-id="{{ form.instance.id }}">
+                    ×
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <input type="file" name="image" id="id_image" class="custom-media-input" data-media-type="image" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="image">
+            {% if form.instance.image %}Изменить{% else %}Добавить{% endif %} изображение
+        </button>
+    </div>
+
+    <div class="form-group">
+        <label>Видео мероприятия</label>
+        <div id="video_url-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.video_url %}
+            <div class="media-preview">
+                <video controls style="max-width: 300px;" class="mr-2">
+                    <source src="{{ form.instance.video_url.url }}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                        data-media-type="video_url" data-media-id="{{ form.instance.id }}">
+                    ×
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <input type="file" name="video_url" id="id_video_url" class="custom-media-input" data-media-type="video_url" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="video_url">
+            {% if form.instance.video_url %}Изменить{% else %}Добавить{% endif %} видео
+        </button>
+    </div>
+
+    <div class="form-group">
+        <label>Программа мероприятия (PDF)</label>
+        <div id="program_file-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.program_file %}
+            <div class="media-preview">
+                <span>{{ form.instance.program_file.name }}</span>
+                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                        data-media-type="program_file" data-media-id="{{ form.instance.id }}">
+                    ×
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <input type="file" name="program_file" id="id_program_file" class="custom-media-input" data-media-type="program_file" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="program_file">
+            {% if form.instance.program_file %}Изменить{% else %}Добавить{% endif %} программу
+        </button>
+    </div>
 
     <!-- Контейнер для выбора местоположения -->
     <div class="form-group place-input-container">
@@ -130,6 +191,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="/static/js/ticket_table.js"></script>
+<script src="/static/js/custom_media.js"></script>
 <script>
     // Ждем, пока страница полностью загрузится
     document.addEventListener('DOMContentLoaded', function() {

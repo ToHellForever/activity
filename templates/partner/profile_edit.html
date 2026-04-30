@@ -9,6 +9,7 @@
     
     <h2>Личные данные</h2>
     {% for field in user_form %}
+        {% if field.name != 'video_business_card' %}
         <div class="form-group">
             {{ field.label_tag }}
             {{ field }}
@@ -19,7 +20,32 @@
                 <div class="alert alert-danger">{{ error }}</div>
             {% endfor %}
         </div>
+        {% endif %}
     {% endfor %}
+
+    <!-- Кастомное поле для видео-визитки -->
+    <div class="form-group">
+        <label>Видео-визитка</label>
+        <div id="video_business_card-preview-container" class="media-preview-container mb-2">
+            {% if request.user.video_business_card %}
+            <div class="media-preview">
+                <video controls style="max-width: 300px;" class="mr-2">
+                    <source src="{{ request.user.video_business_card.url }}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                        data-media-type="video_business_card" data-media-id="{{ request.user.id }}">
+                    ×
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <input type="file" name="video_business_card" id="id_video_business_card" class="custom-media-input"
+               data-media-type="video_business_card" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="video_business_card">
+            {% if request.user.video_business_card %}Изменить{% else %}Добавить{% endif %} видео-визитку
+        </button>
+    </div>
 
     <button type="submit" class="btn btn-primary">Сохранить все изменения</button>
 </form>
@@ -57,4 +83,8 @@
 
 <!-- Ссылка на соглашение -->
 <p><a href="#" target="_blank">Пользовательское соглашение партнёра</a></p>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/custom_media.js"></script>
 {% endblock %}

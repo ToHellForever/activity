@@ -907,3 +907,48 @@ def report_schedule(request):
         logger.exception("Ошибка в представлении report_schedule: %s", str(e))
         messages.error(request, f"Произошла ошибка: {str(e)}")
         return redirect("partner:dashboard")
+
+@login_required
+def remove_media(request, media_type, media_id):
+    """
+    View для удаления медиафайлов через AJAX.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    
+    try:
+        if media_type == 'image':
+            event = Event.objects.get(id=media_id, organizer=request.user)
+            if event.image:
+                event.image.delete(save=False)
+                event.image = None
+                event.save()
+                return JsonResponse({'status': 'success'})
+            
+        elif media_type == 'video_url':
+            event = Event.objects.get(id=media_id, organizer=request.user)
+            if event.video_url:
+                event.video_url.delete(save=False)
+                event.video_url = None
+                event.save()
+                return JsonResponse({'status': 'success'})
+            
+        elif media_type == 'program_file':
+            event = Event.objects.get(id=media_id, organizer=request.user)
+            if event.program_file:
+                event.program_file.delete(save=False)
+                event.program_file = None
+                event.save()
+                return JsonResponse({'status': 'success'})
+            
+        elif media_type == 'video_business_card':
+            if request.user.video_business_card:
+                request.user.video_business_card.delete(save=False)
+                request.user.video_business_card = None
+                request.user.save()
+                return JsonResponse({'status': 'success'})
+            
+        return JsonResponse({'status': 'error', 'message': 'Media not found'}, status=404)
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
