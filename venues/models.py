@@ -7,8 +7,25 @@ from django.urls import reverse
 
 User = get_user_model()
 
+
+class VenueFormat(models.Model):
+    """Справочник форматов мероприятий."""
+
+    name = models.CharField(
+        max_length=100, unique=True, verbose_name="Формат мероприятия"
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Формат мероприятия"
+        verbose_name_plural = "Форматы мероприятий"
+
+
 class VenueType(models.Model):
     """Справочник типов площадок."""
+
     name = models.CharField(max_length=100, unique=True, verbose_name="Тип площадки")
 
     def __str__(self):
@@ -21,6 +38,7 @@ class VenueType(models.Model):
 
 class VenueEquipment(models.Model):
     """Справочник оборудования."""
+
     name = models.CharField(max_length=100, unique=True, verbose_name="Оборудование")
 
     def __str__(self):
@@ -33,6 +51,7 @@ class VenueEquipment(models.Model):
 
 class VenueAmenity(models.Model):
     """Справочник удобств."""
+
     name = models.CharField(max_length=100, unique=True, verbose_name="Удобство")
 
     def __str__(self):
@@ -45,61 +64,93 @@ class VenueAmenity(models.Model):
 
 class Venue(models.Model):
     """Модель площадки для проведения мероприятий."""
+
     STATUS_CHOICES = [
-        ('draft', 'Черновик'),
-        ('published', 'Опубликовано'),
-        ('archived', 'Архив'),
+        ("draft", "Черновик"),
+        ("published", "Опубликовано"),
+        ("archived", "Архив"),
     ]
     PLACEMENT_TARIFF_CHOICES = [
-        ('basic', 'Базовый'),
-        ('extended', 'Расширенный'),
-        ('premium', 'Премиум'),
+        ("basic", "Базовый"),
+        ("extended", "Расширенный"),
+        ("premium", "Премиум"),
     ]
     PRICE_UNIT_CHOICES = [
-        ('hour', 'В час'),
-        ('day', 'В день'),
-        ('request', 'По запросу'),
+        ("hour", "В час"),
+        ("day", "В день"),
+        ("request", "По запросу"),
     ]
 
     title = models.CharField(max_length=255, verbose_name="Название площадки")
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    short_description = models.TextField(max_length=500, verbose_name="Краткое описание")
+    short_description = models.TextField(
+        max_length=500, verbose_name="Краткое описание"
+    )
     full_description = models.TextField(verbose_name="Полное описание")
-    
-    venue_type = models.ForeignKey(VenueType, on_delete=models.SET_NULL, null=True, verbose_name="Тип площадки")
-    
+
+    venue_type = models.ForeignKey(
+        VenueType, on_delete=models.SET_NULL, null=True, verbose_name="Тип площадки"
+    )
+
     address = models.CharField(max_length=255, verbose_name="Адрес")
-    city = models.CharField(max_length=100, default='Новосибирск', verbose_name="Город")
+    city = models.CharField(max_length=100, default="Новосибирск", verbose_name="Город")
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
     metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
-    
+
     latitude = models.FloatField(null=True, blank=True, verbose_name="Широта")
     longitude = models.FloatField(null=True, blank=True, verbose_name="Долгота")
-    
-    area = models.FloatField(validators=[MinValueValidator(1)], verbose_name="Площадь (кв.м.)")
+
+    area = models.FloatField(
+        validators=[MinValueValidator(1)], verbose_name="Площадь (кв.м.)"
+    )
     max_capacity = models.PositiveIntegerField(verbose_name="Вместимость (макс.)")
-    
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Стоимость аренды")
-    price_unit = models.CharField(max_length=20, choices=PRICE_UNIT_CHOICES, default='day', verbose_name="Единица стоимости")
-    
+
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2, verbose_name="Стоимость аренды"
+    )
+    price_unit = models.CharField(
+        max_length=20,
+        choices=PRICE_UNIT_CHOICES,
+        default="day",
+        verbose_name="Единица стоимости",
+    )
+
     parking = models.BooleanField(default=False, verbose_name="Парковка")
-    
-    equipment = models.ManyToManyField(VenueEquipment, blank=True, verbose_name="Оборудование")
-    amenities = models.ManyToManyField(VenueAmenity, blank=True, verbose_name="Удобства")
-    
-    formats = TaggableManager(verbose_name="Подходит для формата", help_text="Выберите форматы: тренинг, мастер-класс и т.д.")
-    
-    images = models.ImageField(upload_to='venue_images/', blank=True, verbose_name="Галерея фото")
-    video = models.FileField(upload_to='venue_videos/', blank=True, null=True, verbose_name="Видео (опционально)")
-    
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    placement_tariff = models.CharField(max_length=20, choices=PLACEMENT_TARIFF_CHOICES, default='basic')
-    
-    contacts_opened = models.BooleanField(default=False, verbose_name="Контакты открыты") # Для тарифов extended/premium
-    
+
+    equipment = models.ManyToManyField(
+        VenueEquipment, blank=True, verbose_name="Оборудование"
+    )
+    amenities = models.ManyToManyField(
+        VenueAmenity, blank=True, verbose_name="Удобства"
+    )
+
+    formats = TaggableManager(
+        verbose_name="Подходит для формата",
+        help_text="Выберите форматы: тренинг, мастер-класс и т.д.",
+    )
+
+    images = models.ImageField(
+        upload_to="venue_images/", blank=True, verbose_name="Главное фото"
+    )
+    video = models.FileField(
+        upload_to="venue_videos/",
+        blank=True,
+        null=True,
+        verbose_name="Видео (опционально)",
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    placement_tariff = models.CharField(
+        max_length=20, choices=PLACEMENT_TARIFF_CHOICES, default="basic"
+    )
+
+    contacts_opened = models.BooleanField(
+        default=False, verbose_name="Контакты открыты"
+    )  # Для тарифов extended/premium
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # SEO поля
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.TextField(blank=True)
@@ -110,7 +161,7 @@ class Venue(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('venue_detail', kwargs={'slug': self.slug})
+        return reverse("venue_detail", kwargs={"slug": self.slug})
 
     def __str__(self):
         return self.title
@@ -122,26 +173,29 @@ class Venue(models.Model):
 
 class BookingRequest(models.Model):
     """Модель заявки на площадку."""
+
     STATUS_CHOICES = [
-        ('new', 'Новая'),
-        ('in_work', 'В работе'),
-        ('transferred', 'Передана площадке'),
-        ('closed', 'Закрыта'),
+        ("new", "Новая"),
+        ("in_work", "В работе"),
+        ("transferred", "Передана площадке"),
+        ("closed", "Закрыта"),
     ]
 
-    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='booking_requests')
-    
+    venue = models.ForeignKey(
+        Venue, on_delete=models.CASCADE, related_name="booking_requests"
+    )
+
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=30)
     email = models.EmailField(blank=True)
-    
+
     event_date = models.DateTimeField()
     participants_count = models.PositiveIntegerField()
     event_format = models.CharField(max_length=100)
-    
+
     comment = models.TextField(blank=True)
-    
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

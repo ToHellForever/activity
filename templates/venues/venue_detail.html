@@ -4,6 +4,12 @@
 {% block content %}
 <div class="container">
     <h1>{{ venue.title }}</h1>
+    {% if venue.meta_title %}
+    <meta property="og:title" content="{{ venue.meta_title }}">
+    {% endif %}
+    {% if venue.meta_description %}
+    <meta property="og:description" content="{{ venue.meta_description }}">
+    {% endif %}
     
     <div class="row">
         <!-- Блок с фото и краткой информацией -->
@@ -12,16 +18,35 @@
             {% if venue.images %}
                 <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
-                        <div class="carousel-item active">
-                            <img src="{{ venue.images.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        {% for image in venue.images.all %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text|default:venue.title }}">
                         </div>
+                        {% endfor %}
                     </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                    </button>
                 </div>
             {% endif %}
             
             <div class="mt-4">
                 <h3>Описание</h3>
                 <p>{{ venue.full_description|linebreaksbr }}</p>
+                {% if venue.video %}
+                <div class="mt-4">
+                    <h4>Видео</h4>
+                    <video controls class="w-100" style="max-height: 400px;">
+                        <source src="{{ venue.video.url }}" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                </div>
+                {% endif %}
             </div>
             
             <h4>Характеристики</h4>
@@ -29,7 +54,14 @@
                 <li class="list-group-item"><strong>Вместимость:</strong> {{ venue.max_capacity }} человек</li>
                 <li class="list-group-item"><strong>Площадь:</strong> {{ venue.area }} кв.м.</li>
                 <li class="list-group-item"><strong>Тип площадки:</strong> {{ venue.venue_type }}</li>
-                <li class="list-group-item"><strong>Цена:</strong> {{ venue.price }} ₽/{{ venue.get_price_unit_display }}</li>
+                <li class="list-group-item"><strong>Цена:</strong> {{ venue.price|floatformat }} ₽/{{ venue.get_price_unit_display }}</li>
+                <li class="list-group-item"><strong>Подходит для форматов:</strong>
+                    {% for format in venue.formats.all %}
+                        <span class="badge bg-info mx-1">{{ format.name }}</span>
+                    {% empty %}
+                        Форматы не указаны
+                    {% endfor %}
+                </li>
                 <li class="list-group-item">
                     <strong>Парковка:</strong>
                     {% if venue.parking %}
@@ -38,15 +70,25 @@
                         <i class="bi bi-parking-x text-danger"></i> Нет
                     {% endif %}
                 </li>
+                <li class="list-group-item">
+                    <strong>Удобства:</strong>
+                    {% for amenity in venue.amenities.all %}
+                        <span class="badge bg-secondary mx-1">{{ amenity.name }}</span>
+                    {% empty %}
+                        Удобства не указаны
+                    {% endfor %}
+                </li>
             </ul>
             
             <h4>Оборудование</h4>
             {% if venue.equipment.all %}
-                <ul>
+                <div class="row">
                     {% for item in venue.equipment.all %}
-                        <li>{{ item.name }}</li>
+                        <div class="col-md-4 mb-2">
+                            <span class="badge bg-light text-dark border">{{ item.name }}</span>
+                        </div>
                     {% endfor %}
-                </ul>
+                </div>
             {% else %}
                 <p>Оборудование не указано.</p>
             {% endif %}
@@ -61,8 +103,31 @@
                 <!-- Адрес -->
                 <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
                 
-                <!-- Карта (заглушка, можно заменить на Яндекс.Карты) -->
-                <div id="map-canvas" style="height: 250px; background-color: #e9ecef; border-radius: 8px; margin: 15px 0;"></div>
+                <!-- Карта (интеграция с Яндекс.Картами) -->
+                {% if venue.latitude and venue.longitude %}
+                <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
+                <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (typeof ymaps !== 'undefined') {
+                            ymaps.ready(function() {
+                                var map = new ymaps.Map("map-canvas", {
+                                    center: [{{ venue.latitude }}, {{ venue.longitude }}],
+                                    zoom: 15
+                                });
+
+                                var placemark = new ymaps.Placemark([{{ venue.latitude }}, {{ venue.longitude }}], {
+                                    balloonContent: '{{ venue.title }}'
+                                });
+
+                                map.geoObjects.add(placemark);
+                            });
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="alert alert-info">Координаты для карты не указаны.</div>
+                {% endif %}
                 
                 <!-- Кнопка для заявки -->
                 {% if venue.contacts_opened %}
