@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "taggit",
     "visitor_app",
     "partner_app",
+    "venues",
     "core",
     "django_celery_beat",
 ]

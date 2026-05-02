@@ -244,6 +244,3 @@ class SupportTicketAdmin(admin.ModelAdmin):
         (None, {"fields": ("user", "status")}),
         ("Тикет", {"fields": ("subject", "created_at")}),
     )
-
-
-# video_business_card

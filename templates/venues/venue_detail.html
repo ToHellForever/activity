@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ venue.title }}</h1>
+    
+    <div class="row">
+        <!-- Блок с фото и краткой информацией -->
+        <div class="col-md-8">
+            <!-- Галерея изображений -->
+            {% if venue.images %}
+                <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ venue.images.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <h3>Описание</h3>
+                <p>{{ venue.full_description|linebreaksbr }}</p>
+            </div>
+            
+            <h4>Характеристики</h4>
+            <ul class="list-group">
+                <li class="list-group-item"><strong>Вместимость:</strong> {{ venue.max_capacity }} человек</li>
+                <li class="list-group-item"><strong>Площадь:</strong> {{ venue.area }} кв.м.</li>
+                <li class="list-group-item"><strong>Тип площадки:</strong> {{ venue.venue_type }}</li>
+                <li class="list-group-item"><strong>Цена:</strong> {{ venue.price }} ₽/{{ venue.get_price_unit_display }}</li>
+                <li class="list-group-item">
+                    <strong>Парковка:</strong>
+                    {% if venue.parking %}
+                        <i class="bi bi-parking-fill text-success"></i> Есть
+                    {% else %}
+                        <i class="bi bi-parking-x text-danger"></i> Нет
+                    {% endif %}
+                </li>
+            </ul>
+            
+            <h4>Оборудование</h4>
+            {% if venue.equipment.all %}
+                <ul>
+                    {% for item in venue.equipment.all %}
+                        <li>{{ item.name }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Оборудование не указано.</p>
+            {% endif %}
+        </div>
+
+        <!-- Блок с картой, адресом и заявкой -->
+        <div class="col-md-4">
+            <div class="sticky-top" style="top: 2rem;">
+                
+                <h3>Контакты и карта</h3>
+                
+                <!-- Адрес -->
+                <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
+                
+                <!-- Карта (заглушка, можно заменить на Яндекс.Карты) -->
+                <div id="map-canvas" style="height: 250px; background-color: #e9ecef; border-radius: 8px; margin: 15px 0;"></div>
+                
+                <!-- Кнопка для заявки -->
+                {% if venue.contacts_opened %}
+                    <p><strong>Контакты доступны для тарифа "{{ venue.get_placement_tariff_display }}"</strong></p>
+                    <p>Email: {{ venue.organizer.email }}</p>
+                    <p>Телефон: {{ venue.organizer.phone_number }}</p>
+                {% else %}
+                    <button type='button' data-bs-toggle='modal' data-bs-target='#requestModal'
+                            class='btn btn-primary w-100 mt-3'>
+                        Оставить заявку на просмотр площадки
+                    </button>
+                    
+                    <!-- Модальное окно для заявки (можно вынести в отдельный файл) -->
+                    <div class='modal fade' id='requestModal'>
+                        <div class='modal-dialog'>
+                            <div class='modal-content'>
+                                <form id="booking-form" method="post">
+                                    {% csrf_token %}
+                                    {{ form.as_p }}
+                                    <button type="submit" class="btn btn-success">Отправить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

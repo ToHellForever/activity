@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container">
+  <h1>Каталог площадок</h1>
+  
+  <!-- Фильтры -->
+  <form id="filter-form" method="get">
+      <div class="row">
+          <div class="col-md-3">
+              <input type="text" name="city" class="form-control" placeholder="Город" value="{{ request.GET.city }}">
+          </div>
+          <div class="col-md-3">
+              <input type="text" name="district" class="form-control" placeholder="Район" value="{{ request.GET.district }}">
+          </div>
+          <div class="col-md-3">
+              <input type="text" name="metro" class="form-control" placeholder="Метро" value="{{ request.GET.metro }}">
+          </div>
+          <div class="col-md-3 mt-4">
+              <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
+          </div>
+      </div>
+  </form>
+  
+  <div id="venues-grid" class="row row-cols-1 row-cols-md-3 g-4 mt-4">
+      {% for venue in venues %}
+      <div class="col">
+          <div class="card h-100">
+              {% if venue.photos.first %}
+              <!-- Стало -->
+                <img src="{{ venue.images.url }}" class="card-img-top" alt="...">
+              {% endif %}
+              <div class="card-body">
+                  <h5 class="card-title">{{ venue.title }}</h5>
+                  <p class="card-text text-muted">{{ venue.address }}</p>
+                  <p>Вместимость: {{ venue.max_capacity }} чел.</p>
+                  <p>Цена: {{ venue.price }} ₽/{{ venue.get_price_unit_display }}</p>
+                    {% if venue.slug %}
+                        <a href="{% url 'venue_detail' venue.slug %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+                    {% else %}
+                        <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm disabled">Подробнее</a>
+                    {% endif %}
+                  <a href="#" data-bs-toggle="modal" data-bs-target="#requestModal-{{ venue.id }}" 
+                     class="btn btn-primary btn-sm">Оставить заявку</a>
+              </div>
+          </div>
+      </div>
+      {% endfor %}
+  </div>
+  
+  <!-- Кнопка "Показать ещё" -->
+  {% if is_paginated and page_obj.has_next %}
+  <div class="text-center mt-4">
+      <button id="load-more-btn" data-page="{{ page_obj.next_page_number }}" 
+              class="btn btn-outline-secondary">
+          Показать ещё {{ venues|length }} площадок →
+      </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Модальные окна для заявок -->
+{% for venue in venues %}
+<div class="modal fade" id="requestModal-{{ venue.id }}" tabindex="-1">
+   <!-- ... содержимое формы заявки ... -->
+</div>
+{% endfor %}
+{% endblock %}
