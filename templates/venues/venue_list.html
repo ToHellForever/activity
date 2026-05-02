@@ -40,8 +40,9 @@
                     {% else %}
                         <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm disabled">Подробнее</a>
                     {% endif %}
-                  <a href="#" data-bs-toggle="modal" data-bs-target="#requestModal-{{ venue.id }}" 
-                     class="btn btn-primary btn-sm">Оставить заявку</a>
+<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal-{{ venue.id }}">
+  Оставить заявку
+</button>
               </div>
           </div>
       </div>
@@ -61,8 +62,55 @@
 
 <!-- Модальные окна для заявок -->
 {% for venue in venues %}
-<div class="modal fade" id="requestModal-{{ venue.id }}" tabindex="-1">
-   <!-- ... содержимое формы заявки ... -->
+<div class="modal fade" id="requestModal-{{ venue.id }}" tabindex="-1" aria-labelledby="requestModalLabel-{{ venue.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="requestModalLabel-{{ venue.id }}">Заявка на площадку: {{ venue.title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <form method="post" action="{% url 'venue_list' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="venue_id" value="{{ venue.id }}">
+          <div class="mb-3">
+            <label for="name-{{ venue.id }}" class="form-label">Ваше имя</label>
+            <input type="text" class="form-control" id="name-{{ venue.id }}" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="phone-{{ venue.id }}" class="form-label">Телефон</label>
+            <input type="tel" class="form-control" id="phone-{{ venue.id }}" name="phone" required>
+          </div>
+          <div class="mb-3">
+            <label for="email-{{ venue.id }}" class="form-label">Email (необязательно)</label>
+            <input type="email" class="form-control" id="email-{{ venue.id }}" name="email">
+          </div>
+          <div class="mb-3">
+            <label for="event_date-{{ venue.id }}" class="form-label">Дата и время мероприятия</label>
+            <input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="participants_count-{{ venue.id }}" class="form-label">Количество участников</label>
+            <input type="number" class="form-control" id="participants_count-{{ venue.id }}" name="participants_count" min="1" required>
+          </div>
+          <div class="mb-3">
+            <label for="event_format-{{ venue.id }}" class="form-label">Формат мероприятия</label>
+            <input type="text" class="form-control" id="event_format-{{ venue.id }}" name="event_format" required>
+          </div>
+          <div class="mb-3">
+            <label for="comment-{{ venue.id }}" class="form-label">Комментарий (необязательно)</label>
+            <textarea class="form-control" id="comment-{{ venue.id }}" name="comment" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          <button type="submit" class="btn btn-primary">Отправить заявку</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endfor %}
 {% endblock %}
+
+{% block extra_js %}{% endblock %}
