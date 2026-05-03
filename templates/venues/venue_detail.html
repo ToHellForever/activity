@@ -106,7 +106,7 @@
                 <!-- Карта (интеграция с Яндекс.Картами) -->
                 {% if venue.latitude and venue.longitude %}
                 <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
-                <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+                <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         if (typeof ymaps !== 'undefined') {
