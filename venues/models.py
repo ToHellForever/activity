@@ -97,8 +97,8 @@ class Venue(models.Model):
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
     metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
 
-    latitude = models.FloatField(null=True, blank=True, verbose_name="Широта")
-    longitude = models.FloatField(null=True, blank=True, verbose_name="Долгота")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     area = models.FloatField(
         validators=[MinValueValidator(1)], verbose_name="Площадь (кв.м.)"
