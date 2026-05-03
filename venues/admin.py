@@ -42,6 +42,12 @@ class VenueAdmin(admin.ModelAdmin):
     search_fields = ("title", "address")
     filter_horizontal = ("equipment", "amenities",)
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if 'slug' in form.base_fields:
+            form.base_fields['slug'].help_text = "Оставьте это поле пустым, чтобы автоматически сгенерировать slug из названия."
+        return form
+
 
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):

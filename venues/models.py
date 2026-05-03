@@ -174,6 +174,7 @@ class Venue(VideoWatermarkMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
+            from slugify import slugify
             self.slug = slugify(self.title)
 
         # Обработка водяного знака для изображения
