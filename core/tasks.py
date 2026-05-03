@@ -3,6 +3,7 @@ from celery import shared_task
 from django.apps import apps
 import os
 import logging
+import time
 # settings
 from django.conf import settings
 
@@ -20,7 +21,25 @@ def process_video_task(
     self, model_name, instance_id, video_field_name, hash_field_name
 ):
     try:
-        model = apps.get_model("core", model_name)
+        # Разбираем model_name в формате "app_label.model_name"
+        if isinstance(model_name, str) and '.' in model_name:
+            parts = model_name.split('.')
+            if len(parts) == 2:
+                app_label, model_name = parts
+            else:
+                # Если формат неожиданный, используем venues по умолчанию для Venues
+                if 'Venue' in model_name:
+                    app_label = 'venues'
+                else:
+                    app_label = 'core'
+        else:
+            # Если нет точки, используем venues по умолчанию для Venues
+            if 'Venue' in str(model_name):
+                app_label = 'venues'
+            else:
+                app_label = 'core'
+
+        model = apps.get_model(app_label, model_name)
         instance = model.objects.get(pk=instance_id)
         
         video_field = getattr(instance, video_field_name)

@@ -1,10 +1,13 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.validators import FileExtensionValidator
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from taggit.managers import TaggableManager
 from django.urls import reverse
-
+from core.validators import validate_video_duration
+from core.mixins import VideoWatermarkMixin
+import os
 User = get_user_model()
 
 
@@ -62,7 +65,7 @@ class VenueAmenity(models.Model):
         verbose_name_plural = "Удобства"
 
 
-class Venue(models.Model):
+class Venue(VideoWatermarkMixin, models.Model):
     """Модель площадки для проведения мероприятий."""
 
     STATUS_CHOICES = [
@@ -97,8 +100,12 @@ class Venue(models.Model):
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
     metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
 
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
 
     area = models.FloatField(
         validators=[MinValueValidator(1)], verbose_name="Площадь (кв.м.)"
@@ -130,13 +137,23 @@ class Venue(models.Model):
     )
 
     images = models.ImageField(
-        upload_to="venue_images/", blank=True, verbose_name="Главное фото"
+        upload_to="venue_images/", blank=True, verbose_name="Главное фото", null=True
     )
     video = models.FileField(
         upload_to="venue_videos/",
         blank=True,
         null=True,
         verbose_name="Видео (опционально)",
+        validators=[
+            FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
+            validate_video_duration,
+        ],
+    )
+    processed_video_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        editable=False,
+        verbose_name="Хэш обработанного видео",
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
@@ -158,6 +175,19 @@ class Venue(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+
+        # Обработка водяного знака для изображения
+        if self.images:
+            from django.conf import settings
+            from core.utils import add_watermark_to_image
+
+            # Путь к логотипу для водяного знака
+            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+
+            if os.path.exists(watermark_path):
+                image_path = self.images.path
+                add_watermark_to_image(image_path, watermark_path, image_path)
+
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
