@@ -8,6 +8,7 @@ from django.urls import reverse
 from core.validators import validate_video_duration
 from core.mixins import VideoWatermarkMixin
 import os
+
 User = get_user_model()
 
 
@@ -73,17 +74,50 @@ class Venue(VideoWatermarkMixin, models.Model):
         ("published", "Опубликовано"),
         ("archived", "Архив"),
     ]
-    PLACEMENT_TARIFF_CHOICES = [
-        ("basic", "Базовый"),
-        ("extended", "Расширенный"),
-        ("premium", "Премиум"),
+    TARIFF_CHOICES = [
+        ("free", "Free"),
+        ("standard", "Standard"),
+        ("premium", "Premium"),
     ]
+
+    TARIFF_LIMITS = {
+        "free": {
+            "max_photos": 1,
+            "has_video": False,
+            "priority": 1,
+            "show_badge": False,
+            "description_limit": 500,
+            "show_in_collections": False,
+        },
+        "standard": {
+            "max_photos": 10,
+            "has_video": False,
+            "priority": 2,
+            "show_badge": True,
+            "description_limit": 2000,
+            "show_in_collections": True,
+        },
+        "premium": {
+            "max_photos": 25,
+            "has_video": True,
+            "priority": 3,
+            "show_badge": True,
+            "description_limit": 5000,
+            "show_in_collections": True,
+        },
+    }
     PRICE_UNIT_CHOICES = [
         ("hour", "В час"),
         ("day", "В день"),
         ("request", "По запросу"),
     ]
-
+    tariff = models.CharField(
+        max_length=20,
+        choices=TARIFF_CHOICES,
+        default="free",
+        verbose_name="Тариф",
+        help_text="Выберите тариф - от него зависят доступные возможности",
+    )
     title = models.CharField(max_length=255, verbose_name="Название площадки")
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     short_description = models.TextField(
@@ -157,9 +191,6 @@ class Venue(VideoWatermarkMixin, models.Model):
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
-    placement_tariff = models.CharField(
-        max_length=20, choices=PLACEMENT_TARIFF_CHOICES, default="basic"
-    )
 
     contacts_opened = models.BooleanField(
         default=False, verbose_name="Контакты открыты"
@@ -175,6 +206,7 @@ class Venue(VideoWatermarkMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             from slugify import slugify
+
             self.slug = slugify(self.title)
 
         # Обработка водяного знака для изображения
