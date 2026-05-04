@@ -67,7 +67,7 @@ class VenueAmenity(models.Model):
         verbose_name_plural = "Удобства"
 
 
-class VenueImage(models.Model):
+class VenueImage(VideoWatermarkMixin, models.Model):
     """Модель для хранения фотографий площадки."""
 
     venue = models.ForeignKey(
@@ -88,6 +88,21 @@ class VenueImage(models.Model):
 
     def __str__(self):
         return f"Фото для {self.venue.title}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # Обработка водяного знака для изображения
+        if self.image:
+            from django.conf import settings
+            from core.utils import add_watermark_to_image
+
+            # Путь к логотипу для водяного знака
+            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+
+            if os.path.exists(watermark_path):
+                image_path = self.image.path
+                add_watermark_to_image(image_path, watermark_path, image_path)
 
     class Meta:
         verbose_name = "Фото площадки"
