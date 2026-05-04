@@ -8,6 +8,7 @@ from django.urls import reverse
 from core.validators import validate_video_duration
 from core.mixins import VideoWatermarkMixin
 import os
+from slugify import slugify
 
 User = get_user_model()
 
@@ -75,35 +76,41 @@ class Venue(VideoWatermarkMixin, models.Model):
         ("archived", "Архив"),
     ]
     TARIFF_CHOICES = [
-        ("free", "Free"),
-        ("standard", "Standard"),
-        ("premium", "Premium"),
+        (1, "Free"),
+        (2, "Standard"),
+        (3, "Premium"),
     ]
 
     TARIFF_LIMITS = {
-        "free": {
+        1: {
             "max_photos": 1,
             "has_video": False,
             "priority": 1,
             "show_badge": False,
             "description_limit": 500,
             "show_in_collections": False,
+            "contacts_level": "only_request",
+            "badge_text": "",
         },
-        "standard": {
+        2: {
             "max_photos": 10,
             "has_video": False,
             "priority": 2,
             "show_badge": True,
             "description_limit": 2000,
             "show_in_collections": True,
+            "contacts_level": "request_or_show",
+            "badge_text": "Партнёр",
         },
-        "premium": {
+        3: {
             "max_photos": 25,
             "has_video": True,
             "priority": 3,
             "show_badge": True,
             "description_limit": 5000,
             "show_in_collections": True,
+            "contacts_level": "direct",
+            "badge_text": "Рекомендуем",
         },
     }
     PRICE_UNIT_CHOICES = [
@@ -111,10 +118,9 @@ class Venue(VideoWatermarkMixin, models.Model):
         ("day", "В день"),
         ("request", "По запросу"),
     ]
-    tariff = models.CharField(
-        max_length=20,
+    tariff = models.PositiveSmallIntegerField(
         choices=TARIFF_CHOICES,
-        default="free",
+        default=1,
         verbose_name="Тариф",
         help_text="Выберите тариф - от него зависят доступные возможности",
     )
@@ -205,7 +211,6 @@ class Venue(VideoWatermarkMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            from slugify import slugify
 
             self.slug = slugify(self.title)
 

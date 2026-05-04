@@ -52,8 +52,17 @@ class VenueListView(ListView):
 
         has_wifi_queryset_ids = self.request.GET.getlist('has_wifi') # Пример для оборудования/удобств
 
-        # Сортировка по приоритету тарифа и другим параметрам (пример)
-        qs = qs.order_by('-placement_tariff', 'price')
+        # Сортировка по приоритету тарифа и другим параметрам
+        from django.db.models import Case, When, Value, IntegerField
+        qs = qs.annotate(
+            tariff_priority=Case(
+                When(tariff=3, then=Value(3)),
+                When(tariff=2, then=Value(2)),
+                When(tariff=1, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('-tariff_priority', 'price')
 
         return qs
 
@@ -105,6 +114,8 @@ class VenueDetailView(DetailView):
     template_name = 'venues/venue_detail.html' # Указываем шаблон
     context_object_name = 'venue' # Как переменная будет называться в шаблоне
 
-    def get_queryset(self):
-        # Показываем только опубликованные площадки
-        return Venue.objects.filter(status='published')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        venue = self.object
+        context['limits'] = venue.TARIFF_LIMITS.get(venue.tariff, {})
+        return context
