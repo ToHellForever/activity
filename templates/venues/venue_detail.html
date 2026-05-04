@@ -103,24 +103,62 @@
                 <!-- Адрес -->
                 <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
                 
+                <!-- Вывод координат для сравнения -->
+                <script>
+                    // Выводим точные координаты из шаблона для сравнения с админкой
+                    console.group('СРАВНЕНИЕ КООРДИНАТ');
+                    console.log('Координаты из шаблона (для сравнения с админкой):');
+                    console.log('Широта (latitude):', '{{ venue.latitude }}');
+                    console.log('Долгота (longitude):', '{{ venue.longitude }}');
+                    console.log('Адрес:', '{{ venue.address }}');
+                    console.groupEnd();
+                </script>
+
                 <!-- Карта (интеграция с Яндекс.Картами) -->
                 {% if venue.latitude and venue.longitude %}
                 <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
                 <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
+                        // Получаем точные координаты с 6 знаками после запятой
+                        // Используем фильтр stringformat для гарантированного сохранения точности
+                        var latStr = '{{ venue.latitude|stringformat:"f" }}';
+                        var lonStr = '{{ venue.longitude|stringformat:"f" }}';
+                        
+                        // Преобразуем в числа с полной точностью
+                        // Заменяем запятую на точку на случай, если используется европейский формат
+                        var lat = parseFloat(latStr.replace(',', '.'));
+                        var lon = parseFloat(lonStr.replace(',', '.'));
+                        
+                        // Выводим РАСШИРЕННУЮ отладочную информацию
+                        console.group('ПОЛНАЯ ОТЛАДКА КООРДИНАТ');
+                        console.log('1. Оригинальные значения из Django:');
+                        console.log('   Широта:', '{{ venue.latitude }}');
+                        console.log('   Долгота:', '{{ venue.longitude }}');
+                        console.log('2. Строковые значения для преобразования:');
+                        console.log('   latStr:', latStr);
+                        console.log('   lonStr:', lonStr);
+                        console.log('3. Числовые значения для карты:');
+                        console.log('   lat:', lat);
+                        console.log('   lon:', lon);
+                        console.groupEnd();
+                        
                         if (typeof ymaps !== 'undefined') {
                             ymaps.ready(function() {
                                 var map = new ymaps.Map("map-canvas", {
-                                    center: [{{ venue.latitude }}, {{ venue.longitude }}],
+                                    center: [lat, lon],
                                     zoom: 15
                                 });
 
-                                var placemark = new ymaps.Placemark([{{ venue.latitude }}, {{ venue.longitude }}], {
-                                    balloonContent: '{{ venue.title }}'
+                                var placemark = new ymaps.Placemark([lat, lon], {
+                                    balloonContent: '{{ venue.title }}',
+                                    hintContent: '{{ venue.address }}'
                                 });
 
                                 map.geoObjects.add(placemark);
+                                
+                                // Устанавливаем центр карты точно на метку
+                                map.setCenter([lat, lon]);
                             });
                         }
                     });
