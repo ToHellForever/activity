@@ -3,6 +3,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const venueForm = document.getElementById('venue_form');
     if (!venueForm) return;
 
+    // Добавляем стили для поисковой строки Яндекс.Карт
+    const style = document.createElement('style');
+    style.textContent = `
+        .ymap-container .ymaps-2-1-79-searchbox-input__input {
+            color: black !important;
+            background-color: white !important;
+            border: 1px solid #ccc !important;
+            opacity: 1 !important;
+        }
+        .ymap-container .ymaps-2-1-79-searchbox-popup-item-title {
+            color: black !important;
+        }
+        .ymap-container .ymaps-2-1-79-searchbox-popup-item-text {
+            color: black !important;
+        }
+        .ymap-container .ymaps-2-1-79-searchbox-view__input-wrapper {
+            background-color: white !important;
+        }
+    `;
+    document.head.appendChild(style);
+
     // API ключ Яндекс Карт
     const apiKey = 'f4f22e64-c72d-4d41-a5ad-76b4f6367b75';
     
@@ -31,7 +52,45 @@ function initMap() {
         return;
     }
 
-    // --- 2. Создаем контейнер для карты ---
+    // --- 2. Добавляем глобальные стили для Яндекс.Карт ---
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Стили для поисковой строки */
+        .ymaps-2-1-79-searchbox-input__input {
+            color: black !important;
+            background-color: white !important;
+            border: 1px solid #ccc !important;
+            opacity: 1 !important;
+            font-size: 14px !important;
+        }
+        .ymaps-2-1-79-searchbox-view {
+            background-color: white !important;
+            border-radius: 4px !important;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2) !important;
+        }
+        /* Стили для выпадающего списка */
+        .ymaps-2-1-79-searchbox-popup {
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #ccc !important;
+        }
+        .ymaps-2-1-79-searchbox-popup-item {
+            color: black !important;
+            padding: 5px 10px !important;
+        }
+        .ymaps-2-1-79-searchbox-popup-item-title {
+            color: black !important;
+        }
+        .ymaps-2-1-79-searchbox-popup-item-text {
+            color: black !important;
+        }
+        .ymaps-2-1-79-searchbox-popup-item:hover {
+            background-color: #f5f5f5 !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // --- 3. Создаем контейнер для карты ---
     const mapContainer = document.createElement('div');
     mapContainer.id = 'map-container';
     mapContainer.style.width = '100%';
