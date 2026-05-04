@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from .models import Venue, BookingRequest
+from .models import Venue, BookingRequest, VenueImage
 
 
 class VenueForm(forms.ModelForm):
@@ -60,20 +60,10 @@ class VenueForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         tariff = cleaned_data.get("tariff")
-        images = cleaned_data.get("images")
         video = cleaned_data.get("video")
 
         if tariff:
             limits = Venue.TARIFF_LIMITS.get(tariff, {})
-
-            # Проверка количества фотографий
-            max_photos = limits.get("max_photos", 1)
-            if images and max_photos < 1:
-                tariff_name = dict(Venue.TARIFF_CHOICES).get(tariff, str(tariff))
-                raise ValidationError(
-                    _("Для тарифа %(tariff)s загрузка фотографий не разрешена.")
-                    % {"tariff": tariff_name}
-                )
 
             # Проверка возможности загрузки видео
             has_video = limits.get("has_video", False)

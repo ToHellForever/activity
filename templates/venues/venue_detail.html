@@ -14,10 +14,24 @@
     <div class="row">
         <!-- Блок с фото и краткой информацией -->
         <div class="col-md-8">
-            <!-- Главное фото -->
-            {% if venue.images %}
-                <div class="mb-4">
-                    <img src="{{ venue.images.url }}" class="img-fluid rounded" alt="{{ venue.title }}">
+            <!-- Галерея фотографий -->
+            {% if venue.images.all %}
+                <div id="carouselExampleIndicators" class="carousel slide mb-4" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in venue.images.all %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text|default:venue.title }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                    </button>
                 </div>
             {% endif %}
             

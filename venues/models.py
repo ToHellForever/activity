@@ -67,6 +67,32 @@ class VenueAmenity(models.Model):
         verbose_name_plural = "Удобства"
 
 
+class VenueImage(models.Model):
+    """Модель для хранения фотографий площадки."""
+
+    venue = models.ForeignKey(
+        'Venue',
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name="Площадка"
+    )
+    image = models.ImageField(
+        upload_to="venue_images/",
+        verbose_name="Фото"
+    )
+    alt_text = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Альтернативный текст"
+    )
+
+    def __str__(self):
+        return f"Фото для {self.venue.title}"
+
+    class Meta:
+        verbose_name = "Фото площадки"
+        verbose_name_plural = "Фото площадок"
+
 class Venue(VideoWatermarkMixin, models.Model):
     """Модель площадки для проведения мероприятий."""
 
@@ -175,10 +201,6 @@ class Venue(VideoWatermarkMixin, models.Model):
         verbose_name="Подходит для формата",
         help_text="Выберите форматы: тренинг, мастер-класс и т.д.",
     )
-
-    images = models.ImageField(
-        upload_to="venue_images/", blank=True, verbose_name="Главное фото", null=True
-    )
     video = models.FileField(
         upload_to="venue_videos/",
         blank=True,
@@ -211,20 +233,7 @@ class Venue(VideoWatermarkMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-
             self.slug = slugify(self.title)
-
-        # Обработка водяного знака для изображения
-        if self.images:
-            from django.conf import settings
-            from core.utils import add_watermark_to_image
-
-            # Путь к логотипу для водяного знака
-            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
-
-            if os.path.exists(watermark_path):
-                image_path = self.images.path
-                add_watermark_to_image(image_path, watermark_path, image_path)
 
         super().save(*args, **kwargs)
 

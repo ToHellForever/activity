@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.core.exceptions import ValidationError
 from .models import (
     VenueType,
     VenueEquipment,
@@ -6,6 +8,7 @@ from .models import (
     Venue,
     BookingRequest,
     VenueFormat,
+    VenueImage,
 )
 from .forms import VenueForm
 
@@ -30,6 +33,18 @@ class VenueFormatAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
+class VenueImageInline(admin.TabularInline):
+    model = VenueImage
+    extra = 1
+    fields = ('image', 'alt_text', 'image_preview')
+    readonly_fields = ('image_preview',)
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.image.url)
+        return ""
+    image_preview.short_description = "Превью"
+
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
     form = VenueForm
@@ -47,9 +62,7 @@ class VenueAdmin(admin.ModelAdmin):
         "equipment",
         "amenities",
     )
-
-    class Media:
-        js = ("/static/js/map_admin.js", "/static/js/venue_admin.js")
+    inlines = [VenueImageInline]
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -71,6 +84,28 @@ class VenueAdmin(admin.ModelAdmin):
             )
         return form
 
+    def save_formset(self, request, form, formset, change):
+        super().save_formset(request, form, formset, change)
+        if formset.model == VenueImage:
+            venue = form.instance
+            tariff = venue.tariff
+            limits = venue.TARIFF_LIMITS.get(tariff, {})
+            max_photos = limits.get("max_photos", 1)
+
+            # Проверяем количество фотографий
+            if VenueImage.objects.filter(venue=venue).count() > max_photos:
+                raise ValidationError(
+                    f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
+                )
+
+    class Media:
+        js = ("/static/js/map_admin.js", "/static/js/venue_admin.js")
+
+
+@admin.register(VenueImage)
+class VenueImageAdmin(admin.ModelAdmin):
+    list_display = ("venue", "alt_text")
+    list_filter = ("venue",)
 
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):
