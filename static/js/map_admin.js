@@ -42,7 +42,7 @@ function initMap() {
     $fields.address.parentNode.insertBefore(mapContainer, $fields.address);
 
     // --- 3. Получаем начальные координаты ---
-    const defaultLat = 55.030204; // Новосибирск (центр)
+    const defaultLat = 55.030204; 
     const defaultLon = 82.920430;
     
     let currentLat = $fields.latitude.value ? parseFloat($fields.latitude.value) : defaultLat;
@@ -73,27 +73,28 @@ function initMap() {
                 $fields.address.value = geoObject.getAddressLine();
                 $fields.latitude.value = lat.toFixed(6);
                 $fields.longitude.value = lon.toFixed(6);
-                
-                // Заполняем доп. поля (если есть данные)
-                if (metaData) {
-                    const details = metaData.AddressDetails?.Country;
-                    if (details) {
-                        // Город
-                        const cityObj = details.AdministrativeArea?.Locality;
-                        if (cityObj && $fields.city) {
-                            $fields.city.value = cityObj.LocalityName;
+
+                // Сбросим доп. поля перед заполнением
+                if ($fields.city) $fields.city.value = '';
+                if ($fields.district) $fields.district.value = '';
+                if ($fields.metro) $fields.metro.value = '';
+
+                // Заполняем доп. поля (ищем в Components)
+                if (metaData && metaData.Address && metaData.Address.Components) {
+                    metaData.Address.Components.forEach(comp => {
+                        // Город (locality)
+                        if (comp.kind === 'locality' && $fields.city) {
+                            $fields.city.value = comp.name;
                         }
-                        // Район
-                        const districtObj = details.AdministrativeArea?.SubAdministrativeArea;
-                        if (districtObj && $fields.district) {
-                            $fields.district.value = districtObj.SubAdministrativeAreaName;
+                        // Район (sublocality - например, Таганский район)
+                        if (comp.kind === 'district' && $fields.district) {
+                            $fields.district.value = comp.name;
                         }
-                    }
-                    // Метро (ищем в Components)
-                    const metroComp = (metaData.Address?.Components || []).find(c => c.kind === 'metro');
-                    if (metroComp && $fields.metro) {
-                        $fields.metro.value = metroComp.name;
-                    }
+                        // Метро
+                        if (comp.kind === 'metro' && $fields.metro) {
+                            $fields.metro.value = comp.name;
+                        }
+                    });
                 }
             }
         }).catch(err => console.error('Геокодер:', err));

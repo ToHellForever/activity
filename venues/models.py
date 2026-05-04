@@ -96,7 +96,7 @@ class Venue(VideoWatermarkMixin, models.Model):
     )
 
     address = models.CharField(max_length=255, verbose_name="Адрес")
-    city = models.CharField(max_length=100, default="Новосибирск", verbose_name="Город")
+    city = models.CharField(max_length=100, default="", verbose_name="Город")
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
     metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
 
