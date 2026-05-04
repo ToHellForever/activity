@@ -28,6 +28,7 @@ class VenueAmenityAdmin(admin.ModelAdmin):
 class VenueFormatAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
+
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
     list_display = (
@@ -40,12 +41,20 @@ class VenueAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "placement_tariff", "city", "venue_type")
     search_fields = ("title", "address")
-    filter_horizontal = ("equipment", "amenities",)
+    filter_horizontal = (
+        "equipment",
+        "amenities",
+    )
+
+    class Media:
+        js = ("/static/js/map_admin.js",)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        if 'slug' in form.base_fields:
-            form.base_fields['slug'].help_text = "Оставьте это поле пустым, чтобы автоматически сгенерировать slug из названия."
+        if "slug" in form.base_fields:
+            form.base_fields["slug"].help_text = (
+                "Оставьте это поле пустым, чтобы автоматически сгенерировать slug из названия."
+            )
         return form
 
 
