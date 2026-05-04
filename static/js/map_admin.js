@@ -1,201 +1,118 @@
-// Инициализация Яндекс Карт для админ-панели
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Проверяем, что находимся на странице редактирования площадки
-    if (document.getElementById('venue_form')) {
-        // API ключ Яндекс Карт
-        const apiKey = 'f4f22e64-c72d-4d41-a5ad-76b4f6367b75';
-        
-        // Создаем скрипт для загрузки API Яндекс Карт
-        const script = document.createElement('script');
-        script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=ru_RU`;
-        script.async = true;
-        script.onload = initMap;
-        document.head.appendChild(script);
-    }
+    // Ищем форму площадки по ID
+    const venueForm = document.getElementById('venue_form');
+    if (!venueForm) return;
+
+    // API ключ Яндекс Карт
+    const apiKey = 'f4f22e64-c72d-4d41-a5ad-76b4f6367b75';
+    
+    // Загружаем API Яндекс Карт
+    const script = document.createElement('script');
+    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=ru_RU`;
+    script.async = true;
+    script.onload = () => ymaps.ready(initMap);
+    document.head.appendChild(script);
 });
 
 function initMap() {
-    // Проверяем, что API Яндекс Карт загружен
-    if (typeof ymaps === 'undefined') {
-        console.error('Яндекс Карты не загружены');
+    // --- 1. Ищем все поля формы ---
+    const $fields = {
+        address: document.querySelector('#id_address'),
+        city: document.querySelector('#id_city'),
+        district: document.querySelector('#id_district'),
+        metro: document.querySelector('#id_metro'),
+        latitude: document.querySelector('#id_latitude'),
+        longitude: document.querySelector('#id_longitude')
+    };
+
+    // Проверяем наличие обязательных полей
+    if (!$fields.address || !$fields.latitude || !$fields.longitude) {
+        console.error('Не найдены обязательные поля формы');
         return;
     }
+
+    // --- 2. Создаем контейнер для карты ---
+    const mapContainer = document.createElement('div');
+    mapContainer.id = 'map-container';
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '400px';
+    mapContainer.style.marginBottom = '20px';
     
-    // Находим все поля формы заранее
-    const addressField = document.querySelector('#id_address');
-    const cityField = document.querySelector('#id_city');
-    const districtField = document.querySelector('#id_district');
-    const metroField = document.querySelector('#id_metro');
-    const latitudeField = document.querySelector('#id_latitude');
-    const longitudeField = document.querySelector('#id_longitude');
+    // Вставляем карту перед полем адреса
+    $fields.address.parentNode.insertBefore(mapContainer, $fields.address);
+
+    // --- 3. Получаем начальные координаты ---
+    const defaultLat = 55.030204; // Новосибирск (центр)
+    const defaultLon = 82.920430;
     
-    // Ждем полной загрузки API
-    ymaps.ready(function() {
-        // Получаем элементы DOM
-        const mapContainer = document.createElement('div');
-        mapContainer.id = 'map-container';
-        mapContainer.style.width = '100%';
-        mapContainer.style.height = '400px';
-        mapContainer.style.marginBottom = '20px';
-        
-        // Находим поле адреса
-        const addressField = document.querySelector('#id_address');
-        if (!addressField) {
-            console.error('Поле адреса не найдено');
-            return;
-        }
-        
-        // Находим поля координат
-        const latitudeField = document.querySelector('#id_latitude');
-        const longitudeField = document.querySelector('#id_longitude');
-        
-        // Вставляем контейнер для карты перед полем адреса
-        addressField.parentNode.insertBefore(mapContainer, addressField);
-        
-        // Получаем текущие координаты из полей (по умолчанию - Новосибирск)
-        let currentLat = latitudeField && latitudeField.value ? parseFloat(latitudeField.value) : 55.030204;
-        let currentLon = longitudeField && longitudeField.value ? parseFloat(longitudeField.value) : 82.920430;
-        
-        // Инициализируем карту
-        const map = new ymaps.Map('map-container', {
-            center: [currentLat, currentLon],
-            zoom: 14
-        });
-        
-        // Создаем метку
-        let placemark = new ymaps.Placemark([currentLat, currentLon], {
-            balloonContent: 'Перетащите метку для изменения местоположения'
-        }, {
-            preset: 'islands#violetDotIconWithCaption',
-            draggable: true
-        });
-        
-        map.geoObjects.add(placemark);
-        
-        // Обработчик клика на карте
-        map.events.add('click', function(e) {
-            const coords = e.get('coords');
-            
-            // Обновляем позицию метки
-            placemark.geometry.setCoordinates(coords);
-            
-            // Обновляем скрытые поля координат
-            if (latitudeField) latitudeField.value = coords[0];
-            if (longitudeField) longitudeField.value = coords[1];
-            
-            // Обновляем адрес через геокодер
-            updateAddressFromCoords(coords[0], coords[1]);
-        });
-        
-        // Обработчик перетаскивания метки
-        placemark.events.add('dragend', function(e) {
-            const newCoords = placemark.geometry.getCoordinates();
-            
-            // Обновляем скрытые поля координат
-            if (latitudeField) latitudeField.value = newCoords[0];
-            if (longitudeField) longitudeField.value = newCoords[1];
-            
-            // Обновляем адрес через геокодер
-            updateAddressFromCoords(newCoords[0], newCoords[1]);
-        });
-        
-        // Функция для обновления адреса по координатам
-        function updateAddressFromCoords(lat, lon) {
-            ymaps.geocode([lon, lat], { kind: 'house' }).then(
-                function(res) {
-                    if (res.geoObjects.getLength() > 0) {
-                        const firstGeoObject = res.geoObjects.get(0);
-                        
-                        // Получаем полный адрес
-                        const address = firstGeoObject.getAddressLine();
-                        
-                        // Получаем детализированную информацию о компонентах адреса
-                        const metaData = firstGeoObject.properties.get('metaDataProperty.GeocoderMetaData');
-                        
-                        // Обновляем поле адреса
-                        if (addressField) addressField.value = address;
-                        
-                        // Обновляем город
-                        if (cityField) cityField.value = 'Новосибирск';
-                        
-                        // Обновляем район и метро через детализированные данные
-                        updateAddressComponents(metaData);
-                    } else {
-                        console.warn('Не удалось получить адрес для данных координат');
-                        // Попробуем получить хотя бы приблизительный адрес
-                        ymaps.geocode([lon, lat]).then(
-                            function(res) {
-                                if (res.geoObjects.getLength() > 0) {
-                                    const firstGeoObject = res.geoObjects.get(0);
-                                    if (addressField) addressField.value = firstGeoObject.getAddressLine();
-                                }
-                            }
-                        );
-                    }
-                }
-            )
-            .catch(function(err) {
-                console.error('Ошибка геокодирования:', err);
-            });
-        }
-        
-        // Функция для обновления компонентов адреса
-        function updateAddressComponents(metaData) {
-            if (!metaData) return;
-            
-            // Очищаем предыдущие значения
-            if (districtField) districtField.value = '';
-            if (metroField) metroField.value = '';
-            
-            // Пробуем получить район из компонентов адреса
-            if (metaData.Address && metaData.Address.Components) {
-                const components = metaData.Address.Components;
+    let currentLat = $fields.latitude.value ? parseFloat($fields.latitude.value) : defaultLat;
+    let currentLon = $fields.longitude.value ? parseFloat($fields.longitude.value) : defaultLon;
+
+    // --- 4. Инициализируем карту и метку ---
+    const map = new ymaps.Map('map-container', {
+        center: [currentLat, currentLon],
+        zoom: 14,
+        controls: ['searchControl'] 
+    });
+
+    const placemark = new ymaps.Placemark([currentLat, currentLon], {}, {
+        preset: 'islands#violetDotIconWithCaption',
+        draggable: true
+    });
+    
+    map.geoObjects.add(placemark);
+
+    // --- 5. Функция обновления полей из геокодера ---
+    function updateFieldsFromGeocoder(lat, lon) {
+        ymaps.geocode([lat, lon], { results: 1 }).then(res => {
+            if (res.geoObjects.getLength()) {
+                const geoObject = res.geoObjects.get(0);
+                const metaData = geoObject.properties.get('metaDataProperty.GeocoderMetaData');
                 
-                // Ищем район
-                const districtComponent = components.find(c => c.kind === 'district');
-                if (districtComponent && districtField) {
-                    districtField.value = districtComponent.name;
-                }
+                // Заполняем адрес и координаты (всегда)
+                $fields.address.value = geoObject.getAddressLine();
+                $fields.latitude.value = lat.toFixed(6);
+                $fields.longitude.value = lon.toFixed(6);
                 
-                // Ищем метро
-                const metroComponent = components.find(c => c.kind === 'metro');
-                if (metroComponent && metroField) {
-                    metroField.value = metroComponent.name;
-                }
-            }
-        }
-        
-        // Обработчик изменения адреса
-        if (addressField) {
-            addressField.addEventListener('change', function() {
-                const address = this.value;
-                
-                // Геокодируем адрес
-                ymaps.geocode(address, { results: 1 }).then(
-                    function(res) {
-                        if (res.geoObjects.getLength() > 0) {
-                            const firstGeoObject = res.geoObjects.get(0);
-                            const coords = firstGeoObject.geometry.getCoordinates();
-                            
-                            // Обновляем метку на карте
-                            placemark.geometry.setCoordinates(coords);
-                            
-                            // Обновляем скрытые поля координат
-                            if (latitudeField) latitudeField.value = coords[0];
-                            if (longitudeField) longitudeField.value = coords[1];
-                            
-                            // Центрируем карту
-                            map.setCenter(coords, 16);
-                        } else {
-                            console.warn('Адрес не найден');
+                // Заполняем доп. поля (если есть данные)
+                if (metaData) {
+                    const details = metaData.AddressDetails?.Country;
+                    if (details) {
+                        // Город
+                        const cityObj = details.AdministrativeArea?.Locality;
+                        if (cityObj && $fields.city) {
+                            $fields.city.value = cityObj.LocalityName;
+                        }
+                        // Район
+                        const districtObj = details.AdministrativeArea?.SubAdministrativeArea;
+                        if (districtObj && $fields.district) {
+                            $fields.district.value = districtObj.SubAdministrativeAreaName;
                         }
                     }
-                )
-                .catch(function(err) {
-                    console.error('Ошибка геокодирования:', err);
-                });
-            });
-        }
+                    // Метро (ищем в Components)
+                    const metroComp = (metaData.Address?.Components || []).find(c => c.kind === 'metro');
+                    if (metroComp && $fields.metro) {
+                        $fields.metro.value = metroComp.name;
+                    }
+                }
+            }
+        }).catch(err => console.error('Геокодер:', err));
+    }
+
+    // --- 6. Обработчики событий ---
+    
+    // Клик по карте
+    map.events.add('click', e => {
+        const coords = e.get('coords'); // [lat, lon]
+        placemark.geometry.setCoordinates(coords);
+        updateFieldsFromGeocoder(coords[0], coords[1]);
+        map.setCenter(coords);
+    });
+
+    // Перетаскивание метки
+    placemark.events.add('dragend', () => {
+        const coords = placemark.geometry.getCoordinates();
+        updateFieldsFromGeocoder(coords[0], coords[1]);
+        map.setCenter(coords);
     });
 }
