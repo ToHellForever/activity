@@ -8,7 +8,6 @@ from django.urls import reverse
 from core.validators import validate_video_duration
 from core.mixins import VideoWatermarkMixin
 import os
-from slugify import slugify
 
 User = get_user_model()
 
