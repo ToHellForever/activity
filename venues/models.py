@@ -7,6 +7,7 @@ from taggit.managers import TaggableManager
 from django.urls import reverse
 from core.validators import validate_video_duration
 from core.mixins import VideoWatermarkMixin
+from unidecode import unidecode
 import os
 
 User = get_user_model()
@@ -247,7 +248,7 @@ class Venue(VideoWatermarkMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(unidecode(self.title))
 
         super().save(*args, **kwargs)
 
