@@ -198,6 +198,7 @@ class Venue(VideoWatermarkMixin, models.Model):
     )
 
     parking = models.BooleanField(default=False, verbose_name="Парковка")
+    has_wifi = models.BooleanField(default=False, verbose_name="Wi-Fi")
 
     equipment = models.ManyToManyField(
         VenueEquipment, blank=True, verbose_name="Оборудование"

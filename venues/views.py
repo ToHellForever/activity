@@ -17,10 +17,12 @@ class VenueListView(ListView):
     def get_queryset(self):
         qs = super().get_queryset().filter(status='published')
 
-        # Фильтрация по GET-параметрам из ТЗ
+        # Фильтрация по GET-параметрам
         city = self.request.GET.get('city')
         if city:
             qs = qs.filter(city__iexact=city)
+        else:
+            qs = qs.filter(city__iexact='Новосибирск')  # По умолчанию Новосибирск
 
         district = self.request.GET.get('district')
         if district:
@@ -30,27 +32,37 @@ class VenueListView(ListView):
         if metro:
             qs = qs.filter(metro__iexact=metro)
 
-        venue_type_id = self.request.GET.get('type')
-        if venue_type_id:
-            qs = qs.filter(venue_type_id=venue_type_id)
+        venue_type = self.request.GET.get('venue_type')
+        if venue_type:
+            qs = qs.filter(venue_type=venue_type)
 
         max_capacity = self.request.GET.get('max_capacity')
         if max_capacity and max_capacity.isdigit():
             qs = qs.filter(max_capacity__gte=max_capacity)
 
-        price_from = self.request.GET.get('price_from')
-        if price_from and price_from.isdigit():
-            qs = qs.filter(price__gte=price_from)
+        price = self.request.GET.get('price')
+        if price and price.isdigit():
+            qs = qs.filter(price__lte=price)
 
-        price_to = self.request.GET.get('price_to')
-        if price_to and price_to.isdigit():
-            qs = qs.filter(price__lte=price_to)
+        price_unit = self.request.GET.get('price_unit')
+        if price_unit:
+            qs = qs.filter(price_unit=price_unit)
 
-        has_parking = self.request.GET.get('parking')
-        if has_parking == 'on':
+        equipment = self.request.GET.get('equipment')
+        if equipment:
+            qs = qs.filter(equipment__name__iexact=equipment)
+
+        has_parking = self.request.GET.get('has_parking')
+        if has_parking:
             qs = qs.filter(parking=True)
 
-        has_wifi_queryset_ids = self.request.GET.getlist('has_wifi') # Пример для оборудования/удобств
+        has_wifi = self.request.GET.get('has_wifi')
+        if has_wifi:
+            qs = qs.filter(has_wifi=True)
+
+        venue_format = self.request.GET.get('venue_format')
+        if venue_format:
+            qs = qs.filter(formats__name__iexact=venue_format)
 
         # Сортировка по приоритету тарифа и другим параметрам
         from django.db.models import Case, When, Value, IntegerField
@@ -64,7 +76,7 @@ class VenueListView(ListView):
             )
         ).order_by('-tariff_priority', 'price')
 
-        return qs
+        return qs.distinct()
 
     def post(self, request, *args, **kwargs):
         venue_id = request.POST.get('venue_id')

@@ -74,6 +74,26 @@ class VenueAdmin(admin.ModelAdmin):
     filter_horizontal = ("equipment", "amenities")
     inlines = [VenueImageInline]
     change_form_template = "admin/venues/venue/change_form.html"
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'slug', 'tariff', 'status', 'venue_type', 'address', 'city', 'district', 'metro', 'latitude', 'longitude')
+        }),
+        ('Описание', {
+            'fields': ('short_description', 'full_description')
+        }),
+        ('Характеристики', {
+            'fields': ('area', 'max_capacity', 'price', 'price_unit')
+        }),
+        ('Удобства', {
+            'fields': ('parking', 'has_wifi')
+        }),
+        ('Медиа', {
+            'fields': ('video',)
+        }),
+        ('SEO', {
+            'fields': ('meta_title', 'meta_description')
+        }),
+    )
 
     def delete_model(self, request, obj):
         # Удаляем все связанные медиафайлы

@@ -8,13 +8,63 @@
   <form id="filter-form" method="get">
       <div class="row">
           <div class="col-md-3">
-              <input type="text" name="city" class="form-control" placeholder="Город" value="{{ request.GET.city }}">
+              <input type="text" name="city" class="form-control" placeholder="Город" value="{% if request.GET.city %}{{ request.GET.city }}{% else %}Новосибирск{% endif %}">
           </div>
           <div class="col-md-3">
               <input type="text" name="district" class="form-control" placeholder="Район" value="{{ request.GET.district }}">
           </div>
           <div class="col-md-3">
               <input type="text" name="metro" class="form-control" placeholder="Метро" value="{{ request.GET.metro }}">
+          </div>
+          <div class="col-md-3">
+              <select name="venue_type" class="form-select">
+                  <option value="">Тип площадки</option>
+                  <option value="1" {% if request.GET.venue_type == '1' %}selected{% endif %}>Конференц-зал</option>
+                  <option value="2" {% if request.GET.venue_type == '2' %}selected{% endif %}>Коворкинг</option>
+                  <option value="3" {% if request.GET.venue_type == '3' %}selected{% endif %}>Лекционный зал</option>
+              </select>
+          </div>
+      </div>
+      <div class="row mt-3">
+          <div class="col-md-3">
+              <input type="number" name="max_capacity" class="form-control" placeholder="Вместимость max" value="{{ request.GET.max_capacity }}">
+          </div>
+          <div class="col-md-3">
+              <input type="number" name="price" class="form-control" placeholder="Цена" value="{{ request.GET.price }}">
+          </div>
+          <div class="col-md-3">
+              <select name="price_unit" class="form-select">
+                  <option value="">Формат аренды</option>
+                  <option value="hour" {% if request.GET.price_unit == 'hour' %}selected{% endif %}>Почасовая</option>
+                  <option value="day" {% if request.GET.price_unit == 'day' %}selected{% endif %}>Посуточная</option>
+                  <option value="request" {% if request.GET.price_unit == 'request' %}selected{% endif %}>По запросу</option>
+              </select>
+          </div>
+          <div class="col-md-3">
+              <input type="text" name="equipment" class="form-control" placeholder="Оборудование" value="{{ request.GET.equipment }}">
+          </div>
+      </div>
+      <div class="row mt-3">
+          <div class="col-md-3">
+              <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="has_parking" id="has_parking" {% if request.GET.has_parking %}checked{% endif %}>
+                  <label class="form-check-label" for="has_parking">Парковка</label>
+              </div>
+          </div>
+          <div class="col-md-3">
+              <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="has_wifi" id="has_wifi" {% if request.GET.has_wifi %}checked{% endif %}>
+                  <label class="form-check-label" for="has_wifi">Wi-Fi</label>
+              </div>
+          </div>
+          <div class="col-md-3">
+              <select name="venue_format" class="form-select">
+                  <option value="">Подходит для формата</option>
+                  <option value="training" {% if request.GET.venue_format == 'training' %}selected{% endif %}>Тренинг</option>
+                  <option value="masterclass" {% if request.GET.venue_format == 'masterclass' %}selected{% endif %}>Мастер-класс</option>
+                  <option value="meeting" {% if request.GET.venue_format == 'meeting' %}selected{% endif %}>Деловая встреча</option>
+                  <option value="conference" {% if request.GET.venue_format == 'conference' %}selected{% endif %}>Конференция</option>
+              </select>
           </div>
           <div class="col-md-3 mt-4">
               <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
