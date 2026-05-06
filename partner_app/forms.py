@@ -1,8 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from core.models import Event, PartnerDocument
+from core.models import Event, PartnerDocument, PayoutDetails
 from .models import ReportSchedule
-
 User = get_user_model()
 
 
@@ -231,3 +230,17 @@ class ReportScheduleForm(forms.ModelForm):
                 f"Saved schedule for {instance.partner.email}: {instance.frequency}, {instance.report_format}"
             )  # Отладочный вывод
         return instance
+
+
+class PayoutDetailsForm(forms.ModelForm):
+    class Meta:
+        model = PayoutDetails
+        fields = ['bank_name', 'account_number', 'account_holder', 'inn']
+        
+        # Добавим более понятные подсказки (лейблы)
+        labels = {
+            'bank_name': 'Банк',
+            'account_number': 'Номер счёта или карты',
+            'account_holder': 'ФИО владельца счёта',
+            'inn': 'ИНН (необязательно)',
+        }

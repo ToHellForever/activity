@@ -34,4 +34,7 @@ urlpatterns = [
         name="check_ticket",
     ),
     path("remove_media/<str:media_type>/<int:media_id>/", views.remove_media, name="remove_media"),
+    path("request_payout/", views.request_payout, name="request_payout"),
+    path('payout-details/', views.payout_details, name='payout_details'),
+    path("delete_reports/", views.delete_reports, name="delete_reports"),
 ]

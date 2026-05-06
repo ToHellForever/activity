@@ -15,8 +15,12 @@ from datetime import datetime, timedelta
 import os
 import json
 
-from core.models import Event, Ticket, Order, PayoutRequest
-from .forms import EventForm, DocumentUploadForm, ReportScheduleForm
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
+from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails
+from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
@@ -714,14 +718,128 @@ def finances(request):
         "-created_at"
     )
 
+    # Получаем реквизиты партнёра
+    partner_payout_details = PayoutDetails.objects.filter(partner=request.user)
+
     context = {
         "total_revenue": total_revenue,
         "commission_amount": commission_amount,
         "payout_amount": payout_amount,
         "payout_history": payout_history,
+        "partner_payout_details": partner_payout_details,
     }
     return render(request, "partner/finances.html", context)
 
+@require_POST
+@csrf_exempt
+def request_payout(request):
+    """
+    Обработка AJAX-запроса на создание запроса выплаты.
+    """
+    try:
+        data = request.POST
+        amount = float(data.get('amount', 0))
+        payout_details_id = data.get('payout_details')
+        comment = data.get('comment', '')
+        
+        if not payout_details_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Пожалуйста, выберите реквизиты для выплаты'
+            }, status=400)
+        
+        try:
+            payout_details = PayoutDetails.objects.get(id=payout_details_id, partner=request.user)
+        except ObjectDoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Выбранные реквизиты не найдены'
+            }, status=404)
+        
+        # Создаём запрос на выплату
+        payout_request = PayoutRequest.objects.create(
+            organizer=request.user,
+            amount=amount,
+            payment_details=payout_details,
+            comment=comment,
+            status='pending'
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Запрос на выплату успешно создан!'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Произошла ошибка: {str(e)}'
+        }, status=500)
+
+
+@require_POST
+@csrf_exempt
+def delete_reports(request):
+    """
+    Удаление выбранных отчётов через AJAX.
+    """
+    try:
+        data = json.loads(request.body)
+        report_ids = data.get('report_ids', [])
+        
+        if not report_ids:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Не выбрано ни одного отчёта для удаления'
+            }, status=400)
+        
+        # Удаляем отчёты и их файлы
+        deleted_count = 0
+        for report_id in report_ids:
+            try:
+                report = SalesReport.objects.get(id=report_id, partner=request.user)
+                if report.file_path:
+                    report.file_path.delete()
+                report.delete()
+                deleted_count += 1
+            except ObjectDoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Успешно удалено {deleted_count} отчёт(ов)'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Произошла ошибка: {str(e)}'
+        }, status=500)
+
+@login_required
+def payout_details(request):
+    """
+    Страница для добавления и просмотра реквизитов для выплат.
+    """
+    # Получаем все реквизиты текущего пользователя
+    details = PayoutDetails.objects.filter(partner=request.user)
+
+    if request.method == 'POST':
+        form = PayoutDetailsForm(request.POST)
+        if form.is_valid():
+            payout_detail = form.save(commit=False)
+            payout_detail.partner = request.user
+            payout_detail.save()
+            messages.success(request, "Реквизиты успешно сохранены!")
+            return redirect('partner:payout_details')
+    else:
+        form = PayoutDetailsForm()
+
+    context = {
+        'form': form,
+        'details': details,
+    }
+    return render(request, 'partner/payout_details.html', context)
 
 @login_required
 def profile_edit(request):

@@ -4,6 +4,52 @@
 {% block content %}
 <h1>Финансы и выплаты</h1>
 
+<!-- Модальное окно для запроса выплаты -->
+<div class="modal fade" id="payoutModal" tabindex="-1" aria-labelledby="payoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="payoutModalLabel">Запрос выплаты</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="payoutRequestForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="payoutAmount" class="form-label">Сумма выплаты</label>
+                        <input type="text" class="form-control" id="payoutAmount" value="{{ payout_amount|floatformat }} ₽" readonly>
+                        <input type="hidden" name="amount" value="{{ payout_amount }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payoutDetails" class="form-label">Реквизиты для выплаты</label>
+                        <select class="form-select" id="payoutDetails" name="payout_details" required>
+                            {% if partner_payout_details %}
+                                {% for detail in partner_payout_details %}
+                                    <option value="{{ detail.id }}">{{ detail.bank_name }} ({{ detail.account_number }})</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="" disabled selected>Нет сохранённых реквизитов</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payoutComment" class="form-label">Комментарий (необязательно)</label>
+                        <textarea class="form-textarea form-control" id="payoutComment" name="comment" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        Запросить выплату
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div style="display: flex; gap: 20px; margin-bottom: 20px;">
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
         <h3>Общая выручка</h3>
@@ -16,9 +62,66 @@
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
         <h3>К выплате</h3>
         <p style="font-size: 24px; font-weight: bold;">{{ payout_amount|floatformat }} ₽</p>
-        <button class="btn btn-success">Запросить выплату</button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#payoutModal">
+            Запросить выплату
+        </button>
     </div>
 </div>
+
+<h2>История выплат</h2>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Обработка формы запроса выплаты
+$(document).ready(function() {
+    $('#payoutRequestForm').submit(function(e) {
+        e.preventDefault();
+        
+        const button = $(this).find('button[type="submit"]');
+        const spinner = button.find('.spinner-border');
+        
+        // Показать спиннер
+        spinner.removeClass('d-none');
+        button.prop('disabled', true);
+        
+        // Отправить запрос
+        fetch('{% url "partner:request_payout" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                amount: $('input[name="amount"]').val(),
+                payout_details: $('select[name="payout_details"]').val(),
+                comment: $('textarea[name="comment"]').val(),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            spinner.addClass('d-none');
+            button.prop('disabled', false);
+            
+            if (data.status === 'success') {
+                alert('Запрос на выплату успешно отправлен!');
+                window.location.reload();
+            } else {
+                alert('Ошибка: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            spinner.addClass('d-none');
+            button.prop('disabled', false);
+            alert('Произошла ошибка при отправке запроса на выплату');
+        });
+    });
+});
+</script>
+{% endblock %}
 
 <h2>История выплат</h2>
 <table class="table table-striped">
@@ -39,8 +142,18 @@
       <td>{{ payout.amount }} ₽</td>
       <td>{{ payout.get_status_display }}</td>
       <td>{{ payout.created_at|date:"d.m.Y" }}</td>
-      <td><!-- Тут будут реквизиты --></td>
-      <td><!-- Кнопки действий --></td>
+      <td>{{ payout.payment_details.bank_name }} ({{ payout.payment_details.account_number }})</td>
+      <td>
+          {% if payout.status == 'pending' %}
+              <button class="btn btn-sm btn-outline-danger cancel-payout" data-payout-id="{{ payout.id }}">
+                  Отменить
+              </button>
+          {% elif payout.status == 'completed' %}
+              <span class="badge bg-success">Выполнено</span>
+          {% elif payout.status == 'cancelled' %}
+              <span class="badge bg-danger">Отменено</span>
+          {% endif %}
+      </td>
     </tr>
     {% empty %}
     <tr>

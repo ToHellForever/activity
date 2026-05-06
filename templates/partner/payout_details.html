@@ -1,0 +1,62 @@
+<!-- templates/partner/payout_details.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Мои реквизиты для выплат</h1>
+
+<div class="card mb-4">
+  <div class="card-header">
+    Добавить новые реквизиты
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        Банк: {{ form.bank_name }}
+      </div>
+      <div class="mb-3">
+        Номер счёта или карты: {{ form.account_number }}
+      </div>
+      <div class="mb-3">
+        ФИО владельца счёта: {{ form.account_holder }}
+      </div>
+      <div class="mb-3">
+        ИНН (необязательно): {{ form.inn }}
+      </div>
+      <button type="submit" class="btn btn-primary">Сохранить реквизиты</button>
+    </form>
+  </div>
+</div>
+
+<h2>Сохранённые реквизиты</h2>
+{% if details %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Банк</th>
+      <th>Номер счёта</th>
+      <th>Владелец</th>
+      <th>Действия</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for detail in details %}
+    <tr>
+      <td>{{ detail.get_bank_name_display }}</td>
+      <td>{{ detail.account_number }}</td>
+      <td>{{ detail.account_holder }}</td>
+      <td>
+          <a href="{% url 'partner:finances' %}?payout_details={{ detail.id }}" class="btn btn-sm btn-outline-primary">
+              Использовать
+          </a>
+          <!-- Здесь можно добавить кнопку удаления -->
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>У вас пока нет сохранённых реквизитов. Добавьте их с помощью формы выше.</p>
+{% endif %}
+{% endblock %}

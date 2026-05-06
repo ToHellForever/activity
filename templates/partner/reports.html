@@ -144,14 +144,27 @@
     
     {% if user_reports %}
     <div class="card report-card mb-4 report-table">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             Предыдущие отчёты
+            <div>
+                <button id="selectAllReports" class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="bi bi-check-square"></i> Выделить все
+                </button>
+                <button id="deleteSelectedReports" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i> Удалить выбранные
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
+                            <th>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox">
+                                </div>
+                            </th>
                             <th>Период</th>
                             <th>Формат</th>
                             <th>Дата создания</th>
@@ -162,6 +175,11 @@
                     <tbody>
                         {% for report in user_reports %}
                         <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input report-checkbox" type="checkbox" value="{{ report.id }}" id="reportCheck{{ report.id }}">
+                                </div>
+                            </td>
                             <td>{{ report.period_start|date:"d.m.Y" }} - {{ report.period_end|date:"d.m.Y" }}</td>
                             <td>{{ report.get_report_type_display }}</td>
                             <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
@@ -175,9 +193,14 @@
                                 {% endif %}
                             </td>
                             <td class="text-end">
-                                <a href="{{ report.file_path.url }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-download"></i> Скачать
-                                </a>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ report.file_path.url }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> Скачать
+                                    </a>
+                                    <div class="form-check d-flex align-items-center">
+                                        <input class="form-check-input report-checkbox" type="checkbox" value="{{ report.id }}" id="reportCheck{{ report.id }}">
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -191,6 +214,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // График продаж
@@ -221,6 +245,64 @@ const salesChart = new Chart(ctx, {
             }
         }
     }
+});
+
+$(document).ready(function() {
+    // Делегирование событий для динамических чекбоксов
+    $(document).on('change', '.report-checkbox', function() {
+        const allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
+        $('#selectAllCheckbox').prop('checked', allChecked);
+    });
+
+    // Выделение всех чекбоксов
+    $('#selectAllCheckbox').change(function() {
+        const isChecked = $(this).prop('checked');
+        $('.report-checkbox').prop('checked', isChecked);
+    });
+
+    // Кнопка "Выделить все"
+    $('#selectAllReports').click(function() {
+        $('.report-checkbox').prop('checked', true);
+        $('#selectAllCheckbox').prop('checked', true);
+    });
+
+    // Удаление выбранных отчётов
+    $('#deleteSelectedReports').click(function() {
+        const selectedReports = [];
+        $('.report-checkbox:checked').each(function() {
+            selectedReports.push($(this).val());
+        });
+
+        if (selectedReports.length === 0) {
+            alert('Пожалуйста, выберите хотя бы один отчёт для удаления');
+            return;
+        }
+
+        if (confirm(`Вы уверены, что хотите удалить ${selectedReports.length} отчёт(ов)?`)) {
+            fetch('{% url "partner:delete_reports" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ report_ids: selectedReports })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении отчётов');
+            });
+        }
+    });
 });
 
 // Генерация отчёта

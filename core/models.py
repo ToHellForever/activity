@@ -8,6 +8,7 @@ from django.utils import timezone
 from core.mixins import VideoWatermarkMixin
 from core.validators import validate_video_duration, compress_video
 
+
 class VideoWatermarkMixin:
     """Миксин для обработки видео с водяными знаками."""
 
@@ -17,6 +18,7 @@ class VideoWatermarkMixin:
         try:
             with open(video_field.path, "rb") as f:
                 import hashlib
+
                 return hashlib.md5(f.read()).hexdigest()
         except FileNotFoundError:
             return None
@@ -34,8 +36,8 @@ class VideoWatermarkMixin:
             except Exception as e:
                 print(f"Ошибка удаления файла: {e}")
         setattr(self, hash_field_name, None)
-        
-        
+
+
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     USER_TYPE_CHOICES = (
         ("guest", "Гость"),
@@ -81,7 +83,9 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         if self.pk:
             old = CustomUser.objects.get(pk=self.pk)
             if old.video_business_card != self.video_business_card:
-                self.delete_old_video('video_business_card', 'processed_video_business_card_hash')
+                self.delete_old_video(
+                    "video_business_card", "processed_video_business_card_hash"
+                )
 
         super().save(*args, **kwargs)
 
@@ -262,15 +266,15 @@ class Event(models.Model, VideoWatermarkMixin):
 
     def __str__(self):
         return self.title
-    
+
     def save(self, *args, **kwargs):
         # Проверяем замену видео мероприятия
         if self.pk:
             old = Event.objects.get(pk=self.pk)
             if old.video_url != self.video_url:
-                self.delete_old_video('video_url', 'processed_video_url_hash')
-                self.video_processing_status = 'pending'
-                
+                self.delete_old_video("video_url", "processed_video_url_hash")
+                self.video_processing_status = "pending"
+
     def save(self, *args, **kwargs):
         """
         Сохранение модели с добавлением водяного знака на изображения.
@@ -372,6 +376,36 @@ class Order(models.Model):
         verbose_name_plural = "Заказы"
 
 
+class PayoutDetails(models.Model):
+    """Модель для хранения реквизитов партнёра."""
+
+    BANK_CHOICES = [
+        ("sberbank", "Сбербанк"),
+        ("tinkoff", "Тинькофф"),
+        ("vtb", "ВТБ"),
+        ("alfabank", "Альфа-Банк"),
+        ("other", "Другой банк"),
+    ]
+
+    partner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Партнёр")
+    bank_name = models.CharField(
+        max_length=100, choices=BANK_CHOICES, verbose_name="Банк"
+    )
+    account_number = models.CharField(max_length=50, verbose_name="Номер счёта/карты")
+    account_holder = models.CharField(max_length=255, verbose_name="Владелец счёта")
+    inn = models.CharField(max_length=20, blank=True, null=True, verbose_name="ИНН")
+    is_default = models.BooleanField(default=False, verbose_name="Основные реквизиты")
+
+    def __str__(self):
+        return (
+            f"Реквизиты {self.partner.get_full_name()} - {self.get_bank_name_display()}"
+        )
+
+    class Meta:
+        verbose_name = "Реквизиты для выплаты"
+        verbose_name_plural = "Реквизиты для выплат"
+
+
 class PayoutRequest(models.Model):
     """Модель для запроса выплаты партнером."""
 
@@ -388,9 +422,10 @@ class PayoutRequest(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
-    payout_method = models.JSONField(
-        verbose_name="Реквизиты для выплаты"
-    )  # Хранит номер счета, ИНН и т.д.
+    payment_details = models.ForeignKey(
+        PayoutDetails, on_delete=models.SET_NULL, null=True, verbose_name="Реквизиты"
+    )
+    comment = models.TextField(blank=True, null=True, verbose_name="Комментарий")
 
     def __str__(self):
         return f"Запрос #{self.id} - {self.get_status_display()}"
