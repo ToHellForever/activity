@@ -10,7 +10,7 @@ from .models import (
     VenueFormat,
     VenueImage,
 )
-from .forms import VenueForm
+from .forms import VenueForm, VenueImageForm
 
 
 @admin.register(VenueType)
@@ -35,9 +35,11 @@ class VenueFormatAdmin(admin.ModelAdmin):
 
 class VenueImageInline(admin.TabularInline):
     model = VenueImage
+    form = VenueImageForm
     extra = 1
-    fields = ('image', 'alt_text', 'image_preview')
+    fields = ('image', 'alt_text', 'order', 'image_preview')
     readonly_fields = ('image_preview',)
+    ordering = ('order',)
 
     def image_preview(self, obj):
         if obj.image:
@@ -63,6 +65,7 @@ class VenueAdmin(admin.ModelAdmin):
         "amenities"
     )
     inlines = [VenueImageInline]
+    change_form_template = 'admin/venues/venue/change_form.html'
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -86,11 +89,22 @@ class VenueAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         super().save_formset(request, form, formset, change)
+
         if formset.model == VenueImage:
             venue = form.instance
             tariff = venue.tariff
             limits = venue.TARIFF_LIMITS.get(tariff, {})
             max_photos = limits.get("max_photos", 1)
+
+            # Обработка множественной загрузки фотографий
+            if 'images' in request.FILES:
+                images = request.FILES.getlist('images')
+                for image in images:
+                    if VenueImage.objects.filter(venue=venue).count() >= max_photos:
+                        raise ValidationError(
+                            f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
+                        )
+                    VenueImage.objects.create(venue=venue, image=image, alt_text="")
 
             # Проверяем количество фотографий
             if VenueImage.objects.filter(venue=venue).count() > max_photos:

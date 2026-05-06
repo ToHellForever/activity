@@ -1,8 +1,44 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.forms import ClearableFileInput, MultipleChoiceField, CheckboxSelectMultiple
 from .models import Venue, BookingRequest, VenueImage
 
+class MultipleFileInput(ClearableFileInput):
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+class VenueImageForm(forms.ModelForm):
+    images = MultipleFileField(label="Фотографии", required=False)
+
+    class Meta:
+        model = VenueImage
+        fields = ('image', 'alt_text', 'order')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['image'].widget = forms.HiddenInput()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance
+
+    def save_m2m(self):
+        pass
 
 class VenueForm(forms.ModelForm):
     class Meta:
@@ -75,7 +111,6 @@ class VenueForm(forms.ModelForm):
                 )
 
         return cleaned_data
-
 
 class BookingRequestForm(forms.ModelForm):
     class Meta:
