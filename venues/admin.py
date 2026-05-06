@@ -153,6 +153,14 @@ class VenueImageAdmin(admin.ModelAdmin):
     list_display = ("venue",)
     list_filter = ("venue",)
 
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            if obj.image:
+                import os
+                if os.path.isfile(obj.image.path):
+                    os.remove(obj.image.path)
+        queryset.delete()
+
 
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):
