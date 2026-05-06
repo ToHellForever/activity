@@ -128,6 +128,14 @@ class VenueAdmin(admin.ModelAdmin):
             )
         return form
 
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            if obj.video:
+                import os
+                if os.path.isfile(obj.video.path):
+                    os.remove(obj.video.path)
+        queryset.delete()
+        
     def save_form(self, request, form, change):
         obj = super().save_form(request, form, change)
 
@@ -160,6 +168,19 @@ class VenueAdmin(admin.ModelAdmin):
                     form._errors[NON_FIELD_ERRORS] = form.error_class([str(e)])
 
         return obj
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+
+        # Обработка очистки видео
+        if 'video-clear' in request.POST:
+            venue = form.instance
+            if venue.video:
+                import os
+                if os.path.isfile(venue.video.path):
+                    os.remove(venue.video.path)
+                venue.video = None
+                venue.save()
 
     def save_formset(self, request, form, formset, change):
         super().save_formset(request, form, formset, change)

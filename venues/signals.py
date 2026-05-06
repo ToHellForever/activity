@@ -1,11 +1,25 @@
 # venues/signals.py
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.conf import settings
 from .models import Venue
 from core.tasks import process_video_task
 import os
 
+@receiver(pre_save, sender=Venue)
+def clear_venue_video(sender, instance, **kwargs):
+    if not instance.pk:
+        return False
+
+    try:
+        old_instance = Venue.objects.get(pk=instance.pk)
+    except Venue.DoesNotExist:
+        return False
+
+    # Если видео было удалено
+    if old_instance.video and not instance.video:
+        if os.path.isfile(old_instance.video.path):
+            os.remove(old_instance.video.path)
 
 @receiver(post_save, sender=Venue)
 def process_venue_video(sender, instance, **kwargs):
