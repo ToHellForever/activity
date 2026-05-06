@@ -4,8 +4,30 @@
 <div class="container">
   <h1>Каталог площадок</h1>
   
+  <div class="row mb-4">
+      <div class="col-md-12">
+          <div class="d-flex justify-content-between align-items-center">
+              <h2>Сортировка:</h2>
+              <div class="btn-group" role="group">
+                  <a href="?sort=relevance" class="btn {% if request.GET.sort == 'relevance' or not request.GET.sort %}btn-primary{% else %}btn-outline-primary{% endif %}">Релевантности</a>
+                  <a href="?sort=price_asc" class="btn {% if request.GET.sort == 'price_asc' %}btn-primary{% else %}btn-outline-primary{% endif %}">Цене ↑</a>
+                  <a href="?sort=price_desc" class="btn {% if request.GET.sort == 'price_desc' %}btn-primary{% else %}btn-outline-primary{% endif %}">Цене ↓</a>
+                  <a href="?sort=area" class="btn {% if request.GET.sort == 'area' %}btn-primary{% else %}btn-outline-primary{% endif %}">Площади</a>
+                  <a href="?sort=capacity" class="btn {% if request.GET.sort == 'capacity' %}btn-primary{% else %}btn-outline-primary{% endif %}">Вместимости</a>
+                  <a href="?sort=venue_type" class="btn {% if request.GET.sort == 'venue_type' %}btn-primary{% else %}btn-outline-primary{% endif %}">Типу помещения</a>
+                  <a href="?sort=priority" class="btn {% if request.GET.sort == 'priority' %}btn-primary{% else %}btn-outline-primary{% endif %}">Приоритету размещения</a>
+              </div>
+          </div>
+      </div>
+  </div>
+
   <!-- Фильтры -->
   <form id="filter-form" method="get">
+      <!-- Сохраняем параметры сортировки при фильтрации -->
+      {% if request.GET.sort %}
+      <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+      {% endif %}
+
       <div class="row">
           <div class="col-md-3">
               <input type="text" name="city" class="form-control" placeholder="Город" value="{% if request.GET.city %}{{ request.GET.city }}{% else %}Новосибирск{% endif %}">

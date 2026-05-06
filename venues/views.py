@@ -75,8 +75,11 @@ class VenueListView(ListView):
         if venue_format:
             qs = qs.filter(formats__name__iexact=venue_format)
 
+        # Обработка параметра сортировки
+        sort_param = self.request.GET.get("sort")
+
         # Сортировка по приоритету тарифа и другим параметрам
-        from django.db.models import Case, When, Value, IntegerField
+        from django.db.models import Case, When, Value, IntegerField, F
 
         qs = qs.annotate(
             tariff_priority=Case(
@@ -86,7 +89,30 @@ class VenueListView(ListView):
                 default=Value(0),
                 output_field=IntegerField(),
             )
-        ).order_by("-tariff_priority", "price")
+        )
+
+        # Применяем сортировку в зависимости от параметра
+        if sort_param == "relevance" or not sort_param:
+            # Сортировка по релевантности (по умолчанию: приоритет тарифа и цена)
+            qs = qs.order_by("-tariff_priority", "price")
+        elif sort_param == "price_asc":
+            # Цена по возрастанию
+            qs = qs.order_by("price", "-tariff_priority")
+        elif sort_param == "price_desc":
+            # Цена по убыванию
+            qs = qs.order_by("-price", "-tariff_priority")
+        elif sort_param == "area":
+            # Площадь (чем больше, тем выше в списке)
+            qs = qs.order_by("-area", "-tariff_priority")
+        elif sort_param == "capacity":
+            # Вместимость (чем больше, тем выше в списке)
+            qs = qs.order_by("-max_capacity", "-tariff_priority")
+        elif sort_param == "venue_type":
+            # Тип помещения
+            qs = qs.order_by("venue_type__name", "-tariff_priority")
+        elif sort_param == "priority":
+            # Приоритет размещения (тариф)
+            qs = qs.order_by("-tariff_priority")
 
         return qs.distinct()
 
