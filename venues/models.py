@@ -234,6 +234,10 @@ class Venue(VideoWatermarkMixin, models.Model):
         default=False, verbose_name="Контакты открыты"
     )  # Для тарифов extended/premium
 
+    contact_info = models.TextField(
+        blank=True, verbose_name="Контактная информация"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

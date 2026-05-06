@@ -90,6 +90,9 @@ class VenueAdmin(admin.ModelAdmin):
         ('Медиа', {
             'fields': ('video',)
         }),
+        ('Контакты', {
+            'fields': ('contact_info',)
+        }),
         ('SEO', {
             'fields': ('meta_title', 'meta_description')
         }),
