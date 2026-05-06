@@ -8,67 +8,67 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!tariffField) return;
 
     // Определяем ограничения и подсказки для каждого тарифа
-        const tariffInfo = {
-            free: {
-                limits: {
-                    max_photos: 1,
-                    has_video: false,
-                    description_limit: 500,
-                    show_badge: false,
-                    show_in_collections: false,
-                    priority: 1
-                },
-                hints: {
-                    photos: "В бесплатном тарифе можно загрузить только 1 фото.",
-                    video: "Видео недоступно в бесплатном тарифе.",
-                    description: "Максимальная длина описания: 500 символов.",
-                    badge: 'Значок "Партнер" недоступен в бесплатном тарифе.',
-                    collections: "Площадка не будет показана в подборках.",
-                    priority: "Низкий приоритет в поисковой выдаче."
-                }
+    const tariffInfo = {
+        '1': {
+            limits: {
+                max_photos: 1,
+                has_video: false,
+                description_limit: 500,
+                show_badge: false,
+                show_in_collections: false,
+                priority: 1
             },
-            standard: {
-                limits: {
-                    max_photos: 10,
-                    has_video: false,
-                    description_limit: 2000,
-                    show_badge: true,
-                    show_in_collections: true,
-                    priority: 2
-                },
-                hints: {
-                    photos: "В стандартном тарифе можно загрузить до 10 фото.",
-                    video: "Видео недоступно в стандартном тарифе.",
-                    description: "Максимальная длина описания: 2000 символов.",
-                    badge: 'Значок "Партнер" будет отображаться.',
-                    collections: "Площадка будет показана в подборках.",
-                    priority: "Средний приоритет в поисковой выдаче."
-                }
-            },
-            premium: {
-                limits: {
-                    max_photos: 25,
-                    has_video: true,
-                    description_limit: 5000,
-                    show_badge: true,
-                    show_in_collections: true,
-                    priority: 3
-                },
-                hints: {
-                    photos: "В премиум тарифе можно загрузить до 25 фото.",
-                    video: "Видео доступно в премиум тарифе.",
-                    description: "Максимальная длина описания: 5000 символов.",
-                    badge: 'Значок "Партнер" будет отображаться.',
-                    collections: "Площадка будет показана в подборках.",
-                    priority: "Высокий приоритет в поисковой выдаче."
-                }
+            hints: {
+                photos: "В бесплатном тарифе можно загрузить только 1 фото.",
+                video: "Видео недоступно в бесплатном тарифе.",
+                description: "Максимальная длина описания: 500 символов.",
+                badge: 'Значок "Партнер" недоступен в бесплатном тарифе.',
+                collections: "Площадка не будет показана в подборках.",
+                priority: "Низкий приоритет в поисковой выдаче."
             }
-        };
+        },
+        '2': {
+            limits: {
+                max_photos: 10,
+                has_video: false,
+                description_limit: 2000,
+                show_badge: true,
+                show_in_collections: true,
+                priority: 2
+            },
+            hints: {
+                photos: "В стандартном тарифе можно загрузить до 10 фото.",
+                video: "Видео недоступно в стандартном тарифе.",
+                description: "Максимальная длина описания: 2000 символов.",
+                badge: 'Значок "Партнер" будет отображаться.',
+                collections: "Площадка будет показана в подборках.",
+                priority: "Средний приоритет в поисковой выдаче."
+            }
+        },
+        '3': {
+            limits: {
+                max_photos: 25,
+                has_video: true,
+                description_limit: 5000,
+                show_badge: true,
+                show_in_collections: true,
+                priority: 3
+            },
+            hints: {
+                photos: "В премиум тарифе можно загрузить до 25 фото.",
+                video: "Видео доступно в премиум тарифе.",
+                description: "Максимальная длина описания: 5000 символов.",
+                badge: 'Значок "Партнер" будет отображаться.',
+                collections: "Площадка будет показана в подборках.",
+                priority: "Высокий приоритет в поисковой выдаче."
+            }
+        }
+    };
 
     // Функция для обновления валидации полей и подсказок
     function updateFieldValidation() {
         const selectedTariff = tariffField.value;
-        const tariff = tariffInfo[selectedTariff] || tariffInfo.free;
+        const tariff = tariffInfo[selectedTariff] || tariffInfo['1'];
         const limits = tariff.limits;
         const hints = tariff.hints;
 
@@ -77,24 +77,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const field = document.querySelector(fieldId);
             if (!field) return;
 
-            // Ищем существующую подсказку
-            let hintElement = field.nextElementSibling;
-            while (hintElement && !hintElement.classList.contains('tariff-hint')) {
-                hintElement = hintElement.nextElementSibling;
-            }
+            // Удаляем старые подсказки
+            const oldHints = field.parentNode.querySelectorAll('.tariff-hint');
+            oldHints.forEach(hint => hint.remove());
 
-            // Если подсказки нет, создаем ее
-            if (!hintElement) {
-                hintElement = document.createElement('div');
-                hintElement.className = 'tariff-hint';
-                field.parentNode.insertBefore(hintElement, field.nextSibling);
-            }
-
-            // Обновляем текст подсказки
+            // Создаем новую подсказку
+            const hintElement = document.createElement('div');
+            hintElement.className = 'tariff-hint';
             hintElement.textContent = hintText;
             hintElement.style.color = '#666';
             hintElement.style.fontSize = '0.8em';
             hintElement.style.marginTop = '4px';
+            field.parentNode.insertBefore(hintElement, field.nextSibling);
         }
 
         // Находим поле видео
