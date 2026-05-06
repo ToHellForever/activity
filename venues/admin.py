@@ -75,6 +75,39 @@ class VenueAdmin(admin.ModelAdmin):
     inlines = [VenueImageInline]
     change_form_template = "admin/venues/venue/change_form.html"
 
+    def delete_model(self, request, obj):
+        # Удаляем все связанные медиафайлы
+        for image in obj.images.all():
+            if image.image:
+                import os
+                if os.path.isfile(image.image.path):
+                    os.remove(image.image.path)
+
+        if obj.video:
+            import os
+            if os.path.isfile(obj.video.path):
+                os.remove(obj.video.path)
+
+        # Удаляем запись из базы данных
+        obj.delete()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            # Удаляем все связанные медиафайлы
+            for image in obj.images.all():
+                if image.image:
+                    import os
+                    if os.path.isfile(image.image.path):
+                        os.remove(image.image.path)
+
+            if obj.video:
+                import os
+                if os.path.isfile(obj.video.path):
+                    os.remove(obj.video.path)
+
+        # Удаляем записи из базы данных
+        queryset.delete()
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
