@@ -36,10 +36,8 @@ class VenueFormatAdmin(admin.ModelAdmin):
 class VenueImageInline(admin.TabularInline):
     model = VenueImage
     form = VenueImageForm
-    extra = 1
-    fields = ('image', 'image_preview')
     readonly_fields = ('image_preview',)
-
+    extra = 0
     def image_preview(self, obj):
         if obj.image:
             return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.image.url)
@@ -59,12 +57,9 @@ class VenueAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "tariff", "city", "venue_type")
     search_fields = ("title", "address")
-    filter_horizontal = (
-        "equipment",
-        "amenities"
-    )
+    filter_horizontal = ("equipment", "amenities")
     inlines = [VenueImageInline]
-    change_form_template = 'admin/venues/venue/change_form.html'
+    change_form_template = "admin/venues/venue/change_form.html"
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -86,6 +81,39 @@ class VenueAdmin(admin.ModelAdmin):
             )
         return form
 
+    def save_form(self, request, form, change):
+        obj = super().save_form(request, form, change)
+
+        # Обработка множественной загрузки фотографий при создании/редактировании площадки
+        if "images" in request.FILES:
+            images = request.FILES.getlist("images")
+            if images:
+                from django.core.exceptions import NON_FIELD_ERRORS
+
+                try:
+                    tariff = form.instance.tariff
+                    limits = form.instance.TARIFF_LIMITS.get(tariff, {})
+                    max_photos = limits.get("max_photos", 1)
+                    current_count = VenueImage.objects.filter(
+                        venue=form.instance
+                    ).count()
+
+                    for image in images:
+                        if current_count >= max_photos:
+                            form._errors[NON_FIELD_ERRORS] = form.error_class(
+                                [
+                                    f"Для тарифа {form.instance.get_tariff_display()} можно загрузить не более {max_photos} фотографий. "
+                                    f"Текущее количество: {current_count}"
+                                ]
+                            )
+                            break
+                        VenueImage.objects.create(venue=form.instance, image=image)
+                        current_count += 1
+                except Exception as e:
+                    form._errors[NON_FIELD_ERRORS] = form.error_class([str(e)])
+
+        return obj
+
     def save_formset(self, request, form, formset, change):
         super().save_formset(request, form, formset, change)
 
@@ -95,20 +123,11 @@ class VenueAdmin(admin.ModelAdmin):
             limits = venue.TARIFF_LIMITS.get(tariff, {})
             max_photos = limits.get("max_photos", 1)
 
-            # Обработка множественной загрузки фотографий
-            if 'images' in request.FILES:
-                images = request.FILES.getlist('images')
-                for image in images:
-                    if VenueImage.objects.filter(venue=venue).count() >= max_photos:
-                        raise ValidationError(
-                            f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
-                        )
-                    VenueImage.objects.create(venue=venue, image=image)
-
-            # Проверяем количество фотографий
+            # Проверяем количество фотографий после сохранения
             if VenueImage.objects.filter(venue=venue).count() > max_photos:
                 raise ValidationError(
-                    f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
+                    f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий. "
+                    f"Текущее количество: {VenueImage.objects.filter(venue=venue).count()}"
                 )
 
     class Media:
@@ -119,6 +138,7 @@ class VenueAdmin(admin.ModelAdmin):
 class VenueImageAdmin(admin.ModelAdmin):
     list_display = ("venue",)
     list_filter = ("venue",)
+
 
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):

@@ -4,8 +4,10 @@ from django.utils.translation import gettext_lazy as _
 from django.forms import ClearableFileInput, MultipleChoiceField, CheckboxSelectMultiple
 from .models import Venue, BookingRequest, VenueImage
 
+
 class MultipleFileInput(ClearableFileInput):
     allow_multiple_selected = True
+
 
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
@@ -20,25 +22,32 @@ class MultipleFileField(forms.FileField):
             result = single_file_clean(data, initial)
         return result
 
+
 class VenueImageForm(forms.ModelForm):
     images = MultipleFileField(label="Фотографии", required=False)
 
     class Meta:
         model = VenueImage
-        fields = ('image',)
+        fields = []  # Не отображаем поле image в форме, так как используем images
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['image'].widget = forms.HiddenInput()
+        # Скрываем стандартное поле image, так как используем кастомное images
+        if "image" in self.fields:
+            self.fields["image"].widget = forms.HiddenInput()
 
     def save(self, commit=True):
+        # Базовая логика сохранения без обработки images
         instance = super().save(commit=False)
         if commit:
             instance.save()
+            self.save_m2m()
         return instance
 
     def save_m2m(self):
+        # Пустой метод, так как обработка images происходит в админке
         pass
+
 
 class VenueForm(forms.ModelForm):
     class Meta:
@@ -111,6 +120,7 @@ class VenueForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
 
 class BookingRequestForm(forms.ModelForm):
     class Meta:
