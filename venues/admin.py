@@ -60,7 +60,7 @@ class VenueAdmin(admin.ModelAdmin):
     search_fields = ("title", "address")
     filter_horizontal = (
         "equipment",
-        "amenities",
+        "amenities"
     )
     inlines = [VenueImageInline]
 
