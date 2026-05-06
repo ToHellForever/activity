@@ -37,9 +37,8 @@ class VenueImageInline(admin.TabularInline):
     model = VenueImage
     form = VenueImageForm
     extra = 1
-    fields = ('image', 'alt_text', 'order', 'image_preview')
+    fields = ('image', 'image_preview')
     readonly_fields = ('image_preview',)
-    ordering = ('order',)
 
     def image_preview(self, obj):
         if obj.image:
@@ -104,7 +103,7 @@ class VenueAdmin(admin.ModelAdmin):
                         raise ValidationError(
                             f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
                         )
-                    VenueImage.objects.create(venue=venue, image=image, alt_text="")
+                    VenueImage.objects.create(venue=venue, image=image)
 
             # Проверяем количество фотографий
             if VenueImage.objects.filter(venue=venue).count() > max_photos:
@@ -118,7 +117,7 @@ class VenueAdmin(admin.ModelAdmin):
 
 @admin.register(VenueImage)
 class VenueImageAdmin(admin.ModelAdmin):
-    list_display = ("venue", "alt_text")
+    list_display = ("venue",)
     list_filter = ("venue",)
 
 @admin.register(BookingRequest)

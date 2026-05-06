@@ -25,7 +25,7 @@ class VenueImageForm(forms.ModelForm):
 
     class Meta:
         model = VenueImage
-        fields = ('image', 'alt_text', 'order')
+        fields = ('image',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

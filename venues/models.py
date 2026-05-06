@@ -80,12 +80,6 @@ class VenueImage(VideoWatermarkMixin, models.Model):
         upload_to="venue_images/",
         verbose_name="Фото"
     )
-    alt_text = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Альтернативный текст"
-    )
-    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
     def __str__(self):
         return f"Фото для {self.venue.title}"
 
