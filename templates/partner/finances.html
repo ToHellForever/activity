@@ -198,7 +198,7 @@ $(document).on('click', '.cancel-payout', function() {
             'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({}) // Тело можно оставить пустым или добавить данные
-    })
+    }) 
     .then(response => response.json())
     .then(data => {
         button.prop('disabled', false);
