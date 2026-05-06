@@ -38,11 +38,25 @@ class VenueImageInline(admin.TabularInline):
     form = VenueImageForm
     readonly_fields = ('image_preview',)
     extra = 0
+
     def image_preview(self, obj):
         if obj.image:
             return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.image.url)
         return ""
     image_preview.short_description = "Превью"
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+
+        class CustomFormSet(formset):
+            def delete_existing(self, obj, commit=True):
+                if commit and obj.image:
+                    import os
+                    if os.path.isfile(obj.image.path):
+                        os.remove(obj.image.path)
+                super().delete_existing(obj, commit)
+
+        return CustomFormSet
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
