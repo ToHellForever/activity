@@ -776,7 +776,38 @@ def request_payout(request):
             'message': f'Произошла ошибка: {str(e)}'
         }, status=500)
 
-
+@require_POST
+@login_required
+def cancel_payout(request, payout_id):
+    """
+    Отмена заявки на выплату через AJAX.
+    """
+    try:
+        # Ищем заявку, которая принадлежит текущему пользователю
+        payout_request = get_object_or_404(PayoutRequest, id=payout_id, organizer=request.user)
+        
+        # Проверяем, можно ли отменить (статус должен быть 'pending')
+        if payout_request.status != 'pending':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Отменить можно только заявку в статусе "Ожидает обработки"'
+            }, status=400)
+            
+        # Меняем статус и сохраняем
+        payout_request.status = 'cancelled'
+        payout_request.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Заявка на выплату отменена!'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Произошла ошибка: {str(e)}'
+        }, status=500)
+        
 @require_POST
 @csrf_exempt
 def delete_reports(request):

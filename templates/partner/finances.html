@@ -70,59 +70,6 @@
 
 <h2>История выплат</h2>
 
-{% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-// Обработка формы запроса выплаты
-$(document).ready(function() {
-    $('#payoutRequestForm').submit(function(e) {
-        e.preventDefault();
-        
-        const button = $(this).find('button[type="submit"]');
-        const spinner = button.find('.spinner-border');
-        
-        // Показать спиннер
-        spinner.removeClass('d-none');
-        button.prop('disabled', true);
-        
-        // Отправить запрос
-        fetch('{% url "partner:request_payout" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({
-                amount: $('input[name="amount"]').val(),
-                payout_details: $('select[name="payout_details"]').val(),
-                comment: $('textarea[name="comment"]').val(),
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            spinner.addClass('d-none');
-            button.prop('disabled', false);
-            
-            if (data.status === 'success') {
-                alert('Запрос на выплату успешно отправлен!');
-                window.location.reload();
-            } else {
-                alert('Ошибка: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            spinner.addClass('d-none');
-            button.prop('disabled', false);
-            alert('Произошла ошибка при отправке запроса на выплату');
-        });
-    });
-});
-</script>
-{% endblock %}
-
 <h2>История выплат</h2>
 <table class="table table-striped">
   <thead>
@@ -162,4 +109,116 @@ $(document).ready(function() {
     {% endfor %}
   </tbody>
 </table>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Обработка формы запроса выплаты
+// Обработка формы запроса выплаты
+$(document).ready(function() {
+    let isSubmitting = false; // Флаг для защиты от двойного клика
+
+    $('#payoutRequestForm').submit(function(e) {
+        e.preventDefault();
+        
+        // Защита от повторного нажатия, пока запрос не завершен
+        if (isSubmitting) {
+            return;
+        }
+
+        const form = $(this);
+        const button = form.find('button[type="submit"]');
+        const spinner = button.find('.spinner-border');
+        
+        isSubmitting = true;
+        spinner.removeClass('d-none');
+        button.prop('disabled', true);
+        
+        // Отправить запрос
+        fetch('{% url "partner:request_payout" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                amount: $('input[name="amount"]').val(),
+                payout_details: $('select[name="payout_details"]').val(),
+                comment: $('textarea[name="comment"]').val(),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            isSubmitting = false; // Сбрасываем флаг
+            spinner.addClass('d-none');
+            button.prop('disabled', false);
+            
+            if (data.status === 'success') {
+                alert('Запрос на выплату успешно отправлен!');
+                
+                // Сброс формы и закрытие модального окна ПЕРЕД перезагрузкой
+                form.trigger('reset'); 
+                $('#payoutModal').modal('hide'); 
+                
+                window.location.reload();
+            } else {
+                alert('Ошибка: ' + data.message);
+            }
+        })
+        .catch(error => {
+            isSubmitting = false;
+            console.error('Error:', error);
+            spinner.addClass('d-none');
+            button.prop('disabled', false);
+            alert('Произошла ошибка при отправке запроса на выплату');
+        });
+    });
+});
+
+// Обработка кнопки "Отменить" в истории выплат
+$(document).on('click', '.cancel-payout', function() {
+    const button = $(this);
+    const payoutId = button.data('payout-id');
+    
+    if (!confirm("Вы уверены, что хотите отменить эту заявку?")) {
+        return;
+    }
+    
+    button.prop('disabled', true); // Блокируем кнопку, чтобы не кликнуть дважды
+    button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Отмена...'); // Показываем спиннер
+
+    fetch(`{% url "partner:cancel_payout" 0 %}`.replace("0", payoutId), { // Подставляем ID в URL
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({}) // Тело можно оставить пустым или добавить данные
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.prop('disabled', false);
+        button.html('Отменить'); // Возвращаем текст кнопки
+        
+        if (data.status === 'success') {
+             alert(data.message);
+             window.location.reload(); // Перезагружаем страницу, чтобы увидеть изменения в таблице
+        } else {
+             alert('Ошибка: ' + data.message);
+             // Здесь можно вернуть кнопку к исходному виду, если отмена не удалась
+             // button.replaceWith(`<button ...>Отменить</button>`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при отмене заявки');
+        button.prop('disabled', false);
+        button.html('Отменить');
+    });
+});
+</script>
 {% endblock %}
