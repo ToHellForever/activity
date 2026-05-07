@@ -127,7 +127,7 @@ function initMap() {
             if (res.geoObjects.getLength()) {
                 const geoObject = res.geoObjects.get(0);
                 const metaData = geoObject.properties.get('metaDataProperty.GeocoderMetaData');
-                
+
                 // Заполняем адрес и координаты (всегда)
                 $fields.address.value = geoObject.getAddressLine();
                 $fields.latitude.value = lat.toFixed(6);
@@ -139,21 +139,34 @@ function initMap() {
                 if ($fields.metro) $fields.metro.value = '';
 
                 // Заполняем доп. поля (ищем в Components)
+                let metroFound = false;
                 if (metaData && metaData.Address && metaData.Address.Components) {
                     metaData.Address.Components.forEach(comp => {
-                        // Город (locality)
                         if (comp.kind === 'locality' && $fields.city) {
                             $fields.city.value = comp.name;
                         }
-                        // Район (sublocality - например, Таганский район)
                         if (comp.kind === 'district' && $fields.district) {
                             $fields.district.value = comp.name;
                         }
-                        // Метро
                         if (comp.kind === 'metro' && $fields.metro) {
                             $fields.metro.value = comp.name;
+                            metroFound = true;
                         }
                     });
+                }
+
+                // Если метро не найдено в адресе, ищем ближайшую станцию
+                if ($fields.metro && !metroFound) {
+                    ymaps.geocode([lat, lon], {
+                        kind: 'metro',
+                        results: 1,
+                        radius: 1000 // радиус поиска в метрах
+                    }).then(metroRes => {
+                        if (metroRes.geoObjects.getLength()) {
+                            const metroGeo = metroRes.geoObjects.get(0);
+                            $fields.metro.value = metroGeo.properties.get('name');
+                        }
+                    }).catch(err => console.error('Поиск метро:', err));
                 }
             }
         }).catch(err => console.error('Геокодер:', err));
