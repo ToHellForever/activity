@@ -41,30 +41,17 @@ class VenueType(models.Model):
         verbose_name_plural = "Типы площадок"
 
 
-class VenueEquipment(models.Model):
+class VenueEquipmentAndAmenity(models.Model):
     """Справочник оборудования."""
 
-    name = models.CharField(max_length=100, unique=True, verbose_name="Оборудование")
+    name = models.CharField(max_length=100, unique=True, verbose_name="Оборудование и удобства")
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = "Оборудование"
-        verbose_name_plural = "Оборудование"
-
-
-class VenueAmenity(models.Model):
-    """Справочник удобств."""
-
-    name = models.CharField(max_length=100, unique=True, verbose_name="Удобство")
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Удобство"
-        verbose_name_plural = "Удобства"
+        verbose_name = "Оборудование и удобства"
+        verbose_name_plural = "Оборудование и удобства"
 
 
 class VenueImage(VideoWatermarkMixin, models.Model):
@@ -200,11 +187,8 @@ class Venue(VideoWatermarkMixin, models.Model):
     parking = models.BooleanField(default=False, verbose_name="Парковка")
     has_wifi = models.BooleanField(default=False, verbose_name="Wi-Fi")
 
-    equipment = models.ManyToManyField(
-        VenueEquipment, blank=True, verbose_name="Оборудование"
-    )
-    amenities = models.ManyToManyField(
-        VenueAmenity, blank=True, verbose_name="Удобства"
+    equipment_amenity = models.ManyToManyField(
+        VenueEquipmentAndAmenity, blank=True, verbose_name="Оборудование и удобства"
     )
 
     formats = TaggableManager(

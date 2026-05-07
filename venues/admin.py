@@ -3,8 +3,7 @@ from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from .models import (
     VenueType,
-    VenueEquipment,
-    VenueAmenity,
+    VenueEquipmentAndAmenity,
     Venue,
     BookingRequest,
     VenueFormat,
@@ -18,13 +17,8 @@ class VenueTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
-@admin.register(VenueEquipment)
-class VenueEquipmentAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-
-
-@admin.register(VenueAmenity)
-class VenueAmenityAdmin(admin.ModelAdmin):
+@admin.register(VenueEquipmentAndAmenity)
+class VenueEquipmentAndAmenityAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
@@ -71,7 +65,7 @@ class VenueAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "tariff", "city", "venue_type")
     search_fields = ("title", "address")
-    filter_horizontal = ("equipment", "amenities")
+    filter_horizontal = ("equipment_amenity",)
     inlines = [VenueImageInline]
     change_form_template = "admin/venues/venue/change_form.html"
     fieldsets = (
