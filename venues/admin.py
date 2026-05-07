@@ -3,10 +3,8 @@ from django.utils.html import format_html
 from django.core.exceptions import ValidationError
 from .models import (
     VenueType,
-    VenueEquipmentAndAmenity,
     Venue,
     BookingRequest,
-    VenueFormat,
     VenueImage,
 )
 from .forms import VenueForm, VenueImageForm
@@ -17,26 +15,20 @@ class VenueTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
-@admin.register(VenueEquipmentAndAmenity)
-class VenueEquipmentAndAmenityAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-
-
-@admin.register(VenueFormat)
-class VenueFormatAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-
-
 class VenueImageInline(admin.TabularInline):
     model = VenueImage
     form = VenueImageForm
-    readonly_fields = ('image_preview',)
+    readonly_fields = ("image_preview",)
     extra = 0
 
     def image_preview(self, obj):
         if obj.image:
-            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.image.url)
+            return format_html(
+                '<img src="{}" style="max-height: 100px; max-width: 100px;" />',
+                obj.image.url,
+            )
         return ""
+
     image_preview.short_description = "Превью"
 
     def get_formset(self, request, obj=None, **kwargs):
@@ -46,11 +38,13 @@ class VenueImageInline(admin.TabularInline):
             def delete_existing(self, obj, commit=True):
                 if commit and obj.image:
                     import os
+
                     if os.path.isfile(obj.image.path):
                         os.remove(obj.image.path)
                 super().delete_existing(obj, commit)
 
         return CustomFormSet
+
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
@@ -65,31 +59,32 @@ class VenueAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "tariff", "city", "venue_type")
     search_fields = ("title", "address")
-    filter_horizontal = ("equipment_amenity",)
     inlines = [VenueImageInline]
     change_form_template = "admin/venues/venue/change_form.html"
     fieldsets = (
-        (None, {
-            'fields': ('title', 'slug', 'tariff', 'status', 'venue_type', 'address', 'city', 'district', 'metro', 'latitude', 'longitude')
-        }),
-        ('Описание', {
-            'fields': ('short_description', 'full_description')
-        }),
-        ('Характеристики', {
-            'fields': ('area', 'max_capacity', 'price', 'price_unit')
-        }),
-        ('Удобства', {
-            'fields': ('parking', 'has_wifi')
-        }),
-        ('Медиа', {
-            'fields': ('video',)
-        }),
-        ('Контакты', {
-            'fields': ('contact_info',)
-        }),
-        ('SEO', {
-            'fields': ('meta_title', 'meta_description')
-        }),
+        (
+            None,
+            {
+                "fields": (
+                    "title",
+                    "slug",
+                    "tariff",
+                    "status",
+                    "venue_type",
+                    "address",
+                    "city",
+                    "district",
+                    "metro",
+                    "latitude",
+                    "longitude",
+                )
+            },
+        ),
+        ("Описание", {"fields": ("short_description", "full_description")}),
+        ("Характеристики", {"fields": ("area", "max_capacity", "price", "price_unit")}),
+        ("Медиа", {"fields": ("video",)}),
+        ("Контакты", {"fields": ("contact_info",)}),
+        ("SEO", {"fields": ("meta_title", "meta_description")}),
     )
 
     def delete_model(self, request, obj):
@@ -97,11 +92,13 @@ class VenueAdmin(admin.ModelAdmin):
         for image in obj.images.all():
             if image.image:
                 import os
+
                 if os.path.isfile(image.image.path):
                     os.remove(image.image.path)
 
         if obj.video:
             import os
+
             if os.path.isfile(obj.video.path):
                 os.remove(obj.video.path)
 
@@ -114,11 +111,13 @@ class VenueAdmin(admin.ModelAdmin):
             for image in obj.images.all():
                 if image.image:
                     import os
+
                     if os.path.isfile(image.image.path):
                         os.remove(image.image.path)
 
             if obj.video:
                 import os
+
                 if os.path.isfile(obj.video.path):
                     os.remove(obj.video.path)
 
@@ -149,10 +148,11 @@ class VenueAdmin(admin.ModelAdmin):
         for obj in queryset:
             if obj.video:
                 import os
+
                 if os.path.isfile(obj.video.path):
                     os.remove(obj.video.path)
         queryset.delete()
-        
+
     def save_form(self, request, form, change):
         obj = super().save_form(request, form, change)
 
@@ -190,10 +190,11 @@ class VenueAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
 
         # Обработка очистки видео
-        if 'video-clear' in request.POST:
+        if "video-clear" in request.POST:
             venue = form.instance
             if venue.video:
                 import os
+
                 if os.path.isfile(venue.video.path):
                     os.remove(venue.video.path)
                 venue.video = None
@@ -228,6 +229,7 @@ class VenueImageAdmin(admin.ModelAdmin):
         for obj in queryset:
             if obj.image:
                 import os
+
                 if os.path.isfile(obj.image.path):
                     os.remove(obj.image.path)
         queryset.delete()

@@ -55,22 +55,6 @@ class VenueListView(ListView):
         if price_unit:
             qs = qs.filter(price_unit=price_unit)
 
-        equipment = self.request.GET.get("equipment")
-        if equipment:
-            qs = qs.filter(equipment__name__iexact=equipment)
-
-        has_parking = self.request.GET.get("has_parking")
-        if has_parking == "on":
-            qs = qs.filter(parking=True)
-        elif has_parking == "off":
-            qs = qs.filter(parking=False)
-
-        has_wifi = self.request.GET.get("has_wifi")
-        if has_wifi == "on":
-            qs = qs.filter(has_wifi=True)
-        elif has_wifi == "off":
-            qs = qs.filter(has_wifi=False)
-
         venue_format = self.request.GET.get("venue_format")
         if venue_format:
             qs = qs.filter(formats__name__iexact=venue_format)

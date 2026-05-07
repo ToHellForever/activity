@@ -62,36 +62,8 @@
                         Форматы не указаны
                     {% endfor %}
                 </li>
-                <li class="list-group-item">
-                    <strong>Парковка:</strong>
-                    {% if venue.parking %}
-                        <i class="bi bi-parking-fill text-success"></i> Есть
-                    {% else %}
-                        <i class="bi bi-parking-x text-danger"></i> Нет
-                    {% endif %}
-                </li>
-                <li class="list-group-item">
-                    <strong>Удобства:</strong>
-                    {% for amenity in venue.amenities.all %}
-                        <span class="badge bg-secondary mx-1">{{ amenity.name }}</span>
-                    {% empty %}
-                        Удобства не указаны
-                    {% endfor %}
-                </li>
             </ul>
             
-            <h4>Оборудование</h4>
-            {% if venue.equipment.all %}
-                <div class="row">
-                    {% for item in venue.equipment.all %}
-                        <div class="col-md-4 mb-2">
-                            <span class="badge bg-light text-dark border">{{ item.name }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p>Оборудование не указано.</p>
-            {% endif %}
         </div>
 
         <!-- Блок с картой, адресом и заявкой -->

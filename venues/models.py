@@ -13,21 +13,6 @@ import os
 User = get_user_model()
 
 
-class VenueFormat(models.Model):
-    """Справочник форматов мероприятий."""
-
-    name = models.CharField(
-        max_length=100, unique=True, verbose_name="Формат мероприятия"
-    )
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Формат мероприятия"
-        verbose_name_plural = "Форматы мероприятий"
-
-
 class VenueType(models.Model):
     """Справочник типов площадок."""
 
@@ -41,32 +26,17 @@ class VenueType(models.Model):
         verbose_name_plural = "Типы площадок"
 
 
-class VenueEquipmentAndAmenity(models.Model):
-    """Справочник оборудования."""
-
-    name = models.CharField(max_length=100, unique=True, verbose_name="Оборудование и удобства")
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Оборудование и удобства"
-        verbose_name_plural = "Оборудование и удобства"
-
-
 class VenueImage(VideoWatermarkMixin, models.Model):
     """Модель для хранения фотографий площадки."""
 
     venue = models.ForeignKey(
-        'Venue',
+        "Venue",
         on_delete=models.CASCADE,
-        related_name='images',
-        verbose_name="Площадка"
+        related_name="images",
+        verbose_name="Площадка",
     )
-    image = models.ImageField(
-        upload_to="venue_images/",
-        verbose_name="Фото"
-    )
+    image = models.ImageField(upload_to="venue_images/", verbose_name="Фото")
+
     def __str__(self):
         return f"Фото для {self.venue.title}"
 
@@ -88,6 +58,7 @@ class VenueImage(VideoWatermarkMixin, models.Model):
     class Meta:
         verbose_name = "Фото площадки"
         verbose_name_plural = "Фото площадок"
+
 
 class Venue(VideoWatermarkMixin, models.Model):
     """Модель площадки для проведения мероприятий."""
@@ -184,13 +155,6 @@ class Venue(VideoWatermarkMixin, models.Model):
         verbose_name="Единица стоимости",
     )
 
-    parking = models.BooleanField(default=False, verbose_name="Парковка")
-    has_wifi = models.BooleanField(default=False, verbose_name="Wi-Fi")
-
-    equipment_amenity = models.ManyToManyField(
-        VenueEquipmentAndAmenity, blank=True, verbose_name="Оборудование и удобства"
-    )
-
     formats = TaggableManager(
         verbose_name="Подходит для формата",
         help_text="Выберите форматы: тренинг, мастер-класс и т.д.",
@@ -218,9 +182,7 @@ class Venue(VideoWatermarkMixin, models.Model):
         default=False, verbose_name="Контакты открыты"
     )  # Для тарифов extended/premium
 
-    contact_info = models.TextField(
-        blank=True, verbose_name="Контактная информация"
-    )
+    contact_info = models.TextField(blank=True, verbose_name="Контактная информация")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
