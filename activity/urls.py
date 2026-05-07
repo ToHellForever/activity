@@ -37,7 +37,8 @@ urlpatterns = [
     path("update-ticket-status/<int:ticket_id>/", update_ticket_status, name="update_ticket_status"),
     path("partner/", include("partner_app.urls")),
     path("visitor/", include("visitor_app.urls")),
-    path("venues/", include("venues.urls")),
+    path("venues/", include("venues.urls", namespace="venues")),
+    path("admin/venues/", include("venues.urls", namespace="admin_venues")),
 ]
 
 if settings.DEBUG:

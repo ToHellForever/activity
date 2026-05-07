@@ -99,6 +99,14 @@ class Venue(VideoWatermarkMixin, models.Model):
         (3, "Premium"),
     ]
 
+    # Элементы оборудования, связанные с площадкой
+    equipment_items = models.ManyToManyField(
+        EquipmentItem,
+        blank=True,
+        verbose_name="Элементы оборудования",
+        related_name="venues"
+    )
+
     TARIFF_LIMITS = {
         1: {
             "max_photos": 1,

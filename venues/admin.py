@@ -11,12 +11,21 @@ from .models import (
 )
 from .forms import VenueForm, VenueImageForm
 
+
+class EquipmentItemInline(admin.TabularInline):
+    model = EquipmentItem
+    extra = 1
+    fields = ("name",)
+
+
 @admin.register(EquipmentCategory)
 class EquipmentCategoryAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
     ordering = ("name",)
     list_per_page = 20
+    inlines = [EquipmentItemInline]
+
 
 @admin.register(EquipmentItem)
 class EquipmentItemAdmin(admin.ModelAdmin):
@@ -25,7 +34,8 @@ class EquipmentItemAdmin(admin.ModelAdmin):
     list_filter = ("category",)
     ordering = ("category__name", "name")
     list_per_page = 20
-    
+
+
 @admin.register(VenueType)
 class VenueTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -234,7 +244,11 @@ class VenueAdmin(admin.ModelAdmin):
                 )
 
     class Media:
-        js = ("/static/js/map_admin.js", "/static/js/venue_admin.js")
+        js = (
+            "/static/js/map_admin.js",
+            "/static/js/venue_admin.js",
+            "/static/js/equipment_admin.js",
+        )
 
 
 @admin.register(VenueImage)

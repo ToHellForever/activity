@@ -1,3 +1,7 @@
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .models import EquipmentItem
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
@@ -5,7 +9,57 @@ from django.shortcuts import get_object_or_404
 from .models import Venue, BookingRequest
 from .forms import BookingRequestForm
 
+@csrf_exempt
+@login_required
+def get_equipment_items(request):
+    category_id = request.GET.get("category_id")
+    if not category_id:
+        return JsonResponse([], safe=False)
 
+    items = EquipmentItem.objects.filter(category_id=category_id).values("id", "name")
+    return JsonResponse(list(items), safe=False)
+
+@csrf_exempt
+@login_required
+def save_venue_equipment(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    venue_id = request.POST.get('venue_id')
+    equipment_id = request.POST.get('equipment_id')
+    is_checked = request.POST.get('is_checked') == 'true'
+
+    if not venue_id or not equipment_id:
+        return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
+
+    try:
+        venue = Venue.objects.get(pk=venue_id)
+        equipment = EquipmentItem.objects.get(pk=equipment_id)
+
+        if is_checked:
+            venue.equipment_items.add(equipment)
+        else:
+            venue.equipment_items.remove(equipment)
+
+        return JsonResponse({'success': True})
+    except Venue.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Venue not found'}, status=404)
+    except EquipmentItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Equipment not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+@login_required
+def get_venue_equipment(request, venue_id):
+    try:
+        venue = Venue.objects.get(pk=venue_id)
+        equipment_items = venue.equipment_items.values('id', 'name')
+        return JsonResponse(list(equipment_items), safe=False)
+    except Venue.DoesNotExist:
+        return JsonResponse([], safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 class VenueListView(ListView):
     """
     Список площадок с фильтрацией и поэтапной подгрузкой.
