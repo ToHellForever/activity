@@ -414,14 +414,15 @@ class PayoutRequest(models.Model):
         ("processing", "В обработке"),
         ("paid", "Выплачено"),
         ("rejected", "Отклонено"),
+        ("cancelled", "Отменено"),
     ]
 
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE)
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Партнёр")
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Сумма к выплате"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     payment_details = models.ForeignKey(
         PayoutDetails, on_delete=models.SET_NULL, null=True, verbose_name="Реквизиты"
     )

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, Ticket, Order, PartnerDocument
+from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage
 from django import forms
 from django.contrib import messages
@@ -7,7 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
 from django.utils.html import mark_safe
-
+from django.db.models import F
 
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
@@ -244,3 +244,43 @@ class SupportTicketAdmin(admin.ModelAdmin):
         (None, {"fields": ("user", "status")}),
         ("Тикет", {"fields": ("subject", "created_at")}),
     )
+
+
+@admin.register(PayoutRequest)
+class PayoutRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "organizer",
+        "amount",
+        "get_status_display", 
+        "created_at",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = ("id", "payment_details__account_holder", "organizer__email")
+    readonly_fields = ("created_at",)
+
+    # Методы для отображения данных из связанных моделей
+    def get_partner_full_name(self, obj):
+        return obj.organizer.get_full_name()
+    get_partner_full_name.short_description = "Партнёр"
+
+    def get_bank_name(self, obj):
+        if obj.payment_details:
+            return obj.payment_details.get_bank_name_display()
+        return "-"
+    get_bank_name.short_description = "Банк"
+
+    def get_account_number(self, obj):
+        if obj.payment_details:
+            return obj.payment_details.account_number
+        return "-"
+    get_account_number.short_description = "Счёт/Карта"
+    
+    def get_queryset(self, request):
+        # Подгружаем связанные данные одним запросом
+        qs = super().get_queryset(request)
+        return qs.select_related("organizer", "payment_details")
+    
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+    get_status_display.short_description = "Статус"

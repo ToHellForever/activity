@@ -95,8 +95,12 @@
               <button class="btn btn-sm btn-outline-danger cancel-payout" data-payout-id="{{ payout.id }}">
                   Отменить
               </button>
-          {% elif payout.status == 'completed' %}
+          {% elif payout.status == 'paid' %}
               <span class="badge bg-success">Выполнено</span>
+          {% elif payout.status == 'processing' %}
+              <span class="badge bg-warning">В обработке</span>
+          {% elif payout.status == 'rejected' %}
+              <span class="badge bg-danger">Отклонено</span>
           {% elif payout.status == 'cancelled' %}
               <span class="badge bg-danger">Отменено</span>
           {% endif %}
