@@ -11,8 +11,33 @@ from unidecode import unidecode
 import os
 
 User = get_user_model()
+class EquipmentCategory(models.Model):
+    """Справочник категорий оборудования."""
 
+    name = models.CharField(max_length=100, unique=True, verbose_name="Категория оборудования")
 
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Категория оборудования"
+        verbose_name_plural = "Категории оборудования"
+# подкатегория для оборудования например: "Звук" - "Колонки", "Микрофон", "Свет" - "Прожекторы", "Декорации" - "Столы", "Стулья"
+class EquipmentItem(models.Model):
+    """Модель для конкретного оборудования, связанного с категорией."""
+
+    category = models.ForeignKey(
+        EquipmentCategory, on_delete=models.CASCADE, related_name="items", verbose_name="Категория"
+    )
+    name = models.CharField(max_length=100, verbose_name="Название оборудования")
+
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
+    class Meta:
+        verbose_name = "Элемент оборудования"
+        verbose_name_plural = "Элементы оборудования"
+        
 class VenueType(models.Model):
     """Справочник типов площадок."""
 
@@ -154,7 +179,9 @@ class Venue(VideoWatermarkMixin, models.Model):
         default="day",
         verbose_name="Единица стоимости",
     )
-
+    equipment = models.ManyToManyField(
+        EquipmentCategory, blank=True, verbose_name="Оборудование"
+    )
     formats = TaggableManager(
         verbose_name="Подходит для формата",
         help_text="Выберите форматы: тренинг, мастер-класс и т.д.",

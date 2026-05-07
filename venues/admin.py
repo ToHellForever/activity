@@ -6,10 +6,26 @@ from .models import (
     Venue,
     BookingRequest,
     VenueImage,
+    EquipmentCategory,
+    EquipmentItem,
 )
 from .forms import VenueForm, VenueImageForm
 
+@admin.register(EquipmentCategory)
+class EquipmentCategoryAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+    list_per_page = 20
 
+@admin.register(EquipmentItem)
+class EquipmentItemAdmin(admin.ModelAdmin):
+    list_display = ("name", "category")
+    search_fields = ("name", "category__name")
+    list_filter = ("category",)
+    ordering = ("category__name", "name")
+    list_per_page = 20
+    
 @admin.register(VenueType)
 class VenueTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -82,6 +98,7 @@ class VenueAdmin(admin.ModelAdmin):
         ),
         ("Описание", {"fields": ("short_description", "full_description")}),
         ("Характеристики", {"fields": ("area", "max_capacity", "price", "price_unit")}),
+        ("Оборудование и удобства", {"fields": ("equipment", "formats")}),
         ("Медиа", {"fields": ("video",)}),
         ("Контакты", {"fields": ("contact_info",)}),
         ("SEO", {"fields": ("meta_title", "meta_description")}),
