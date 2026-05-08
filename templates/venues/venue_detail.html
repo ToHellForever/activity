@@ -74,17 +74,6 @@
                 
                 <!-- Адрес -->
                 <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
-                
-                <!-- Вывод координат для сравнения -->
-                <script>
-                    // Выводим точные координаты из шаблона для сравнения с админкой
-                    console.group('СРАВНЕНИЕ КООРДИНАТ');
-                    console.log('Координаты из шаблона (для сравнения с админкой):');
-                    console.log('Широта (latitude):', '{{ venue.latitude }}');
-                    console.log('Долгота (longitude):', '{{ venue.longitude }}');
-                    console.log('Адрес:', '{{ venue.address }}');
-                    console.groupEnd();
-                </script>
 
                 <!-- Карта (интеграция с Яндекс.Картами) -->
                 {% if venue.latitude and venue.longitude %}
@@ -101,19 +90,6 @@
                         // Заменяем запятую на точку на случай, если используется европейский формат
                         var lat = parseFloat(latStr.replace(',', '.'));
                         var lon = parseFloat(lonStr.replace(',', '.'));
-                        
-                        // Выводим РАСШИРЕННУЮ отладочную информацию
-                        console.group('ПОЛНАЯ ОТЛАДКА КООРДИНАТ');
-                        console.log('1. Оригинальные значения из Django:');
-                        console.log('   Широта:', '{{ venue.latitude }}');
-                        console.log('   Долгота:', '{{ venue.longitude }}');
-                        console.log('2. Строковые значения для преобразования:');
-                        console.log('   latStr:', latStr);
-                        console.log('   lonStr:', lonStr);
-                        console.log('3. Числовые значения для карты:');
-                        console.log('   lat:', lat);
-                        console.log('   lon:', lon);
-                        console.groupEnd();
                         
                         if (typeof ymaps !== 'undefined') {
                             ymaps.ready(function() {

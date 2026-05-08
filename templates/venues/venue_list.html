@@ -93,7 +93,7 @@
                   <p>Вместимость: {{ venue.max_capacity }} чел.</p>
                   <p>Цена: {{ venue.price }} ₽/{{ venue.get_price_unit_display }}</p>
                     {% if venue.slug %}
-                        <a href="{% url 'venue_detail' venue.slug %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+                        <a href="{% url 'venues:venue_detail' venue.slug %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
                     {% else %}
                         <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm disabled">Подробнее</a>
                     {% endif %}
@@ -126,7 +126,7 @@
         <h5 class="modal-title" id="requestModalLabel-{{ venue.id }}">Заявка на площадку: {{ venue.title }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-      <form method="post" action="{% url 'venue_list' %}">
+      <form method="post">
         {% csrf_token %}
         <div class="modal-body">
           <input type="hidden" name="venue_id" value="{{ venue.id }}">

@@ -71,10 +71,6 @@ class VenueListView(ListView):
     paginate_by = 12  # Выводим 12 карточек за раз
 
     def get_queryset(self):
-        # Debug output for filter values
-        print("GET parameters:", self.request.GET)
-        print("has_parking:", self.request.GET.get("has_parking"))
-        print("has_wifi:", self.request.GET.get("has_wifi"))
 
         qs = super().get_queryset().filter(status="published")
 
@@ -83,7 +79,7 @@ class VenueListView(ListView):
         if city:
             qs = qs.filter(city__iexact=city)
         else:
-            qs = qs.filter(city__iexact="Новосибирск")  # По умолчанию Новосибирск
+            qs = qs.filter(city__iexact="Новосибирск") 
 
         district = self.request.GET.get("district")
         if district:
@@ -168,17 +164,6 @@ class VenueListView(ListView):
         # Если форма невалидна, возвращаем ту же страницу с ошибками
         return self.get(request, *args, **kwargs)
 
-
-class VenueDetailView(DetailView):
-    """
-    Карточка площадки.
-    """
-
-    model = Venue
-    template_name = "venues/venue_detail.html"
-    context_object_name = "venue"
-
-
 @require_POST
 def send_booking_request(request):
     """
@@ -201,9 +186,9 @@ class VenueDetailView(DetailView):
     Отображает подробную информацию об одной площадке.
     """
 
-    model = Venue  # Указываем, с какой моделью работаем
-    template_name = "venues/venue_detail.html"  # Указываем шаблон
-    context_object_name = "venue"  # Как переменная будет называться в шаблоне
+    model = Venue  
+    template_name = "venues/venue_detail.html"  
+    context_object_name = "venue" 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
