@@ -79,19 +79,19 @@
                <div class="form-group">
                    <label>Подходит для формата:</label>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="тренинг" id="format-training" {% if 'тренинг' in request.GET.getlist %}checked{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="venue_format" value="тренинг" id="format-training" {% if 'тренинг' in request.GET.getlist.0 %}checked{% endif %}>
                         <label class="form-check-label" for="format-training">Тренинг</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="мастер-класс" id="format-masterclass" {% if 'мастер-класс' in request.GET.getlist %}checked{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="venue_format" value="мастер-класс" id="format-masterclass" {% if 'мастер-класс' in request.GET.getlist.0 %}checked{% endif %}>
                         <label class="form-check-label" for="format-masterclass">Мастер-класс</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="деловая встреча" id="format-meeting" {% if 'деловая встреча' in request.GET.getlist %}checked{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="venue_format" value="деловая встреча" id="format-meeting" {% if 'деловая встреча' in request.GET.getlist.0 %}checked{% endif %}>
                         <label class="form-check-label" for="format-meeting">Деловая встреча</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="конференция" id="format-conference" {% if 'конференция' in request.GET.getlist %}checked{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="venue_format" value="конференция" id="format-conference" {% if 'конференция' in request.GET.getlist.0 %}checked{% endif %}>
                         <label class="form-check-label" for="format-conference">Конференция</label>
                     </div>
                </div>
@@ -212,6 +212,33 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Функция для получения значений параметров из URL
+    function getParameterValuesByName(name) {
+        const url = window.location.href;
+        const regex = new RegExp('[\?&]' + name + '=([^&#]*)', 'g');
+        const values = [];
+        let match;
+        while ((match = regex.exec(url)) !== null) {
+            values.push(decodeURIComponent(match[1].replace(/\+/g, ' ')));
+        }
+        return values;
+    }
+
+    // Восстанавливаем состояние чекбоксов при загрузке страницы
+    const selectedFormats = getParameterValuesByName('venue_format');
+    selectedFormats.forEach(format => {
+        const checkbox = document.querySelector(`input[name="venue_format"][value="${format}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+    });
+
+    // Сохранение состояния чекбоксов при отправке формы
+    const filterForm = document.getElementById('filter-form');
+    filterForm.addEventListener('submit', function() {
+        // Удаляем старые скрытые поля, если они есть
+        document.querySelectorAll('input[name="venue_format"][type="hidden"]').forEach(el => el.remove());
+    });
     const filterBtn = document.getElementById('equipment-filter-btn');
     const filterBlock = document.getElementById('equipment-filter-block');
     const itemsContainer = document.getElementById('equipment-items');
