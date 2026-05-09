@@ -175,7 +175,11 @@
           </div>
           <div class="mb-3">
             <label for="phone-{{ venue.id }}" class="form-label">Телефон</label>
-            <input type="tel" class="form-control" id="phone-{{ venue.id }}" name="phone" required>
+            <input type="tel" class="form-control" id="phone-{{ venue.id }}" name="phone" required
+                   oninput="validatePhone(this)" onblur="validatePhone(this)">
+            <div class="invalid-feedback">
+              Номер должен быть в формате +7XXXXXXXXXX, 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)
+            </div>
           </div>
           <div class="mb-3">
             <label for="email-{{ venue.id }}" class="form-label">Email (необязательно)</label>
@@ -183,7 +187,11 @@
           </div>
           <div class="mb-3">
             <label for="event_date-{{ venue.id }}" class="form-label">Дата и время мероприятия</label>
-            <input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required>
+            <input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required
+                   onchange="validateDate(this)" onblur="validateDate(this)">
+            <div class="invalid-feedback">
+              Дата мероприятия должна быть будущей (завтра или позже)
+            </div>
           </div>
           <div class="mb-3">
             <label for="participants_count-{{ venue.id }}" class="form-label">Количество участников</label>
@@ -315,6 +323,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return values;
     }
 });
+
+// Клиентская валидация телефона (российский формат)
+function validatePhone(input) {
+    const phone = input.value;
+    let isValid = false;
+    
+    // Проверяем формат +7XXXXXXXXXX (12 символов с +)
+    if (phone.startsWith('+') && phone.length === 12) {
+        const digits = phone.substring(1);
+        isValid = /^\d{11}$/.test(digits) && phone[1] === '7';
+    }
+    // Проверяем формат 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)
+    else if (phone.length === 11) {
+        isValid = /^[78]\d{10}$/.test(phone);
+    }
+    
+    if (phone && !isValid) {
+        input.setCustomValidity('Номер должен быть в формате +7XXXXXXXXXX, 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)');
+    } else {
+        input.setCustomValidity('');
+    }
+}
+
+// Клиентская валидация даты
+function validateDate(input) {
+    const selectedDate = new Date(input.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только дат
+    
+    if (selectedDate && selectedDate <= today) {
+        input.setCustomValidity('Дата мероприятия должна быть будущей (завтра или позже)');
+    } else {
+        input.setCustomValidity('');
+    }
+}
 
 // Функция для отправки заявки через AJAX
 function submitBookingRequest(venueId) {
