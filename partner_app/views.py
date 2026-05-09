@@ -633,7 +633,7 @@ def export_participant_list(orders, event, export_format):
         # Создаем таблицу
         table = Table(data)
         # Устанавливаем ширину столбцов
-        column_widths = [80, 110, 100, 80, 70, 70, 30, 60]
+        column_widths = [80, 100, 80, 70, 70, 60, 80, 50]
         table._argW = column_widths
 
         table.setStyle(
