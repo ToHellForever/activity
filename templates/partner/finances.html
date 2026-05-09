@@ -14,11 +14,14 @@
             </div>
             <form id="payoutRequestForm">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="payoutAmount" class="form-label">Сумма выплаты</label>
-                        <input type="text" class="form-control" id="payoutAmount" value="{{ payout_amount|floatformat }} ₽" readonly>
-                        <input type="hidden" name="amount" value="{{ payout_amount }}">
-                    </div>
+                     <div class="mb-3">
+                         <label for="payoutAmount" class="form-label">Сумма выплаты</label>
+                         <div class="input-group">
+                             <input type="number" step="0.01" class="form-control" id="payoutAmount" name="amount" value="{{ payout_amount|stringformat:".2f" }}" min="0" max="{{ payout_amount }}">
+                             <span class="input-group-text">₽</span>
+                         </div>
+                         <small class="text-muted">Максимальная доступная сумма: {{ payout_amount|floatformat:2 }} ₽</small>
+                     </div>
                     
                     <div class="mb-3">
                         <label for="payoutDetails" class="form-label">Реквизиты для выплаты</label>
@@ -119,13 +122,32 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 // Обработка формы запроса выплаты
-// Обработка формы запроса выплаты
 $(document).ready(function() {
     let isSubmitting = false; // Флаг для защиты от двойного клика
 
+    // Клиентская валидация суммы выплаты
+    $('#payoutAmount').on('input', function() {
+        const maxAmount = parseFloat($(this).attr('max'));
+        const currentValue = parseFloat($(this).val());
+
+        if (currentValue > maxAmount) {
+            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
+            $(this).val(maxAmount.toFixed(2));
+        }
+    });
+
     $('#payoutRequestForm').submit(function(e) {
         e.preventDefault();
-        
+
+        // Проверка суммы выплаты
+        const maxAmount = parseFloat($('#payoutAmount').attr('max'));
+        const currentValue = parseFloat($('#payoutAmount').val());
+
+        if (currentValue > maxAmount) {
+            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
+            return;
+        }
+
         // Защита от повторного нажатия, пока запрос не завершен
         if (isSubmitting) {
             return;

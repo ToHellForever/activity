@@ -773,13 +773,13 @@ def request_payout(request):
         amount = float(data.get('amount', 0))
         payout_details_id = data.get('payout_details')
         comment = data.get('comment', '')
-        
+
         if not payout_details_id:
             return JsonResponse({
                 'status': 'error',
                 'message': 'Пожалуйста, выберите реквизиты для выплаты'
             }, status=400)
-        
+
         try:
             payout_details = PayoutDetails.objects.get(id=payout_details_id, partner=request.user)
         except ObjectDoesNotExist:
@@ -787,7 +787,28 @@ def request_payout(request):
                 'status': 'error',
                 'message': 'Выбранные реквизиты не найдены'
             }, status=404)
-        
+
+        # Получаем доступную для выплаты сумму
+        orders = Order.objects.filter(ticket__event__organizer=request.user)
+        total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+        commission_sum = (
+            orders.annotate(
+                event_commission=ExpressionWrapper(
+                    F("total_price") * (F("ticket__event__commission_rate") / 100),
+                    output_field=DecimalField(),
+                )
+            ).aggregate(total_commission=Sum("event_commission"))["total_commission"]
+            or 0
+        )
+        payout_amount = total_revenue - commission_sum
+
+        # Серверная валидация суммы выплаты
+        if amount > payout_amount:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Сумма выплаты не может превышать доступную сумму: {payout_amount:.2f} ₽'
+            }, status=400)
+
         # Создаём запрос на выплату
         payout_request = PayoutRequest.objects.create(
             organizer=request.user,
@@ -796,12 +817,12 @@ def request_payout(request):
             comment=comment,
             status='pending'
         )
-        
+
         return JsonResponse({
             'status': 'success',
             'message': 'Запрос на выплату успешно создан!'
         })
-        
+
     except Exception as e:
         return JsonResponse({
             'status': 'error',
