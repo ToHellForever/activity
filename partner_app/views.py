@@ -641,7 +641,7 @@ def export_participant_list(orders, event, export_format):
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
                     ("FONTNAME", (0, 0), (-1, 0), "DejaVuSans-Bold"),
                     ("FONTSIZE", (0, 0), (-1, 0), 8),
                     ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
@@ -649,6 +649,11 @@ def export_participant_list(orders, event, export_format):
                     ("GRID", (0, 0), (-1, -1), 1, colors.black),
                     ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
                     ("FONTSIZE", (0, 1), (-1, -1), 6),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("WORDWRAP", (0, 0), (-1, -1), True),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                    ("ALIGN", (7, 0), (7, -1), "CENTER"),
                 ]
             )
         )
