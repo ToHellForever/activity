@@ -187,8 +187,8 @@
           </div>
           <div class="mb-3">
             <label for="event_date-{{ venue.id }}" class="form-label">Дата и время мероприятия</label>
-            <input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required
-                   onchange="validateDate(this)" onblur="validateDate(this)">
+<input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required
+       onchange="validateDate(this)" oninput="validateDate(this)">
             <div class="invalid-feedback">
               Дата мероприятия должна быть будущей (завтра или позже)
             </div>
