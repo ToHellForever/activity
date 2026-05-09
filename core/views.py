@@ -495,6 +495,26 @@ def send_multiple_tickets_notification(user, orders, request=None):
     tickets_info = ""
     total_amount = 0
     for order in orders:
+        # Генерация QR-кода
+        import qrcode
+        import io
+        import base64
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(f"Order ID: {order.id}")
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Конвертируем QR-код в base64 для вставки в HTML
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
         tickets_info += f"""
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <p><strong>Тип билета:</strong> {order.ticket.name}</p>
@@ -502,25 +522,26 @@ def send_multiple_tickets_notification(user, orders, request=None):
             <p><strong>Сумма:</strong> {order.total_price} ₽</p>
             <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
             <p><strong>Место проведения:</strong> {order.ticket.event.place_data.address if order.ticket.event.place_data else "Не указано"}</p>
+            <p><strong>QR-код:</strong></p>
+            <img src="data:image/png;base64,{img_str}" alt="QR-код для заказа #{order.id}" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
         </div>
         """
         total_amount += order.total_price
 
-    message = f"""
-    <html>
+    message = f"""\n    <html>
     <body>
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Здравствуйте, {user.get_full_name() or user.email}!</h2>
-            
+
             <p>Благодарим вас за покупку билетов на мероприятие:</p>
             <h3 style="color: #3498db;">{orders[0].ticket.event.title}</h3>
-            
+
             {tickets_info}
-            
+
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p><strong>Итого к оплате:</strong> {total_amount} ₽</p>
+            <p><strong>Итого к оплате:</strong> {total_amount} руб.</p>
             </div>
-            
+
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{button_url}" style="
                     display: inline-block;
@@ -532,7 +553,7 @@ def send_multiple_tickets_notification(user, orders, request=None):
                     font-weight: bold;
                 ">{button_text}</a>
             </div>
-            
+
             <div style="
                 margin-top: 40px;
                 padding-top: 20px;
