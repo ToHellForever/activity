@@ -156,9 +156,12 @@
         {% else %}
             <div class="no-tickets">
                 <p>У вас пока нет купленных билетов.</p>
-                <p><a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Посмотреть мероприятия</a></p>
             </div>
         {% endif %}
+
+        <div class="d-flex justify-content-center mb-4">
+            <a href="{% url 'event_list' %}" class="btn btn-primary">Посмотреть мероприятия</a>
+        </div>
 
         <a href="{% url 'logout' %}" class="logout-btn">Выйти</a>
     </div>
