@@ -111,7 +111,7 @@ class VenueAdmin(admin.ModelAdmin):
         ("Характеристики", {"fields": ("area", "max_capacity", "price", "price_unit")}),
         ("Оборудование и удобства", {"fields": ("equipment", "formats")}),
         ("Медиа", {"fields": ("video",)}),
-        ("Контакты", {"fields": ("contact_info",)}),
+        ("Контакты", {"fields": ("contact_info", "email")}),
         ("SEO", {"fields": ("meta_title", "meta_description")}),
     )
 
@@ -271,6 +271,7 @@ class VenueImageAdmin(admin.ModelAdmin):
 class BookingRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "venue", "name", "event_date", "status", "created_at")
     list_filter = ("status", "created_at")
+
 
 @admin.register(VenueFormat)
 class VenueFormatAdmin(admin.ModelAdmin):

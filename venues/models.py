@@ -11,10 +11,14 @@ from unidecode import unidecode
 import os
 
 User = get_user_model()
+
+
 class EquipmentCategory(models.Model):
     """Справочник категорий оборудования."""
 
-    name = models.CharField(max_length=100, unique=True, verbose_name="Категория оборудования")
+    name = models.CharField(
+        max_length=100, unique=True, verbose_name="Категория оборудования"
+    )
 
     def __str__(self):
         return self.name
@@ -22,12 +26,17 @@ class EquipmentCategory(models.Model):
     class Meta:
         verbose_name = "Категория оборудования"
         verbose_name_plural = "Категории оборудования"
+
+
 # подкатегория для оборудования например: "Звук" - "Колонки", "Микрофон", "Свет" - "Прожекторы", "Декорации" - "Столы", "Стулья"
 class EquipmentItem(models.Model):
     """Модель для конкретного оборудования, связанного с категорией."""
 
     category = models.ForeignKey(
-        EquipmentCategory, on_delete=models.CASCADE, related_name="items", verbose_name="Категория"
+        EquipmentCategory,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Категория",
     )
     name = models.CharField(max_length=100, verbose_name="Название оборудования")
 
@@ -37,7 +46,8 @@ class EquipmentItem(models.Model):
     class Meta:
         verbose_name = "Элемент оборудования"
         verbose_name_plural = "Элементы оборудования"
-        
+
+
 class VenueType(models.Model):
     """Справочник типов площадок."""
 
@@ -49,6 +59,7 @@ class VenueType(models.Model):
     class Meta:
         verbose_name = "Тип площадки"
         verbose_name_plural = "Типы площадок"
+
 
 class VenueFormat(models.Model):
     """Справочник форматов площадок."""
@@ -116,7 +127,7 @@ class Venue(VideoWatermarkMixin, models.Model):
         EquipmentItem,
         blank=True,
         verbose_name="Элементы оборудования",
-        related_name="venues"
+        related_name="venues",
     )
 
     TARIFF_LIMITS = {
@@ -203,7 +214,9 @@ class Venue(VideoWatermarkMixin, models.Model):
         EquipmentCategory, blank=True, verbose_name="Оборудование"
     )
     formats = models.ManyToManyField(
-        VenueFormat, blank=True, verbose_name="Форматы площадки",
+        VenueFormat,
+        blank=True,
+        verbose_name="Форматы площадки",
         help_text="Выберите форматы: тренинг, мастер-класс и т.д.",
     )
     video = models.FileField(
@@ -230,6 +243,11 @@ class Venue(VideoWatermarkMixin, models.Model):
     )  # Для тарифов extended/premium
 
     contact_info = models.TextField(blank=True, verbose_name="Контактная информация")
+    email = models.EmailField(
+        blank=True,
+        verbose_name="Email для уведомлений",
+        help_text="Email, на который будут приходить уведомления о новых заявках",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
