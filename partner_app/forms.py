@@ -9,11 +9,6 @@ class EventForm(forms.ModelForm):
     """
     Форма для создания и редактирования мероприятия.
     """
-
-    video_changed = forms.BooleanField(
-        widget=forms.HiddenInput(), required=False, initial=False
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
