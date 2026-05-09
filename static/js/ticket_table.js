@@ -20,27 +20,31 @@ function addTicketRow() {
 
 // Функция для обновления скрытого поля с данными билетов
 function updateTicketTypesHiddenField() {
+    const hiddenField = document.getElementById('ticketTypesHidden');
+    if (!hiddenField) {
+        return;
+    }
+
     const rows = document.querySelectorAll('#ticketTable tbody tr');
     let ticketData = [];
-    
+
     rows.forEach(row => {
         const nameInput = row.querySelector('input[name="ticket_name[]"]');
         const priceInput = row.querySelector('input[name="ticket_price[]"]');
         const quantityInput = row.querySelector('input[name="ticket_quantity[]"]');
-        
+
         if (nameInput && priceInput && quantityInput) {
             const name = nameInput.value.trim();
             const price = priceInput.value.trim();
             const quantity = quantityInput.value.trim();
-            
+
             if (name && price && quantity) {
                 ticketData.push(`${name}:${price}:${quantity}`);
             }
         }
     });
-    
-    document.getElementById('ticketTypesHidden').value = ticketData.join('\n');
-    console.log("Updated ticket data:", document.getElementById('ticketTypesHidden').value);
+
+    hiddenField.value = ticketData.join('\n');
 }
 
 // Функция для валидации целых чисел

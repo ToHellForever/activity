@@ -43,12 +43,10 @@
     {% for field in form %}
         {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' %}
         <div class="form-group">
-            <label>
-                {{ field.label_tag }}
-                {% if field.required %}
-                    <span class="text-danger">*</span>
-                {% endif %}
-            </label>
+            {{ field.label_tag }}
+            {% if field.required %}
+                <span class="text-danger">*</span>
+            {% endif %}
             {% if field.name == 'date_time' and is_edit and form.instance.date_time %}
                 <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" class="form-control">
             {% elif field.name == 'refund_deadline_hours' %}
@@ -71,7 +69,7 @@
 
     <!-- Кастомные поля для медиафайлов -->
     <div class="form-group">
-        <label>Изображение мероприятия</label>
+        <label for="id_image">Изображение мероприятия</label>
         <div id="image-preview-container" class="media-preview-container mb-2">
             {% if form.instance.image %}
             <div class="media-preview">
@@ -90,7 +88,7 @@
     </div>
 
     <div class="form-group">
-        <label>Видео мероприятия</label>
+        <label for="id_video_url">Видео мероприятия</label>
         <div id="video_url-preview-container" class="media-preview-container mb-2">
             {% if form.instance.video_url %}
             <div class="media-preview">
@@ -112,7 +110,7 @@
     </div>
 
     <div class="form-group">
-        <label>Программа мероприятия (PDF)</label>
+        <label for="id_program_file">Программа мероприятия (PDF)</label>
         <div id="program_file-preview-container" class="media-preview-container mb-2">
             {% if form.instance.program_file %}
             <div class="media-preview">
@@ -132,7 +130,7 @@
 
     <!-- Контейнер для выбора местоположения -->
     <div class="form-group place-input-container">
-        <label>Местоположение<span class="text-danger">*</span></label>
+        <label for="id_place_data">Местоположение<span class="text-danger">*</span></label>
         <div>
             <p class="text-muted mb-2">Выберите место на карте, кликнув по нужному месту или используя поиск по карте</p>
             <div class="place-additional-info mt-2">
