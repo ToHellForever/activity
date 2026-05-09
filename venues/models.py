@@ -50,6 +50,18 @@ class VenueType(models.Model):
         verbose_name = "Тип площадки"
         verbose_name_plural = "Типы площадок"
 
+class VenueFormat(models.Model):
+    """Справочник форматов площадок."""
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Формат площадки")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Формат площадки"
+        verbose_name_plural = "Форматы площадок"
+
 
 class VenueImage(VideoWatermarkMixin, models.Model):
     """Модель для хранения фотографий площадки."""
@@ -190,8 +202,8 @@ class Venue(VideoWatermarkMixin, models.Model):
     equipment = models.ManyToManyField(
         EquipmentCategory, blank=True, verbose_name="Оборудование"
     )
-    formats = TaggableManager(
-        verbose_name="Подходит для формата",
+    formats = models.ManyToManyField(
+        VenueFormat, blank=True, verbose_name="Форматы площадки",
         help_text="Выберите форматы: тренинг, мастер-класс и т.д.",
     )
     video = models.FileField(

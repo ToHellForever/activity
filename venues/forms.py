@@ -53,6 +53,9 @@ class VenueForm(forms.ModelForm):
     class Meta:
         model = Venue
         fields = "__all__"
+        widgets = {
+            'formats': forms.CheckboxSelectMultiple,
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

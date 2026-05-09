@@ -164,9 +164,11 @@ class VenueListView(ListView):
         if price_unit:
             qs = qs.filter(price_unit=price_unit)
 
-        venue_format = self.request.GET.get("venue_format")
-        if venue_format:
-            qs = qs.filter(formats__name__iexact=venue_format)
+        venue_formats = self.request.GET.getlist("venue_format")
+        if venue_formats:
+            # Заменяем "+" на пробелы в значениях форматов
+            normalized_formats = [vf.replace('+', ' ') for vf in venue_formats]
+            qs = qs.filter(formats__name__in=normalized_formats)
 
         # Обработка параметра сортировки
         sort_param = self.request.GET.get("sort")

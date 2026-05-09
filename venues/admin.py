@@ -8,6 +8,7 @@ from .models import (
     VenueImage,
     EquipmentCategory,
     EquipmentItem,
+    VenueFormat,
 )
 from .forms import VenueForm, VenueImageForm
 
@@ -270,3 +271,9 @@ class VenueImageAdmin(admin.ModelAdmin):
 class BookingRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "venue", "name", "event_date", "status", "created_at")
     list_filter = ("status", "created_at")
+
+@admin.register(VenueFormat)
+class VenueFormatAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
