@@ -559,11 +559,13 @@ def export_participant_list(orders, event, export_format):
         from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         import os
+        import qrcode
+        import io
 
         # Регистрируем шрифт DejaVuSans для поддержки кириллицы
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -595,10 +597,26 @@ def export_participant_list(orders, event, export_format):
                 "Тип билета",
                 "Статус",
                 "Цена",
+                "QR-код",
             ]
         ]
 
         for index, order in enumerate(orders, 1):
+            # Генерация QR-кода
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(f"Order ID: {order.id}")
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            qr_code_img = io.BytesIO()
+            img.save(qr_code_img, format='PNG')
+            qr_code_img.seek(0)
+            qr_image = Image(qr_code_img, width=50, height=50)
+
             data.append(
                 [
                     f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
@@ -608,13 +626,14 @@ def export_participant_list(orders, event, export_format):
                     order.ticket.name,
                     "Оплачено" if order.attended else "Ожидает оплаты",
                     f"{order.total_price:.2f} руб.",
+                    qr_image,
                 ]
             )
 
         # Создаем таблицу
         table = Table(data)
-        # Устанавливаем ширину столбцов (в порядке: №, Имя, E-mail, Дата покупки, Тип билета, Количество, Стоимость, Статус посещения)
-        column_widths = [80, 110, 100, 80, 70, 70, 80]
+        # Устанавливаем ширину столбцов
+        column_widths = [80, 110, 100, 80, 70, 70, 30, 60]
         table._argW = column_widths
 
         table.setStyle(
@@ -624,22 +643,12 @@ def export_participant_list(orders, event, export_format):
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("FONTNAME", (0, 0), (-1, 0), "DejaVuSans-Bold"),
-                    (
-                        "FONTSIZE",
-                        (0, 0),
-                        (-1, 0),
-                        8,
-                    ),  # Увеличен размер шрифта для заголовка
+                    ("FONTSIZE", (0, 0), (-1, 0), 8),
                     ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                     ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
                     ("GRID", (0, 0), (-1, -1), 1, colors.black),
                     ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
-                    (
-                        "FONTSIZE",
-                        (0, 1),
-                        (-1, -1),
-                        6,
-                    ),  # Увеличен размер шрифта для данных
+                    ("FONTSIZE", (0, 1), (-1, -1), 6),
                 ]
             )
         )
@@ -651,7 +660,7 @@ def export_participant_list(orders, event, export_format):
         buffer.seek(0)
         response = HttpResponse(buffer, content_type="application/pdf")
         response["Content-Disposition"] = (
-            f'attachment; filename="Участники_{event.title}.pdf"'
+            f'attachment; filename="Участники_{event.title}_с_QR.pdf"'
         )
         return response
 

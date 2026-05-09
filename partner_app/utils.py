@@ -1,11 +1,12 @@
 import csv
 import io
+import qrcode
 from datetime import datetime
 from django.http import HttpResponse
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -64,7 +65,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
     elif report_type == "excel":
         return generate_excel_report(report_data, period_start, period_end)
     elif report_type == "pdf":
-        return generate_pdf_report(report_data, period_start, period_end)
+        return generate_pdf_report(report_data, period_start, period_end, orders=orders)
     else:
         raise ValueError("Неверный формат отчёта")
 
@@ -138,8 +139,27 @@ def generate_excel_report(data, period_start, period_end):
     return output
 
 
-def generate_pdf_report(data, period_start, period_end):
-    """Генерирует отчёт в формате PDF с поддержкой кириллицы."""
+def generate_qr_code(order_id):
+    """
+    Генерирует QR-код для заказа и возвращает его в виде изображения.
+    """
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(f"Order ID: {order_id}")
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    return img_byte_arr
+
+def generate_pdf_report(data, period_start, period_end, orders=None):
+    """Генерирует отчёт в формате PDF с поддержкой кириллицы и QR-кодами."""
     # Регистрируем шрифт с поддержкой кириллицы
     pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
     pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", "DejaVuSans-Bold.ttf"))
@@ -170,21 +190,38 @@ def generate_pdf_report(data, period_start, period_end):
 
     # Таблица с данными
     table_data = [
-        ["Мероприятие", "Тип билета", "Количество", "Сумма (₽)", "Дата заказа"]
+        ["Мероприятие", "Тип билета", "Количество", "Сумма (₽)", "Дата заказа", "QR-код"]
     ]
 
-    for row in data:
-        table_data.append(
-            [
-                row["event"],
-                row["ticket"],
-                str(row["quantity"]),
-                f"{row['price']:.2f}",
-                row["date"],
-            ]
-        )
+    for idx, row in enumerate(data):
+        if "quantity" in row and row["quantity"] == "ИТОГО:":
+            # Итоговая строка, QR-код не нужен
+            table_data.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    str(row["quantity"]),
+                    f"{row['price']:.2f}",
+                    row.get("date", ""),
+                    "",
+                ]
+            )
+        else:
+            # Для обычных строк добавляем QR-код
+            qr_code_img = generate_qr_code(idx)
+            qr_image = Image(qr_code_img, width=50, height=50)
+            table_data.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    str(row.get("quantity", "")),
+                    f"{row.get('price', 0):.2f}",
+                    row.get("date", ""),
+                    qr_image,
+                ]
+            )
 
-    table = Table(table_data)
+    table = Table(table_data, colWidths=[120, 100, 60, 80, 80, 60])
     table.setStyle(
         TableStyle(
             [
