@@ -6,6 +6,8 @@ from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem
 from .forms import BookingRequestForm
 import json
@@ -237,6 +239,38 @@ class VenueListView(ListView):
         return self.get(request, *args, **kwargs)
 
 
+def _send_booking_notification(booking_request):
+    """Отправляет уведомление владельцу площадки о новой заявке"""
+    venue = booking_request.venue
+
+    if not venue.email:
+        return
+
+    # Данные из заявки
+    context = {
+        "venue": venue,
+        "booking": booking_request,
+        "event_date": booking_request.event_date.strftime("%d.%m.%Y %H:%M"),
+        "formats": booking_request.event_format,
+    }
+
+    # Формируем тему письма
+    subject = f"Новая заявка на площадку {venue.title}"
+
+    # Рендерим HTML-шаблон письма
+    email_content = render_to_string("emails/booking_notification.html", context)
+
+    # Создаем и отправляем письмо
+    email = EmailMessage(
+        subject=subject,
+        body=email_content,
+        from_email=None,  # Будет использован DEFAULT_FROM_EMAIL из настроек
+        to=[venue.email],
+    )
+    email.content_subtype = "html"  # Указываем, что содержимое - HTML
+    email.send()
+
+
 @require_POST
 def send_booking_request(request):
     """
@@ -260,10 +294,11 @@ def send_booking_request(request):
     if form.is_valid():
         booking_request = form.save(commit=False)
         booking_request.venue = venue
-        booking_request.status = "new"  # Устанавливаем статус по умолчанию
+        booking_request.status = "new"
         booking_request.save()
 
-        # Здесь можно добавить отправку email администратору или владельцу площадки
+        # Отправляем уведомление владельцу площадки
+        _send_booking_notification(booking_request)
 
         return JsonResponse({"success": True})
 
