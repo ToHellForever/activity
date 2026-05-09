@@ -7,7 +7,7 @@ from taggit.managers import TaggableManager
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin
 from core.validators import validate_video_duration, compress_video
-
+from django.utils import timezone
 
 class VideoWatermarkMixin:
     """Миксин для обработки видео с водяными знаками."""
@@ -335,6 +335,13 @@ class Ticket(models.Model):
 
     def is_available(self, quantity=1):
         """Проверяет, доступно ли указанное количество билетов для покупки."""
+
+        # Проверяем, не закрыты ли продажи для мероприятия
+        if self.event.auto_close_sales_hours > 0:
+            close_time = self.event.date_time - timezone.timedelta(hours=self.event.auto_close_sales_hours)
+            if timezone.now() >= close_time:
+                return False
+
         sold = sum(order.quantity for order in self.orders.all())
         return self.available_quantity >= sold + quantity
 

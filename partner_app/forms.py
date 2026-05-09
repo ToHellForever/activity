@@ -27,6 +27,11 @@ class EventForm(forms.ModelForm):
         self.fields["refund_deadline_hours"].required = True
         self.fields["duration"].required = False
 
+        # Настройка поля auto_close_sales_hours
+        self.fields["auto_close_sales_hours"].required = True
+        self.fields["auto_close_sales_hours"].widget.attrs["min"] = 24
+        self.fields["auto_close_sales_hours"].help_text = "Продажи автоматически будут прекращены за указанное количество часов до начала мероприятия (минимум 24 часа)."
+
         # Кастомные сообщения об ошибках
         self.fields["date_time"].error_messages = {
             "required": "Пожалуйста, укажите дату и время проведения мероприятия."
@@ -45,6 +50,12 @@ class EventForm(forms.ModelForm):
                     "Неверный формат. Используйте ЧЧ:ММ (например, 02:30)"
                 )
         return None
+
+    def clean_auto_close_sales_hours(self):
+        auto_close_sales_hours = self.cleaned_data.get("auto_close_sales_hours")
+        if auto_close_sales_hours is not None and auto_close_sales_hours < 24:
+            raise forms.ValidationError("Минимальное значение — 24 часа.")
+        return auto_close_sales_hours
 
     class Meta:
         model = Event

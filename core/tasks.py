@@ -4,8 +4,10 @@ from django.apps import apps
 import os
 import logging
 import time
-# settings
+from django.utils import timezone
 from django.conf import settings
+from core.models import Event, Ticket
+
 
 logger = logging.getLogger(__name__)
 
@@ -115,3 +117,32 @@ def process_video_task(
     except Exception as e:
         logger.error(f"Исключение при обработке видео: {str(e)}")
         return f"Исключение при обработке видео: {str(e)}"
+
+@shared_task
+def close_event_sales():
+    """
+    Задача Celery для автоматического закрытия продаж билетов
+    за указанное количество часов до начала мероприятия.
+    """
+
+    now = timezone.now()
+    events = Event.objects.filter(status="active")
+
+    for event in events:
+        # Вычисляем время закрытия продаж
+        close_time = event.date_time - timezone.timedelta(hours=24)
+
+        # Если текущее время больше или равно времени закрытия
+        if now >= close_time:
+            # Закрываем продажи для всех билетов этого мероприятия
+            for ticket in event.tickets.all():
+                ticket.available_quantity = 0
+                ticket.save()
+
+            # Обновляем статус мероприятия, если нужно
+            event.status = "completed"
+            event.save()
+
+            logger.info(f"Продажи билетов для мероприятия {event.title} закрыты за 24 часа до начала.")
+
+    return f"Проверка и закрытие продаж выполнены: {now}"
