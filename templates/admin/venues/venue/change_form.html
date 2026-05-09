@@ -1,6 +1,7 @@
 {% extends "admin/change_form.html" %}
- {% load i18n admin_urls static %} 
- {% block after_field_sets %}
+{% load i18n admin_urls static %}
+
+{% block after_field_sets %}
 <div
   class="form-group"
   style="
@@ -11,9 +12,9 @@
     border: 1px solid #dee2e6;
   "
 >
-  <label style="font-weight: bold;color: black;"
-    >{% trans "Множественная загрузка фотографий" %}:</label
-  >
+  <label style="font-weight: bold;color: black;">
+    {% trans "Множественная загрузка фотографий" %}:
+  </label>
   <input
     type="file"
     name="images"
@@ -25,31 +26,51 @@
     {% trans "Выберите несколько фотографий для загрузки." %}
   </p>
 </div>
-{{ block.super }} 
-{% endblock %} 
-{% block extrahead %} 
+{{ block.super }}
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  #equipment_items_group fieldset.module {
+    min-height: 300px !important;
+    max-height: 400px !important;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    background-color: #fff;
+  }
+  
+  #equipment_items_group label,
+  #equipment_items_group .form-check-label {
+    color: black !important;
+  }
+  
+  #equipment_items_group .form-check {
+    margin-left: 0 !important;
+    padding-left: 1.25rem;
+  }
+  
+  #equipment_items_group .form-check-input {
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %}
+
+{% block inline_fieldsets %}
 {{ block.super }}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const tariffSelect = document.getElementById("id_tariff");
-    const imagesHelp = document.getElementById("images_help_text");
-
-    const limits = {
-      1: { max_photos: 1 },
-      2: { max_photos: 10 },
-      3: { max_photos: 25 },
-    };
-
-    function updateImagesHelp() {
-      const selectedTariff = tariffSelect.value;
-      if (imagesHelp && limits[selectedTariff]) {
-        imagesHelp.textContent = `{% trans "Выберите несколько фотографий для загрузки. Максимум" %}: ${limits[selectedTariff].max_photos}.`;
-      }
-    }
-
-    if (tariffSelect && imagesHelp) {
-      tariffSelect.addEventListener("change", updateImagesHelp);
-      updateImagesHelp();
+  document.addEventListener('DOMContentLoaded', function() {
+    const equipmentGroup = document.querySelector('#equipment_items_group fieldset.module');
+    if (equipmentGroup) {
+      equipmentGroup.style.minHeight = '300px';
+      equipmentGroup.style.maxHeight = '400px';
+      equipmentGroup.style.overflowY = 'auto';
+      equipmentGroup.style.padding = '10px';
+      equipmentGroup.style.border = '1px solid #dee2e6';
+      equipmentGroup.style.borderRadius = '5px';
+      equipmentGroup.style.backgroundColor = '#fff';
     }
   });
 </script>

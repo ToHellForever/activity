@@ -3,11 +3,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const equipmentField = document.getElementById('id_equipment');
     const equipmentItemsContainer = document.createElement('div');
     equipmentItemsContainer.id = 'equipment-items-container';
+    
+    // Устанавливаем стили для контейнера
     equipmentItemsContainer.style.marginTop = '15px';
     equipmentItemsContainer.style.padding = '10px';
     equipmentItemsContainer.style.border = '1px solid #ddd';
     equipmentItemsContainer.style.borderRadius = '4px';
-    equipmentItemsContainer.style.backgroundColor = '#f8f9fa';
+    equipmentItemsContainer.style.backgroundColor = '#fff';
+    equipmentItemsContainer.style.minHeight = '300px';
+    equipmentItemsContainer.style.maxHeight = '400px';
+    equipmentItemsContainer.style.overflowY = 'auto';
 
     // Вставляем контейнер после поля equipment
     if (equipmentField) {
@@ -58,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(response => response.json())
                     .then(selectedItems => {
                         // Создаем чекбоксы для всех элементов оборудования
-                        let html = '<h4>Элементы оборудования:</h4>';
+                        let html = '<h4 style="color: black; margin-bottom: 15px;">Элементы оборудования:</h4>';
                         html += '<div style="max-height: 300px; overflow-y: auto; padding: 5px;">';
 
                         // Группируем элементы по категориям
@@ -73,17 +78,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Отображаем элементы по категориям
                         for (const [categoryId, items] of Object.entries(itemsByCategory)) {
                             const categoryName = equipmentField.querySelector(`option[value="${categoryId}"]`).text;
-                            html += `<div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">`;
-                            html += `<h5 style="margin-bottom: 5px;">${categoryName}</h5>`;
+                            html += `<div style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">`;
+                            html += `<h5 style="margin-bottom: 10px; color: black;">${categoryName}</h5>`;
+
+                            html += '<div style="display: grid; grid-template-columns: 1fr; gap: 5px;">';
 
                             items.forEach(item => {
                                 const isChecked = selectedItems.some(selected => selected.id === item.id);
-                                html += `<div style="margin: 5px 0;">`;
-                                html += `<input type="checkbox" name="equipment_items" value="${item.id}" id="item_${item.id}" ${isChecked ? 'checked' : ''}>`;
-                                html += `<label for="item_${item.id}" style="margin-left: 5px;">${item.name}</label>`;
+                                html += `<div style="display: flex; align-items: center;">`;
+                                html += `<input type="checkbox" name="equipment_items" value="${item.id}" id="item_${item.id}" ${isChecked ? 'checked' : ''} style="margin-right: 8px;">`;
+                                html += `<label for="item_${item.id}" style="color: black; margin: 0;">${item.name}</label>`;
                                 html += `</div>`;
                             });
 
+                            html += '</div>';
                             html += `</div>`;
                         }
 
