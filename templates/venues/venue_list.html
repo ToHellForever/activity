@@ -165,7 +165,7 @@
         <h5 class="modal-title" id="requestModalLabel-{{ venue.id }}">Заявка на площадку: {{ venue.title }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-      <form method="post">
+      <form id="booking-request-form-{{ venue.id }}">
         {% csrf_token %}
         <div class="modal-body">
           <input type="hidden" name="venue_id" value="{{ venue.id }}">
@@ -200,7 +200,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-          <button type="submit" class="btn btn-primary">Отправить заявку</button>
+          <button type="button" class="btn btn-primary" onclick="submitBookingRequest({{ venue.id }})">Отправить заявку</button>
         </div>
       </form>
     </div>
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemsContainer = document.getElementById('equipment-items');
     const loadingText = document.getElementById('equipment-loading');
     const clearFiltersBtn = document.getElementById('clear-equipment-filters');
-    
+
     // --- 1. Загрузка данных об оборудовании ---
     filterBtn.addEventListener('click', function() {
         if (filterBlock.classList.contains('d-none')) {
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const catDiv = document.createElement('div');
                         catDiv.className = 'mb-3';
                         catDiv.innerHTML = `<strong>${cat.category_name}</strong>`;
-                        
+
                         cat.items.forEach(item => {
                             const checkboxId = `equip-${item.id}`;
                             const checkboxDiv = document.createElement('div');
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         filterBlock.classList.toggle('d-none');
     });
-    
+
     // --- 2. Очистка фильтров оборудования ---
     clearFiltersBtn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -315,5 +315,34 @@ document.addEventListener('DOMContentLoaded', function() {
         return values;
     }
 });
+
+// Функция для отправки заявки через AJAX
+function submitBookingRequest(venueId) {
+    const form = document.getElementById(`booking-request-form-${venueId}`);
+    const formData = new FormData(form);
+
+    fetch("{% url 'venues:send_booking_request' %}", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Заявка успешно отправлена!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById(`requestModal-${venueId}`));
+            modal.hide();
+        } else {
+            alert('Ошибка при отправке заявки: ' + JSON.stringify(data.errors));
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при отправке заявки.');
+    });
+}
 </script>
 {% endblock %}

@@ -11,7 +11,8 @@ urlpatterns = [
     # для списка площадок
     path("public/get_equipment_items/", views.public_get_equipment_items, name="public_get_equipment_items"),
     path("public/save_venue_equipment/", views.public_save_venue_equipment, name="public_save_venue_equipment"),
-    
+    path("send_booking_request/", views.send_booking_request, name="send_booking_request"),
+
     path('', views.VenueListView.as_view(), name='venue_list'),
     path('<slug:slug>/', views.VenueDetailView.as_view(), name='venue_detail'),
 ]

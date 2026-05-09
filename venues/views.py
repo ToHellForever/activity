@@ -9,7 +9,9 @@ from django.shortcuts import get_object_or_404
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem
 from .forms import BookingRequestForm
 import json
-# ФУНКЦИИ ДЛЯ АДМИНКИ 
+
+
+# ФУНКЦИИ ДЛЯ АДМИНКИ
 @csrf_exempt
 @login_required
 def get_equipment_items(request):
@@ -20,18 +22,23 @@ def get_equipment_items(request):
     items = EquipmentItem.objects.filter(category_id=category_id).values("id", "name")
     return JsonResponse(list(items), safe=False)
 
+
 @csrf_exempt
 @login_required
 def save_venue_equipment(request):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Method not allowed"}, status=405
+        )
 
-    venue_id = request.POST.get('venue_id')
-    equipment_id = request.POST.get('equipment_id')
-    is_checked = request.POST.get('is_checked') == 'true'
+    venue_id = request.POST.get("venue_id")
+    equipment_id = request.POST.get("equipment_id")
+    is_checked = request.POST.get("is_checked") == "true"
 
     if not venue_id or not equipment_id:
-        return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
+        return JsonResponse(
+            {"success": False, "error": "Missing parameters"}, status=400
+        )
 
     try:
         venue = Venue.objects.get(pk=venue_id)
@@ -42,75 +49,79 @@ def save_venue_equipment(request):
         else:
             venue.equipment_items.remove(equipment)
 
-        return JsonResponse({'success': True})
+        return JsonResponse({"success": True})
     except Venue.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Venue not found'}, status=404)
+        return JsonResponse({"success": False, "error": "Venue not found"}, status=404)
     except EquipmentItem.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Equipment not found'}, status=404)
+        return JsonResponse(
+            {"success": False, "error": "Equipment not found"}, status=404
+        )
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
 
 @csrf_exempt
 @login_required
 def get_venue_equipment(request, venue_id):
     try:
         venue = Venue.objects.get(pk=venue_id)
-        equipment_items = venue.equipment_items.values('id', 'name')
+        equipment_items = venue.equipment_items.values("id", "name")
         return JsonResponse(list(equipment_items), safe=False)
     except Venue.DoesNotExist:
         return JsonResponse([], safe=False)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-    
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 # ПУБЛИЧНЫЕ ФУНКЦИИ
 def public_get_equipment_items(request):
     """
     Публичный эндпоинт для получения списка оборудования.
     Используется для рендера чекбоксов в фильтре.
     """
-    categories = EquipmentCategory.objects.prefetch_related('items').all()
-    
+    categories = EquipmentCategory.objects.prefetch_related("items").all()
+
     data = []
     for category in categories:
-        items = [{'id': item.id, 'name': item.name} for item in category.items.all()]
-        data.append({
-            'category_id': category.id,
-            'category_name': category.name,
-            'items': items
-        })
-    
-    return JsonResponse({'equipment': data})
+        items = [{"id": item.id, "name": item.name} for item in category.items.all()]
+        data.append(
+            {"category_id": category.id, "category_name": category.name, "items": items}
+        )
+
+    return JsonResponse({"equipment": data})
+
 
 def public_save_venue_equipment(request):
     """
     Публичный эндпоинт для применения фильтра.
     Принимает список ID оборудования и возвращает отрендеренный HTML плиток.
     """
-    if request.method == 'POST':
+    if request.method == "POST":
         # Получаем список ID из тела запроса (JSON)
         try:
             data = json.loads(request.body)
-            selected_item_ids = data.get('item_ids', [])
+            selected_item_ids = data.get("item_ids", [])
         except json.JSONDecodeError:
-            selected_item_ids = request.POST.getlist('item_ids[]') # Альтернатива для form-data
+            selected_item_ids = request.POST.getlist(
+                "item_ids[]"
+            )  # Альтернатива для form-data
 
         # Начинаем фильтрацию с опубликованных площадок
-        venues = Venue.objects.filter(status='published')
-        
+        venues = Venue.objects.filter(status="published")
+
         # Применяем фильтр по каждому выбранному item_id
         for item_id in selected_item_ids:
             venues = venues.filter(equipment_items__id=item_id)
-        
+
         # Убираем дубликаты (если площадка подходит под несколько фильтров)
         venues = venues.distinct()
 
         # Рендерим карточки в HTML-строку
-        html = render_to_string('venues/_venue_card.html', {'venues': venues})
-        
-        return JsonResponse({'html': html})
+        html = render_to_string("venues/_venue_card.html", {"venues": venues})
 
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+        return JsonResponse({"html": html})
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 class VenueListView(ListView):
@@ -133,7 +144,7 @@ class VenueListView(ListView):
             qs = qs.filter(city__iexact=city)
         else:
             qs = qs.filter(city__iexact="Новосибирск")
-        
+
         # Фильтрация по оборудованию
         equipment_ids = self.request.GET.getlist("equipment")
         if equipment_ids:
@@ -167,7 +178,7 @@ class VenueListView(ListView):
         venue_formats = self.request.GET.getlist("venue_format")
         if venue_formats:
             # Заменяем "+" на пробелы в значениях форматов
-            normalized_formats = [vf.replace('+', ' ') for vf in venue_formats]
+            normalized_formats = [vf.replace("+", " ") for vf in venue_formats]
             qs = qs.filter(formats__name__in=normalized_formats)
 
         # Обработка параметра сортировки
@@ -225,15 +236,32 @@ class VenueListView(ListView):
         # Если форма невалидна, возвращаем ту же страницу с ошибками
         return self.get(request, *args, **kwargs)
 
+
 @require_POST
 def send_booking_request(request):
     """
     Обработка формы заявки через AJAX.
     """
+    venue_id = request.POST.get("venue_id")
+    if not venue_id:
+        return JsonResponse(
+            {"success": False, "errors": {"__all__": "Площадка не указана"}}
+        )
+
+    try:
+        venue = Venue.objects.get(pk=venue_id)
+    except Venue.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "errors": {"__all__": "Указанная площадка не найдена"}}
+        )
+
     form = BookingRequestForm(request.POST)
 
     if form.is_valid():
-        booking_request = form.save()
+        booking_request = form.save(commit=False)
+        booking_request.venue = venue
+        booking_request.status = "new"  # Устанавливаем статус по умолчанию
+        booking_request.save()
 
         # Здесь можно добавить отправку email администратору или владельцу площадки
 
@@ -247,9 +275,9 @@ class VenueDetailView(DetailView):
     Отображает подробную информацию об одной площадке.
     """
 
-    model = Venue  
-    template_name = "venues/venue_detail.html"  
-    context_object_name = "venue" 
+    model = Venue
+    template_name = "venues/venue_detail.html"
+    context_object_name = "venue"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

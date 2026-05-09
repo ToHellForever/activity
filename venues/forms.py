@@ -54,7 +54,7 @@ class VenueForm(forms.ModelForm):
         model = Venue
         fields = "__all__"
         widgets = {
-            'formats': forms.CheckboxSelectMultiple,
+            "formats": forms.CheckboxSelectMultiple,
         }
 
     def __init__(self, *args, **kwargs):
@@ -128,4 +128,12 @@ class VenueForm(forms.ModelForm):
 class BookingRequestForm(forms.ModelForm):
     class Meta:
         model = BookingRequest
-        fields = "__all__"
+        fields = [
+            "name",
+            "phone",
+            "email",
+            "event_date",
+            "participants_count",
+            "event_format",
+            "comment",
+        ]
