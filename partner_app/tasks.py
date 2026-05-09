@@ -1,6 +1,7 @@
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.utils import timezone
+from django.core.files.base import ContentFile
 from datetime import datetime, timedelta
 from .models import ReportSchedule, SalesReport
 from .utils import generate_sales_report
