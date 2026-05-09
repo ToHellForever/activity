@@ -73,12 +73,28 @@
                   <option value="conference" {% if request.GET.venue_format == 'conference' %}selected{% endif %}>Конференция</option>
               </select>
           </div>
+          <button id="equipment-filter-btn" class="btn btn-outline-secondary mb-4" type="button">
+  <i class="bi bi-gear"></i> Оборудование и удобства
+</button>
+
+<!-- Блок с оборудованием (изначально скрыт) -->
+<div id="equipment-filter-block" class="card p-3 mb-4 d-none">
+  <h5>Фильтр по оборудованию</h5>
+  <div id="equipment-loading" class="text-muted mb-2">Загрузка списка...</div>
+  <div id="equipment-items">
+    <!-- Здесь будут динамически созданные чекбоксы -->
+  </div>
+  
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <button id="clear-equipment-filters" class="btn btn-sm btn-outline-danger">Сбросить</button>
+  </div>
+</div>
           <div class="col-md-3 mt-4">
               <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
           </div>
       </div>
   </form>
-  
+   
   <div id="venues-grid" class="row row-cols-1 row-cols-md-3 g-4 mt-4">
       {% for venue in venues %}
       <div class="col">
@@ -97,6 +113,7 @@
                     {% else %}
                         <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm disabled">Подробнее</a>
                     {% endif %}
+
 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal-{{ venue.id }}">
   Оставить заявку
 </button>
@@ -170,4 +187,84 @@
 {% endfor %}
 {% endblock %}
 
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtn = document.getElementById('equipment-filter-btn');
+    const filterBlock = document.getElementById('equipment-filter-block');
+    const itemsContainer = document.getElementById('equipment-items');
+    const loadingText = document.getElementById('equipment-loading');
+    const clearFiltersBtn = document.getElementById('clear-equipment-filters');
+    
+    // --- 1. Загрузка данных об оборудовании ---
+    filterBtn.addEventListener('click', function() {
+        if (filterBlock.classList.contains('d-none')) {
+            loadingText.style.display = 'block';
+            itemsContainer.innerHTML = ''; // Очищаем контейнер при каждом открытии
+            fetch("/venues/public/get_equipment_items/")
+                .then(response => {
+                    if (!response.ok) {
+                        // Покажем текст ошибки от сервера в блоке
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    data.equipment.forEach(cat => {
+                        const catDiv = document.createElement('div');
+                        catDiv.className = 'mb-3';
+                        catDiv.innerHTML = `<strong>${cat.category_name}</strong>`;
+                        
+                        cat.items.forEach(item => {
+                            const checkboxId = `equip-${item.id}`;
+                            const checkboxDiv = document.createElement('div');
+                            checkboxDiv.className = 'form-check';
+                            checkboxDiv.innerHTML =
+                                '<input ' +
+                                    'class="form-check-input equip-checkbox"' +
+                                    'type="checkbox"' +
+                                    'name="equipment"' +
+                                    'value="' + item.id + '"' +
+                                    'id="' + checkboxId + '"' +
+                                    (getParameterValuesByName('equipment').includes(item.id.toString()) ? ' checked' : '') +
+                                    '>' +
+                                '<label class="form-check-label" for="' + checkboxId + '">' +
+                                    item.name +
+                                '</label>';
+                            catDiv.appendChild(checkboxDiv);
+                        });
+                        itemsContainer.appendChild(catDiv);
+                    });
+                    loadingText.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки оборудования:', error);
+                    loadingText.style.display = 'none';
+                    itemsContainer.innerHTML = '<div class="text-danger">Ошибка: ' + error.message + '</div>';
+                });
+        }
+        filterBlock.classList.toggle('d-none');
+    });
+    
+    // --- 2. Очистка фильтров оборудования ---
+    clearFiltersBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.equip-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    });
+
+    // --- 3. Вспомогательная функция для получения всех параметров из URL ---
+    function getParameterValuesByName(name) {
+        const url = window.location.href;
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)', 'g');
+        const values = [];
+        let match;
+        while ((match = regex.exec(url)) !== null) {
+            values.push(decodeURIComponent(match[1].replace(/\+/g, ' ')));
+        }
+        return values;
+    }
+});
+</script>
+{% endblock %}

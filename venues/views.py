@@ -6,9 +6,10 @@ from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from .models import Venue, BookingRequest
+from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem
 from .forms import BookingRequestForm
-
+import json
+# ФУНКЦИИ ДЛЯ АДМИНКИ 
 @csrf_exempt
 @login_required
 def get_equipment_items(request):
@@ -60,6 +61,58 @@ def get_venue_equipment(request, venue_id):
         return JsonResponse([], safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+    
+# ПУБЛИЧНЫЕ ФУНКЦИИ
+def public_get_equipment_items(request):
+    """
+    Публичный эндпоинт для получения списка оборудования.
+    Используется для рендера чекбоксов в фильтре.
+    """
+    categories = EquipmentCategory.objects.prefetch_related('items').all()
+    
+    data = []
+    for category in categories:
+        items = [{'id': item.id, 'name': item.name} for item in category.items.all()]
+        data.append({
+            'category_id': category.id,
+            'category_name': category.name,
+            'items': items
+        })
+    
+    return JsonResponse({'equipment': data})
+
+def public_save_venue_equipment(request):
+    """
+    Публичный эндпоинт для применения фильтра.
+    Принимает список ID оборудования и возвращает отрендеренный HTML плиток.
+    """
+    if request.method == 'POST':
+        # Получаем список ID из тела запроса (JSON)
+        try:
+            data = json.loads(request.body)
+            selected_item_ids = data.get('item_ids', [])
+        except json.JSONDecodeError:
+            selected_item_ids = request.POST.getlist('item_ids[]') # Альтернатива для form-data
+
+        # Начинаем фильтрацию с опубликованных площадок
+        venues = Venue.objects.filter(status='published')
+        
+        # Применяем фильтр по каждому выбранному item_id
+        for item_id in selected_item_ids:
+            venues = venues.filter(equipment_items__id=item_id)
+        
+        # Убираем дубликаты (если площадка подходит под несколько фильтров)
+        venues = venues.distinct()
+
+        # Рендерим карточки в HTML-строку
+        html = render_to_string('venues/_venue_card.html', {'venues': venues})
+        
+        return JsonResponse({'html': html})
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
 class VenueListView(ListView):
     """
     Список площадок с фильтрацией и поэтапной подгрузкой.
@@ -79,7 +132,13 @@ class VenueListView(ListView):
         if city:
             qs = qs.filter(city__iexact=city)
         else:
-            qs = qs.filter(city__iexact="Новосибирск") 
+            qs = qs.filter(city__iexact="Новосибирск")
+        
+        # Фильтрация по оборудованию
+        equipment_ids = self.request.GET.getlist("equipment")
+        if equipment_ids:
+            for equipment_id in equipment_ids:
+                qs = qs.filter(equipment_items__id=equipment_id)
 
         district = self.request.GET.get("district")
         if district:
