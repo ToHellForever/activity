@@ -414,6 +414,14 @@ def buy_ticket(request, event_id):
         and request.POST.get("book_without_payment") == "on"
     )
 
+    # Отладочный вывод UTM-меток
+    print("UTM Source from POST:", request.POST.get('utm_source'))
+    print("UTM Source from GET:", request.GET.get('utm_source'))
+    print("UTM Medium from POST:", request.POST.get('utm_medium'))
+    print("UTM Medium from GET:", request.GET.get('utm_medium'))
+    print("UTM Campaign from POST:", request.POST.get('utm_campaign'))
+    print("UTM Campaign from GET:", request.GET.get('utm_campaign'))
+
     # Создаем заказы для каждого типа билетов
     orders = []
     for ticket, quantity in ticket_quantities.items():
@@ -428,6 +436,11 @@ def buy_ticket(request, event_id):
             total_price=ticket.price * quantity,
             quantity=quantity,
             is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
+            utm_source=request.POST.get('utm_source') or request.GET.get('utm_source'),
+            utm_medium=request.POST.get('utm_medium') or request.GET.get('utm_medium'),
+            utm_campaign=request.POST.get('utm_campaign') or request.GET.get('utm_campaign'),
+            utm_term=request.POST.get('utm_term') or request.GET.get('utm_term'),
+            utm_content=request.POST.get('utm_content') or request.GET.get('utm_content'),
         )
         orders.append(order)
 

@@ -415,6 +415,23 @@ def reports(request):
         for item in sales_graph_data
     }
 
+    # Получаем данные об источниках трафика
+    traffic_sources = (
+        orders.exclude(utm_source__isnull=True).exclude(utm_source__exact='')
+        .values('utm_source')
+        .annotate(total=Sum('total_price'), count=Count('id'))
+        .order_by('-total')
+    )
+
+    # Преобразуем в удобный формат
+    traffic_sources_data = {
+        item['utm_source']: {
+            'total': float(item['total']),
+            'count': item['count']
+        }
+        for item in traffic_sources
+    }
+
     # Получаем список ранее сгенерированных отчётов
     user_reports = SalesReport.objects.filter(partner=request.user).order_by(
         "-created_at"
@@ -431,6 +448,7 @@ def reports(request):
         "tickets_sold": tickets_sold,
         "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
         "sales_graph_data": json.dumps(sales_graph_data),
+        "traffic_sources_data": traffic_sources_data,
         "user_reports": user_reports,
         "report_schedule": report_schedule,
     }

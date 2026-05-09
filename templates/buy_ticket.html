@@ -9,8 +9,24 @@
     <p>Место: {% with place=event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</p>
     <p>Описание: {{ event.description_short }}</p>
     
-    <form method="post">
-        {% csrf_token %}
+     <form method="post">
+         {% csrf_token %}
+         <!-- Скрытые поля для передачи UTM-меток -->
+         {% if request.GET.utm_source %}
+             <input type="hidden" name="utm_source" value="{{ request.GET.utm_source }}">
+         {% endif %}
+         {% if request.GET.utm_medium %}
+             <input type="hidden" name="utm_medium" value="{{ request.GET.utm_medium }}">
+         {% endif %}
+         {% if request.GET.utm_campaign %}
+             <input type="hidden" name="utm_campaign" value="{{ request.GET.utm_campaign }}">
+         {% endif %}
+         {% if request.GET.utm_term %}
+             <input type="hidden" name="utm_term" value="{{ request.GET.utm_term }}">
+         {% endif %}
+         {% if request.GET.utm_content %}
+             <input type="hidden" name="utm_content" value="{{ request.GET.utm_content }}">
+         {% endif %}
         
         <div class="form-group">
             <label for="email">Email:</label>

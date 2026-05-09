@@ -375,6 +375,13 @@ class Order(models.Model):
         null=True, blank=True, verbose_name="Срок оплаты"
     )
 
+    # Поля для хранения UTM-меток
+    utm_source = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Source")
+    utm_medium = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Medium")
+    utm_campaign = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Campaign")
+    utm_term = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Term")
+    utm_content = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Content")
+
     def __str__(self):
         return f"Заказ #{self.id} - {self.ticket.name}"
 
