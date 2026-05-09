@@ -123,26 +123,20 @@ def close_event_sales():
     """
     Задача Celery для автоматического закрытия продаж билетов
     за указанное количество часов до начала мероприятия.
+    Использует значение auto_close_sales_hours из модели Event.
     """
 
     now = timezone.now()
     events = Event.objects.filter(status="active")
 
     for event in events:
-        # Вычисляем время закрытия продаж
-        close_time = event.date_time - timezone.timedelta(hours=24)
+        # Проверяем, нужно ли автоматически закрывать продажи для этого мероприятия
+        if event.auto_close_sales_hours > 0:
+            # Вычисляем время закрытия продаж на основе настроек мероприятия
+            close_time = event.date_time - timezone.timedelta(hours=event.auto_close_sales_hours)
 
-        # Если текущее время больше или равно времени закрытия
-        if now >= close_time:
-            # Закрываем продажи для всех билетов этого мероприятия
-            for ticket in event.tickets.all():
-                ticket.available_quantity = 0
-                ticket.save()
-
-            # Обновляем статус мероприятия, если нужно
-            event.status = "completed"
-            event.save()
-
-            logger.info(f"Продажи билетов для мероприятия {event.title} закрыты за 24 часа до начала.")
+            # Если текущее время больше или равно времени закрытия
+            if now >= close_time:
+                logger.info(f"Продажи билетов для мероприятия {event.title} закрыты за {event.auto_close_sales_hours} часов до начала.")
 
     return f"Проверка и закрытие продаж выполнены: {now}"
