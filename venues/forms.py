@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import ClearableFileInput, MultipleChoiceField, CheckboxSelectMultiple
+from django.utils import timezone
 from .models import Venue, BookingRequest, VenueImage
 
 
@@ -126,6 +127,10 @@ class VenueForm(forms.ModelForm):
 
 
 class BookingRequestForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.venue = kwargs.pop("venue", None)
+        super().__init__(*args, **kwargs)
+
     class Meta:
         model = BookingRequest
         fields = [
@@ -137,3 +142,29 @@ class BookingRequestForm(forms.ModelForm):
             "event_format",
             "comment",
         ]
+        widgets = {
+            "email": forms.EmailInput(attrs={"required": "required"}),
+            "name": forms.TextInput(attrs={"required": "required"}),
+            "phone": forms.TextInput(attrs={"required": "required"}),
+            "event_date": forms.DateTimeInput(attrs={"required": "required"}),
+            "participants_count": forms.NumberInput(attrs={"required": "required"}),
+            "event_format": forms.TextInput(attrs={"required": "required"}),
+        }
+
+    def clean_event_date(self):
+        event_date = self.cleaned_data.get("event_date")
+        if event_date and event_date < timezone.now():
+            raise ValidationError("Нельзя выбрать прошедшую дату для мероприятия")
+        return event_date
+
+    def clean_participants_count(self):
+        participants_count = self.cleaned_data.get("participants_count")
+        if (
+            self.venue
+            and participants_count
+            and participants_count > self.venue.max_capacity
+        ):
+            raise ValidationError(
+                f"Количество участников не может превышать {self.venue.max_capacity} - максимальную вместимость площадки"
+            )
+        return participants_count

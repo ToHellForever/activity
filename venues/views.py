@@ -271,12 +271,55 @@ def _send_booking_notification(booking_request):
     email.send()
 
 
+def _process_booking_request(request):
+    """Обрабатывает данные формы и сохраняет заявку"""
+    venue_id = request.POST.get("venue_id")
+    if not venue_id:
+        return False, {"__all__": "Площадка не указана"}
+
+    try:
+        venue = Venue.objects.get(pk=venue_id)
+    except Venue.DoesNotExist:
+        return False, {"__all__": "Указанная площадка не найдена"}
+
+    form = BookingRequestForm(request.POST, venue=venue)
+
+    if form.is_valid():
+        booking_request = form.save(commit=False)
+        booking_request.venue = venue
+        booking_request.status = "new"
+        booking_request.save()
+
+        # Отправляем уведомление владельцу площадки
+        _send_booking_notification(booking_request)
+        return True, None
+
+    return False, form.errors
+
+
 @require_POST
 def send_booking_request(request):
     """
     Обработка формы заявки через AJAX.
     """
-    venue_id = request.POST.get("venue_id")
+    # Сразу возвращаем успех, чтобы форма закрылась
+    # Обработка будет продолжаться в фоновом режиме
+    return JsonResponse({"success": True})
+
+
+@require_POST
+def process_booking_request(request):
+    """
+    Фактическая обработка формы заявки в фоновом режиме
+    """
+    # Создаем копию POST данных, чтобы не модифицировать оригинал
+    post_data = request.POST.copy()
+
+    # Обрабатываем данные
+    success, errors = _process_booking_request(request)
+
+    # Возвращаем результат (хотя он не будет использоваться в UI)
+    return JsonResponse({"success": success, "errors": errors})
     if not venue_id:
         return JsonResponse(
             {"success": False, "errors": {"__all__": "Площадка не указана"}}

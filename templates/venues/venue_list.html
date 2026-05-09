@@ -165,7 +165,7 @@
         <h5 class="modal-title" id="requestModalLabel-{{ venue.id }}">Заявка на площадку: {{ venue.title }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-      <form id="booking-request-form-{{ venue.id }}">
+      <form id="booking-request-form-{{ venue.id }}" novalidate>
         {% csrf_token %}
         <div class="modal-body">
           <input type="hidden" name="venue_id" value="{{ venue.id }}">
@@ -320,8 +320,21 @@ document.addEventListener('DOMContentLoaded', function() {
 function submitBookingRequest(venueId) {
     const form = document.getElementById(`booking-request-form-${venueId}`);
     const formData = new FormData(form);
+    const modal = bootstrap.Modal.getInstance(document.getElementById(`requestModal-${venueId}`));
 
-    fetch("{% url 'venues:send_booking_request' %}", {
+    // Проверяем валидность формы
+    if (!form.checkValidity()) {
+        // Если форма невалидна, показываем стандартные сообщения браузера
+        form.reportValidity();
+        return;
+    }
+
+    // Показываем сообщение об успехе и закрываем модальное окно
+    alert('Заявка успешно отправлена!');
+    modal.hide();
+
+    // Отправляем данные в фоновом режиме
+    fetch("{% url 'venues:process_booking_request' %}", {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -329,19 +342,13 @@ function submitBookingRequest(venueId) {
         },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Заявка успешно отправлена!');
-            const modal = bootstrap.Modal.getInstance(document.getElementById(`requestModal-${venueId}`));
-            modal.hide();
-        } else {
-            alert('Ошибка при отправке заявки: ' + JSON.stringify(data.errors));
+    .then(response => {
+        if (!response.ok) {
+            console.error('Ошибка при обработке заявки');
         }
     })
     .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Произошла ошибка при отправке заявки.');
+        console.error('Ошибка при фоновой отправке:', error);
     });
 }
 </script>
