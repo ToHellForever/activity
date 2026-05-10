@@ -10,7 +10,6 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
 from django.views.decorators.cache import never_cache
-from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
 from .models import Event, Ticket
@@ -26,14 +25,19 @@ from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.conf import settings
+from django.db import transaction, IntegrityError
 import uuid
 import logging
 import random
 import string
-from django.views.decorators.csrf import csrf_exempt
+import requests
 import json
+import base64
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
+
 
 @csrf_exempt
 def yookassa_webhook(request):
@@ -41,12 +45,12 @@ def yookassa_webhook(request):
     logger.info(f"Webhook received. Method: {request.method}")
     logger.info(f"Headers: {request.headers}")
     logger.info(f"Body: {request.body}")
-    
+
     # Проверяем метод запроса
-    if request.method != 'POST':
+    if request.method != "POST":
         logger.warning("Non-POST request received")
         return HttpResponseBadRequest("Only POST allowed")
-    
+
     # Парсим JSON
     try:
         event_json = json.loads(request.body)
@@ -54,37 +58,42 @@ def yookassa_webhook(request):
     except json.JSONDecodeError:
         logger.error("Invalid JSON format")
         return HttpResponseBadRequest("Invalid JSON")
-    
+
     # Проверяем тип уведомления
-    if event_json.get('type') != 'notification':
+    if event_json.get("type") != "notification":
         logger.warning(f"Not a notification type: {event_json.get('type')}")
         return HttpResponseBadRequest("Not a notification")
-    
+
     # Обрабатываем событие
     try:
-        event = event_json['event']
-        payment_data = event_json['object']
-        order_id = payment_data['metadata']['order_id']
-        
+        event = event_json["event"]
+        payment_data = event_json["object"]
+        order_id = payment_data["metadata"]["order_id"]
+
         # Обновляем статус заказа
         order = Order.objects.get(id=order_id)
-        if event == 'payment.succeeded' and not order.is_paid:
+        if event == "payment.succeeded" and not order.is_paid:
             order.is_paid = True
-            order.payment_status = 'succeeded'
+            order.payment_status = "succeeded"
             order.save()
-            logger.info(f"Order {order_id} marked as paid (payment {payment_data['id']})")
-        elif event == 'payment.canceled':
-            order.payment_status = 'canceled'
+            logger.info(
+                f"Order {order_id} marked as paid (payment {payment_data['id']})"
+            )
+        elif event == "payment.canceled":
+            order.payment_status = "canceled"
             order.save()
-            logger.info(f"Order {order_id} marked as canceled (payment {payment_data['id']})")
-        
+            logger.info(
+                f"Order {order_id} marked as canceled (payment {payment_data['id']})"
+            )
+
     except Order.DoesNotExist:
         logger.error(f"Order {order_id} not found")
     except Exception as e:
         logger.error(f"Error processing webhook: {str(e)}")
-    
+
     # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
     return HttpResponse(status=200)
+
 
 def landing_page(request):
     return render(request, "landing.html")
@@ -481,6 +490,17 @@ def buy_ticket(request, event_id):
         and request.POST.get("book_without_payment") == "on"
     )
 
+    # Если требуется оплата (не бронирование), будем использовать ЮKassa
+    require_payment = not is_booking_without_payment
+
+    # Если требуется оплата (не бронирование), будем использовать ЮKassa
+    require_payment = not is_booking_without_payment
+
+    # Добавляем отладочный вывод для проверки логики
+    logger.info(
+        f"Проверка логики оплаты: require_payment={require_payment}, is_booking_without_payment={is_booking_without_payment}"
+    )
+
     # Отладочный вывод UTM-меток
     print("UTM Source from POST:", request.POST.get("utm_source"))
     print("UTM Source from GET:", request.GET.get("utm_source"))
@@ -612,10 +632,111 @@ def buy_ticket(request, event_id):
         except Exception as e:
             logger.exception("Ошибка отправки уведомления партнёру: %s", e)
 
+    # Если требуется оплата через ЮKassa, генерируем платежный токен
+    if require_payment:
+        yookassa_payment_token = None
+        try:
+            # Создаем платеж в ЮKassa для получения токена
+            total_amount = sum(
+                ticket.price * quantity
+                for ticket, quantity in ticket_quantities.items()
+            )
+
+            # Подготавливаем данные для создания платежа
+            # Используем только первый заказ для упрощения (или можно сделать join через запятую)
+            primary_order_id = orders[0].id
+            payment_data = {
+                "amount": {"value": str(total_amount), "currency": "RUB"},
+                "confirmation": {"type": "embedded"},
+                "capture": True,
+                "metadata": {"order_id": str(primary_order_id)},
+                "description": f"Оплата билетов на мероприятие {event.title}",
+            }
+
+            # Логируем данные для отладки
+            logger.info(f"Создание платежа в ЮKassa: {payment_data}")
+
+            # Формируем заголовок Authorization в формате Basic <base64(shopId:secretKey)>
+            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
+            auth_bytes = auth_string.encode('ascii')
+            auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
+            
+            # Логируем заголовок для отладки
+            logger.info(f"Сформированный заголовок Authorization: Basic ***{auth_base64[-10:]}")
+            
+            headers = {
+                "Idempotence-Key": str(uuid.uuid4()),
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth_base64}",
+            }
+            response = requests.post(
+                "https://api.yookassa.ru/v3/payments",
+                headers=headers,
+                json=payment_data,
+            )
+
+            # Добавляем отладочный вывод статуса ответа от ЮKassa
+            logger.info(f"Ответ от ЮKassa: {response.status_code}, {response.text}")
+
+            if response.ok:
+                payment_response = response.json()
+                yookassa_payment_token = payment_response["confirmation"][
+                    "confirmation_token"
+                ]
+                logger.info(
+                    f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
+                )
+            else:
+                logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
+                messages.error(
+                    request, "Ошибка при создании платежа. Попробуйте еще раз."
+                )
+                return render(
+                    request,
+                    "buy_ticket.html",
+                    {
+                        "event": event,
+                        "tickets": tickets,
+                        "allow_booking_without_payment": event.allow_booking_without_payment,
+                    },
+                )
+        except Exception as e:
+            logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
+            messages.error(request, "Ошибка при обработке платежа. Попробуйте еще раз.")
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "event": event,
+                    "tickets": tickets,
+                    "allow_booking_without_payment": event.allow_booking_without_payment,
+                },
+            )
+
     from django.urls import reverse
 
-    url = reverse("landing_page") + "?success=ticket_purchased"
-    return redirect(url)
+    # Перенаправляем на страницу оплаты или успешной покупки
+    if require_payment and yookassa_payment_token:
+        # Логируем передачу токена в шаблон
+        logger.info(f"Передача токена в шаблон: {yookassa_payment_token}")
+        # Формируем абсолютный URL для возврата после оплаты
+        return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
+        # Передаем токен и URL в шаблон для инициализации виджета
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+                "yookassa_payment_token": yookassa_payment_token,
+                "yookassa_return_url": return_url,
+                "orders": orders,
+            },
+        )
+    else:
+        url = reverse("landing_page") + "?success=ticket_purchased"
+        return redirect(url)
 
 
 def send_multiple_tickets_notification(user, orders, request=None):

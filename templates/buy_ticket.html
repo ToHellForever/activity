@@ -1,6 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+    {% if yookassa_payment_token %}
+    <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {% if yookassa_payment_token %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkout = new window.YooMoneyCheckoutWidget({
+                confirmation_token: '{{ yookassa_payment_token }}',
+                return_url: '{{ yookassa_return_url }}',
+                error_callback: function(error) {
+                    console.error('Ошибка платежа:', error);
+                    alert('Произошла ошибка при оплате. Попробуйте еще раз.');
+                }
+            });
+
+            // Отображаем виджет на странице
+            checkout.render('payment-widget-container');
+        });
+    </script>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <h1>Покупка билетов на "{{ event.title }}"</h1>
@@ -80,5 +106,9 @@
             {% if allow_booking_without_payment %}Забронировать/Купить выбранные билеты{% else %}Купить выбранные билеты{% endif %}
         </button>
     </form>
+    
+    {% if yookassa_payment_token %}
+    <div id="payment-widget-container" style="margin-top: 20px;"></div>
+    {% endif %}
 </div>
 {% endblock %}
