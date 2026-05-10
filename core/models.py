@@ -9,6 +9,7 @@ from core.mixins import VideoWatermarkMixin
 from core.validators import validate_video_duration, compress_video
 from django.utils import timezone
 
+
 class VideoWatermarkMixin:
     """Миксин для обработки видео с водяными знаками."""
 
@@ -76,6 +77,24 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
     )
     processed_video_business_card_hash = models.CharField(
         max_length=32, blank=True, null=True
+    )
+    VIDEO_PROCESSING_STATUS_CHOICES = (
+        ("pending", "Ожидает обработки"),
+        ("processing", "Обрабатывается"),
+        ("completed", "Обработка завершена"),
+        ("failed", "Ошибка обработки"),
+    )
+    video_business_card_processing_status = models.CharField(
+        max_length=20,
+        choices=VIDEO_PROCESSING_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус обработки видео-визитки",
+    )
+    video_processing_status = models.CharField(
+        max_length=20,
+        choices=VIDEO_PROCESSING_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус обработки видео",
     )
 
     def save(self, *args, **kwargs):
@@ -338,7 +357,9 @@ class Ticket(models.Model):
 
         # Проверяем, не закрыты ли продажи для мероприятия
         if self.event.auto_close_sales_hours > 0:
-            close_time = self.event.date_time - timezone.timedelta(hours=self.event.auto_close_sales_hours)
+            close_time = self.event.date_time - timezone.timedelta(
+                hours=self.event.auto_close_sales_hours
+            )
             if timezone.now() >= close_time:
                 return False
 
@@ -376,11 +397,21 @@ class Order(models.Model):
     )
 
     # Поля для хранения UTM-меток
-    utm_source = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Source")
-    utm_medium = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Medium")
-    utm_campaign = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Campaign")
-    utm_term = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Term")
-    utm_content = models.CharField(max_length=100, blank=True, null=True, verbose_name="UTM Content")
+    utm_source = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="UTM Source"
+    )
+    utm_medium = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="UTM Medium"
+    )
+    utm_campaign = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="UTM Campaign"
+    )
+    utm_term = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="UTM Term"
+    )
+    utm_content = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="UTM Content"
+    )
 
     def __str__(self):
         return f"Заказ #{self.id} - {self.ticket.name}"
@@ -431,7 +462,9 @@ class PayoutRequest(models.Model):
         ("cancelled", "Отменено"),
     ]
 
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Партнёр")
+    organizer = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name="Партнёр"
+    )
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Сумма к выплате"
     )
