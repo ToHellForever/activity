@@ -5,6 +5,26 @@
 {% block content %}
 <h1>Список мероприятий</h1>
 
+<!-- Форма фильтрации по тегам -->
+<form method="get" class="mb-4">
+    <div class="form-group">
+        <label>Фильтр по тегам:</label>
+        <div class="d-flex flex-wrap gap-2">
+            {% for tag in all_tags %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="tags" value="{{ tag.name }}" id="tag-{{ forloop.counter }}"
+                           {% if tag.name in selected_tags %}checked{% endif %}>
+                    <label class="form-check-label" for="tag-{{ forloop.counter }}">
+                        {{ tag.name }}
+                    </label>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Применить фильтр</button>
+    <a href="{% url 'event_list' %}" class="btn btn-secondary mt-2">Сбросить фильтр</a>
+</form>
+
 {% if events %}
     <ul>
         {% for event in events %}
@@ -12,6 +32,15 @@
                 <a href="{% url 'event_detail' event.id %}">
                     {{ event.title }} ({{ event.date_time|date:"d.m.Y H:i" }})
                 </a>
+                {% if event.tags.all %}
+                    <div class="mt-1">
+                        <small>Теги:
+                            {% for tag in event.tags.all %}
+                                <span class="badge bg-secondary">{{ tag.name }}</span>
+                            {% endfor %}
+                        </small>
+                    </div>
+                {% endif %}
             </li>
         {% endfor %}
     </ul>

@@ -310,7 +310,22 @@ def update_ticket_status(request, ticket_id):
 
 def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
-    return render(request, "events/event_list.html", {"events": active_events})
+
+    # Получаем все теги для фильтра
+    all_tags = Event.tags.most_common()
+
+    # Получаем выбранные теги из GET-запроса
+    selected_tags = request.GET.getlist('tags')
+
+    # Фильтруем мероприятия по выбранным тегам, если они есть
+    if selected_tags:
+        active_events = active_events.filter(tags__name__in=selected_tags).distinct()
+
+    return render(request, "events/event_list.html", {
+        "events": active_events,
+        "all_tags": all_tags,
+        "selected_tags": selected_tags
+    })
 
 
 def event_detail(request, event_id):

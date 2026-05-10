@@ -72,7 +72,6 @@ def create_event(request):
     """
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
-
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
@@ -87,33 +86,40 @@ def create_event(request):
                         current_file.delete(save=False) # Не сохраняем модель здесь
                     setattr(event, field_name, None)
 
-            event.save()
+        event.save()
 
-            # Обрабатываем данные о билетах из таблицы
-            ticket_names = request.POST.getlist("ticket_name[]")
-            ticket_prices = request.POST.getlist("ticket_price[]")
-            ticket_quantities = request.POST.getlist("ticket_quantity[]")
+        # Обрабатываем теги
+        tags = request.POST.getlist('tags')
+        if tags:
+            event.tags.set(tags)
+        else:
+            event.tags.clear()
 
-            for name, price, quantity in zip(
-                ticket_names, ticket_prices, ticket_quantities
-            ):
-                if name and price and quantity:
-                    try:
-                        event.tickets.create(
-                            name=name,
-                            price=float(price.replace(",", ".")) if "," in price else float(price),
-                            available_quantity=int(quantity),
-                        )
-                    except (ValueError, TypeError):
-                        continue
+        # Обрабатываем данные о билетах из таблицы
+        ticket_names = request.POST.getlist("ticket_name[]")
+        ticket_prices = request.POST.getlist("ticket_price[]")
+        ticket_quantities = request.POST.getlist("ticket_quantity[]")
 
-            # РЕДИРЕКТИМ пользователя. 
-            # Обработка видео начнется автоматически через сигнал post_save.
-            messages.success(
-                request,
-                "Мероприятие успешно создано! Видео будет обработано в фоновом режиме.",
-            )
-            return redirect("partner:partner_event_list")
+        for name, price, quantity in zip(
+            ticket_names, ticket_prices, ticket_quantities
+        ):
+            if name and price and quantity:
+                try:
+                    event.tickets.create(
+                        name=name,
+                        price=float(price.replace(",", ".")) if "," in price else float(price),
+                        available_quantity=int(quantity),
+                    )
+                except (ValueError, TypeError):
+                    continue
+
+        # РЕДИРЕКТИМ пользователя.
+        # Обработка видео начнется автоматически через сигнал post_save.
+        messages.success(
+            request,
+            "Мероприятие успешно создано! Видео будет обработано в фоновом режиме.",
+        )
+        return redirect("partner:partner_event_list")
     else:
         form = EventForm()
 
@@ -195,6 +201,13 @@ def edit_event(request, event_id):
         if form.is_valid():
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
+
+            # Обрабатываем теги
+            tags = request.POST.getlist('tags')
+            if tags:
+                event.tags.set(tags)
+            else:
+                event.tags.clear()
 
             # Обработка данных о билетах: удаляем старые и создаем новые
             event.tickets.all().delete()
