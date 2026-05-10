@@ -10,10 +10,21 @@ from django.contrib import messages
 from django.shortcuts import redirect
 import logging
 from django.contrib.auth import update_session_auth_hash
-logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 import os
 import json
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
+from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails
+from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
+from .models import SalesReport, ReportSchedule
+from .utils import generate_sales_report
+from core.forms import PartnerProfileForm, PasswordChangeForm
+
+logger = logging.getLogger(__name__)
+
 
 def get_rejection_messages(request):
     """Возвращает сообщения об отклонении мероприятий для текущего пользователя."""
@@ -28,16 +39,6 @@ def get_rejection_messages(request):
             rejection_messages.append(f"Мероприятие {event.title} отклонено. Причина: {event.rejection_reason}")
 
     return rejection_messages
-
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist
-from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails
-from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
-from .models import SalesReport, ReportSchedule
-from .utils import generate_sales_report
-from core.forms import PartnerProfileForm, PasswordChangeForm
 
 @login_required
 def partner_dashboard(request):

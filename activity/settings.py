@@ -175,3 +175,6 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 3600.0,  # Каждый час
     },
 }
+YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
+YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
+YOOKASSA_WEBHOOK_KEY = os.getenv("YOOKASSA_WEBHOOK_KEY")

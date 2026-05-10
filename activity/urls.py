@@ -17,6 +17,7 @@ from core.views import (
     activate_account,
     forgot_password,
     update_ticket_status,
+    yookassa_webhook,
 )
 app_name = "venues"
 
@@ -36,10 +37,12 @@ urlpatterns = [
     path("activate/<int:pk>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
     path("update-ticket-status/<int:ticket_id>/", update_ticket_status, name="update_ticket_status"),
+    path('payment/webhook/', yookassa_webhook, name='yookassa_webhook'),
     path("partner/", include("partner_app.urls")),
     path("visitor/", include("visitor_app.urls")),
     path("venues/", include("venues.urls")),
     path("admin/venues/", include("venues.urls", namespace="admin_venues")),
+    
 ]
 
 if settings.DEBUG:

@@ -30,9 +30,61 @@ import uuid
 import logging
 import random
 import string
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 logger = logging.getLogger(__name__)
 
+@csrf_exempt
+def yookassa_webhook(request):
+    # Логируем все входящие данные (для отладки)
+    logger.info(f"Webhook received. Method: {request.method}")
+    logger.info(f"Headers: {request.headers}")
+    logger.info(f"Body: {request.body}")
+    
+    # Проверяем метод запроса
+    if request.method != 'POST':
+        logger.warning("Non-POST request received")
+        return HttpResponseBadRequest("Only POST allowed")
+    
+    # Парсим JSON
+    try:
+        event_json = json.loads(request.body)
+        logger.info(f"Parsed event: {event_json}")
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON format")
+        return HttpResponseBadRequest("Invalid JSON")
+    
+    # Проверяем тип уведомления
+    if event_json.get('type') != 'notification':
+        logger.warning(f"Not a notification type: {event_json.get('type')}")
+        return HttpResponseBadRequest("Not a notification")
+    
+    # Обрабатываем событие
+    try:
+        event = event_json['event']
+        payment_data = event_json['object']
+        order_id = payment_data['metadata']['order_id']
+        
+        # Обновляем статус заказа
+        order = Order.objects.get(id=order_id)
+        if event == 'payment.succeeded' and not order.is_paid:
+            order.is_paid = True
+            order.payment_status = 'succeeded'
+            order.save()
+            logger.info(f"Order {order_id} marked as paid (payment {payment_data['id']})")
+        elif event == 'payment.canceled':
+            order.payment_status = 'canceled'
+            order.save()
+            logger.info(f"Order {order_id} marked as canceled (payment {payment_data['id']})")
+        
+    except Order.DoesNotExist:
+        logger.error(f"Order {order_id} not found")
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+    
+    # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
+    return HttpResponse(status=200)
 
 def landing_page(request):
     return render(request, "landing.html")
