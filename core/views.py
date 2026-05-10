@@ -402,48 +402,6 @@ def buy_ticket(request, event_id):
         # Показываем форму покупки
         tickets = event.tickets.all()
 
-        # Для оплаты через ЮKassa создаем платеж заранее
-        yookassa_payment_token = None
-        try:
-            # Создаем тестовый платеж для получения токена (сумма 1 рубль)
-            payment_data = {
-                "amount": {"value": "1.00", "currency": "RUB"},
-                "confirmation": {"type": "embedded"},
-                "capture": True,
-                "description": f"Предварительная оплата билетов на {event.title}",
-            }
-
-            # Формируем заголовок Authorization
-            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
-            auth_bytes = auth_string.encode('ascii')
-            auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
-
-            headers = {
-                "Idempotence-Key": str(uuid.uuid4()),
-                "Content-Type": "application/json",
-                "Authorization": f"Basic {auth_base64}",
-            }
-
-            response = requests.post(
-                "https://api.yookassa.ru/v3/payments",
-                headers=headers,
-                json=payment_data,
-            )
-
-            if response.ok:
-                payment_response = response.json()
-                yookassa_payment_token = payment_response["confirmation"]["confirmation_token"]
-                logger.info(f"Создан предварительный платеж в ЮKassa. Токен: {yookassa_payment_token}")
-            else:
-                logger.error(f"Ошибка создания предварительного платежа: {response.text}")
-
-        except Exception as e:
-            logger.error(f"Ошибка при создании предварительного платежа: {str(e)}")
-
-        # Формируем абсолютный URL для возврата после оплаты
-        from django.urls import reverse
-        return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
-
         return render(
             request,
             "buy_ticket.html",
@@ -451,10 +409,11 @@ def buy_ticket(request, event_id):
                 "event": event,
                 "tickets": tickets,
                 "allow_booking_without_payment": event.allow_booking_without_payment,
-                "yookassa_payment_token": yookassa_payment_token,
-                "yookassa_return_url": return_url,
             },
         )
+
+    # Проверяем, является ли запрос AJAX (для обработки виджета оплаты)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
     # Обработка POST-запроса
     email = (request.POST.get("email") or "").strip()
@@ -538,23 +497,161 @@ def buy_ticket(request, event_id):
     # Если требуется оплата (не бронирование), будем использовать ЮKassa
     require_payment = not is_booking_without_payment
 
-    # Если требуется оплата (не бронирование), будем использовать ЮKassa
-    require_payment = not is_booking_without_payment
+    # Если это AJAX-запрос, сразу создаем заказы и платеж
+    if is_ajax:
+        # Создаем заказы для каждого типа билетов
+        orders = []
+        try:
+            with transaction.atomic():
+                for ticket, quantity in ticket_quantities.items():
+                    logger.debug(
+                        f"Начало обработки билета {ticket.id}, доступно до блокировки: {ticket.get_available_count()}"
+                    )
 
-    # Добавляем отладочный вывод для проверки логики
-    logger.info(
-        f"Проверка логики оплаты: require_payment={require_payment}, is_booking_without_payment={is_booking_without_payment}"
-    )
+                    # Блокируем билет для предотвращения гонки
+                    ticket = Ticket.objects.select_for_update().get(pk=ticket.pk)
+                    logger.debug(
+                        f"Билет {ticket.id} заблокирован, доступно после блокировки: {ticket.get_available_count()}"
+                    )
 
-    # Отладочный вывод UTM-меток
-    print("UTM Source from POST:", request.POST.get("utm_source"))
-    print("UTM Source from GET:", request.GET.get("utm_source"))
-    print("UTM Medium from POST:", request.POST.get("utm_medium"))
-    print("UTM Medium from GET:", request.GET.get("utm_medium"))
-    print("UTM Campaign from POST:", request.POST.get("utm_campaign"))
-    print("UTM Campaign from GET:", request.GET.get("utm_campaign"))
+                    # Повторно проверяем доступность после блокировки
+                    if not ticket.is_available(quantity):
+                        logger.warning(
+                            f"Недостаточно билетов типа '{ticket.name}'. Запрошено: {quantity}, доступно: {ticket.get_available_count()}"
+                        )
+                        return JsonResponse({
+                            'success': False,
+                            'message': f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
+                        })
 
-    # Создаем заказы для каждого типа билетов
+                    logger.debug(
+                        f"Создание заказа для билета {ticket.id}, количество: {quantity}"
+                    )
+                    order = Order.objects.create(
+                        ticket=ticket,
+                        participant_data={
+                            "email": email,
+                            "first_name": first_name,
+                            "last_name": last_name,
+                            "phone": phone,
+                        },
+                        total_price=ticket.price * quantity,
+                        quantity=quantity,
+                        is_paid=False,  # Сначала ставим False, после оплаты обновится через webhook
+                        utm_source=request.POST.get("utm_source")
+                        or request.GET.get("utm_source"),
+                        utm_medium=request.POST.get("utm_medium")
+                        or request.GET.get("utm_medium"),
+                        utm_campaign=request.POST.get("utm_campaign")
+                        or request.GET.get("utm_campaign"),
+                        utm_term=request.POST.get("utm_term")
+                        or request.GET.get("utm_term"),
+                        utm_content=request.POST.get("utm_content")
+                        or request.GET.get("utm_content"),
+                    )
+                    orders.append(order)
+                    logger.debug(
+                        f"Заказ для билета {ticket.id} успешно создан, ID заказа: {order.id}"
+                    )
+
+                # Отправляем уведомления о покупке билетов сразу после создания заказов
+                try:
+                    send_multiple_tickets_notification(user, orders, request)
+                    logger.info(f"Уведомления успешно отправлены пользователю {user.email}")
+                except Exception as e:
+                    logger.exception("Ошибка отправки письма: %s", e)
+
+                # Если требуется оплата через ЮKassa, генерируем платежный токен
+                if require_payment:
+                    yookassa_payment_token = None
+                    try:
+                        # Создаем платеж в ЮKassa для получения токена
+                        total_amount = sum(
+                            ticket.price * quantity
+                            for ticket, quantity in ticket_quantities.items()
+                        )
+
+                        # Подготавливаем данные для создания платежа
+                        # Используем только первый заказ для упрощения
+                        primary_order_id = orders[0].id
+                        payment_data = {
+                            "amount": {"value": str(total_amount), "currency": "RUB"},
+                            "confirmation": {"type": "embedded"},
+                            "capture": True,
+                            "metadata": {"order_id": str(primary_order_id)},
+                            "description": f"Оплата билетов на мероприятие {event.title}",
+                        }
+
+                        # Логируем данные для отладки
+                        logger.info(f"Создание платежа в ЮKassa: {payment_data}")
+
+                        # Формируем заголовок Authorization
+                        auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
+                        auth_bytes = auth_string.encode('ascii')
+                        auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
+
+                        headers = {
+                            "Idempotence-Key": str(uuid.uuid4()),
+                            "Content-Type": "application/json",
+                            "Authorization": f"Basic {auth_base64}",
+                        }
+                        response = requests.post(
+                            "https://api.yookassa.ru/v3/payments",
+                            headers=headers,
+                            json=payment_data,
+                        )
+
+                        # Добавляем отладочный вывод статуса ответа от ЮKassa
+                        logger.info(f"Ответ от ЮKassa: {response.status_code}, {response.text}")
+
+                        if response.ok:
+                            payment_response = response.json()
+                            yookassa_payment_token = payment_response["confirmation"]["confirmation_token"]
+                            logger.info(
+                                f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
+                            )
+                        else:
+                            logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
+                            return JsonResponse({
+                                'success': False,
+                                'message': "Ошибка при создании платежа. Попробуйте еще раз."
+                            })
+
+                    except Exception as e:
+                        logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
+                        return JsonResponse({
+                            'success': False,
+                            'message': "Ошибка при обработке платежа. Попробуйте еще раз."
+                        })
+
+                    # Формируем абсолютный URL для возврата после оплаты
+                    return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
+
+                    return JsonResponse({
+                        'success': True,
+                        'payment_token': yookassa_payment_token,
+                        'return_url': return_url
+                    })
+                else:
+                    # Если оплата не требуется (бронирование без оплаты), сразу возвращаем успех
+                    return JsonResponse({
+                        'success': True,
+                        'message': "Бронирование успешно завершено. Информация отправлена на ваш email."
+                    })
+
+        except IntegrityError as e:
+            logger.error(f"Ошибка целостности данных при покупке билетов: {e}")
+            return JsonResponse({
+                'success': False,
+                'message': "Произошла ошибка при покупке билетов. Попробуйте еще раз."
+            })
+        except ValueError as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+
+    # Создаем заказы для обычного POST-запроса (не AJAX)
     orders = []
     try:
         with transaction.atomic():
@@ -648,8 +745,6 @@ def buy_ticket(request, event_id):
             order.payment_deadline = payment_deadline
             order.save()
 
-        orders.append(order)
-
     # Отправляем одно уведомление с информацией о всех билетах
     try:
         send_multiple_tickets_notification(user, orders, request)
@@ -677,112 +772,19 @@ def buy_ticket(request, event_id):
         except Exception as e:
             logger.exception("Ошибка отправки уведомления партнёру: %s", e)
 
-    # Если требуется оплата через ЮKassa, генерируем платежный токен
-    if require_payment:
-        yookassa_payment_token = None
-        try:
-            # Получаем все билеты события для расчета суммы
-            tickets = event.tickets.all()
+    # Отправляем уведомления о покупке билетов
+    try:
+        # Проверяем, что request передан (для AJAX-запросов он может отсутствовать)
+        if request:
+            send_multiple_tickets_notification(user, orders, request)
+        else:
+            logger.warning("Не удалось отправить уведомление - отсутствует объект request")
+    except Exception as e:
+        logger.exception("Ошибка отправки письма: %s", e)
 
-            # Создаем платеж в ЮKassa для получения токена
-            total_amount = sum(
-                ticket.price * quantity
-                for ticket, quantity in ticket_quantities.items()
-            )
-
-            # Подготавливаем данные для создания платежа
-            # Используем только первый заказ для упрощения (или можно сделать join через запятую)
-            primary_order_id = orders[0].id
-            payment_data = {
-                "amount": {"value": str(total_amount), "currency": "RUB"},
-                "confirmation": {"type": "embedded"},
-                "capture": True,
-                "metadata": {"order_id": str(primary_order_id)},
-                "description": f"Оплата билетов на мероприятие {event.title}",
-            }
-
-            # Логируем данные для отладки
-            logger.info(f"Создание платежа в ЮKassa: {payment_data}")
-
-            # Формируем заголовок Authorization в формате Basic <base64(shopId:secretKey)>
-            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
-            auth_bytes = auth_string.encode('ascii')
-            auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
-
-            # Логируем заголовок для отладки
-            logger.info(f"Сформированный заголовок Authorization: Basic ***{auth_base64[-10:]}")
-
-            headers = {
-                "Idempotence-Key": str(uuid.uuid4()),
-                "Content-Type": "application/json",
-                "Authorization": f"Basic {auth_base64}",
-            }
-            response = requests.post(
-                "https://api.yookassa.ru/v3/payments",
-                headers=headers,
-                json=payment_data,
-            )
-
-            # Добавляем отладочный вывод статуса ответа от ЮKassa
-            logger.info(f"Ответ от ЮKassa: {response.status_code}, {response.text}")
-
-            if response.ok:
-                payment_response = response.json()
-                yookassa_payment_token = payment_response["confirmation"][
-                    "confirmation_token"
-                ]
-                logger.info(
-                    f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
-                )
-            else:
-                logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
-                messages.error(
-                    request, "Ошибка при создании платежа. Попробуйте еще раз."
-                )
-                return render(
-                    request,
-                    "buy_ticket.html",
-                    {
-                        "event": event,
-                        "tickets": tickets,
-                        "allow_booking_without_payment": event.allow_booking_without_payment,
-                    },
-                )
-        except Exception as e:
-            logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
-            messages.error(request, "Ошибка при обработке платежа. Попробуйте еще раз.")
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "event": event,
-                    "tickets": tickets,
-                    "allow_booking_without_payment": event.allow_booking_without_payment,
-                },
-            )
-
-    # Перенаправляем на страницу оплаты или успешной покупки
-    if require_payment and yookassa_payment_token:
-        # Логируем передачу токена в шаблон
-        logger.info(f"Передача токена в шаблон: {yookassa_payment_token}")
-        # Формируем абсолютный URL для возврата после оплаты
-        return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
-        # Передаем токен и URL в шаблон для инициализации виджета
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-                "yookassa_payment_token": yookassa_payment_token,
-                "yookassa_return_url": return_url,
-                "orders": orders,
-            },
-        )
-    else:
-        url = reverse("landing_page") + "?success=ticket_purchased"
-        return redirect(url)
+    # Перенаправляем на страницу успешной покупки
+    url = reverse("landing_page") + "?success=ticket_purchased"
+    return redirect(url)
 
 
 def send_multiple_tickets_notification(user, orders, request=None):

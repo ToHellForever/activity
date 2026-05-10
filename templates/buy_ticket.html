@@ -8,42 +8,102 @@
 {% endblock %}
 
 {% block extra_js %}
-    {% if yookassa_payment_token %}
-    <script>
-        // Инициализируем виджет, но не показываем его сразу
-        const checkout = new window.YooMoneyCheckoutWidget({
-            confirmation_token: '{{ yookassa_payment_token }}',
-            return_url: '{{ yookassa_return_url }}',
-            error_callback: function(error) {
-                console.error('Ошибка платежа:', error);
-                alert('Произошла ошибка при оплате. Попробуйте еще раз.');
-            },
-            success_callback: function() {
-                // После успешной оплаты автоматически отправляем форму
-                document.querySelector('form').submit();
-            }
-        });
+    <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
 
+    <script>
         // Обработчик нажатия на кнопку покупки
         document.addEventListener('DOMContentLoaded', function() {
             const buyButton = document.getElementById('buyButton');
             if (buyButton) {
                 buyButton.addEventListener('click', function() {
-                    // Показываем виджет оплаты
-                    document.getElementById('payment-widget-container').style.display = 'block';
+                    // Проверяем, что выбрано хотя бы одно количество билетов
+                    let hasTickets = false;
+                    const quantityInputs = document.querySelectorAll('input[type="number"]');
+                    quantityInputs.forEach(input => {
+                        if (parseInt(input.value) > 0) {
+                            hasTickets = true;
+                        }
+                    });
 
-                    // Если виджет еще не отрендерен, рендерим его
-                    if (!document.querySelector('#payment-widget-container iframe')) {
-                        checkout.render('payment-widget-container');
+                    if (!hasTickets) {
+                        alert('Пожалуйста, выберите хотя бы один билет');
+                        return;
                     }
 
-                    // Прокручиваем к виджету
-                    document.getElementById('payment-widget-container').scrollIntoView({ behavior: 'smooth' });
+                    // Собираем данные формы
+                    const form = document.querySelector('form');
+                    const formData = new FormData(form);
+
+                    // Показываем индикатор загрузки
+                    buyButton.disabled = true;
+                    buyButton.textContent = 'Обработка...';
+
+                    // Отправляем AJAX-запрос для создания заказов и получения токена платежа
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Сетевая ошибка');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Создаем контейнер для виджета, если его еще нет
+                            let widgetContainer = document.getElementById('payment-widget-container');
+                            if (!widgetContainer) {
+                                widgetContainer = document.createElement('div');
+                                widgetContainer.id = 'payment-widget-container';
+                                widgetContainer.style.marginTop = '20px';
+                                widgetContainer.style.display = 'none';
+                                document.querySelector('form').after(widgetContainer);
+                            }
+
+                            // Показываем контейнер для виджета
+                            widgetContainer.style.display = 'block';
+
+                            // Инициализируем виджет ЮKassa
+                            const checkout = new window.YooMoneyCheckoutWidget({
+                                confirmation_token: data.payment_token,
+                                return_url: data.return_url,
+                                error_callback: function(error) {
+                                    console.error('Ошибка платежа:', error);
+                                    alert('Произошла ошибка при оплате. Попробуйте еще раз.');
+                                    buyButton.disabled = false;
+                                    buyButton.textContent = 'Купить выбранные билеты';
+                                },
+                                success_callback: function() {
+                                    // После успешной оплаты перенаправляем на страницу успеха
+                                    window.location.href = data.return_url;
+                                }
+                            });
+
+                            // Рендерим виджет
+                            checkout.render('payment-widget-container');
+
+                            // Прокручиваем к виджету
+                            widgetContainer.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            alert(data.message || 'Произошла ошибка при обработке заказа');
+                            buyButton.disabled = false;
+                            buyButton.textContent = 'Купить выбранные билеты';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Произошла ошибка при обработке заказа: ' + error.message);
+                        buyButton.disabled = false;
+                        buyButton.textContent = 'Купить выбранные билеты';
+                    });
                 });
             }
         });
     </script>
-    {% endif %}
 {% endblock %}
 
 {% block content %}
