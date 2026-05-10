@@ -64,7 +64,6 @@ class EventForm(forms.ModelForm):
             "video_url",
             "program_file",
             "category",
-            "tags",
             "allow_booking_without_payment",
             "auto_close_sales_hours",
             "refund_deadline_hours",

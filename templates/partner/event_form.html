@@ -50,7 +50,7 @@
             {% if field.name == 'date_time' and is_edit and form.instance.date_time %}
                 <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" class="form-control">
             {% elif field.name == 'refund_deadline_hours' %}
-                {{ field }}
+                <input type="number" name="refund_deadline_hours" id="id_refund_deadline_hours" value="24" class="form-control">
                 <small class="form-text text-muted">Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.</small>
             {% else %}
                 {{ field }}
