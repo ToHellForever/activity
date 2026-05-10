@@ -464,6 +464,25 @@ def buy_ticket(request, event_id):
     except Exception as e:
         logger.exception("Ошибка отправки письма: %s", e)
 
+    # Проверяем, все ли билеты на мероприятие выкуплены
+    all_tickets_sold = True
+    for ticket in event.tickets.all():
+        if ticket.get_available_count() > 0:
+            all_tickets_sold = False
+            break
+
+    # Логируем результат проверки
+    logger.debug(f"Проверка на выкуп всех билетов для мероприятия {event.id}: {all_tickets_sold}")
+
+    # Если все билеты выкуплены, отправляем уведомление партнёру
+    if all_tickets_sold:
+        try:
+            logger.debug(f"Отправка уведомления партнёру для мероприятия {event.id}")
+            send_partner_all_tickets_sold_notification(event)
+            logger.debug(f"Уведомление партнёру для мероприятия {event.id} отправлено")
+        except Exception as e:
+            logger.exception("Ошибка отправки уведомления партнёру: %s", e)
+
     from django.urls import reverse
 
     url = reverse("landing_page") + "?success=ticket_purchased"
@@ -692,6 +711,47 @@ def send_ticket_notification(user, order, request=None):
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
 
+
+def send_partner_all_tickets_sold_notification(event):
+    """
+    Отправляет уведомление партнёру о том, что все билеты на мероприятие выкуплены.
+    """
+    subject = f"Все билеты на мероприятие '{event.title}' выкуплены"
+    organizer_email = event.organizer.email
+
+    # Формируем сообщение
+    message = f"""
+    <html>
+    <body>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Здравствуйте, {event.organizer.get_full_name()}!</h2>
+
+            <p>Поздравляем! Все билеты на ваше мероприятие <strong>{event.title}</strong> были успешно выкуплены.</p>
+
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Дата и время:</strong> {event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+                <p><strong>Место проведения:</strong> {event.get_place_address}</p>
+            </div>
+
+            <p>Теперь вы можете подготовиться к проведению мероприятия.</p>
+
+            <div style="
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                font-size: 12px;
+                color: #7f8c8d;
+            ">
+                <p>Если у вас возникли вопросы, обратитесь в нашу <a href="#">службу поддержки</a>.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    send_mail(
+        subject, "", "dim.anosoff2018@yandex.ru", [organizer_email], html_message=message
+    )
 
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
