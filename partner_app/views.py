@@ -15,6 +15,20 @@ from datetime import datetime, timedelta
 import os
 import json
 
+def get_rejection_messages(request):
+    """Возвращает сообщения об отклонении мероприятий для текущего пользователя."""
+    from core.models import Event
+    rejected_events = Event.objects.filter(
+        organizer=request.user, status="rejected"
+    )
+
+    rejection_messages = []
+    for event in rejected_events:
+        if event.rejection_reason:
+            rejection_messages.append(f"Мероприятие {event.title} отклонено. Причина: {event.rejection_reason}")
+
+    return rejection_messages
+
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
@@ -29,6 +43,16 @@ from core.forms import PartnerProfileForm, PasswordChangeForm
 def partner_dashboard(request):
     if request.user.user_type != "partner":
         return redirect("visitor:dashboard")
+
+    # Получаем отклоненные мероприятия партнёра
+    rejected_events = Event.objects.filter(
+        organizer=request.user, status="rejected"
+    )
+
+    rejection_messages = []
+    for event in rejected_events:
+        if event.rejection_reason:
+            rejection_messages.append(f"Мероприятие '{event.title}' отклонено. Причина: {event.rejection_reason}")
 
     # Получаем активные мероприятия партнёра
     active_events = Event.objects.filter(
@@ -60,6 +84,7 @@ def partner_dashboard(request):
         "active_events_count": active_events,
         "monthly_sales_sum": monthly_sales,
         "pending_payouts_count": pending_payouts,
+        "rejection_messages": rejection_messages,
     }
     return render(request, "partner/dashboard.html", context)
 
@@ -145,6 +170,7 @@ def create_event(request):
             "form": form,
             "is_edit": False,
             "ticket_data": ticket_data,
+            "rejection_messages": get_rejection_messages(request),
         },
     )
 
@@ -238,7 +264,7 @@ def edit_event(request, event_id):
     else:
         form = EventForm(instance=event)
 
-    return render(request, "partner/event_form.html", {"form": form, "is_edit": True})
+    return render(request, "partner/event_form.html", {"form": form, "is_edit": True, "rejection_messages": get_rejection_messages(request)})
 
 
 
@@ -290,6 +316,7 @@ def partner_event_list(request):
 
     context = {
         "events": event_data,
+        "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/partner_event_list.html", context)
 
@@ -509,6 +536,7 @@ def participant_list(request, event_id):
         "event": event,
         "orders": orders,
     }
+    context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/participant_list.html", context)
 
 
@@ -779,6 +807,7 @@ def finances(request):
         "payout_history": payout_history,
         "partner_payout_details": partner_payout_details,
     }
+    context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/finances.html", context)
 
 @require_POST
@@ -941,6 +970,7 @@ def payout_details(request):
     context = {
         'form': form,
         'details': details,
+        'rejection_messages': get_rejection_messages(request),
     }
     return render(request, 'partner/payout_details.html', context)
 
@@ -1005,6 +1035,7 @@ def profile_edit(request):
         "user_form": user_form,
         "password_form": password_form,
         "document_form": document_form,
+        "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/profile_edit.html", context)
 
@@ -1120,7 +1151,7 @@ def report_schedule(request):
         else:
             form = ReportScheduleForm(instance=schedule, partner=request.user)
 
-        return render(request, "partner/report_schedule.html", {"form": form})
+        return render(request, "partner/report_schedule.html", {"form": form, "rejection_messages": get_rejection_messages(request)})
     except Exception as e:
         import logging
 
@@ -1188,4 +1219,4 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
 
-    return render(request, "change_password.html", {"form": password_form})
+    return render(request, "change_password.html", {"form": password_form, "rejection_messages": get_rejection_messages(request)})

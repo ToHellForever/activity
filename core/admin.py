@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.html import mark_safe
 from django.db.models import F
 
+
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
     """
@@ -86,44 +87,57 @@ class EventAdmin(admin.ModelAdmin):
     ]
 
     # Группировка полей на странице редактирования
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "title",
-                    "organizer",
-                    "description_short",
-                    "description_full",
-                    "date_time",
-                    "duration",
-                    "place_data",
-                )
-            },
-        ),
-        ("Медиа и Файлы", {"fields": ("image", "video_url", "program_file")}),
-        (
-            "Настройки и Категории",
-            {
-                "fields": (
-                    "status",
-                    "category",
-                    "tags",
-                    "get_tags_display",
-                    "allow_booking_without_payment",
-                    "commission_rate",
-                    "auto_close_sales_hours",
-                )
-            },
-        ),
-        # Добавляем блок для отображения статуса
-        (
-            "Статусы",
-            {
-                "fields": ("approved_status",),
-            },
-        ),
-    )
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = (
+            (
+                None,
+                {
+                    "fields": (
+                        "title",
+                        "organizer",
+                        "description_short",
+                        "description_full",
+                        "date_time",
+                        "duration",
+                        "place_data",
+                    )
+                },
+            ),
+            ("Медиа и Файлы", {"fields": ("image", "video_url", "program_file")}),
+            (
+                "Настройки и Категории",
+                {
+                    "fields": (
+                        "status",
+                        "category",
+                        "tags",
+                        "get_tags_display",
+                        "allow_booking_without_payment",
+                        "commission_rate",
+                        "auto_close_sales_hours",
+                    )
+                },
+            ),
+            # Добавляем блок для отображения статуса
+            (
+                "Статусы",
+                {
+                    "fields": ("approved_status",),
+                },
+            ),
+        )
+
+        if obj and obj.status == "rejected":
+            fieldsets += (
+                (
+                    "Модерация",
+                    {
+                        "fields": ("rejection_reason",),
+                    },
+                ),
+            )
+
+        return fieldsets
 
     # Настройка отображения тегов
     def get_tags_display(self, obj):
@@ -133,12 +147,17 @@ class EventAdmin(admin.ModelAdmin):
         html = '<div style="display: flex; flex-wrap: wrap; gap: 5px;">'
         for tag in tags:
             html += f'<span style="background-color: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">{tag.name}</span>'
-        html += '</div>'
+        html += "</div>"
         return mark_safe(html)
+
     get_tags_display.short_description = "Теги"
 
     # Добавляем поле для отображения статуса в виде галочки
-    readonly_fields = ("approved_status", "get_tags_display")
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ["approved_status", "get_tags_display"]
+        if obj and obj.status != "rejected":
+            readonly_fields.append("rejection_reason")
+        return readonly_fields
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
@@ -151,14 +170,69 @@ class EventAdmin(admin.ModelAdmin):
     approved_status.boolean = True
     approved_status.short_description = "Одобрено"
 
-    # Действие для одобрения выбранных мероприятий
-
     # Действие для отклонения выбранных мероприятий
     def reject_events(self, request, queryset):
-        updated = queryset.update(status="rejected")
-        self.message_user(request, f"{updated} мероприятий отклонено.")
+        if "apply" in request.POST:
+            rejection_reason = request.POST.get("rejection_reason", "")
+            updated = 0
+            for event in queryset:
+                event.status = "rejected"
+                event.rejection_reason = rejection_reason
+                event.save()
+                self.send_rejection_notification(event, rejection_reason)
+                updated += 1
+            self.message_user(request, f"{updated} мероприятий отклонено.")
+        else:
+            return self.rejection_reason_form(request, queryset)
 
     reject_events.short_description = "Отклонить"
+
+    def rejection_reason_form(self, request, queryset):
+        if len(queryset) == 0:
+            self.message_user(
+                request, "Выберите хотя бы одно мероприятие для отклонения."
+            )
+            return None
+
+        form = """
+        <form method="post">
+            <input type="hidden" name="action" value="reject_events">
+            <input type="hidden" name="action_check" value="1">
+            {% for q in queryset %}
+                <input type="hidden" name="_selected_action" value="{{ q.id }}">
+            {% endfor %}
+            <div style="margin: 10px 0;">
+                <label for="rejection_reason">Укажите причину отклонения:</label><br>
+                <textarea id="rejection_reason" name="rejection_reason" rows="4" cols="60" required></textarea>
+            </div>
+            <input type="submit" name="apply" value="Отклонить">
+        </form>
+        """
+        return mark_safe(form)
+
+    def send_rejection_notification(self, event, rejection_reason):
+        from django.core.mail import send_mail
+
+        subject = f"Ваше мероприятие '{event.title}' отклонено"
+        message = f"""
+        Здравствуйте, {event.organizer.first_name}!
+
+        Ваше мероприятие '{event.title}' было отклонено модератором.
+
+        Причина отклонения: {rejection_reason}
+
+        Пожалуйста, исправьте указанные недочеты и снова отправьте мероприятие на модерацию.
+
+        С уважением,
+        Администрация платформы
+        """
+        send_mail(
+            subject,
+            message,
+            "dim.anosoff2018@yandex.ru",
+            [event.organizer.email],
+            fail_silently=False,
+        )
 
     # Действие для установки статуса "На модерации"
     def to_moderation(self, request, queryset):
@@ -180,6 +254,46 @@ class EventAdmin(admin.ModelAdmin):
         self.message_user(request, f"{updated} мероприятий помечено как завершённые.")
 
     to_completed.short_description = "Завершено"
+
+    def get_form(self, request, obj=None, **kwargs):
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info("TEST: get_form method called")
+
+        form = super().get_form(request, obj, **kwargs)
+
+        # Настройка доступности поля rejection_reason
+        if "rejection_reason" in form.base_fields:
+            logger.info("TEST: rejection_reason field found")
+
+            logger.debug(f"Object: {obj}")
+            logger.debug(f"Object status: {obj.status if obj else None}")
+            logger.debug(
+                f"Condition (obj and obj.status == 'rejected'): {obj and obj.status == 'rejected' if obj else False}"
+            )
+            logger.debug(
+                f"Current widget attrs before modification: {form.base_fields['rejection_reason'].widget.attrs}"
+            )
+
+            if obj and obj.status == "rejected":
+                form.base_fields["rejection_reason"].widget.attrs.pop("readonly", None)
+                form.base_fields["rejection_reason"].widget.attrs[
+                    "style"
+                ] = "background-color: #fff; color: black;"
+                logger.debug(
+                    f"Widget attrs after enabling: {form.base_fields['rejection_reason'].widget.attrs}"
+                )
+            else:
+                form.base_fields["rejection_reason"].widget.attrs["readonly"] = True
+                form.base_fields["rejection_reason"].widget.attrs[
+                    "style"
+                ] = "background-color: #f0f0f0; color: black;"
+                logger.debug(
+                    f"Widget attrs after disabling: {form.base_fields['rejection_reason'].widget.attrs}"
+                )
+
+        return form
 
 
 @admin.register(Ticket)
@@ -265,7 +379,7 @@ class PayoutRequestAdmin(admin.ModelAdmin):
         "id",
         "organizer",
         "amount",
-        "get_status_display", 
+        "get_status_display",
         "created_at",
     )
     list_filter = ("status", "created_at")
@@ -275,25 +389,29 @@ class PayoutRequestAdmin(admin.ModelAdmin):
     # Методы для отображения данных из связанных моделей
     def get_partner_full_name(self, obj):
         return obj.organizer.get_full_name()
+
     get_partner_full_name.short_description = "Партнёр"
 
     def get_bank_name(self, obj):
         if obj.payment_details:
             return obj.payment_details.get_bank_name_display()
         return "-"
+
     get_bank_name.short_description = "Банк"
 
     def get_account_number(self, obj):
         if obj.payment_details:
             return obj.payment_details.account_number
         return "-"
+
     get_account_number.short_description = "Счёт/Карта"
-    
+
     def get_queryset(self, request):
         # Подгружаем связанные данные одним запросом
         qs = super().get_queryset(request)
         return qs.select_related("organizer", "payment_details")
-    
+
     def get_status_display(self, obj):
         return obj.get_status_display()
+
     get_status_display.short_description = "Статус"

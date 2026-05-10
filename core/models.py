@@ -282,6 +282,12 @@ class Event(models.Model, VideoWatermarkMixin):
         verbose_name="Проданы билеты",
         help_text="Флаг, указывающий, что на мероприятие проданы билеты",
     )
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Причина отклонения",
+        help_text="Причина, по которой мероприятие было отклонено модератором",
+    )
 
     def __str__(self):
         return self.title
