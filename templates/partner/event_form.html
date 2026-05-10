@@ -130,9 +130,10 @@
 
     <!-- Контейнер для выбора местоположения -->
     <div class="form-group place-input-container">
-        <label for="id_place_data">Местоположение<span class="text-danger">*</span></label>
+        <label for="id_place_address">Местоположение<span class="text-danger">*</span></label>
         <div>
             <p class="text-muted mb-2">Выберите место на карте, кликнув по нужному месту или используя поиск по карте</p>
+            <input type="text" id="id_place_address" class="form-control mb-2" readonly placeholder="Адрес будет отображаться здесь">
             <div class="place-additional-info mt-2">
                 <input type="text" id="place-additional-info" class="form-control" placeholder="Дополнительная информация (например: вход со двора, 3 этаж и т.д.)">
             </div>
@@ -320,6 +321,7 @@
             };
 
             placeDataInput.value = JSON.stringify(placeData);
+            document.getElementById('id_place_address').value = address;
 
             // Очищаем карту и ставим новую метку
             window.eventMap.geoObjects.removeAll();
@@ -336,6 +338,7 @@
             if (data.coordinates && data.coordinates.length === 2) {
                 const coords = data.coordinates;
                 placeAdditionalInfoInput.value = data.additional_info || '';
+                document.getElementById('id_place_address').value = data.address;
 
                 window.eventMap.setCenter(coords, 15);
                 window.eventMap.geoObjects.add(new ymaps.Placemark(coords, {
