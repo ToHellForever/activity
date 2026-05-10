@@ -56,6 +56,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
             "quantity": total_tickets,
             "price": total_sales,
             "date": "",
+            "is_total": True,  # Флаг для итоговой строки
         }
     )
 
@@ -110,15 +111,28 @@ def generate_excel_report(data, period_start, period_end):
 
     # Данные
     for row in data:
-        ws.append(
-            [
-                row["event"],
-                row["ticket"],
-                row["quantity"],
-                row["price"],
-                row["date"],
-            ]
-        )
+        if row.get("is_total"):
+            # Итоговая строка
+            ws.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    row.get("quantity", ""),
+                    row.get("price", 0),
+                    row.get("date", ""),
+                ]
+            )
+        else:
+            # Обычная строка
+            ws.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    row.get("quantity", ""),
+                    row.get("price", 0),
+                    row.get("date", ""),
+                ]
+            )
 
     # Авторазмер колонок
     for column in ws.columns:
@@ -194,17 +208,19 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
     ]
 
     for idx, row in enumerate(data):
-        if "quantity" in row and row["quantity"] == "ИТОГО:":
+        if row.get("is_total"):
+            # Итоговая строка
             table_data.append(
                 [
                     row.get("event", row.get("name", "")),
                     row.get("ticket", ""),
-                    str(row["quantity"]),
-                    f"{row['price']:.2f}",
+                    str(row.get("quantity", "")),
+                    f"{row.get('price', 0):.2f}",
                     row.get("date", ""),
                 ]
             )
         else:
+            # Обычная строка
             table_data.append(
                 [
                     row.get("event", row.get("name", "")),
