@@ -190,12 +190,11 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
 
     # Таблица с данными
     table_data = [
-        ["Мероприятие", "Тип билета", "Количество", "Сумма (₽)", "Дата заказа", "QR-код"]
+        ["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа"]
     ]
 
     for idx, row in enumerate(data):
         if "quantity" in row and row["quantity"] == "ИТОГО:":
-            # Итоговая строка, QR-код не нужен
             table_data.append(
                 [
                     row.get("event", row.get("name", "")),
@@ -203,13 +202,9 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                     str(row["quantity"]),
                     f"{row['price']:.2f}",
                     row.get("date", ""),
-                    "",
                 ]
             )
         else:
-            # Для обычных строк добавляем QR-код
-            qr_code_img = generate_qr_code(idx)
-            qr_image = Image(qr_code_img, width=50, height=50)
             table_data.append(
                 [
                     row.get("event", row.get("name", "")),
@@ -217,11 +212,10 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                     str(row.get("quantity", "")),
                     f"{row.get('price', 0):.2f}",
                     row.get("date", ""),
-                    qr_image,
                 ]
             )
 
-    table = Table(table_data, colWidths=[120, 100, 60, 80, 80, 60])
+    table = Table(table_data, colWidths=[120, 120, 100, 80, 100])
     table.setStyle(
         TableStyle(
             [
