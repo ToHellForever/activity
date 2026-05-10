@@ -88,12 +88,15 @@ def create_event(request):
 
         event.save()
 
-        # Обрабатываем теги
-        tags = request.POST.getlist('tags')
-        if tags:
-            event.tags.set(tags)
-        else:
-            event.tags.clear()
+        # Обрабатываем теги из JSON-массива
+        tags_json = request.POST.get('tags_json', '[]')
+        try:
+            tags_list = json.loads(tags_json)
+            event.tags.clear()  # Всегда очищаем текущие теги
+            if tags_list:
+                event.tags.set(tags_list)  # Устанавливаем только те, которые пришли в запросе
+        except json.JSONDecodeError:
+            event.tags.clear()  # В случае ошибки очищаем теги
 
         # Обрабатываем данные о билетах из таблицы
         ticket_names = request.POST.getlist("ticket_name[]")
@@ -202,12 +205,15 @@ def edit_event(request, event_id):
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
 
-            # Обрабатываем теги
-            tags = request.POST.getlist('tags')
-            if tags:
-                event.tags.set(tags)
-            else:
-                event.tags.clear()
+            # Обрабатываем теги из JSON-массива
+            tags_json = request.POST.get('tags_json', '[]')
+            try:
+                tags_list = json.loads(tags_json)
+                event.tags.clear()  # Всегда очищаем текущие теги
+                if tags_list:
+                    event.tags.set(tags_list)  # Устанавливаем только те, которые пришли в запросе
+            except json.JSONDecodeError:
+                event.tags.clear()  # В случае ошибки очищаем теги
 
             # Обработка данных о билетах: удаляем старые и создаем новые
             event.tickets.all().delete()

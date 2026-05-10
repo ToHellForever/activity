@@ -142,7 +142,6 @@
                 <span class="badge bg-secondary p-2 d-flex align-items-center">
                     {{ tag.name }}
                     <button type="button" class="btn-close btn-close-white ms-2 remove-tag-btn" aria-label="Удалить"></button>
-                    <input type="hidden" name="tags" value="{{ tag.name }}">
                 </span>
             {% endfor %}
         </div>
@@ -380,6 +379,7 @@
         if (tagName) {
             addTagToContainer(tagName);
             tagInput.value = '';
+            updateTagsJson();
         }
     });
 
@@ -398,7 +398,7 @@
         // Проверяем, что такого тега ещё нет
         const existingTags = tagsContainer.querySelectorAll('.badge');
         for (const tag of existingTags) {
-            if (tag.textContent.trim() === tagName) {
+            if (tag.textContent.trim().replace('×', '').trim() === tagName) {
                 return; // Тег уже существует
             }
         }
@@ -409,22 +409,38 @@
         tagElement.innerHTML = `
             ${tagName}
             <button type="button" class="btn-close btn-close-white ms-2 remove-tag-btn" aria-label="Удалить"></button>
-            <input type="hidden" name="tags" value="${tagName}">
         `;
 
         // Добавляем обработчик удаления
         tagElement.querySelector('.remove-tag-btn').addEventListener('click', function() {
             tagElement.remove();
+            updateTagsJson();
         });
 
         tagsContainer.appendChild(tagElement);
+        updateTagsJson();
     }
 
     // Обработка клика по кнопке удаления тега (делегирование событий)
     document.getElementById('tags-container').addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-tag-btn')) {
             e.target.closest('.badge').remove();
+            updateTagsJson();
         }
+    });
+
+    // Функция для обновления скрытого поля с JSON-массивом тегов
+    function updateTagsJson() {
+        const tagsContainer = document.getElementById('tags-container');
+        const tags = Array.from(tagsContainer.querySelectorAll('.badge')).map(tag => {
+            return tag.textContent.trim().replace('×', '').trim();
+        });
+        document.getElementById('tags-json').value = JSON.stringify(tags);
+    }
+
+    // Инициализация тегов при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTagsJson();
     });
 </script>
 {% endblock %}
