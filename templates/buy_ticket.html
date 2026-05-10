@@ -10,18 +10,37 @@
 {% block extra_js %}
     {% if yookassa_payment_token %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkout = new window.YooMoneyCheckoutWidget({
-                confirmation_token: '{{ yookassa_payment_token }}',
-                return_url: '{{ yookassa_return_url }}',
-                error_callback: function(error) {
-                    console.error('Ошибка платежа:', error);
-                    alert('Произошла ошибка при оплате. Попробуйте еще раз.');
-                }
-            });
+        // Инициализируем виджет, но не показываем его сразу
+        const checkout = new window.YooMoneyCheckoutWidget({
+            confirmation_token: '{{ yookassa_payment_token }}',
+            return_url: '{{ yookassa_return_url }}',
+            error_callback: function(error) {
+                console.error('Ошибка платежа:', error);
+                alert('Произошла ошибка при оплате. Попробуйте еще раз.');
+            },
+            success_callback: function() {
+                // После успешной оплаты автоматически отправляем форму
+                document.querySelector('form').submit();
+            }
+        });
 
-            // Отображаем виджет на странице
-            checkout.render('payment-widget-container');
+        // Обработчик нажатия на кнопку покупки
+        document.addEventListener('DOMContentLoaded', function() {
+            const buyButton = document.getElementById('buyButton');
+            if (buyButton) {
+                buyButton.addEventListener('click', function() {
+                    // Показываем виджет оплаты
+                    document.getElementById('payment-widget-container').style.display = 'block';
+
+                    // Если виджет еще не отрендерен, рендерим его
+                    if (!document.querySelector('#payment-widget-container iframe')) {
+                        checkout.render('payment-widget-container');
+                    }
+
+                    // Прокручиваем к виджету
+                    document.getElementById('payment-widget-container').scrollIntoView({ behavior: 'smooth' });
+                });
+            }
         });
     </script>
     {% endif %}
@@ -102,13 +121,13 @@
             </label>
         </div>
         {% endif %}
-        <button type="submit" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" id="buyButton">
             {% if allow_booking_without_payment %}Забронировать/Купить выбранные билеты{% else %}Купить выбранные билеты{% endif %}
         </button>
     </form>
-    
+
     {% if yookassa_payment_token %}
-    <div id="payment-widget-container" style="margin-top: 20px;"></div>
+    <div id="payment-widget-container" style="margin-top: 20px; display: none;"></div>
     {% endif %}
 </div>
 {% endblock %}

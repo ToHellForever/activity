@@ -401,6 +401,49 @@ def buy_ticket(request, event_id):
     if request.method == "GET":
         # Показываем форму покупки
         tickets = event.tickets.all()
+
+        # Для оплаты через ЮKassa создаем платеж заранее
+        yookassa_payment_token = None
+        try:
+            # Создаем тестовый платеж для получения токена (сумма 1 рубль)
+            payment_data = {
+                "amount": {"value": "1.00", "currency": "RUB"},
+                "confirmation": {"type": "embedded"},
+                "capture": True,
+                "description": f"Предварительная оплата билетов на {event.title}",
+            }
+
+            # Формируем заголовок Authorization
+            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
+            auth_bytes = auth_string.encode('ascii')
+            auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
+
+            headers = {
+                "Idempotence-Key": str(uuid.uuid4()),
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth_base64}",
+            }
+
+            response = requests.post(
+                "https://api.yookassa.ru/v3/payments",
+                headers=headers,
+                json=payment_data,
+            )
+
+            if response.ok:
+                payment_response = response.json()
+                yookassa_payment_token = payment_response["confirmation"]["confirmation_token"]
+                logger.info(f"Создан предварительный платеж в ЮKassa. Токен: {yookassa_payment_token}")
+            else:
+                logger.error(f"Ошибка создания предварительного платежа: {response.text}")
+
+        except Exception as e:
+            logger.error(f"Ошибка при создании предварительного платежа: {str(e)}")
+
+        # Формируем абсолютный URL для возврата после оплаты
+        from django.urls import reverse
+        return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
+
         return render(
             request,
             "buy_ticket.html",
@@ -408,6 +451,8 @@ def buy_ticket(request, event_id):
                 "event": event,
                 "tickets": tickets,
                 "allow_booking_without_payment": event.allow_booking_without_payment,
+                "yookassa_payment_token": yookassa_payment_token,
+                "yookassa_return_url": return_url,
             },
         )
 
@@ -636,6 +681,9 @@ def buy_ticket(request, event_id):
     if require_payment:
         yookassa_payment_token = None
         try:
+            # Получаем все билеты события для расчета суммы
+            tickets = event.tickets.all()
+
             # Создаем платеж в ЮKassa для получения токена
             total_amount = sum(
                 ticket.price * quantity
@@ -660,10 +708,10 @@ def buy_ticket(request, event_id):
             auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
             auth_bytes = auth_string.encode('ascii')
             auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
-            
+
             # Логируем заголовок для отладки
             logger.info(f"Сформированный заголовок Authorization: Basic ***{auth_base64[-10:]}")
-            
+
             headers = {
                 "Idempotence-Key": str(uuid.uuid4()),
                 "Content-Type": "application/json",
@@ -712,8 +760,6 @@ def buy_ticket(request, event_id):
                     "allow_booking_without_payment": event.allow_booking_without_payment,
                 },
             )
-
-    from django.urls import reverse
 
     # Перенаправляем на страницу оплаты или успешной покупки
     if require_payment and yookassa_payment_token:
