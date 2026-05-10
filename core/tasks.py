@@ -1,15 +1,125 @@
-# tasks.py
+# -*- coding: utf-8 -*-
+"""
+Celery задачи для мониторинга и управления системой.
+"""
+
 from celery import shared_task
+from django.db.models import Count
+from core.models import Ticket, Order
+import logging
 from django.apps import apps
 import os
-import logging
 import time
 from django.utils import timezone
 from django.conf import settings
 from core.models import Event, Ticket
-
+from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task
+def check_race_conditions_task():
+    """
+    Периодическая задача для проверки согласованности данных и обнаружения гонок.
+    Запускается через Celery Beat.
+    """
+    logger.info("Starting scheduled race condition check...")
+
+    try:
+        # Вызываем команду Django для проверки
+        call_command("check_race_conditions")
+        logger.info("Scheduled race condition check completed successfully")
+        return "Success: No race condition issues detected"
+    except Exception as e:
+        logger.error(f"Error during scheduled race condition check: {str(e)}")
+        return f"Error: {str(e)}"
+
+
+@shared_task
+def monitor_ticket_consistency():
+    """
+    Расширенный мониторинг согласованности данных о билетах.
+    """
+    logger.info("Starting ticket consistency monitoring...")
+
+    issues = []
+
+    try:
+        # Проверяем все билеты
+        for ticket in Ticket.objects.all():
+            # Прямой расчет проданных билетов
+            db_sold = sum(order.quantity for order in ticket.orders.all())
+            calc_available = ticket.available_quantity - db_sold
+
+            # Расчет через метод модели
+            model_available = ticket.get_available_count()
+
+            if calc_available != model_available:
+                issues.append(
+                    {
+                        "ticket_id": ticket.id,
+                        "name": ticket.name,
+                        "direct_calc": calc_available,
+                        "model_calc": model_available,
+                        "type": "calculation_mismatch",
+                    }
+                )
+
+            # Проверяем на отрицательное количество
+            if model_available < 0:
+                issues.append(
+                    {
+                        "ticket_id": ticket.id,
+                        "name": ticket.name,
+                        "available": model_available,
+                        "type": "negative_quantity",
+                    }
+                )
+
+        if issues:
+            error_msg = f"Found {len(issues)} consistency issues: {issues}"
+            logger.error(error_msg)
+            return error_msg
+        else:
+            logger.info("Ticket consistency monitoring: All tickets are consistent")
+            return "Success: All tickets are consistent"
+
+    except Exception as e:
+        logger.error(f"Ticket consistency monitoring error: {str(e)}")
+        return f"Error: {str(e)}"
+
+
+@shared_task
+def clean_up_inconsistent_tickets():
+    """
+    Исправление несогласованных данных о билетах.
+    """
+    logger.info("Starting ticket data cleanup...")
+
+    try:
+        fixed_count = 0
+
+        for ticket in Ticket.objects.all():
+            # Проверяем на отрицательное доступное количество
+            available = ticket.get_available_count()
+            if available < 0:
+                # Исправляем, увеличивая available_quantity
+                needed = abs(available)
+                ticket.available_quantity += needed
+                ticket.save()
+                fixed_count += 1
+                logger.warning(
+                    f"Fixed ticket {ticket.id}: added {needed} to available_quantity"
+                )
+
+        logger.info(f"Ticket data cleanup: Fixed {fixed_count} tickets")
+        return f"Success: Fixed {fixed_count} tickets"
+
+    except Exception as e:
+        logger.error(f"Ticket data cleanup error: {str(e)}")
+        return f"Error: {str(e)}"
+
 
 def wait_for_file(file_path, max_attempts=20, delay=1):
     for _ in range(max_attempts):

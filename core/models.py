@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 import os
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
@@ -7,6 +7,13 @@ from taggit.managers import TaggableManager
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin
 from core.validators import validate_video_duration, compress_video
+
+try:
+    from core.redis_utils import get_lock
+
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
 from django.utils import timezone
 
 
@@ -360,7 +367,23 @@ class Ticket(models.Model):
 
     def is_available(self, quantity=1):
         """Проверяет, доступно ли указанное количество билетов для покупки."""
+        from django.db import transaction
 
+        try:
+            # Используем распределенную блокировку, если доступно
+            if REDIS_AVAILABLE:
+                with get_lock(self.pk, use_redis=True):
+                    return self._check_availability(quantity)
+            else:
+                # Локальная блокировка через транзакции
+                with transaction.atomic():
+                    ticket = Ticket.objects.select_for_update().get(pk=self.pk)
+                    return ticket._check_availability(quantity)
+        except Ticket.DoesNotExist:
+            return False
+
+    def _check_availability(self, quantity):
+        """Внутренний метод для проверки доступности с уже заблокированным билетом."""
         # Проверяем, не закрыты ли продажи для мероприятия
         if self.event.auto_close_sales_hours > 0:
             close_time = self.event.date_time - timezone.timedelta(
@@ -374,8 +397,22 @@ class Ticket(models.Model):
 
     def get_available_count(self):
         """Возвращает количество доступных билетов данного типа."""
-        sold = sum(order.quantity for order in self.orders.all())
-        return self.available_quantity - sold
+        from django.db import transaction
+
+        try:
+            # Используем распределенную блокировку, если доступно
+            if REDIS_AVAILABLE:
+                with get_lock(self.pk, use_redis=True):
+                    sold = sum(order.quantity for order in self.orders.all())
+                    return self.available_quantity - sold
+            else:
+                # Локальная блокировка через транзакции
+                with transaction.atomic():
+                    ticket = Ticket.objects.select_for_update().get(pk=self.pk)
+                    sold = sum(order.quantity for order in ticket.orders.all())
+                    return ticket.available_quantity - sold
+        except Ticket.DoesNotExist:
+            return 0
 
     class Meta:
         verbose_name = "Билет"

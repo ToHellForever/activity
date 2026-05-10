@@ -315,17 +315,17 @@ def event_list(request):
     all_tags = Event.tags.most_common()
 
     # Получаем выбранные теги из GET-запроса
-    selected_tags = request.GET.getlist('tags')
+    selected_tags = request.GET.getlist("tags")
 
     # Фильтруем мероприятия по выбранным тегам, если они есть
     if selected_tags:
         active_events = active_events.filter(tags__name__in=selected_tags).distinct()
 
-    return render(request, "events/event_list.html", {
-        "events": active_events,
-        "all_tags": all_tags,
-        "selected_tags": selected_tags
-    })
+    return render(
+        request,
+        "events/event_list.html",
+        {"events": active_events, "all_tags": all_tags, "selected_tags": selected_tags},
+    )
 
 
 def event_detail(request, event_id):
@@ -430,34 +430,94 @@ def buy_ticket(request, event_id):
     )
 
     # Отладочный вывод UTM-меток
-    print("UTM Source from POST:", request.POST.get('utm_source'))
-    print("UTM Source from GET:", request.GET.get('utm_source'))
-    print("UTM Medium from POST:", request.POST.get('utm_medium'))
-    print("UTM Medium from GET:", request.GET.get('utm_medium'))
-    print("UTM Campaign from POST:", request.POST.get('utm_campaign'))
-    print("UTM Campaign from GET:", request.GET.get('utm_campaign'))
+    print("UTM Source from POST:", request.POST.get("utm_source"))
+    print("UTM Source from GET:", request.GET.get("utm_source"))
+    print("UTM Medium from POST:", request.POST.get("utm_medium"))
+    print("UTM Medium from GET:", request.GET.get("utm_medium"))
+    print("UTM Campaign from POST:", request.POST.get("utm_campaign"))
+    print("UTM Campaign from GET:", request.GET.get("utm_campaign"))
 
     # Создаем заказы для каждого типа билетов
     orders = []
-    for ticket, quantity in ticket_quantities.items():
-        order = Order.objects.create(
-            ticket=ticket,
-            participant_data={
-                "email": email,
-                "first_name": first_name,
-                "last_name": last_name,
-                "phone": phone,
-            },
-            total_price=ticket.price * quantity,
-            quantity=quantity,
-            is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
-            utm_source=request.POST.get('utm_source') or request.GET.get('utm_source'),
-            utm_medium=request.POST.get('utm_medium') or request.GET.get('utm_medium'),
-            utm_campaign=request.POST.get('utm_campaign') or request.GET.get('utm_campaign'),
-            utm_term=request.POST.get('utm_term') or request.GET.get('utm_term'),
-            utm_content=request.POST.get('utm_content') or request.GET.get('utm_content'),
+    try:
+        with transaction.atomic():
+            for ticket, quantity in ticket_quantities.items():
+                logger.debug(
+                    f"Начало обработки билета {ticket.id}, доступно до блокировки: {ticket.get_available_count()}"
+                )
+
+                # Блокируем билет для предотвращения гонки
+                ticket = Ticket.objects.select_for_update().get(pk=ticket.pk)
+                logger.debug(
+                    f"Билет {ticket.id} заблокирован, доступно после блокировки: {ticket.get_available_count()}"
+                )
+
+                # Повторно проверяем доступность после блокировки
+                if not ticket.is_available(quantity):
+                    logger.warning(
+                        f"Недостаточно билетов типа '{ticket.name}'. Запрошено: {quantity}, доступно: {ticket.get_available_count()}"
+                    )
+                    raise ValueError(
+                        f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
+                    )
+
+                logger.debug(
+                    f"Создание заказа для билета {ticket.id}, количество: {quantity}"
+                )
+                order = Order.objects.create(
+                    ticket=ticket,
+                    participant_data={
+                        "email": email,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "phone": phone,
+                    },
+                    total_price=ticket.price * quantity,
+                    quantity=quantity,
+                    is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
+                    utm_source=request.POST.get("utm_source")
+                    or request.GET.get("utm_source"),
+                    utm_medium=request.POST.get("utm_medium")
+                    or request.GET.get("utm_medium"),
+                    utm_campaign=request.POST.get("utm_campaign")
+                    or request.GET.get("utm_campaign"),
+                    utm_term=request.POST.get("utm_term")
+                    or request.GET.get("utm_term"),
+                    utm_content=request.POST.get("utm_content")
+                    or request.GET.get("utm_content"),
+                )
+                orders.append(order)
+                logger.debug(
+                    f"Заказ для билета {ticket.id} успешно создан, ID заказа: {order.id}"
+                )
+    except IntegrityError as e:
+        messages.error(
+            request, "Произошла ошибка при покупке билетов. Попробуйте еще раз."
         )
-        orders.append(order)
+        logger.error(f"Ошибка целостности данных при покупке билетов: {e}")
+        logger.error(
+            f"Текущее доступное количество билетов: {ticket.get_available_count()}"
+        )
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
+    except ValueError as e:
+        messages.error(request, str(e))
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
 
     # Устанавливаем флаг has_sold_tickets для события, если билеты проданы
     if not event.has_sold_tickets:
@@ -487,7 +547,9 @@ def buy_ticket(request, event_id):
             break
 
     # Логируем результат проверки
-    logger.debug(f"Проверка на выкуп всех билетов для мероприятия {event.id}: {all_tickets_sold}")
+    logger.debug(
+        f"Проверка на выкуп всех билетов для мероприятия {event.id}: {all_tickets_sold}"
+    )
 
     # Если все билеты выкуплены, отправляем уведомление партнёру
     if all_tickets_sold:
@@ -765,8 +827,13 @@ def send_partner_all_tickets_sold_notification(event):
     """
 
     send_mail(
-        subject, "", "dim.anosoff2018@yandex.ru", [organizer_email], html_message=message
+        subject,
+        "",
+        "dim.anosoff2018@yandex.ru",
+        [organizer_email],
+        html_message=message,
     )
+
 
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)

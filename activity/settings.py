@@ -151,3 +151,27 @@ LOGGING = {
         },
     },
 }
+
+
+# Redis Configuration
+REDIS_CONFIG = {
+    "host": "localhost",
+    "port": 6379,
+    "db": 0,
+    "socket_timeout": 5,
+    "socket_connect_timeout": 2,
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_BEAT_SCHEDULE = {
+    "check-race-conditions-hourly": {
+        "task": "core.tasks.check_race_conditions_task",
+        "schedule": 3600.0,  # Каждый час
+    },
+}
