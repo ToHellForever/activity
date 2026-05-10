@@ -109,6 +109,7 @@ class EventAdmin(admin.ModelAdmin):
                     "status",
                     "category",
                     "tags",
+                    "get_tags_display",
                     "allow_booking_without_payment",
                     "commission_rate",
                     "auto_close_sales_hours",
@@ -124,8 +125,20 @@ class EventAdmin(admin.ModelAdmin):
         ),
     )
 
+    # Настройка отображения тегов
+    def get_tags_display(self, obj):
+        tags = obj.tags.all()
+        if not tags:
+            return "-"
+        html = '<div style="display: flex; flex-wrap: wrap; gap: 5px;">'
+        for tag in tags:
+            html += f'<span style="background-color: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">{tag.name}</span>'
+        html += '</div>'
+        return mark_safe(html)
+    get_tags_display.short_description = "Теги"
+
     # Добавляем поле для отображения статуса в виде галочки
-    readonly_fields = ("approved_status",)
+    readonly_fields = ("approved_status", "get_tags_display")
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
