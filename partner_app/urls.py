@@ -38,4 +38,5 @@ urlpatterns = [
     path('payout-details/', views.payout_details, name='payout_details'),
     path("cancel_payout/<int:payout_id>/", views.cancel_payout, name="cancel_payout"),
     path("delete_reports/", views.delete_reports, name="delete_reports"),
+    path("change-password/", views.change_password, name="change_password"),
 ]

@@ -9,7 +9,7 @@ from django.db.models.functions import TruncDate
 from django.contrib import messages
 from django.shortcuts import redirect
 import logging
-
+from django.contrib.auth import update_session_auth_hash
 logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 import os
@@ -1154,3 +1154,19 @@ def remove_media(request, media_type, media_id):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+def change_password(request):
+    """Отдельная страница для смены пароля в личном кабинете партнёра."""
+    if request.method == "POST":
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            messages.success(request, "Пароль успешно изменён!")
+            return redirect("partner:dashboard")
+    else:
+        password_form = PasswordChangeForm(user=request.user)
+
+    return render(request, "change_password.html", {"form": password_form})

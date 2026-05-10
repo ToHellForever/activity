@@ -51,7 +51,7 @@
 </form>
 
 <h1>Смена пароля</h1>
-<a href="{% url 'change_password' %}">смена пароля</a>
+<a href="{% url 'partner:change_password' %}">смена пароля</a>
 {% if request.user.verification_status == 'not_submitted' %}
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
