@@ -523,10 +523,10 @@ def participant_list(request, event_id):
         orders = orders.filter(participant_data__name__icontains=search_name)
     if search_email:
         orders = orders.filter(participant_data__email__icontains=search_email)
-    if search_status == "attended":
-        orders = orders.filter(attended=True)
-    elif search_status == "not_attended":
-        orders = orders.filter(attended=False)
+    if search_status == "is_paid":
+        orders = orders.filter(is_paid=True)
+    elif search_status == "not_paid":
+        orders = orders.filter(is_paid=False)
 
     # Обработка экспорта
     export_format = request.GET.get("export")
@@ -592,7 +592,7 @@ def export_participant_list(orders, event, export_format):
             ws.cell(
                 row=row_num,
                 column=6,
-                value="Оплачено" if order.attended else "Ожидает оплаты",
+                value="Оплачено" if order.is_paid else "Не оплачен",
             )
             ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
 
@@ -683,18 +683,16 @@ def export_participant_list(orders, event, export_format):
             qr_code_img.seek(0)
             qr_image = Image(qr_code_img, width=50, height=50)
 
-            data.append(
-                [
-                    f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
-                    order.participant_data.get("email", ""),
-                    order.participant_data.get("phone", ""),
-                    order.created_at.strftime("%d.%m.%Y %H:%M"),
-                    order.ticket.name,
-                    "Оплачено" if order.attended else "Ожидает оплаты",
-                    f"{order.total_price:.2f} руб.",
-                    qr_image,
-                ]
-            )
+            data.append([
+                f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
+                order.participant_data.get("email", ""),
+                order.participant_data.get("phone", ""),
+                order.created_at.strftime("%d.%m.%Y %H:%M"),
+                order.ticket.name,
+                "Оплачено" if order.is_paid else "Не оплачен",
+                f"{order.total_price:.2f} руб.",
+                qr_image,
+            ])
 
         # Создаем таблицу
         table = Table(data)

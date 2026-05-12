@@ -331,7 +331,7 @@ class OrderAdmin(admin.ModelAdmin):
     Настройка отображения заказов.
     """
 
-    list_display = ("id", "ticket", "created_at", "total_price")
+    list_display = ("id", "ticket", "created_at", "total_price", "is_paid")
     list_filter = ("created_at",)
 
 

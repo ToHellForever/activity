@@ -434,7 +434,7 @@ class Order(models.Model):
     )
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество билетов")
     attended = models.BooleanField(default=False, verbose_name="Посетил мероприятие")
-    is_paid = models.BooleanField(default=True, verbose_name="Оплачен")
+    is_paid = models.BooleanField(default=False, verbose_name="Оплачен")
     payment_deadline = models.DateTimeField(
         null=True, blank=True, verbose_name="Срок оплаты"
     )

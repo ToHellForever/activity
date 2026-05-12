@@ -44,7 +44,7 @@ def yookassa_webhook(request):
     # Логируем все входящие данные (для отладки)
     logger.info(f"Webhook received. Method: {request.method}")
     logger.info(f"Headers: {request.headers}")
-    logger.info(f"Body: {request.body}")
+    logger.info(f"Body: {request.body.decode('utf-8') if request.body else 'Empty body'}")
 
     # Проверяем метод запроса
     if request.method != "POST":
