@@ -41,12 +41,14 @@ def generate_sales_register(partner, start_date, end_date):
         is_paid=True,
     ).select_related("ticket__event")
 
-    # Рассчитываем общие суммы
-    total_sales = orders.aggregate(
+    # Рассчитываем общие суммы (исключаем возвраты из выручки и комиссии)
+    non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
+
+    total_sales = non_refunded_orders.aggregate(
         total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
     )["total"]
 
-    total_commission = orders.aggregate(
+    total_commission = non_refunded_orders.aggregate(
         total=Coalesce(Sum("platform_commission"), 0, output_field=DecimalField())
     )["total"]
 
@@ -63,8 +65,8 @@ def generate_sales_register(partner, start_date, end_date):
         total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
     )["total"]
 
-    # Чистая сумма к выплате
-    net_amount = total_sales - total_commission - total_refunds
+    # Чистая сумма к выплате (возвраты уже исключены из выручки и комиссии)
+    net_amount = total_sales - total_commission
 
     return {
         "total_sales": total_sales,
