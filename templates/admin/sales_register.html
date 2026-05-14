@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Реестр продаж за период с {{ start_date|date:"d.m.Y" }} по {{ end_date|date:"d.m.Y" }}</h1>
+
+    <div class="mt-4">
+        <a href="{% url 'sales_register' %}" class="btn btn-secondary mb-3">Вернуться к выбору периода</a>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Партнёр</th>
+                        <th>Общая выручка</th>
+                        <th>Комиссия платформы</th>
+                        <th>Возвраты</th>
+                        <th>Сумма к выплате</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for partner_data in register_data %}
+                    <tr>
+                        <td>{{ partner_data.partner.get_full_name }} ({{ partner_data.partner.email }})</td>
+                        <td>{{ partner_data.total_sales|floatformat:2 }} ₽</td>
+                        <td>{{ partner_data.total_commission|floatformat:2 }} ₽</td>
+                        <td>{{ partner_data.total_refunds|floatformat:2 }} ₽</td>
+                        <td>{{ partner_data.net_amount|floatformat:2 }} ₽</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#ordersModal_{{ partner_data.partner.id }}">
+                                Детали
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Модальное окно для детализации заказов -->
+                    <div class="modal fade" id="ordersModal_{{ partner_data.partner.id }}" tabindex="-1" aria-labelledby="ordersModalLabel_{{ partner_data.partner.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="ordersModalLabel_{{ partner_data.partner.id }}">Заказы для {{ partner_data.partner.get_full_name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ID заказа</th>
+                                                <th>Мероприятие</th>
+                                                <th>Тип билета</th>
+                                                <th>Количество</th>
+                                                <th>Сумма</th>
+                                                <th>Комиссия</th>
+                                                <th>Дата</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in partner_data.orders %}
+                                            <tr>
+                                                <td>{{ order.id }}</td>
+                                                <td>{{ order.ticket.event.title }}</td>
+                                                <td>{{ order.ticket.name }}</td>
+                                                <td>{{ order.quantity }}</td>
+                                                <td>{{ order.total_price|floatformat:2 }} ₽</td>
+                                                <td>{{ order.platform_commission|floatformat:2 }} ₽</td>
+                                                <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

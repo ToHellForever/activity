@@ -35,9 +35,11 @@ import requests
 import json
 import base64
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import Coalesce
+from django.contrib.admin.views.decorators import staff_member_required
 
 logger = logging.getLogger(__name__)
-
 
 @csrf_exempt
 def yookassa_webhook(request):
@@ -94,10 +96,8 @@ def yookassa_webhook(request):
     # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
     return HttpResponse(status=200)
 
-
 def landing_page(request):
     return render(request, "landing.html")
-
 
 @login_required
 def change_password(request):
@@ -111,7 +111,6 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
     return render(request, "change_password.html", {"password_form": password_form})
-
 
 @never_cache
 def login_view(request):
@@ -136,12 +135,10 @@ def login_view(request):
 
     return render(request, "registration/login.html", {"form": form})
 
-
 def generate_temporary_password(length=10):
     """Генерация временного пароля."""
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(length))
-
 
 @never_cache
 def forgot_password(request):
@@ -160,13 +157,14 @@ def forgot_password(request):
 
             # Отправляем письмо с временным паролем и ссылкой на вход
             subject = "Восстановление пароля"
+
             message = f"""
                 Здравствуйте!
-                
+
                 Ваш временный пароль: {temp_password}.
-                
+
                 Вы можете войти, используя этот пароль, по следующей ссылке: {login_url}
-                
+
                 Пожалуйста, измените пароль после входа в систему.
             """
             send_mail(
@@ -185,7 +183,6 @@ def forgot_password(request):
                 request, "registration/forgot_password_success.html", {"email": email}
             )
     return render(request, "registration/forgot_password.html")
-
 
 @never_cache
 def register_view(request):
@@ -209,7 +206,6 @@ def register_view(request):
 
     return render(request, "registration/register.html", {"form": form})
 
-
 def custom_logout(request):
     """
     Кастомная функция для выхода из системы.
@@ -220,7 +216,6 @@ def custom_logout(request):
 
     # Редиректим на страницу входа по имени URL
     return redirect("login")
-
 
 @login_required
 def support_dashboard(request):
@@ -278,7 +273,6 @@ def support_dashboard(request):
     }
     return render(request, "support_dashboard.html", context)
 
-
 @require_POST
 @login_required
 def send_support_message(request):
@@ -311,7 +305,6 @@ def send_support_message(request):
     messages.error(request, "Ошибка отправки сообщения.")
     return redirect("support_dashboard")
 
-
 def upload_image(request):
     if request.method == "POST":
         data_url = request.POST.get("data")
@@ -325,10 +318,8 @@ def upload_image(request):
 
     return HttpResponseBadRequest("Некорректный запрос")
 
-
 def is_moderator(user):
     return user.is_superuser or user.groups.filter(name="Модераторы").exists()
-
 
 @user_passes_test(is_moderator, login_url="/login/")
 @login_required
@@ -360,14 +351,12 @@ def moderator_dashboard(request):
     }
     return render(request, "moderator_dashboard.html", context)
 
-
 def update_ticket_status(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)
     new_status = request.POST.get("status")
     ticket.status = new_status
     ticket.save()
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
-
 
 def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
@@ -385,14 +374,16 @@ def event_list(request):
     return render(
         request,
         "events/event_list.html",
-        {"events": active_events, "all_tags": all_tags, "selected_tags": selected_tags},
+        {
+            "events": active_events,
+            "all_tags": all_tags,
+            "selected_tags": selected_tags,
+        },
     )
-
 
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
-
 
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
@@ -527,6 +518,8 @@ def buy_ticket(request, event_id):
                     logger.debug(
                         f"Создание заказа для билета {ticket.id}, количество: {quantity}"
                     )
+                    total_price = ticket.price * quantity
+                    platform_commission = total_price * (ticket.event.commission_rate / 100)
                     order = Order.objects.create(
                         ticket=ticket,
                         participant_data={
@@ -535,9 +528,10 @@ def buy_ticket(request, event_id):
                             "last_name": last_name,
                             "phone": phone,
                         },
-                        total_price=ticket.price * quantity,
+                        total_price=total_price,
                         quantity=quantity,
                         is_paid=False,  # Сначала ставим False, после оплаты обновится через webhook
+                        platform_commission=platform_commission,
                         utm_source=request.POST.get("utm_source")
                         or request.GET.get("utm_source"),
                         utm_medium=request.POST.get("utm_medium")
@@ -786,7 +780,6 @@ def buy_ticket(request, event_id):
     url = reverse("landing_page") + "?success=ticket_purchased"
     return redirect(url)
 
-
 def send_multiple_tickets_notification(user, orders, request=None):
     subject = "Ваши электронные билеты"
     activation_link = None
@@ -905,7 +898,6 @@ def send_multiple_tickets_notification(user, orders, request=None):
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
 
-
 def send_ticket_notification(user, order, request=None):
     subject = "Ваш электронный билет"
     activation_link = None
@@ -952,10 +944,10 @@ def send_ticket_notification(user, order, request=None):
     <body>
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Здравствуйте, {user.get_full_name() or user.email}!</h2>
-            
+
             <p>Благодарим вас за покупку билета на мероприятие:</p>
             <h3 style="color: #3498db;">{order.ticket.event.title}</h3>
-            
+
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p><strong>Тип билета:</strong> {order.ticket.name}</p>
                 <p><strong>Количество:</strong> {order.quantity}</p>
@@ -963,7 +955,7 @@ def send_ticket_notification(user, order, request=None):
                 <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
                 <p><strong>Место проведения:</strong> {order.ticket.event.place}</p>
             </div>
-            
+
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{ticket_download_url}" style="
                     display: inline-block;
@@ -975,7 +967,7 @@ def send_ticket_notification(user, order, request=None):
                     font-weight: bold;
                 ">Скачать билет (PDF)</a>
             </div>
-            
+
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{button_url}" style="
                     display: inline-block;
@@ -987,7 +979,7 @@ def send_ticket_notification(user, order, request=None):
                     font-weight: bold;
                 ">{button_text}</a>
             </div>
-            
+
             <div style="
                 margin-top: 40px;
                 padding-top: 20px;
@@ -1008,7 +1000,6 @@ def send_ticket_notification(user, order, request=None):
     send_mail(
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
-
 
 def send_partner_all_tickets_sold_notification(event):
     """
@@ -1055,7 +1046,6 @@ def send_partner_all_tickets_sold_notification(event):
         html_message=message,
     )
 
-
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":
@@ -1065,3 +1055,102 @@ def activate_account(request, pk):
         user.save()
         return redirect("login")
     return render(request, "activate_account.html")
+
+@staff_member_required
+def sales_register(request):
+    """
+    Формирует реестр продаж по всем партнёрам за указанный период.
+    Доступно только для сотрудников (администраторов).
+    """
+    if request.method == "POST":
+        start_date_str = request.POST.get("start_date")
+        end_date_str = request.POST.get("end_date")
+
+        try:
+            start_date = timezone.datetime.strptime(start_date_str, '%Y-%m-%d')
+            end_date = timezone.datetime.strptime(end_date_str, '%Y-%m-%d')
+        except ValueError:
+            messages.error(request, "Некорректный формат даты. Используйте формат YYYY-MM-DD.")
+            return redirect("sales_register")
+
+        # Получаем всех партнёров
+        partners = CustomUser.objects.filter(user_type="partner")
+        register_data = []
+
+        for partner in partners:
+            # Формируем реестр продаж для каждого партнёра
+            sales_register = generate_sales_register(partner, start_date, end_date)
+            print(f"Partner: {partner.email}, Sales: {sales_register['total_sales']}")  # Отладочный вывод
+            if sales_register['total_sales'] > 0:  # Только если есть продажи
+                register_data.append({
+                    'partner': partner,
+                    'total_sales': sales_register['total_sales'],
+                    'total_commission': sales_register['total_commission'],
+                    'total_refunds': sales_register['total_refunds'],
+                    'net_amount': sales_register['net_amount'],
+                    'orders': sales_register['orders'],
+                })
+
+        print(f"Total partners with sales: {len(register_data)}")  # Отладочный вывод
+        context = {
+            'register_data': register_data,
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+        return render(request, "admin/sales_register.html", context)
+
+    return render(request, "admin/sales_register_form.html")
+
+def generate_sales_register(partner, start_date, end_date):
+    """
+    Формирует реестр продаж для партнёра за указанный период.
+
+    Args:
+        partner: Объект пользователя (CustomUser), для которого формируется реестр.
+        start_date: Начальная дата периода (datetime).
+        end_date: Конечная дата периода (datetime).
+
+    Returns:
+        dict: Словарь с данными реестра:
+            - total_sales: Общая сумма продаж (без учёта комиссии).
+            - total_commission: Общая сумма удержанной комиссии.
+            - total_refunds: Общая сумма возвратов.
+            - net_amount: Чистая сумма к выплате (total_sales - total_commission - total_refunds).
+            - orders: Список заказов с детализацией.
+    """
+    # Получаем все мероприятия партнёра
+    partner_events = Event.objects.filter(organizer=partner)
+
+    # Получаем все заказы для этих мероприятий за указанный период
+    orders = Order.objects.filter(
+        ticket__event__in=partner_events,
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+        is_paid=True  # Только оплаченные заказы
+    ).select_related('ticket__event')
+
+    # Рассчитываем общие суммы
+    total_sales = orders.aggregate(
+        total=Coalesce(Sum('total_price'), 0, output_field=DecimalField())
+    )['total']
+
+    total_commission = orders.aggregate(
+        total=Coalesce(Sum('platform_commission'), 0, output_field=DecimalField())
+    )['total']
+
+    # Для возвратов нужно учитывать заказы с is_paid=False (если они были оплачены, но потом отменены)
+    # Здесь можно доработать логику возвратов, если она уже реализована в системе
+    total_refunds = 0  # Пока что возвраты не учитываются, нужно доработать
+
+    # Чистая сумма к выплате
+    net_amount = total_sales - total_commission - total_refunds
+
+    return {
+        'total_sales': total_sales,
+        'total_commission': total_commission,
+        'total_refunds': total_refunds,
+        'net_amount': net_amount,
+        'orders': orders,
+        'start_date': start_date,
+        'end_date': end_date,
+    }

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Формирование реестра продаж</h1>
+    <form method="post" action="{% url 'sales_register' %}" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="start_date" class="form-label">Начальная дата</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+        </div>
+        <div class="mb-3">
+            <label for="end_date" class="form-label">Конечная дата</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Сформировать реестр</button>
+    </form>
+</div>
+{% endblock %}

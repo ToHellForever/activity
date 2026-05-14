@@ -1,7 +1,7 @@
-"""
-Утилиты для работы с файлами и водяными знаками.
-"""
-
+from django.utils import timezone
+from django.db.models import Sum, F, DecimalField
+from django.db.models.functions import Coalesce
+from core.models import Order, Event, PayoutRequest
 import os
 from django.core.files import File
 from PIL import Image, ImageDraw, ImageFont
@@ -10,6 +10,61 @@ import numpy as np
 from moviepy import VideoFileClip, TextClip, CompositeVideoClip
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from io import BytesIO
+
+
+def generate_sales_register(partner, start_date, end_date):
+    """
+    Формирует реестр продаж для партнёра за указанный период.
+
+    Args:
+        partner: Объект пользователя (CustomUser), для которого формируется реестр.
+        start_date: Начальная дата периода (datetime).
+        end_date: Конечная дата периода (datetime).
+
+    Returns:
+        dict: Словарь с данными реестра:
+            - total_sales: Общая сумма продаж (без учёта комиссии).
+            - total_commission: Общая сумма удержанной комиссии.
+            - total_refunds: Общая сумма возвратов.
+            - net_amount: Чистая сумма к выплате (total_sales - total_commission - total_refunds).
+            - orders: Список заказов с детализацией.
+    """
+    # Получаем все мероприятия партнёра
+    partner_events = Event.objects.filter(organizer=partner)
+
+    # Получаем все заказы для этих мероприятий за указанный период
+    orders = Order.objects.filter(
+        ticket__event__in=partner_events,
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+        is_paid=True  # Только оплаченные заказы
+    ).select_related('ticket__event')
+
+    # Рассчитываем общие суммы
+    total_sales = orders.aggregate(
+        total=Coalesce(Sum('total_price'), 0, output_field=DecimalField())
+    )['total']
+
+    total_commission = orders.aggregate(
+        total=Coalesce(Sum('platform_commission'), 0, output_field=DecimalField())
+    )['total']
+
+    # Для возвратов нужно учитывать заказы с is_paid=False (если они были оплачены, но потом отменены)
+    # Здесь можно доработать логику возвратов, если она уже реализована в системе
+    total_refunds = 0  # Пока что возвраты не учитываются, нужно доработать
+
+    # Чистая сумма к выплате
+    net_amount = total_sales - total_commission - total_refunds
+
+    return {
+        'total_sales': total_sales,
+        'total_commission': total_commission,
+        'total_refunds': total_refunds,
+        'net_amount': net_amount,
+        'orders': orders,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
 
 
 def add_watermark_to_image(

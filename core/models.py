@@ -438,6 +438,13 @@ class Order(models.Model):
     payment_deadline = models.DateTimeField(
         null=True, blank=True, verbose_name="Срок оплаты"
     )
+    platform_commission = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Комиссия платформы",
+        help_text="Сумма комиссии платформы, удержанная с этого заказа",
+    )
 
     # Поля для хранения UTM-меток
     utm_source = models.CharField(

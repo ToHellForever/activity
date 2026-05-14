@@ -18,6 +18,7 @@ from core.views import (
     forgot_password,
     update_ticket_status,
     yookassa_webhook,
+    sales_register,
 )
 app_name = "venues"
 
@@ -42,8 +43,9 @@ urlpatterns = [
     path("visitor/", include("visitor_app.urls")),
     path("venues/", include("venues.urls")),
     path("admin/venues/", include("venues.urls", namespace="admin_venues")),
-    
+    path("reports/sales-register/", sales_register, name="sales_register"),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
