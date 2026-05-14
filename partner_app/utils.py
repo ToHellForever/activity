@@ -23,12 +23,19 @@ def generate_sales_report(partner, period_start, period_end, report_type):
         created_at__date__range=[period_start, period_end],
     ).select_related("ticket__event")
 
+    # Разделяем заказы на обычные и возвраты
+    refunded_orders = orders.filter(payment_status__in=["canceled", "refunded"])
+    non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
+
     # Подготавливаем данные для отчёта
     report_data = []
     total_sales = 0
     total_tickets = 0
+    total_refunds = 0
+    total_refunded_tickets = 0
 
-    for order in orders:
+    # Обрабатываем обычные заказы
+    for order in non_refunded_orders:
         event_title = order.ticket.event.title
         ticket_name = order.ticket.name
         quantity = order.quantity
@@ -42,23 +49,61 @@ def generate_sales_report(partner, period_start, period_end, report_type):
                 "quantity": quantity,
                 "price": total_price,
                 "date": order_date,
+                "refund": "-",  # Пометка, что это не возврат
             }
         )
 
         total_sales += total_price
         total_tickets += quantity
 
-    # Добавляем итоговую строку
+    # Обрабатываем возвраты
+    for order in refunded_orders:
+        event_title = order.ticket.event.title
+        ticket_name = order.ticket.name
+        quantity = order.quantity
+        total_price = order.total_price
+        order_date = order.created_at.strftime("%d.%m.%Y %H:%M")
+
+        report_data.append(
+            {
+                "event": event_title,
+                "ticket": ticket_name,
+                "quantity": quantity,
+                "price": total_price,
+                "date": order_date,
+                "refund": "Возврат",  # Пометка, что это возврат
+            }
+        )
+
+        total_refunds += total_price
+        total_refunded_tickets += quantity
+
+    # Добавляем итоговую строку (без учёта возвратов)
     report_data.append(
         {
-            "event": "ИТОГО:",
+            "event": "ИТОГО (без возвратов):",
             "ticket": "",
             "quantity": total_tickets,
             "price": total_sales,
             "date": "",
+            "refund": "-",
             "is_total": True,  # Флаг для итоговой строки
         }
     )
+
+    # Добавляем итоговую строку для возвратов
+    if total_refunded_tickets > 0:
+        report_data.append(
+            {
+                "event": "ВОЗВРАТЫ:",
+                "ticket": "",
+                "quantity": total_refunded_tickets,
+                "price": total_refunds,
+                "date": "",
+                "refund": "Возврат",
+                "is_refund_total": True,  
+            }
+        )
 
     # Генерируем отчёт в зависимости от типа
     if report_type == "csv":
@@ -80,7 +125,14 @@ def generate_csv_report(data, period_start, period_end):
 
     # Заголовки
     writer.writerow(
-        ["Мероприятие", "Тип билета", "Количество", "Сумма (₽)", "Дата заказа"]
+        [
+            "Мероприятие",
+            "Тип билета",
+            "Количество",
+            "Сумма (₽)",
+            "Дата заказа",
+            "Статус",
+        ]
     )
 
     # Данные
@@ -92,6 +144,7 @@ def generate_csv_report(data, period_start, period_end):
                 row["quantity"],
                 row["price"],
                 row["date"],
+                row.get("refund", "-"),
             ]
         )
 
@@ -107,12 +160,21 @@ def generate_excel_report(data, period_start, period_end):
     ws.title = f"Отчёт с {period_start} по {period_end}"
 
     # Заголовки
-    ws.append(["Мероприятие", "Тип билета", "Количество", "Сумма (₽)", "Дата заказа"])
+    ws.append(
+        [
+            "Мероприятие",
+            "Тип билета",
+            "Количество",
+            "Сумма (₽)",
+            "Дата заказа",
+            "Статус",
+        ]
+    )
 
     # Данные
     for row in data:
         if row.get("is_total"):
-            # Итоговая строка
+            # Итоговая строка (без возвратов)
             ws.append(
                 [
                     row.get("event", row.get("name", "")),
@@ -120,6 +182,31 @@ def generate_excel_report(data, period_start, period_end):
                     row.get("quantity", ""),
                     row.get("price", 0),
                     row.get("date", ""),
+                    row.get("refund", "-"),
+                ]
+            )
+        elif row.get("is_refund_total"):
+            # Итоговая строка для возвратов
+            ws.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    row.get("quantity", ""),
+                    row.get("price", 0),
+                    row.get("date", ""),
+                    row.get("refund", "Возврат"),
+                ]
+            )
+        elif row.get("is_net_total"):
+            # Итоговая строка для чистой суммы
+            ws.append(
+                [
+                    row.get("event", row.get("name", "")),
+                    row.get("ticket", ""),
+                    row.get("quantity", ""),
+                    row.get("price", 0),
+                    row.get("date", ""),
+                    row.get("refund", "-"),
                 ]
             )
         else:
@@ -131,6 +218,7 @@ def generate_excel_report(data, period_start, period_end):
                     row.get("quantity", ""),
                     row.get("price", 0),
                     row.get("date", ""),
+                    row.get("refund", "-"),
                 ]
             )
 
@@ -168,9 +256,10 @@ def generate_qr_code(order_id):
 
     img = qr.make_image(fill_color="black", back_color="white")
     img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='PNG')
+    img.save(img_byte_arr, format="PNG")
     img_byte_arr.seek(0)
     return img_byte_arr
+
 
 def generate_pdf_report(data, period_start, period_end, orders=None):
     """Генерирует отчёт в формате PDF с поддержкой кириллицы и QR-кодами."""
@@ -203,9 +292,7 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
     elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
     # Таблица с данными
-    table_data = [
-        ["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа"]
-    ]
+    table_data = [["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа"]]
 
     for idx, row in enumerate(data):
         if row.get("is_total"):
@@ -231,7 +318,7 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                 ]
             )
 
-    table = Table(table_data, colWidths=[120, 120, 100, 80, 100])
+    table = Table(table_data, colWidths=[135, 150, 100, 80, 100])
     table.setStyle(
         TableStyle(
             [
