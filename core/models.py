@@ -460,6 +460,19 @@ class Order(models.Model):
         verbose_name="Статус платежа",
     )
 
+    # Тип покупки
+    PURCHASE_TYPE_CHOICES = [
+        ("paid_ticket", "Платный билет"),
+        ("free_registration", "Бесплатная регистрация"),
+        ("platform_request", "Заявка через платформу"),
+    ]
+    purchase_type = models.CharField(
+        max_length=20,
+        choices=PURCHASE_TYPE_CHOICES,
+        default="paid_ticket",
+        verbose_name="Тип покупки",
+    )
+
     def save(self, *args, **kwargs):
         # Логирование изменения статуса платежа
         if self.pk:  # Если объект уже существует в базе

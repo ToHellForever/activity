@@ -498,6 +498,9 @@ def buy_ticket(request, event_id):
             },
         )
 
+    # Определяем тип покупки
+    purchase_type = request.POST.get("purchase_type", "paid_ticket")
+
     # Проверяем, нужно ли оплачивать сразу или можно забронировать
     is_booking_without_payment = (
         event.allow_booking_without_payment
@@ -543,6 +546,22 @@ def buy_ticket(request, event_id):
                     platform_commission = total_price * (
                         ticket.event.commission_rate / 100
                     )
+
+                    # Определяем тип покупки
+                    if purchase_type == "free_registration":
+                        total_price = 0
+                        platform_commission = 0
+                        is_paid = True
+                    elif purchase_type == "platform_request":
+                        # Создаем заявку в поддержку
+                        from core.models import SupportTicket
+
+                        SupportTicket.objects.create(
+                            user=user,
+                            subject=f"Заявка на участие в мероприятии: {event.title}",
+                            event=event,
+                        )
+
                     order = Order.objects.create(
                         ticket=ticket,
                         participant_data={
@@ -553,8 +572,11 @@ def buy_ticket(request, event_id):
                         },
                         total_price=total_price,
                         quantity=quantity,
-                        is_paid=False,  # Сначала ставим False, после оплаты обновится через webhook
+                        is_paid=(
+                            purchase_type == "free_registration"
+                        ),  # Бесплатная регистрация сразу оплачена
                         platform_commission=platform_commission,
+                        purchase_type=purchase_type,
                         utm_source=request.POST.get("utm_source")
                         or request.GET.get("utm_source"),
                         utm_medium=request.POST.get("utm_medium")
@@ -723,7 +745,10 @@ def buy_ticket(request, event_id):
                     },
                     total_price=ticket.price * quantity,
                     quantity=quantity,
-                    is_paid=not is_booking_without_payment,  # Если бронирование без оплаты, ставим is_paid=False
+                    is_paid=(
+                        purchase_type == "free_registration"
+                    ),  # Бесплатная регистрация сразу оплачена
+                    purchase_type=purchase_type,
                     utm_source=request.POST.get("utm_source")
                     or request.GET.get("utm_source"),
                     utm_medium=request.POST.get("utm_medium")
@@ -1186,7 +1211,7 @@ def generate_sales_register(partner, start_date, end_date):
 
     # Рассчитываем общие суммы (исключаем возвраты из выручки и комиссии)
     non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
-    
+
     total_sales = non_refunded_orders.aggregate(
         total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
     )["total"]

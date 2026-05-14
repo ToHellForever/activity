@@ -181,8 +181,18 @@
             </label>
         </div>
         {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label">Тип покупки:</label>
+            <select class="form-select" name="purchase_type" id="purchaseType">
+                <option value="paid_ticket" selected>Оплатить билет через платформу</option>
+                    <option value="free_registration">Бесплатная регистрация</option>
+                <option value="platform_request">Отправить заявку организатору</option>
+            </select>
+        </div>
+
         <button type="button" class="btn btn-primary" id="buyButton">
-            {% if allow_booking_without_payment %}Забронировать/Купить выбранные билеты{% else %}Купить выбранные билеты{% endif %}
+            Подтвердить выбор
         </button>
     </form>
 
