@@ -50,6 +50,11 @@
         .ticket-active {
             color: #28a745;
         }
+        .ticket-refunded {
+            color: #fd7e14;
+        }
+            color: #28a745;
+        }
         .ticket-completed {
             color: #6c757d;
         }
@@ -101,7 +106,9 @@
                     <div class="ticket-header">
                         <div class="event-title">{{ order.ticket.event.title }}</div>
                         <div class="ticket-status">
-                            {% if order.ticket.event.status == 'active' %}
+                            {% if order.payment_status == 'refunded' %}
+                                <span class="ticket-refunded">Возврат</span>
+                            {% elif order.ticket.event.status == 'active' %}
                                 <span class="ticket-active">✓ Активен</span>
                             {% elif order.ticket.event.status == 'completed' %}
                                 <span class="ticket-completed">Завершено</span>
@@ -137,12 +144,14 @@
                             <div class="ticket-label">Действия:</div>
                             <div>
                                 {% with event=order.ticket.event refund_deadline=order.ticket.event.get_refund_deadline %}
-                                    {% if refund_deadline and refund_deadline > now %}
+                                    {% if refund_deadline and refund_deadline > now and order.payment_status != 'refunded' %}
                                         <form method="post" action="{% url 'visitor:refund_ticket' order.id %}" style="display: inline;">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Вернуть билет</button>
                                         </form>
                                         <small class="text-muted d-block">Возврат возможен до {{ refund_deadline|date:"d.m.Y H:i" }}</small>
+                                    {% elif order.payment_status == 'refunded' %}
+                                        <span class="ticket-refunded">Билет возвращён</span>
                                     {% else %}
                                         <span class="text-muted">Возврат невозможен</span>
                                     {% endif %}

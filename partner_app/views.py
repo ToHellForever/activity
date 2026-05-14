@@ -29,16 +29,18 @@ logger = logging.getLogger(__name__)
 def get_rejection_messages(request):
     """Возвращает сообщения об отклонении мероприятий для текущего пользователя."""
     from core.models import Event
-    rejected_events = Event.objects.filter(
-        organizer=request.user, status="rejected"
-    )
+
+    rejected_events = Event.objects.filter(organizer=request.user, status="rejected")
 
     rejection_messages = []
     for event in rejected_events:
         if event.rejection_reason:
-            rejection_messages.append(f"Мероприятие {event.title} отклонено. Причина: {event.rejection_reason}")
+            rejection_messages.append(
+                f"Мероприятие {event.title} отклонено. Причина: {event.rejection_reason}"
+            )
 
     return rejection_messages
+
 
 @login_required
 def partner_dashboard(request):
@@ -46,14 +48,14 @@ def partner_dashboard(request):
         return redirect("visitor:dashboard")
 
     # Получаем отклоненные мероприятия партнёра
-    rejected_events = Event.objects.filter(
-        organizer=request.user, status="rejected"
-    )
+    rejected_events = Event.objects.filter(organizer=request.user, status="rejected")
 
     rejection_messages = []
     for event in rejected_events:
         if event.rejection_reason:
-            rejection_messages.append(f"Мероприятие '{event.title}' отклонено. Причина: {event.rejection_reason}")
+            rejection_messages.append(
+                f"Мероприятие '{event.title}' отклонено. Причина: {event.rejection_reason}"
+            )
 
     # Получаем активные мероприятия партнёра
     active_events = Event.objects.filter(
@@ -109,18 +111,20 @@ def create_event(request):
                 if clear_field_name in request.POST:
                     current_file = getattr(event, field_name)
                     if current_file:
-                        current_file.delete(save=False) # Не сохраняем модель здесь
+                        current_file.delete(save=False)  # Не сохраняем модель здесь
                     setattr(event, field_name, None)
 
         event.save()
 
         # Обрабатываем теги из JSON-массива
-        tags_json = request.POST.get('tags_json', '[]')
+        tags_json = request.POST.get("tags_json", "[]")
         try:
             tags_list = json.loads(tags_json)
             event.tags.clear()  # Всегда очищаем текущие теги
             if tags_list:
-                event.tags.set(tags_list)  # Устанавливаем только те, которые пришли в запросе
+                event.tags.set(
+                    tags_list
+                )  # Устанавливаем только те, которые пришли в запросе
         except json.JSONDecodeError:
             event.tags.clear()  # В случае ошибки очищаем теги
 
@@ -136,7 +140,11 @@ def create_event(request):
                 try:
                     event.tickets.create(
                         name=name,
-                        price=float(price.replace(",", ".")) if "," in price else float(price),
+                        price=(
+                            float(price.replace(",", "."))
+                            if "," in price
+                            else float(price)
+                        ),
                         available_quantity=int(quantity),
                     )
                 except (ValueError, TypeError):
@@ -204,17 +212,17 @@ def edit_event(request, event_id):
         # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
         # Эта логика удаляет старое видео с диска, если был загружен новый файл.
         # Она должна выполняться ДО валидации и сохранения формы.
-        
+
         # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_url'
         new_video_file = request.FILES.get("video_url")
-        
+
         # Если новый файл есть, и у события уже было старое видео...
         if new_video_file and event.video_url:
             # ...то удаляем старый файл с диска.
             # Метод .delete() у FileField удаляет файл с диска.
             # Параметр save=False важен: мы не хотим сохранять модель сейчас.
-            event.video_url.delete(save=False) 
-        
+            event.video_url.delete(save=False)
+
         # --- КОНЕЦ БЛОГА ИЗМЕНЕНИЙ ---
 
         # Очищаем медиафайлы (изображение, программа), если были отмечены флажки в форме
@@ -233,12 +241,14 @@ def edit_event(request, event_id):
             event = form.save()
 
             # Обрабатываем теги из JSON-массива
-            tags_json = request.POST.get('tags_json', '[]')
+            tags_json = request.POST.get("tags_json", "[]")
             try:
                 tags_list = json.loads(tags_json)
                 event.tags.clear()  # Всегда очищаем текущие теги
                 if tags_list:
-                    event.tags.set(tags_list)  # Устанавливаем только те, которые пришли в запросе
+                    event.tags.set(
+                        tags_list
+                    )  # Устанавливаем только те, которые пришли в запросе
             except json.JSONDecodeError:
                 event.tags.clear()  # В случае ошибки очищаем теги
 
@@ -255,7 +265,11 @@ def edit_event(request, event_id):
                     try:
                         event.tickets.create(
                             name=name,
-                            price=float(price.replace(",", ".")) if "," in price else float(price),
+                            price=(
+                                float(price.replace(",", "."))
+                                if "," in price
+                                else float(price)
+                            ),
                             available_quantity=int(quantity),
                         )
                     except (ValueError, TypeError):
@@ -265,8 +279,15 @@ def edit_event(request, event_id):
     else:
         form = EventForm(instance=event)
 
-    return render(request, "partner/event_form.html", {"form": form, "is_edit": True, "rejection_messages": get_rejection_messages(request)})
-
+    return render(
+        request,
+        "partner/event_form.html",
+        {
+            "form": form,
+            "is_edit": True,
+            "rejection_messages": get_rejection_messages(request),
+        },
+    )
 
 
 @login_required
@@ -464,18 +485,16 @@ def reports(request):
 
     # Получаем данные об источниках трафика
     traffic_sources = (
-        orders.exclude(utm_source__isnull=True).exclude(utm_source__exact='')
-        .values('utm_source')
-        .annotate(total=Sum('total_price'), count=Count('id'))
-        .order_by('-total')
+        orders.exclude(utm_source__isnull=True)
+        .exclude(utm_source__exact="")
+        .values("utm_source")
+        .annotate(total=Sum("total_price"), count=Count("id"))
+        .order_by("-total")
     )
 
     # Преобразуем в удобный формат
     traffic_sources_data = {
-        item['utm_source']: {
-            'total': float(item['total']),
-            'count': item['count']
-        }
+        item["utm_source"]: {"total": float(item["total"]), "count": item["count"]}
         for item in traffic_sources
     }
 
@@ -625,7 +644,13 @@ def export_participant_list(orders, event, export_format):
         from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
+        from reportlab.platypus import (
+            SimpleDocTemplate,
+            Table,
+            TableStyle,
+            Paragraph,
+            Image,
+        )
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
@@ -679,20 +704,22 @@ def export_participant_list(orders, event, export_format):
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             qr_code_img = io.BytesIO()
-            img.save(qr_code_img, format='PNG')
+            img.save(qr_code_img, format="PNG")
             qr_code_img.seek(0)
             qr_image = Image(qr_code_img, width=50, height=50)
 
-            data.append([
-                f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
-                order.participant_data.get("email", ""),
-                order.participant_data.get("phone", ""),
-                order.created_at.strftime("%d.%m.%Y %H:%M"),
-                order.ticket.name,
-                "Оплачено" if order.is_paid else "Не оплачен",
-                f"{order.total_price:.2f} руб.",
-                qr_image,
-            ])
+            data.append(
+                [
+                    f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
+                    order.participant_data.get("email", ""),
+                    order.participant_data.get("phone", ""),
+                    order.created_at.strftime("%d.%m.%Y %H:%M"),
+                    order.ticket.name,
+                    "Оплачено" if order.is_paid else "Не оплачен",
+                    f"{order.total_price:.2f} руб.",
+                    qr_image,
+                ]
+            )
 
         # Создаем таблицу
         table = Table(data)
@@ -777,19 +804,28 @@ def check_ticket(request, order_id):
 def finances(request):
     orders = Order.objects.filter(ticket__event__organizer=request.user)
 
-    # Считаем общую выручку
-    total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+    # Считаем общую выручку (только оплаченные заказы, кроме возвратов)
+    total_revenue = (
+        orders.filter(is_paid=True)
+        .exclude(payment_status="refunded")
+        .aggregate(total=Sum("total_price"))["total"]
+        or 0
+    )
 
     commission_sum = (
-        orders.annotate(
+        orders.filter(is_paid=True)
+        .exclude(payment_status="refunded")
+        .annotate(
             event_commission=ExpressionWrapper(
                 F("total_price") * (F("ticket__event__commission_rate") / 100),
                 output_field=DecimalField(),
             )
-        ).aggregate(total_commission=Sum("event_commission"))["total_commission"]
+        )
+        .aggregate(total_commission=Sum("event_commission"))["total_commission"]
         or 0
     )
     commission_amount = commission_sum
+    # Сумма к выплате: выручка минус комиссия
     payout_amount = total_revenue - commission_sum
 
     payout_history = PayoutRequest.objects.filter(organizer=request.user).order_by(
@@ -809,6 +845,7 @@ def finances(request):
     context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/finances.html", context)
 
+
 @require_POST
 @csrf_exempt
 def request_payout(request):
@@ -817,44 +854,60 @@ def request_payout(request):
     """
     try:
         data = request.POST
-        amount = float(data.get('amount', 0))
-        payout_details_id = data.get('payout_details')
-        comment = data.get('comment', '')
+        amount = float(data.get("amount", 0))
+        payout_details_id = data.get("payout_details")
+        comment = data.get("comment", "")
 
         if not payout_details_id:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Пожалуйста, выберите реквизиты для выплаты'
-            }, status=400)
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Пожалуйста, выберите реквизиты для выплаты",
+                },
+                status=400,
+            )
 
         try:
-            payout_details = PayoutDetails.objects.get(id=payout_details_id, partner=request.user)
+            payout_details = PayoutDetails.objects.get(
+                id=payout_details_id, partner=request.user
+            )
         except ObjectDoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Выбранные реквизиты не найдены'
-            }, status=404)
+            return JsonResponse(
+                {"status": "error", "message": "Выбранные реквизиты не найдены"},
+                status=404,
+            )
 
-        # Получаем доступную для выплаты сумму
+        # Получаем доступную для выплаты сумму (только оплаченные заказы, кроме возвратов)
         orders = Order.objects.filter(ticket__event__organizer=request.user)
-        total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+        total_revenue = (
+            orders.filter(is_paid=True)
+            .exclude(payment_status="refunded")
+            .aggregate(total=Sum("total_price"))["total"]
+            or 0
+        )
         commission_sum = (
-            orders.annotate(
+            orders.filter(is_paid=True)
+            .exclude(payment_status="refunded")
+            .annotate(
                 event_commission=ExpressionWrapper(
                     F("total_price") * (F("ticket__event__commission_rate") / 100),
                     output_field=DecimalField(),
                 )
-            ).aggregate(total_commission=Sum("event_commission"))["total_commission"]
+            )
+            .aggregate(total_commission=Sum("event_commission"))["total_commission"]
             or 0
         )
         payout_amount = total_revenue - commission_sum
 
         # Серверная валидация суммы выплаты
         if amount > payout_amount:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'Сумма выплаты не может превышать доступную сумму: {payout_amount:.2f} ₽'
-            }, status=400)
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Сумма выплаты не может превышать доступную сумму: {payout_amount:.2f} ₽",
+                },
+                status=400,
+            )
 
         # Создаём запрос на выплату
         payout_request = PayoutRequest.objects.create(
@@ -862,19 +915,18 @@ def request_payout(request):
             amount=amount,
             payment_details=payout_details,
             comment=comment,
-            status='pending'
+            status="pending",
         )
 
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Запрос на выплату успешно создан!'
-        })
+        return JsonResponse(
+            {"status": "success", "message": "Запрос на выплату успешно создан!"}
+        )
 
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': f'Произошла ошибка: {str(e)}'
-        }, status=500)
+        return JsonResponse(
+            {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
+        )
+
 
 @require_POST
 @login_required
@@ -884,30 +936,34 @@ def cancel_payout(request, payout_id):
     """
     try:
         # Ищем заявку, которая принадлежит текущему пользователю
-        payout_request = get_object_or_404(PayoutRequest, id=payout_id, organizer=request.user)
-        
+        payout_request = get_object_or_404(
+            PayoutRequest, id=payout_id, organizer=request.user
+        )
+
         # Проверяем, можно ли отменить (статус должен быть 'pending')
-        if payout_request.status != 'pending':
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Отменить можно только заявку в статусе "Ожидает обработки"'
-            }, status=400)
-            
+        if payout_request.status != "pending":
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": 'Отменить можно только заявку в статусе "Ожидает обработки"',
+                },
+                status=400,
+            )
+
         # Меняем статус и сохраняем
-        payout_request.status = 'cancelled'
+        payout_request.status = "cancelled"
         payout_request.save()
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Заявка на выплату отменена!'
-        })
-        
+
+        return JsonResponse(
+            {"status": "success", "message": "Заявка на выплату отменена!"}
+        )
+
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': f'Произошла ошибка: {str(e)}'
-        }, status=500)
-        
+        return JsonResponse(
+            {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
+        )
+
+
 @require_POST
 @csrf_exempt
 def delete_reports(request):
@@ -916,14 +972,17 @@ def delete_reports(request):
     """
     try:
         data = json.loads(request.body)
-        report_ids = data.get('report_ids', [])
-        
+        report_ids = data.get("report_ids", [])
+
         if not report_ids:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Не выбрано ни одного отчёта для удаления'
-            }, status=400)
-        
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Не выбрано ни одного отчёта для удаления",
+                },
+                status=400,
+            )
+
         # Удаляем отчёты и их файлы
         deleted_count = 0
         for report_id in report_ids:
@@ -935,17 +994,19 @@ def delete_reports(request):
                 deleted_count += 1
             except ObjectDoesNotExist:
                 continue
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Успешно удалено {deleted_count} отчёт(ов)'
-        })
-        
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": f"Успешно удалено {deleted_count} отчёт(ов)",
+            }
+        )
+
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': f'Произошла ошибка: {str(e)}'
-        }, status=500)
+        return JsonResponse(
+            {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
+        )
+
 
 @login_required
 def payout_details(request):
@@ -955,23 +1016,24 @@ def payout_details(request):
     # Получаем все реквизиты текущего пользователя
     details = PayoutDetails.objects.filter(partner=request.user)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = PayoutDetailsForm(request.POST)
         if form.is_valid():
             payout_detail = form.save(commit=False)
             payout_detail.partner = request.user
             payout_detail.save()
             messages.success(request, "Реквизиты успешно сохранены!")
-            return redirect('partner:payout_details')
+            return redirect("partner:payout_details")
     else:
         form = PayoutDetailsForm()
 
     context = {
-        'form': form,
-        'details': details,
-        'rejection_messages': get_rejection_messages(request),
+        "form": form,
+        "details": details,
+        "rejection_messages": get_rejection_messages(request),
     }
-    return render(request, 'partner/payout_details.html', context)
+    return render(request, "partner/payout_details.html", context)
+
 
 @login_required
 def profile_edit(request):
@@ -988,22 +1050,21 @@ def profile_edit(request):
         # --- НАЧАЛО БЛОКА ИЗМЕНЕНИЙ ---
         # Эта логика удаляет старое видео-визитку с диска, если был загружен новый файл.
         # Она должна выполняться ДО валидации и сохранения формы.
-        
+
         # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_business_card'
         new_video_file = request.FILES.get("video_business_card")
-        
+
         # Если новый файл есть, и у пользователя уже было старое видео...
         if new_video_file and request.user.video_business_card:
             # ...то удаляем старый файл с диска.
             # Метод .delete() у FileField удаляет файл с диска.
             # Параметр save=False важен: мы не хотим сохранять модель сейчас.
-            request.user.video_business_card.delete(save=False) 
+            request.user.video_business_card.delete(save=False)
         # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
-
 
         # Обработка основной формы профиля (включая видео-визитку)
         if user_form.is_valid():
-            user_form.save() # Сохранение здесь запустит сигнал для обработки нового видео
+            user_form.save()  # Сохранение здесь запустит сигнал для обработки нового видео
 
         # Обработка формы смены пароля
         password_form = PasswordChangeForm(user=request.user, data=request.POST)
@@ -1150,7 +1211,11 @@ def report_schedule(request):
         else:
             form = ReportScheduleForm(instance=schedule, partner=request.user)
 
-        return render(request, "partner/report_schedule.html", {"form": form, "rejection_messages": get_rejection_messages(request)})
+        return render(
+            request,
+            "partner/report_schedule.html",
+            {"form": form, "rejection_messages": get_rejection_messages(request)},
+        )
     except Exception as e:
         import logging
 
@@ -1159,50 +1224,55 @@ def report_schedule(request):
         messages.error(request, f"Произошла ошибка: {str(e)}")
         return redirect("partner:dashboard")
 
+
 @login_required
 def remove_media(request, media_type, media_id):
     """
     View для удаления медиафайлов через AJAX.
     """
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
-    
+    if request.method != "POST":
+        return JsonResponse(
+            {"status": "error", "message": "Method not allowed"}, status=405
+        )
+
     try:
-        if media_type == 'image':
+        if media_type == "image":
             event = Event.objects.get(id=media_id, organizer=request.user)
             if event.image:
                 event.image.delete(save=False)
                 event.image = None
                 event.save()
-                return JsonResponse({'status': 'success'})
-            
-        elif media_type == 'video_url':
+                return JsonResponse({"status": "success"})
+
+        elif media_type == "video_url":
             event = Event.objects.get(id=media_id, organizer=request.user)
             if event.video_url:
                 event.video_url.delete(save=False)
                 event.video_url = None
                 event.save()
-                return JsonResponse({'status': 'success'})
-            
-        elif media_type == 'program_file':
+                return JsonResponse({"status": "success"})
+
+        elif media_type == "program_file":
             event = Event.objects.get(id=media_id, organizer=request.user)
             if event.program_file:
                 event.program_file.delete(save=False)
                 event.program_file = None
                 event.save()
-                return JsonResponse({'status': 'success'})
-            
-        elif media_type == 'video_business_card':
+                return JsonResponse({"status": "success"})
+
+        elif media_type == "video_business_card":
             if request.user.video_business_card:
                 request.user.video_business_card.delete(save=False)
                 request.user.video_business_card = None
                 request.user.save()
-                return JsonResponse({'status': 'success'})
-            
-        return JsonResponse({'status': 'error', 'message': 'Media not found'}, status=404)
-        
+                return JsonResponse({"status": "success"})
+
+        return JsonResponse(
+            {"status": "error", "message": "Media not found"}, status=404
+        )
+
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @login_required
@@ -1218,4 +1288,8 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
 
-    return render(request, "change_password.html", {"form": password_form, "rejection_messages": get_rejection_messages(request)})
+    return render(
+        request,
+        "change_password.html",
+        {"form": password_form, "rejection_messages": get_rejection_messages(request)},
+    )

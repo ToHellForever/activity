@@ -57,8 +57,9 @@ def refund_ticket(request, order_id):
         messages.error(request, "Срок возврата билета истёк.")
         return redirect("visitor:dashboard")
 
-    # Удаляем заказ (это автоматически обновит количество проданных билетов через метод get_sold_count)
-    order.delete()
+    # Обновляем статус заказа на "возврат"
+    order.payment_status = "refunded"
+    order.save()
 
-    messages.success(request, "Билет успешно возвращён.")
+    messages.success(request, "Билет успешно возвращён. Статус заказа обновлён.")
     return redirect("visitor:dashboard")

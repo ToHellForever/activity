@@ -41,12 +41,15 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 logger = logging.getLogger(__name__)
 
+
 @csrf_exempt
 def yookassa_webhook(request):
     # Логируем все входящие данные (для отладки)
     logger.info(f"Webhook received. Method: {request.method}")
     logger.info(f"Headers: {request.headers}")
-    logger.info(f"Body: {request.body.decode('utf-8') if request.body else 'Empty body'}")
+    logger.info(
+        f"Body: {request.body.decode('utf-8') if request.body else 'Empty body'}"
+    )
 
     # Проверяем метод запроса
     if request.method != "POST":
@@ -96,8 +99,10 @@ def yookassa_webhook(request):
     # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
     return HttpResponse(status=200)
 
+
 def landing_page(request):
     return render(request, "landing.html")
+
 
 @login_required
 def change_password(request):
@@ -111,6 +116,7 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
     return render(request, "change_password.html", {"password_form": password_form})
+
 
 @never_cache
 def login_view(request):
@@ -135,10 +141,12 @@ def login_view(request):
 
     return render(request, "registration/login.html", {"form": form})
 
+
 def generate_temporary_password(length=10):
     """Генерация временного пароля."""
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(length))
+
 
 @never_cache
 def forgot_password(request):
@@ -184,6 +192,7 @@ def forgot_password(request):
             )
     return render(request, "registration/forgot_password.html")
 
+
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
@@ -206,6 +215,7 @@ def register_view(request):
 
     return render(request, "registration/register.html", {"form": form})
 
+
 def custom_logout(request):
     """
     Кастомная функция для выхода из системы.
@@ -216,6 +226,7 @@ def custom_logout(request):
 
     # Редиректим на страницу входа по имени URL
     return redirect("login")
+
 
 @login_required
 def support_dashboard(request):
@@ -273,6 +284,7 @@ def support_dashboard(request):
     }
     return render(request, "support_dashboard.html", context)
 
+
 @require_POST
 @login_required
 def send_support_message(request):
@@ -305,6 +317,7 @@ def send_support_message(request):
     messages.error(request, "Ошибка отправки сообщения.")
     return redirect("support_dashboard")
 
+
 def upload_image(request):
     if request.method == "POST":
         data_url = request.POST.get("data")
@@ -318,8 +331,10 @@ def upload_image(request):
 
     return HttpResponseBadRequest("Некорректный запрос")
 
+
 def is_moderator(user):
     return user.is_superuser or user.groups.filter(name="Модераторы").exists()
+
 
 @user_passes_test(is_moderator, login_url="/login/")
 @login_required
@@ -351,12 +366,14 @@ def moderator_dashboard(request):
     }
     return render(request, "moderator_dashboard.html", context)
 
+
 def update_ticket_status(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)
     new_status = request.POST.get("status")
     ticket.status = new_status
     ticket.save()
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
+
 
 def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
@@ -381,9 +398,11 @@ def event_list(request):
         },
     )
 
+
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
+
 
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
@@ -404,7 +423,7 @@ def buy_ticket(request, event_id):
         )
 
     # Проверяем, является ли запрос AJAX (для обработки виджета оплаты)
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     # Обработка POST-запроса
     email = (request.POST.get("email") or "").strip()
@@ -510,16 +529,20 @@ def buy_ticket(request, event_id):
                         logger.warning(
                             f"Недостаточно билетов типа '{ticket.name}'. Запрошено: {quantity}, доступно: {ticket.get_available_count()}"
                         )
-                        return JsonResponse({
-                            'success': False,
-                            'message': f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
-                        })
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "message": f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}",
+                            }
+                        )
 
                     logger.debug(
                         f"Создание заказа для билета {ticket.id}, количество: {quantity}"
                     )
                     total_price = ticket.price * quantity
-                    platform_commission = total_price * (ticket.event.commission_rate / 100)
+                    platform_commission = total_price * (
+                        ticket.event.commission_rate / 100
+                    )
                     order = Order.objects.create(
                         ticket=ticket,
                         participant_data={
@@ -551,7 +574,9 @@ def buy_ticket(request, event_id):
                 # Отправляем уведомления о покупке билетов сразу после создания заказов
                 try:
                     send_multiple_tickets_notification(user, orders, request)
-                    logger.info(f"Уведомления успешно отправлены пользователю {user.email}")
+                    logger.info(
+                        f"Уведомления успешно отправлены пользователю {user.email}"
+                    )
                 except Exception as e:
                     logger.exception("Ошибка отправки письма: %s", e)
 
@@ -581,8 +606,8 @@ def buy_ticket(request, event_id):
 
                         # Формируем заголовок Authorization
                         auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
-                        auth_bytes = auth_string.encode('ascii')
-                        auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
+                        auth_bytes = auth_string.encode("ascii")
+                        auth_base64 = base64.b64encode(auth_bytes).decode("ascii")
 
                         headers = {
                             "Idempotence-Key": str(uuid.uuid4()),
@@ -596,54 +621,70 @@ def buy_ticket(request, event_id):
                         )
 
                         # Добавляем отладочный вывод статуса ответа от ЮKassa
-                        logger.info(f"Ответ от ЮKassa: {response.status_code}, {response.text}")
+                        logger.info(
+                            f"Ответ от ЮKassa: {response.status_code}, {response.text}"
+                        )
 
                         if response.ok:
                             payment_response = response.json()
-                            yookassa_payment_token = payment_response["confirmation"]["confirmation_token"]
+                            yookassa_payment_token = payment_response["confirmation"][
+                                "confirmation_token"
+                            ]
                             logger.info(
                                 f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
                             )
                         else:
-                            logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
-                            return JsonResponse({
-                                'success': False,
-                                'message': "Ошибка при создании платежа. Попробуйте еще раз."
-                            })
+                            logger.error(
+                                f"Ошибка создания платежа в ЮKassa: {response.text}"
+                            )
+                            return JsonResponse(
+                                {
+                                    "success": False,
+                                    "message": "Ошибка при создании платежа. Попробуйте еще раз.",
+                                }
+                            )
 
                     except Exception as e:
                         logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
-                        return JsonResponse({
-                            'success': False,
-                            'message': "Ошибка при обработке платежа. Попробуйте еще раз."
-                        })
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "message": "Ошибка при обработке платежа. Попробуйте еще раз.",
+                            }
+                        )
 
                     # Формируем абсолютный URL для возврата после оплаты
-                    return_url = request.build_absolute_uri(reverse("landing_page")) + "?success=payment_completed"
+                    return_url = (
+                        request.build_absolute_uri(reverse("landing_page"))
+                        + "?success=payment_completed"
+                    )
 
-                    return JsonResponse({
-                        'success': True,
-                        'payment_token': yookassa_payment_token,
-                        'return_url': return_url
-                    })
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "payment_token": yookassa_payment_token,
+                            "return_url": return_url,
+                        }
+                    )
                 else:
                     # Если оплата не требуется (бронирование без оплаты), сразу возвращаем успех
-                    return JsonResponse({
-                        'success': True,
-                        'message': "Бронирование успешно завершено. Информация отправлена на ваш email."
-                    })
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": "Бронирование успешно завершено. Информация отправлена на ваш email.",
+                        }
+                    )
 
         except IntegrityError as e:
             logger.error(f"Ошибка целостности данных при покупке билетов: {e}")
-            return JsonResponse({
-                'success': False,
-                'message': "Произошла ошибка при покупке билетов. Попробуйте еще раз."
-            })
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз.",
+                }
+            )
         except ValueError as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            })
+            return JsonResponse({"success": False, "message": str(e)})
 
     # Создаем заказы для обычного POST-запроса (не AJAX)
     orders = []
@@ -772,13 +813,16 @@ def buy_ticket(request, event_id):
         if request:
             send_multiple_tickets_notification(user, orders, request)
         else:
-            logger.warning("Не удалось отправить уведомление - отсутствует объект request")
+            logger.warning(
+                "Не удалось отправить уведомление - отсутствует объект request"
+            )
     except Exception as e:
         logger.exception("Ошибка отправки письма: %s", e)
 
     # Перенаправляем на страницу успешной покупки
     url = reverse("landing_page") + "?success=ticket_purchased"
     return redirect(url)
+
 
 def send_multiple_tickets_notification(user, orders, request=None):
     subject = "Ваши электронные билеты"
@@ -898,6 +942,7 @@ def send_multiple_tickets_notification(user, orders, request=None):
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
 
+
 def send_ticket_notification(user, order, request=None):
     subject = "Ваш электронный билет"
     activation_link = None
@@ -1001,6 +1046,7 @@ def send_ticket_notification(user, order, request=None):
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
 
+
 def send_partner_all_tickets_sold_notification(event):
     """
     Отправляет уведомление партнёру о том, что все билеты на мероприятие выкуплены.
@@ -1046,6 +1092,7 @@ def send_partner_all_tickets_sold_notification(event):
         html_message=message,
     )
 
+
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":
@@ -1055,6 +1102,7 @@ def activate_account(request, pk):
         user.save()
         return redirect("login")
     return render(request, "activate_account.html")
+
 
 @staff_member_required
 def sales_register(request):
@@ -1067,10 +1115,12 @@ def sales_register(request):
         end_date_str = request.POST.get("end_date")
 
         try:
-            start_date = timezone.datetime.strptime(start_date_str, '%Y-%m-%d')
-            end_date = timezone.datetime.strptime(end_date_str, '%Y-%m-%d')
+            start_date = timezone.datetime.strptime(start_date_str, "%Y-%m-%d")
+            end_date = timezone.datetime.strptime(end_date_str, "%Y-%m-%d")
         except ValueError:
-            messages.error(request, "Некорректный формат даты. Используйте формат YYYY-MM-DD.")
+            messages.error(
+                request, "Некорректный формат даты. Используйте формат YYYY-MM-DD."
+            )
             return redirect("sales_register")
 
         # Получаем всех партнёров
@@ -1080,26 +1130,31 @@ def sales_register(request):
         for partner in partners:
             # Формируем реестр продаж для каждого партнёра
             sales_register = generate_sales_register(partner, start_date, end_date)
-            print(f"Partner: {partner.email}, Sales: {sales_register['total_sales']}")  # Отладочный вывод
-            if sales_register['total_sales'] > 0:  # Только если есть продажи
-                register_data.append({
-                    'partner': partner,
-                    'total_sales': sales_register['total_sales'],
-                    'total_commission': sales_register['total_commission'],
-                    'total_refunds': sales_register['total_refunds'],
-                    'net_amount': sales_register['net_amount'],
-                    'orders': sales_register['orders'],
-                })
+            print(
+                f"Partner: {partner.email}, Sales: {sales_register['total_sales']}"
+            )  # Отладочный вывод
+            if sales_register["total_sales"] > 0:  # Только если есть продажи
+                register_data.append(
+                    {
+                        "partner": partner,
+                        "total_sales": sales_register["total_sales"],
+                        "total_commission": sales_register["total_commission"],
+                        "total_refunds": sales_register["total_refunds"],
+                        "net_amount": sales_register["net_amount"],
+                        "orders": sales_register["orders"],
+                    }
+                )
 
         print(f"Total partners with sales: {len(register_data)}")  # Отладочный вывод
         context = {
-            'register_data': register_data,
-            'start_date': start_date,
-            'end_date': end_date,
+            "register_data": register_data,
+            "start_date": start_date,
+            "end_date": end_date,
         }
         return render(request, "admin/sales_register.html", context)
 
     return render(request, "admin/sales_register_form.html")
+
 
 def generate_sales_register(partner, start_date, end_date):
     """
@@ -1126,31 +1181,39 @@ def generate_sales_register(partner, start_date, end_date):
         ticket__event__in=partner_events,
         created_at__gte=start_date,
         created_at__lte=end_date,
-        is_paid=True  # Только оплаченные заказы
-    ).select_related('ticket__event')
+        is_paid=True,  # Только оплаченные заказы
+    ).select_related("ticket__event")
 
     # Рассчитываем общие суммы
     total_sales = orders.aggregate(
-        total=Coalesce(Sum('total_price'), 0, output_field=DecimalField())
-    )['total']
+        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
+    )["total"]
 
     total_commission = orders.aggregate(
-        total=Coalesce(Sum('platform_commission'), 0, output_field=DecimalField())
-    )['total']
+        total=Coalesce(Sum("platform_commission"), 0, output_field=DecimalField())
+    )["total"]
 
-    # Для возвратов нужно учитывать заказы с is_paid=False (если они были оплачены, но потом отменены)
-    # Здесь можно доработать логику возвратов, если она уже реализована в системе
-    total_refunds = 0  # Пока что возвраты не учитываются, нужно доработать
+    # Рассчитываем сумму возвратов: учитываем заказы, которые были оплачены, но потом возвращены или отменены
+    refunded_orders = Order.objects.filter(
+        ticket__event__in=partner_events,
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+        payment_status__in=["canceled", "refunded"],
+    )
+
+    total_refunds = refunded_orders.aggregate(
+        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
+    )["total"]
 
     # Чистая сумма к выплате
     net_amount = total_sales - total_commission - total_refunds
 
     return {
-        'total_sales': total_sales,
-        'total_commission': total_commission,
-        'total_refunds': total_refunds,
-        'net_amount': net_amount,
-        'orders': orders,
-        'start_date': start_date,
-        'end_date': end_date,
+        "total_sales": total_sales,
+        "total_commission": total_commission,
+        "total_refunds": total_refunds,
+        "net_amount": net_amount,
+        "orders": orders,
+        "start_date": start_date,
+        "end_date": end_date,
     }

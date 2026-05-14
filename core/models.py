@@ -451,6 +451,7 @@ class Order(models.Model):
         ("pending", "Ожидает оплаты"),
         ("succeeded", "Оплачено"),
         ("canceled", "Отменено"),
+        ("refunded", "Возврат"),
     ]
     payment_status = models.CharField(
         max_length=20,
@@ -458,6 +459,24 @@ class Order(models.Model):
         default="pending",
         verbose_name="Статус платежа",
     )
+
+    def save(self, *args, **kwargs):
+        # Логирование изменения статуса платежа
+        if self.pk:  # Если объект уже существует в базе
+            original = Order.objects.get(pk=self.pk)
+            if original.payment_status != self.payment_status:
+                from django.contrib.auth import get_user_model
+
+                User = get_user_model()
+                admin_users = User.objects.filter(is_superuser=True)
+
+                # Отправляем уведомление администраторам (можно заменить на logging, если нужно)
+                for admin in admin_users:
+                    print(
+                        f"Уведомление для {admin.email}: Статус заказа #{self.id} изменён с {original.payment_status} на {self.payment_status}"
+                    )
+
+        super().save(*args, **kwargs)
 
     # Поля для хранения UTM-меток
     utm_source = models.CharField(

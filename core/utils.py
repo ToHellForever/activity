@@ -50,13 +50,13 @@ def generate_sales_register(partner, start_date, end_date):
         total=Coalesce(Sum("platform_commission"), 0, output_field=DecimalField())
     )["total"]
 
-    # Рассчитываем сумму возвратов: учитываем заказы, которые были оплачены, но потом отменены
+    # Рассчитываем сумму возвратов: учитываем заказы, которые были оплачены, но потом возвращены или отменены
     refunded_orders = Order.objects.filter(
         ticket__event__in=partner_events,
         created_at__gte=start_date,
         created_at__lte=end_date,
         is_paid=True,
-        payment_status="canceled",
+        payment_status__in=["canceled", "refunded"],
     )
 
     total_refunds = refunded_orders.aggregate(
