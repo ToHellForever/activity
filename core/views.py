@@ -4,7 +4,7 @@ from django.shortcuts import (
     get_object_or_404,
     HttpResponseRedirect,
     reverse,
-)
+) 
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
