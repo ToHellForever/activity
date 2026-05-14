@@ -543,8 +543,12 @@ def participant_list(request, event_id):
     search_email = request.GET.get("email", "")
     search_status = request.GET.get("status", "")
 
-    # Базовый фильтр: только заказы для этого мероприятия
-    orders = Order.objects.filter(ticket__event=event).select_related("ticket")
+    # Базовый фильтр: только заказы для этого мероприятия, исключая возвраты
+    orders = (
+        Order.objects.filter(ticket__event=event)
+        .exclude(payment_status__in=["canceled", "refunded"])
+        .select_related("ticket")
+    )
 
     # Применяем фильтры
     if search_name:
@@ -559,7 +563,9 @@ def participant_list(request, event_id):
     # Обработка экспорта
     export_format = request.GET.get("export")
     if export_format:
-        return export_participant_list(orders, event, export_format)
+        # Для экспорта также исключаем возвраты
+        export_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
+        return export_participant_list(export_orders, event, export_format)
 
     context = {
         "event": event,
