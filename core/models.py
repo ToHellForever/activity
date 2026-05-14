@@ -446,6 +446,19 @@ class Order(models.Model):
         help_text="Сумма комиссии платформы, удержанная с этого заказа",
     )
 
+    # Статус платежа
+    PAYMENT_STATUS_CHOICES = [
+        ("pending", "Ожидает оплаты"),
+        ("succeeded", "Оплачено"),
+        ("canceled", "Отменено"),
+    ]
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус платежа",
+    )
+
     # Поля для хранения UTM-меток
     utm_source = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="UTM Source"

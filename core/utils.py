@@ -33,37 +33,47 @@ def generate_sales_register(partner, start_date, end_date):
     partner_events = Event.objects.filter(organizer=partner)
 
     # Получаем все заказы для этих мероприятий за указанный период
+    # Включаем все оплаченные заказы (включая отменённые) для детализации
     orders = Order.objects.filter(
         ticket__event__in=partner_events,
         created_at__gte=start_date,
         created_at__lte=end_date,
-        is_paid=True  # Только оплаченные заказы
-    ).select_related('ticket__event')
+        is_paid=True,
+    ).select_related("ticket__event")
 
     # Рассчитываем общие суммы
     total_sales = orders.aggregate(
-        total=Coalesce(Sum('total_price'), 0, output_field=DecimalField())
-    )['total']
+        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
+    )["total"]
 
     total_commission = orders.aggregate(
-        total=Coalesce(Sum('platform_commission'), 0, output_field=DecimalField())
-    )['total']
+        total=Coalesce(Sum("platform_commission"), 0, output_field=DecimalField())
+    )["total"]
 
-    # Для возвратов нужно учитывать заказы с is_paid=False (если они были оплачены, но потом отменены)
-    # Здесь можно доработать логику возвратов, если она уже реализована в системе
-    total_refunds = 0  # Пока что возвраты не учитываются, нужно доработать
+    # Рассчитываем сумму возвратов: учитываем заказы, которые были оплачены, но потом отменены
+    refunded_orders = Order.objects.filter(
+        ticket__event__in=partner_events,
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+        is_paid=True,
+        payment_status="canceled",
+    )
+
+    total_refunds = refunded_orders.aggregate(
+        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
+    )["total"]
 
     # Чистая сумма к выплате
     net_amount = total_sales - total_commission - total_refunds
 
     return {
-        'total_sales': total_sales,
-        'total_commission': total_commission,
-        'total_refunds': total_refunds,
-        'net_amount': net_amount,
-        'orders': orders,
-        'start_date': start_date,
-        'end_date': end_date,
+        "total_sales": total_sales,
+        "total_commission": total_commission,
+        "total_refunds": total_refunds,
+        "net_amount": net_amount,
+        "orders": orders,
+        "start_date": start_date,
+        "end_date": end_date,
     }
 
 
