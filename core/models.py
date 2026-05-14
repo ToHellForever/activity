@@ -392,7 +392,9 @@ class Ticket(models.Model):
             if timezone.now() >= close_time:
                 return False
 
-        sold = sum(order.quantity for order in self.orders.all())
+        sold = sum(
+            order.quantity for order in self.orders.exclude(payment_status="refunded")
+        )
         return self.available_quantity >= sold + quantity
 
     def get_available_count(self):
@@ -403,13 +405,19 @@ class Ticket(models.Model):
             # Используем распределенную блокировку, если доступно
             if REDIS_AVAILABLE:
                 with get_lock(self.pk, use_redis=True):
-                    sold = sum(order.quantity for order in self.orders.all())
+                    sold = sum(
+                        order.quantity
+                        for order in self.orders.exclude(payment_status="refunded")
+                    )
                     return self.available_quantity - sold
             else:
                 # Локальная блокировка через транзакции
                 with transaction.atomic():
                     ticket = Ticket.objects.select_for_update().get(pk=self.pk)
-                    sold = sum(order.quantity for order in ticket.orders.all())
+                    sold = sum(
+                        order.quantity
+                        for order in ticket.orders.exclude(payment_status="refunded")
+                    )
                     return ticket.available_quantity - sold
         except Ticket.DoesNotExist:
             return 0
