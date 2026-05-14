@@ -462,16 +462,23 @@ def reports(request):
     """
     orders = Order.objects.filter(ticket__event__organizer=request.user)
 
-    # Расчет общей статистики
-    total_sales = orders.aggregate(total=Sum("total_price"))["total"] or 0
-    # Считаем реальное количество проданных билетов (не заказов)
-    tickets_sold = sum(order.quantity for order in orders)
+    # Расчет общей статистики (без учёта возвратов)
+    non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
+    total_sales = non_refunded_orders.aggregate(total=Sum("total_price"))["total"] or 0
+
+    # Считаем количество возвратов
+    refunded_orders = orders.filter(payment_status__in=["canceled", "refunded"])
+    total_refunds = refunded_orders.aggregate(total=Sum("total_price"))["total"] or 0
+
+    # Считаем реальное количество проданных билетов (без возвратов)
+    tickets_sold = sum(order.quantity for order in non_refunded_orders)
+
     # Средний чек = общая выручка / количество проданных билетов
     avg_check = total_sales / tickets_sold if tickets_sold > 0 else 0
 
-    # Получаем данные для графика продаж по дням
+    # Получаем данные для графика продаж по дням (без учёта возвратов)
     sales_graph_data = (
-        orders.annotate(date=TruncDate("created_at"))
+        non_refunded_orders.annotate(date=TruncDate("created_at"))
         .values("date")
         .annotate(total=Sum("total_price"))
         .order_by("date")
@@ -483,9 +490,9 @@ def reports(request):
         for item in sales_graph_data
     }
 
-    # Получаем данные об источниках трафика
+    # Получаем данные об источниках трафика (без учёта возвратов)
     traffic_sources = (
-        orders.exclude(utm_source__isnull=True)
+        non_refunded_orders.exclude(utm_source__isnull=True)
         .exclude(utm_source__exact="")
         .values("utm_source")
         .annotate(total=Sum("total_price"), count=Count("id"))
@@ -513,6 +520,8 @@ def reports(request):
         "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
         "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
+        "total_refunds": "{:,.2f}".format(total_refunds).replace(",", " "),
+        "refunded_tickets": sum(order.quantity for order in refunded_orders),
         "sales_graph_data": json.dumps(sales_graph_data),
         "traffic_sources_data": traffic_sources_data,
         "user_reports": user_reports,

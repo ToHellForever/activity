@@ -6,6 +6,11 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+<style>
+    .refund-value {
+        color: #fd7e14;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -19,17 +24,30 @@
                 Общая статистика
             </div>
             <div class="card-body">
-                <div class="stat-value mb-2">{{ total_sales }} ₽</div>
-                <div class="stat-label mb-1">Итого продаж</div>
-                
+                <div class="stat-value mb-1">{{ total_sales }} ₽</div>
+                <div class="stat-label mb-2">Итого продаж (без возвратов)</div>
+                 
                 <div class="row mt-3">
                     <div class="col-6">
                         <div class="stat-value mb-1">{{ tickets_sold }}</div>
-                        <div class="stat-label">Билетов продано</div>
+                        <div class="stat-label">Билетов продано (без возвратов)</div>
                     </div>
                     <div class="col-6">
                         <div class="stat-value mb-1">{{ avg_check }} ₽</div>
                         <div class="stat-label">Средний чек</div>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <div class="stat-value refund-value mb-1">{{ total_refunds }} ₽</div>
+                        <div class="stat-label">Возвраты</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-value refund-value mb-1">{{ refunded_tickets }}</div>
+                        <div class="stat-label">Возвращённых билетов</div>
                     </div>
                 </div>
             </div>
