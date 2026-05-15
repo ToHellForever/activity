@@ -77,6 +77,7 @@ def yookassa_webhook(request):
 
         # Обновляем статус заказа
         order = Order.objects.get(id=order_id)
+        logger.info(f"Обработка события {event} для заказа {order_id}, текущий статус is_paid: {order.is_paid}")
         if event == "payment.succeeded" and not order.is_paid:
             order.is_paid = True
             order.payment_status = "succeeded"
@@ -84,6 +85,25 @@ def yookassa_webhook(request):
             logger.info(
                 f"Order {order_id} marked as paid (payment {payment_data['id']})"
             )
+            # Отправляем уведомление о покупке билетов
+            logger.info(f"Начало отправки уведомления о покупке билетов для заказа {order_id}")
+            try:
+                # Получаем email пользователя из данных заказа
+                email = order.participant_data.get('email')
+                if not email:
+                    logger.warning(f"Не удалось отправить уведомление: отсутствует email в данных заказа {order.id}")
+                    return
+
+                # Получаем пользователя по email
+                user = CustomUser.objects.get(email=email)
+                # Отправляем уведомление
+                send_multiple_tickets_notification(user, [order])
+                logger.info(f"Уведомление о покупке билетов успешно отправлено пользователю {user.email}")
+            except CustomUser.DoesNotExist:
+                logger.warning(f"Не удалось отправить уведомление: пользователь с email {email} не найден")
+            except Exception as e:
+                logger.exception(f"Ошибка отправки уведомления о покупке билетов: {str(e)}")
+            logger.info(f"Завершение отправки уведомления о покупке билетов для заказа {order_id}")
         elif event == "payment.canceled":
             order.payment_status = "canceled"
             order.save()
@@ -916,7 +936,7 @@ def send_multiple_tickets_notification(user, orders, request=None):
             <p><strong>Количество:</strong> {order.quantity}</p>
             <p><strong>Сумма:</strong> {order.total_price} ₽</p>
             <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
-            <p><strong>Место проведения:</strong> {order.ticket.event.place_data.address if order.ticket.event.place_data else "Не указано"}</p>
+                <p><strong>Место проведения:</strong> {order.ticket.event.place_data.get('address', 'Не указано') if isinstance(order.ticket.event.place_data, dict) else getattr(order.ticket.event.place_data, 'address', 'Не указано')}</p>
             <p><strong>QR-код:</strong></p>
             <img src="data:image/png;base64,{img_str}" alt="QR-код для заказа #{order.id}" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
         </div>
