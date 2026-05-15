@@ -315,6 +315,25 @@ class OrderAdmin(admin.ModelAdmin):
 
     list_display = ("id", "ticket", "created_at", "total_price", "is_paid")
     list_filter = ("created_at",)
+    readonly_fields = ("display_qr_codes",)
+
+    def display_qr_codes(self, obj):
+        """Отображает QR-коды для заказа."""
+        if not obj.qr_codes:
+            return "QR-коды не сгенерированы"
+
+        html = '<div style="display: flex; flex-wrap: wrap; gap: 10px;">'
+        for qr in obj.qr_codes:
+            qr_path = qr.get("qr_code_path", "")
+            if qr_path:
+                html += f'<div style="text-align: center;">'
+                html += f'<img src="/media/{qr_path}" width="100" height="100" style="border: 1px solid #ccc;"/>'
+                html += f'<div>{qr.get("unique_id", "")}</div>'
+                html += f'</div>'
+        html += '</div>'
+        return mark_safe(html)
+
+    display_qr_codes.short_description = "QR-коды"
 
 
 # --- Регистрация модели пользователя (если нужна кастомизация) ---
