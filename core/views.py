@@ -34,10 +34,19 @@ import string
 import requests
 import json
 import base64
+import qrcode
+import io
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce
 from django.contrib.admin.views.decorators import staff_member_required
+import uuid
+import logging
+import random
+import string
+import requests
+import json
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -910,37 +919,49 @@ def send_multiple_tickets_notification(user, orders, request=None):
     tickets_info = ""
     total_amount = 0
     for order in orders:
-        # Генерация QR-кода
-        import qrcode
-        import io
-        import base64
+        # Для каждого билета в заказе генерируем отдельный QR-код
+        for i in range(1, order.quantity + 1):
+            # Генерация QR-кода для каждого билета
+            try:
 
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(f"Order ID: {order.id}")
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(f"Order ID: {order.id}, Ticket: {i}")
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
 
-        # Конвертируем QR-код в base64 для вставки в HTML
-        buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                # Конвертируем QR-код в base64 для вставки в HTML
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-        tickets_info += f"""
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Тип билета:</strong> {order.ticket.name}</p>
-            <p><strong>Количество:</strong> {order.quantity}</p>
-            <p><strong>Сумма:</strong> {order.total_price} ₽</p>
-            <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
-                <p><strong>Место проведения:</strong> {order.ticket.event.place_data.get('address', 'Не указано') if isinstance(order.ticket.event.place_data, dict) else getattr(order.ticket.event.place_data, 'address', 'Не указано')}</p>
-            <p><strong>QR-код:</strong></p>
-            <img src="data:image/png;base64,{img_str}" alt="QR-код для заказа #{order.id}" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
-        </div>
-        """
+                tickets_info += f"""
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p><strong>Тип билета:</strong> {order.ticket.name}</p>
+                    <p><strong>Билет №{i} из {order.quantity}</strong></p>
+                    <p><strong>Сумма:</strong> {order.total_price} ₽</p>
+                    <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+                    <p><strong>Место проведения:</strong> {order.ticket.event.place_data.get('address', 'Не указано') if isinstance(order.ticket.event.place_data, dict) else getattr(order.ticket.event.place_data, 'address', 'Не указано')}</p>
+                    <p><strong>QR-код для билета №{i}:</strong></p>
+                    <img src="data:image/png;base64,{img_str}" alt="QR-код для билета #{i} заказа #{order.id}" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
+                </div>
+                """
+            except Exception as e:
+                logger.exception(f"Ошибка генерации QR-кода для билета {i} заказа {order.id}: {str(e)}")
+                tickets_info += f"""
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p><strong>Тип билета:</strong> {order.ticket.name}</p>
+                    <p><strong>Билет №{i} из {order.quantity}</strong></p>
+                    <p><strong>Сумма:</strong> {order.total_price} ₽</p>
+                    <p><strong>Дата и время:</strong> {order.ticket.event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+                    <p><strong>Место проведения:</strong> {order.ticket.event.place_data.get('address', 'Не указано') if isinstance(order.ticket.event.place_data, dict) else getattr(order.ticket.event.place_data, 'address', 'Не указано')}</p>
+                    <p><strong>QR-код для билета №{i}:</strong> Ошибка генерации QR-кода</p>
+                </div>
+                """
         total_amount += order.total_price
 
     message = f"""\n    <html>

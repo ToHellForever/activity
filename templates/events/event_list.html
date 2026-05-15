@@ -32,15 +32,6 @@
                 <a href="{% url 'event_detail' event.id %}">
                     {{ event.title }} ({{ event.date_time|date:"d.m.Y H:i" }})
                 </a>
-                {% if event.tags.all %}
-                    <div class="mt-1">
-                        <small>Теги:
-                            {% for tag in event.tags.all %}
-                                <span class="badge bg-secondary">{{ tag.name }}</span>
-                            {% endfor %}
-                        </small>
-                    </div>
-                {% endif %}
             </li>
         {% endfor %}
     </ul>
