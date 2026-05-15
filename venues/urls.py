@@ -14,6 +14,11 @@ urlpatterns = [
         views.get_venue_equipment,
         name="get_venue_equipment",
     ),
+    path(
+        "venue/add/get_equipment_items/",
+        views.get_venue_equipment,
+        name="get_venue_equipment_for_add",
+    ),
     # для списка площадок
     path(
         "public/get_equipment_items/",

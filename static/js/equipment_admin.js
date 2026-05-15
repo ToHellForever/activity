@@ -22,7 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Получаем ID текущей площадки из URL
     const pathParts = window.location.pathname.split('/');
     // URL выглядит как /admin/venues/venue/47/change/, поэтому ID площадки - это pathParts[4]
+    // Для формы добавления (URL заканчивается на /add/) venueId будет строкой 'add'
     const venueId = pathParts[4];
+    // Проверяем, что venueId является числом (для существующих площадок)
+    const isExistingVenue = venueId && !isNaN(venueId);
 
     // Функция для загрузки элементов оборудования
     function loadEquipmentItems() {
@@ -59,7 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Получаем выбранные элементы для текущей площадки
-                fetch(`/venues/venue/${venueId}/get_equipment_items/`)
+                let url = isExistingVenue ?
+                    `/venues/venue/${venueId}/get_equipment_items/` :
+                    `/venues/venue/add/get_equipment_items/`;
+                fetch(url)
                     .then(response => response.json())
                     .then(selectedItems => {
                         // Создаем чекбоксы для всех элементов оборудования
@@ -104,28 +110,31 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const equipmentId = this.value;
                                 const isChecked = this.checked;
 
-                                // Отправляем данные на сервер
-                                fetch('/venues/save_venue_equipment/', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                                    },
-                                    body: `venue_id=${venueId}&equipment_id=${equipmentId}&is_checked=${isChecked}`
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (!data.success) {
-                                        console.error('Ошибка при сохранении:', data.error);
+                                // Отправляем данные на сервер только если это существующая площадка
+                                // (для формы добавления новой площадки сохранение происходит при сохранении формы)
+                                if (isExistingVenue) {
+                                    fetch('/venues/save_venue_equipment/', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded',
+                                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                        },
+                                        body: `venue_id=${venueId}&equipment_id=${equipmentId}&is_checked=${isChecked}`
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (!data.success) {
+                                            console.error('Ошибка при сохранении:', data.error);
+                                            // Возвращаем чекбокс в исходное состояние
+                                            this.checked = !isChecked;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Ошибка:', error);
                                         // Возвращаем чекбокс в исходное состояние
                                         this.checked = !isChecked;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Ошибка:', error);
-                                    // Возвращаем чекбокс в исходное состояние
-                                    this.checked = !isChecked;
-                                });
+                                    });
+                                }
                             });
                         });
                     })

@@ -64,11 +64,19 @@ def save_venue_equipment(request):
 
 @csrf_exempt
 @login_required
-def get_venue_equipment(request, venue_id):
+def get_venue_equipment(request, venue_id=None):
+    """
+    Получает оборудование для площадки.
+    Если venue_id не указан (для формы добавления), возвращает пустой список.
+    """
     try:
-        venue = Venue.objects.get(pk=venue_id)
-        equipment_items = venue.equipment_items.values("id", "name")
-        return JsonResponse(list(equipment_items), safe=False)
+        if venue_id:
+            venue = Venue.objects.get(pk=venue_id)
+            equipment_items = venue.equipment_items.values("id", "name")
+            return JsonResponse(list(equipment_items), safe=False)
+        else:
+            # Для формы добавления новой площадки возвращаем пустой список
+            return JsonResponse([], safe=False)
     except Venue.DoesNotExist:
         return JsonResponse([], safe=False)
     except Exception as e:
