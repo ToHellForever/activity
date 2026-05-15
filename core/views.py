@@ -12,7 +12,7 @@ from .forms import CustomAuthenticationForm, CustomUserCreationForm
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
-from .models import Event, Ticket
+from .models import Event, Ticket, Tag
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
 from django.utils import timezone
@@ -378,8 +378,11 @@ def update_ticket_status(request, ticket_id):
 def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
 
-    # Получаем все теги для фильтра
-    all_tags = Event.tags.most_common()
+    # Получаем все теги для фильтра, отсортированные по популярности
+    from django.db.models import Count
+    all_tags = Tag.objects.annotate(
+        event_count=Count('event')
+    ).order_by('-event_count')
 
     # Получаем выбранные теги из GET-запроса
     selected_tags = request.GET.getlist("tags")

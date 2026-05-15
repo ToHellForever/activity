@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails
+from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
@@ -116,17 +116,12 @@ def create_event(request):
 
         event.save()
 
-        # Обрабатываем теги из JSON-массива
-        tags_json = request.POST.get("tags_json", "[]")
-        try:
-            tags_list = json.loads(tags_json)
-            event.tags.clear()  # Всегда очищаем текущие теги
-            if tags_list:
-                event.tags.set(
-                    tags_list
-                )  # Устанавливаем только те, которые пришли в запросе
-        except json.JSONDecodeError:
-            event.tags.clear()  # В случае ошибки очищаем теги
+        # Обрабатываем теги из массива ID
+        tags_ids = request.POST.getlist("tags")
+        if tags_ids:
+            # Ограничиваем количество тегов до 5
+            selected_tags = tags_ids[:5]
+            event.tags.set(selected_tags)
 
         # Обрабатываем данные о билетах из таблицы
         ticket_names = request.POST.getlist("ticket_name[]")
@@ -180,6 +175,7 @@ def create_event(request):
             "is_edit": False,
             "ticket_data": ticket_data,
             "rejection_messages": get_rejection_messages(request),
+            "all_tags": Tag.objects.all(),
         },
     )
 
@@ -240,17 +236,12 @@ def edit_event(request, event_id):
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
 
-            # Обрабатываем теги из JSON-массива
-            tags_json = request.POST.get("tags_json", "[]")
-            try:
-                tags_list = json.loads(tags_json)
-                event.tags.clear()  # Всегда очищаем текущие теги
-                if tags_list:
-                    event.tags.set(
-                        tags_list
-                    )  # Устанавливаем только те, которые пришли в запросе
-            except json.JSONDecodeError:
-                event.tags.clear()  # В случае ошибки очищаем теги
+            # Обрабатываем теги из массива ID
+            tags_ids = request.POST.getlist("tags")
+            if tags_ids:
+                # Ограничиваем количество тегов до 5
+                selected_tags = tags_ids[:5]
+                event.tags.set(selected_tags)
 
             # Обработка данных о билетах: удаляем старые и создаем новые
             event.tickets.all().delete()
@@ -286,6 +277,7 @@ def edit_event(request, event_id):
             "form": form,
             "is_edit": True,
             "rejection_messages": get_rejection_messages(request),
+            "all_tags": Tag.objects.all(),
         },
     )
 
@@ -341,8 +333,6 @@ def partner_event_list(request):
         "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/partner_event_list.html", context)
-
-
 
 
 @login_required

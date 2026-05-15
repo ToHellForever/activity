@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage
+from .models import SupportTicket, SupportMessage, Tag
 from django import forms
 from django.contrib import messages
 from django.conf import settings
@@ -43,6 +43,16 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
                 obj.user.verification_status = "pending"
                 obj.user.save()
             super().save_model(request, obj, form, change)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """
+    Настройка отображения модели Tag в админке.
+    """
+    list_display = ('name',)
+    search_fields = ('name',)
+    ordering = ('name',)
 
 
 @admin.register(Event)

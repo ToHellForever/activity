@@ -166,6 +166,22 @@ class Category(models.Model):
         ordering = ["name"]
 
 
+class Tag(models.Model):
+    """Модель для тегов мероприятий."""
+
+    name = models.CharField(
+        max_length=50, unique=True, verbose_name="Название тега"
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
+        ordering = ["name"]
+
+
 class Event(models.Model, VideoWatermarkMixin):
     """Модель для мероприятия."""
 
@@ -238,7 +254,12 @@ class Event(models.Model, VideoWatermarkMixin):
         blank=True,
         verbose_name="Категория",
     )
-    tags = TaggableManager(verbose_name="Теги", blank=True)
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        verbose_name="Теги",
+        help_text="Выберите до 5 тегов для мероприятия"
+    )
     video_url = models.FileField(
         upload_to="event_videos/",
         blank=True,

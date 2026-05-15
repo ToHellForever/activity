@@ -41,7 +41,7 @@
     {% csrf_token %}
 
     {% for field in form %}
-        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' %}
+        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' %}
         <div class="form-group">
             {{ field.label_tag }}
             {% if field.required %}
@@ -67,6 +67,28 @@
         {% endif %}
     {% endfor %}
 
+    <!-- Кастомное поле для выбора тегов -->
+    <div class="form-group">
+        <label for="id_tags">Теги</label>
+<select name="tags" id="id_tags" class="form-control" multiple>
+    {% for tag in all_tags %}
+        <option value="{{ tag.id }}"
+            {% if is_edit and form.instance.pk and tag in form.instance.tags.all %}selected{% endif %}>
+            {{ tag.name }}
+        </option>
+    {% endfor %}
+</select>
+        <small class="form-text text-muted">Выберите до 5 тегов (необязательно)</small>
+    </div>
+        <div id="tags-container" class="d-flex flex-wrap gap-2 mb-2">
+            {% if form.instance.pk %}
+                {% for tag in form.instance.tags.all %}
+                    <span class="badge bg-secondary p-2 d-flex align-items-center">
+                        {{ tag.name }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
     <!-- Кастомные поля для медиафайлов -->
     <div class="form-group">
         <label for="id_image">Изображение мероприятия</label>
@@ -126,28 +148,6 @@
         <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="program_file">
             {% if form.instance.program_file %}Изменить{% else %}Добавить{% endif %} программу
         </button>
-    </div>
-
-    <!-- Поле для добавления тегов -->
-    <div class="form-group">
-        <label>Теги</label>
-        <div class="input-group mb-2">
-            <input type="text" id="tag-input" class="form-control" placeholder="Введите тег">
-            <div class="input-group-append">
-                <button class="btn btn-primary" type="button" id="add-tag-btn">Добавить</button>
-            </div>
-        </div>
-        <div id="tags-container" class="d-flex flex-wrap gap-2 mb-2">
-            {% if form.instance.pk %}
-                {% for tag in form.instance.tags.all %}
-                    <span class="badge bg-secondary p-2 d-flex align-items-center">
-                        {{ tag.name }}
-                        <button type="button" class="btn-close btn-close-white ms-2 remove-tag-btn" aria-label="Удалить"></button>
-                    </span>
-                {% endfor %}
-            {% endif %}
-        </div>
-        <input type="hidden" id="tags-json" name="tags_json" value="{% if form.instance.pk %}{{ form.instance.tags.all|safe }}{% else %}[]{% endif %}">
     </div>
 
     <!-- Контейнер для выбора местоположения -->
