@@ -69,6 +69,16 @@ class VenueForm(forms.ModelForm):
             # Вставляем его первым
             self.fields = {"tariff": tariff_field, **self.fields}
 
+        # Обработка видимости полей в зависимости от тарифа
+        if "tariff" in self.fields and "full_description" in self.fields:
+            # Получаем текущее значение тарифа
+            initial_tariff = self.initial.get("tariff", None)
+            
+            # Если тариф Free (1), скрываем поле полного описания
+            if initial_tariff == 1:
+                self.fields["full_description"].widget = forms.HiddenInput()
+                self.fields["full_description"].required = False
+
     def clean_short_description(self):
         short_description = self.cleaned_data.get("short_description")
         tariff = self.cleaned_data.get("tariff")
@@ -89,6 +99,10 @@ class VenueForm(forms.ModelForm):
         tariff = self.cleaned_data.get("tariff")
 
         if full_description and tariff:
+            # Проверяем только для тарифов Standard и Premium
+            if tariff == 1:  # Для Free тарифа полное описание не обязательно
+                return full_description
+
             limits = Venue.TARIFF_LIMITS.get(tariff, {})
             description_limit = limits.get("description_limit", 500)
 

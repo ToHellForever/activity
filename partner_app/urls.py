@@ -8,9 +8,6 @@ urlpatterns = [
     path("create_event/", views.create_event, name="create_event"),
     path("edit_event/<int:event_id>/", views.edit_event, name="edit_event"),
     path("partner_event_list/", views.partner_event_list, name="partner_event_list"),
-    path(
-        "duplicate_event/<int:event_id>/", views.duplicate_event, name="duplicate_event"
-    ),
     path("delete_event/<int:event_id>/", views.delete_event, name="delete_event"),
     path("bulk_delete_events/", views.bulk_delete_events, name="bulk_delete_events"),
     path("reports/", views.reports, name="reports"),
@@ -33,9 +30,13 @@ urlpatterns = [
         views.check_ticket,
         name="check_ticket",
     ),
-    path("remove_media/<str:media_type>/<int:media_id>/", views.remove_media, name="remove_media"),
+    path(
+        "remove_media/<str:media_type>/<int:media_id>/",
+        views.remove_media,
+        name="remove_media",
+    ),
     path("request_payout/", views.request_payout, name="request_payout"),
-    path('payout-details/', views.payout_details, name='payout_details'),
+    path("payout-details/", views.payout_details, name="payout_details"),
     path("cancel_payout/<int:payout_id>/", views.cancel_payout, name="cancel_payout"),
     path("delete_reports/", views.delete_reports, name="delete_reports"),
     path("change-password/", views.change_password, name="change_password"),

@@ -37,7 +37,19 @@
             
             <div class="mt-4">
                 <h3>Описание</h3>
-                <p>{{ venue.full_description|linebreaksbr }}</p>
+                
+                {% if venue.tariff == 1 %}
+                    <!-- Для тарифа Free только краткое описание -->
+                    <p>{{ venue.short_description|linebreaksbr }}</p>
+                {% else %}
+                    <!-- Для тарифов Standard и Premium: краткое и полное описание -->
+                    <p><strong>Краткое описание:</strong></p>
+                    <p>{{ venue.short_description|linebreaksbr }}</p>
+                    
+                    <p class="mt-3"><strong>Подробное описание:</strong></p>
+                    <p>{{ venue.full_description|linebreaksbr }}</p>
+                {% endif %}
+                
                 {% if venue.video %}
                 <div class="mt-4">
                     <h4>Видео</h4>
