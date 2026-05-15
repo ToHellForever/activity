@@ -122,9 +122,6 @@
       {% for venue in venues %}
       <div class="col">
           <div class="card h-100">
-              {% if venue.images.first %}
-                <img src="{{ venue.images.first.url }}" class="card-img-top" alt="...">
-              {% endif %}
               <div class="card-body">
                   <h5 class="card-title">{{ venue.title }}</h5>
                   <p class="card-text text-muted">{{ venue.address }}</p>
