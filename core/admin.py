@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag
+from .forms import EventAdminForm
 from django import forms
 from django.contrib import messages
 from django.conf import settings
@@ -50,13 +51,15 @@ class TagAdmin(admin.ModelAdmin):
     """
     Настройка отображения модели Tag в админке.
     """
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    form = EventAdminForm
     """
     Настройка отображения модели Event в админке.
     """
@@ -164,10 +167,7 @@ class EventAdmin(admin.ModelAdmin):
 
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ["approved_status", "get_tags_display"]
-        if obj and obj.status != "rejected":
-            readonly_fields.append("rejection_reason")
-        return readonly_fields
+        return ["approved_status", "get_tags_display"]
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
@@ -266,43 +266,7 @@ class EventAdmin(admin.ModelAdmin):
     to_completed.short_description = "Завершено"
 
     def get_form(self, request, obj=None, **kwargs):
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.info("TEST: get_form method called")
-
         form = super().get_form(request, obj, **kwargs)
-
-        # Настройка доступности поля rejection_reason
-        if "rejection_reason" in form.base_fields:
-            logger.info("TEST: rejection_reason field found")
-
-            logger.debug(f"Object: {obj}")
-            logger.debug(f"Object status: {obj.status if obj else None}")
-            logger.debug(
-                f"Condition (obj and obj.status == 'rejected'): {obj and obj.status == 'rejected' if obj else False}"
-            )
-            logger.debug(
-                f"Current widget attrs before modification: {form.base_fields['rejection_reason'].widget.attrs}"
-            )
-
-            if obj and obj.status == "rejected":
-                form.base_fields["rejection_reason"].widget.attrs.pop("readonly", None)
-                form.base_fields["rejection_reason"].widget.attrs[
-                    "style"
-                ] = "background-color: #fff; color: black;"
-                logger.debug(
-                    f"Widget attrs after enabling: {form.base_fields['rejection_reason'].widget.attrs}"
-                )
-            else:
-                form.base_fields["rejection_reason"].widget.attrs["readonly"] = True
-                form.base_fields["rejection_reason"].widget.attrs[
-                    "style"
-                ] = "background-color: #f0f0f0; color: black;"
-                logger.debug(
-                    f"Widget attrs after disabling: {form.base_fields['rejection_reason'].widget.attrs}"
-                )
-
         return form
 
 

@@ -1,10 +1,18 @@
 from django import forms
+from django.forms import ModelForm
+from .models import Event
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import CustomUser
 from .models import SupportTicket
 
+class EventAdminForm(ModelForm):
+    class Meta:
+        model = Event
+        fields = '__all__'
 
+    class Media:
+        js = ('js/event_admin.js',)
 # --- ФОРМА ВХОДА ---
 class CustomAuthenticationForm(forms.Form):
     """Форма для входа с автоматической проверкой роли."""
