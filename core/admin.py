@@ -269,6 +269,14 @@ class EventAdmin(admin.ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
         return form
 
+    def save_model(self, request, obj, form, change):
+        # Проверяем, обновлены ли данные о местоположении
+        place_data_field = form.data.get("place_data", "{}")
+        if isinstance(place_data_field, str) and "updated" in form.data:
+            obj._place_data_updated = True
+
+        super().save_model(request, obj, form, change)
+
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):

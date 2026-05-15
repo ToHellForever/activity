@@ -330,12 +330,35 @@ class Event(models.Model, VideoWatermarkMixin):
 
     def save(self, *args, **kwargs):
         """
-        Сохранение модели с добавлением водяного знака на изображения.
-        Видео обрабатывается асинхронно через Celery.
+        Сохранение модели с добавлением водяного знака на изображения
+        и обновлением данных о местоположении.
         """
         import os
+        import json
         from django.conf import settings
         from core.utils import add_watermark_to_image
+
+        # Если есть данные о местоположении в отдельных полях, обновляем place_data
+        if hasattr(self, '_place_data_updated'):
+            # Преобразуем в словарь, если это строка
+            place_data = {}
+            if isinstance(self.place_data, str):
+                try:
+                    place_data = json.loads(self.place_data)
+                except json.JSONDecodeError:
+                    place_data = {}
+            elif isinstance(self.place_data, dict):
+                place_data = self.place_data.copy()
+
+            # Обновляем адрес и координаты
+            if hasattr(self, 'address') and self.address:
+                place_data['address'] = self.address
+            if hasattr(self, 'latitude') and self.latitude:
+                place_data['latitude'] = float(self.latitude)
+            if hasattr(self, 'longitude') and self.longitude:
+                place_data['longitude'] = float(self.longitude)
+
+            self.place_data = place_data
 
         super().save(*args, **kwargs)
 

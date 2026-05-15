@@ -133,6 +133,12 @@ function initMap() {
                 $fields.latitude.value = lat.toFixed(6);
                 $fields.longitude.value = lon.toFixed(6);
 
+                // Устанавливаем флаг, что данные о местоположении обновлены
+                const placeDataField = document.querySelector('#id_place_data');
+                if (placeDataField) {
+                    placeDataField.dataset.updated = 'true';
+                }
+
                 // Сбросим доп. поля перед заполнением
                 if ($fields.city) $fields.city.value = '';
                 if ($fields.district) $fields.district.value = '';
