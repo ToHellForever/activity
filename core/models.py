@@ -169,9 +169,7 @@ class Category(models.Model):
 class Tag(models.Model):
     """Модель для тегов мероприятий."""
 
-    name = models.CharField(
-        max_length=50, unique=True, verbose_name="Название тега"
-    )
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название тега")
 
     def __str__(self):
         return self.name
@@ -258,7 +256,7 @@ class Event(models.Model, VideoWatermarkMixin):
         Tag,
         blank=True,
         verbose_name="Теги",
-        help_text="Выберите до 5 тегов для мероприятия"
+        help_text="Выберите до 5 тегов для мероприятия",
     )
     video_url = models.FileField(
         upload_to="event_videos/",
@@ -339,7 +337,7 @@ class Event(models.Model, VideoWatermarkMixin):
         from core.utils import add_watermark_to_image
 
         # Если есть данные о местоположении в отдельных полях, обновляем place_data
-        if hasattr(self, '_place_data_updated'):
+        if hasattr(self, "_place_data_updated"):
             # Преобразуем в словарь, если это строка
             place_data = {}
             if isinstance(self.place_data, str):
@@ -351,12 +349,12 @@ class Event(models.Model, VideoWatermarkMixin):
                 place_data = self.place_data.copy()
 
             # Обновляем адрес и координаты
-            if hasattr(self, 'address') and self.address:
-                place_data['address'] = self.address
-            if hasattr(self, 'latitude') and self.latitude:
-                place_data['latitude'] = float(self.latitude)
-            if hasattr(self, 'longitude') and self.longitude:
-                place_data['longitude'] = float(self.longitude)
+            if hasattr(self, "address") and self.address:
+                place_data["address"] = self.address
+            if hasattr(self, "latitude") and self.latitude:
+                place_data["latitude"] = float(self.latitude)
+            if hasattr(self, "longitude") and self.longitude:
+                place_data["longitude"] = float(self.longitude)
 
             self.place_data = place_data
 
@@ -501,7 +499,7 @@ class Order(models.Model):
         default=list,
         blank=True,
         verbose_name="QR-коды",
-        help_text="Список QR-кодов для каждого купленного билета"
+        help_text="Список QR-кодов для каждого купленного билета",
     )
 
     # Статус платежа
@@ -568,12 +566,16 @@ class Order(models.Model):
             # Уникальный идентификатор для каждого QR-кода
             qr_uuid = str(uuid.uuid4())
 
+            # Формируем данные для QR-кода в читаемом формате, как в письме
+            qr_text_data = f"Order ID: {self.id}, Ticket: {i + 1}"
+
             # Данные для QR-кода (можно расширить по необходимости)
             qr_data = {
                 "order_id": self.id,
                 "ticket_id": self.ticket.id,
                 "participant_data": self.participant_data,
                 "unique_id": qr_uuid,
+                "text_data": qr_text_data,  # Читаемая строка для совместимости
             }
 
             # Создаем QR-код
@@ -583,7 +585,7 @@ class Order(models.Model):
                 box_size=10,
                 border=4,
             )
-            qr.add_data(str(qr_data))
+            qr.add_data(qr_text_data)
             qr.make(fit=True)
 
             # Сохраняем QR-код в виде изображения
@@ -598,11 +600,13 @@ class Order(models.Model):
             img.save(qr_path)
 
             # Сохраняем путь к QR-коду в JSON-поле
-            self.qr_codes.append({
-                "unique_id": qr_uuid,
-                "qr_code_path": os.path.join("qr_codes", qr_filename),
-                "data": qr_data,
-            })
+            self.qr_codes.append(
+                {
+                    "unique_id": qr_uuid,
+                    "qr_code_path": os.path.join("qr_codes", qr_filename),
+                    "data": qr_data,
+                }
+            )
 
     # Поля для хранения UTM-меток
     utm_source = models.CharField(
