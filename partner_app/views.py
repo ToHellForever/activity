@@ -661,8 +661,8 @@ def export_participant_list(orders, event, export_format):
                 "Тип билета",
                 "Статус",
                 "Цена",
-                "Количество билетов",
-                "QR-коды",
+                "Кол-во",
+                "QR",
             ]
         ]
 
@@ -682,7 +682,17 @@ def export_participant_list(orders, event, export_format):
                 qr_code_img = io.BytesIO()
                 img.save(qr_code_img, format="PNG")
                 qr_code_img.seek(0)
-                qr_images.append(Image(qr_code_img, width=20, height=20))
+                qr_images.append(Image(qr_code_img, width=40, height=40))
+
+            # Для первой строки заказа добавляем QR-коды в таблицу
+            if qr_images:
+                qr_cell = qr_images[0]  # Первый QR-код в основной строке
+                other_qrs = qr_images[
+                    1:
+                ]  # Остальные QR-коды добавим как дополнительные строки
+            else:
+                qr_cell = " "
+                other_qrs = []
 
             data.append(
                 [
@@ -694,19 +704,18 @@ def export_participant_list(orders, event, export_format):
                     "Оплачено" if order.is_paid else "Не оплачен",
                     f"{order.total_price:.2f} руб.",
                     f"{order.quantity}",
-                    " ",  # Колонка для QR-кодов (будет пустой в таблице)
+                    qr_cell,
                 ]
             )
 
-            # Добавляем QR-коды в элементы документа
-            for qr_img in qr_images:
-                elements.append(qr_img)
-                elements.append(Paragraph(" ", styles["Normal"]))
+            # Добавляем дополнительные QR-коды как отдельные строки в таблицу
+            for qr_img in other_qrs:
+                data.append(["", "", "", "", "", "", "", "", qr_img])
 
         # Создаем таблицу
         table = Table(data)
         # Устанавливаем ширину столбцов
-        column_widths = [80, 100, 80, 70, 70, 60, 80, 50, 60]
+        column_widths = [80, 100, 60, 70, 70, 60, 60, 40, 50]
         table._argW = column_widths
 
         table.setStyle(

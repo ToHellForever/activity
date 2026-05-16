@@ -101,7 +101,7 @@
                     <td class="text-center" style="width: 100px;">
                         {% for qr_code in order.qr_codes %}
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                                alt="QR-код" class="img-fluid mb-1" style="width: 60px; height: 60px; opacity: 1;">
+                                alt="QR-код" class="img-fluid mb-4" style="width: 70px; height: 70px; opacity: 1;">
                         {% endfor %}
                     </td>
                 </tr>
