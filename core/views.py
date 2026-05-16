@@ -774,7 +774,7 @@ def buy_ticket(request, event_id):
                         "first_name": first_name,
                         "last_name": last_name,
                         "phone": phone,
-                    },
+                    }, 
                     total_price=ticket.price * quantity,
                     quantity=quantity,
                     is_paid=(
