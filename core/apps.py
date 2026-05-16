@@ -7,3 +7,5 @@ class CoreConfig(AppConfig):
     def ready(self):
         # Импортируем сигналы, чтобы они зарегистрировались
         import core.signals
+        # Импортируем proxy-модели
+        import core.proxy_models
