@@ -99,21 +99,30 @@
                         </div>
                     </td>
                     <td class="text-center" style="width: 100px;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                            alt="QR-код" class="img-fluid" style="width: 100px; height: 100px; opacity: 1;">
+                        {% for qr_code in order.qr_codes %}
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                alt="QR-код" class="img-fluid mb-1" style="width: 60px; height: 60px; opacity: 1;">
+                        {% endfor %}
                     </td>
                 </tr>
-                <!-- Модальное окно для QR-кода текущего заказа -->
+                <!-- Модальное окно для QR-кодов текущего заказа -->
                 <div class="modal fade" id="qrModal{{ order.id }}" tabindex="-1" aria-labelledby="qrModalLabel{{ order.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="qrModalLabel{{ order.id }}">QR-код для {{ order.participant_data.name }}</h5>
+                                <h5 class="modal-title" id="qrModalLabel{{ order.id }}">QR-коды для заказа #{{ order.id }}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
                             <div class="modal-body text-center">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                                    alt="QR-код" class="img-fluid">
+                                <div class="row">
+                                    {% for qr_code in order.qr_codes %}
+                                        <div class="col-md-4 mb-3">
+                                            <p>Билет #{{ forloop.counter }}</p>
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                                alt="QR-код для билета #{{ forloop.counter }}" class="img-fluid">
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>

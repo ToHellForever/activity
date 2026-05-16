@@ -554,6 +554,7 @@ def export_participant_list(orders, event, export_format):
             "Тип билета",
             "Статус",
             "Цена",
+            "Количество билетов",
         ]
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
@@ -583,6 +584,9 @@ def export_participant_list(orders, event, export_format):
                 value="Оплачено" if order.is_paid else "Не оплачен",
             )
             ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
+            ws.cell(
+                row=row_num, column=8, value=f"Количество билетов: {order.quantity}"
+            )
 
         # Автоподбор ширины столбцов
         for column in ws.columns:
@@ -657,25 +661,28 @@ def export_participant_list(orders, event, export_format):
                 "Тип билета",
                 "Статус",
                 "Цена",
-                "QR-код",
+                "Количество билетов",
+                "QR-коды",
             ]
         ]
 
         for index, order in enumerate(orders, 1):
-            # Генерация QR-кода
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(f"Order ID: {order.id}")
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white")
-            qr_code_img = io.BytesIO()
-            img.save(qr_code_img, format="PNG")
-            qr_code_img.seek(0)
-            qr_image = Image(qr_code_img, width=50, height=50)
+            # Генерация QR-кодов
+            qr_images = []
+            for i in range(order.quantity):
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(f"Order ID: {order.id}, Билет: {i+1}")
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                qr_code_img = io.BytesIO()
+                img.save(qr_code_img, format="PNG")
+                qr_code_img.seek(0)
+                qr_images.append(Image(qr_code_img, width=20, height=20))
 
             data.append(
                 [
@@ -686,14 +693,20 @@ def export_participant_list(orders, event, export_format):
                     order.ticket.name,
                     "Оплачено" if order.is_paid else "Не оплачен",
                     f"{order.total_price:.2f} руб.",
-                    qr_image,
+                    f"{order.quantity}",
+                    " ",  # Колонка для QR-кодов (будет пустой в таблице)
                 ]
             )
+
+            # Добавляем QR-коды в элементы документа
+            for qr_img in qr_images:
+                elements.append(qr_img)
+                elements.append(Paragraph(" ", styles["Normal"]))
 
         # Создаем таблицу
         table = Table(data)
         # Устанавливаем ширину столбцов
-        column_widths = [80, 100, 80, 70, 70, 60, 80, 50]
+        column_widths = [80, 100, 80, 70, 70, 60, 80, 50, 60]
         table._argW = column_widths
 
         table.setStyle(
