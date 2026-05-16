@@ -68,6 +68,7 @@ class EventForm(forms.ModelForm):
             "auto_close_sales_hours",
             "refund_deadline_hours",
             "duration",
+            "allow_platform_requests",
         ]
         widgets = {
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),

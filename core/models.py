@@ -284,6 +284,10 @@ class Event(models.Model, VideoWatermarkMixin):
     allow_booking_without_payment = models.BooleanField(
         default=False, verbose_name="Разрешить бронирование без оплаты"
     )
+    allow_platform_requests = models.BooleanField(
+        default=False, verbose_name="Разрешить заявки через платформу",
+        help_text="Если включено, пользователи смогут оставить заявку с вопросами"
+    )
     # Автоматическое закрытие продаж (в часах)
     auto_close_sales_hours = models.PositiveIntegerField(
         default=0,

@@ -150,6 +150,17 @@
         </button>
     </div>
 
+    <!-- Флаг для включения заявок через платформу -->
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="id_allow_platform_requests" name="allow_platform_requests" {{ form.instance.allow_platform_requests|yesno:",checked" }}>
+        <label class="form-check-label" for="id_allow_platform_requests">
+            Разрешить заявки через платформу
+        </label>
+        <small class="form-text text-muted">
+            Если включено, пользователи смогут оставить заявку на участие вместо покупки билета.
+        </small>
+    </div>
+
     <!-- Контейнер для выбора местоположения -->
     <div class="form-group place-input-container">
         <label for="id_place_address">Местоположение<span class="text-danger">*</span></label>
