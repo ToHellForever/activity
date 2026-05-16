@@ -185,9 +185,14 @@
         <div class="mb-3">
             <label class="form-label">Тип покупки:</label>
             <select class="form-select" name="purchase_type" id="purchaseType">
-                <option value="paid_ticket" selected>Оплатить билет через платформу</option>
-                    <option value="free_registration">Бесплатная регистрация</option>
-                <option value="platform_request">Отправить заявку организатору</option>
+                {% if event.tickets.first.price == 0 %}
+                    <option value="free_registration" selected>Бесплатная регистрация</option>
+                {% else %}
+                    <option value="paid_ticket" selected>Оплатить билет через платформу</option>
+                    {% if event.allow_platform_requests %}
+                        <option value="platform_request">Отправить заявку организатору</option>
+                    {% endif %}
+                {% endif %}
             </select>
         </div>
 
