@@ -65,24 +65,49 @@ function validateIntegerInput(input) {
 function validateTicketTypes() {
     const rows = document.querySelectorAll('#ticketTable tbody tr');
     let hasValidTicket = false;
-    
+
     rows.forEach(row => {
         const nameInput = row.querySelector('input[name="ticket_name[]"]');
         const priceInput = row.querySelector('input[name="ticket_price[]"]');
         const quantityInput = row.querySelector('input[name="ticket_quantity[]"]');
-        
+
         if (nameInput && priceInput && quantityInput) {
             const name = nameInput.value.trim();
             const price = priceInput.value.trim();
             const quantity = quantityInput.value.trim();
-            
+
             if (name && price && quantity) {
                 hasValidTicket = true;
             }
         }
     });
-    
+
     return hasValidTicket;
+}
+
+// Функция для проверки наличия одновременно бесплатных и платных билетов
+function validateFreeAndPaidTickets() {
+    const priceInputs = document.querySelectorAll('input[name="ticket_price[]"]');
+    let hasFreeTickets = false;
+    let hasPaidTickets = false;
+
+    priceInputs.forEach(input => {
+        const priceValue = input.value.trim();
+        if (priceValue) {
+            try {
+                const price = parseFloat(priceValue.replace(",", "."));
+                if (price === 0) {
+                    hasFreeTickets = true;
+                } else {
+                    hasPaidTickets = true;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+    });
+
+    return { hasFreeTickets, hasPaidTickets };
 }
 
 // Инициализация при загрузке страницы
@@ -130,20 +155,27 @@ document.addEventListener('DOMContentLoaded', function() {
 // Функция для проверки перед отправкой формы
 function validateForm(event) {
     let isValid = true;
-    
+
     // Проверяем все поля цены и количества
     document.querySelectorAll('input[name="ticket_price[]"], input[name="ticket_quantity[]"]').forEach(input => {
         if (!validateIntegerInput(input)) {
             isValid = false;
         }
     });
-    
+
     // Проверяем наличие хотя бы одного типа билета
     if (!validateTicketTypes()) {
         isValid = false;
         alert('Вы должны добавить хотя бы один тип билета со всеми заполненными полями');
     }
-    
+
+    // Проверяем, что нет одновременно бесплатных и платных билетов
+    const { hasFreeTickets, hasPaidTickets } = validateFreeAndPaidTickets();
+    if (hasFreeTickets && hasPaidTickets) {
+        isValid = false;
+        alert('Невозможно создать мероприятие с бесплатными и платными билетами одновременно.');
+    }
+
     if (!isValid) {
         event.preventDefault();
     }

@@ -214,7 +214,7 @@
 <script src="/static/js/ticket_table.js"></script>
 <script src="/static/js/custom_media.js"></script>
 <script>
-    // Ждем, пока страница полностью загрузится
+    // Ждём полной загрузки DOM
     document.addEventListener('DOMContentLoaded', function() {
         // Настройка календаря с ограничением минимальной даты
         const minDate = new Date();
@@ -250,7 +250,7 @@
             const script = document.createElement('script');
             script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
             script.onload = function() {
-                // Ждем полной загрузки API
+                // Ждём полной загрузки API
                 ymaps.ready(function() {
                     initMapWithData();
                 });
@@ -371,78 +371,34 @@
                 }));
             }
         }
-    });
 
-    // Обработка добавления и удаления тегов
-    document.getElementById('add-tag-btn').addEventListener('click', function() {
-        const tagInput = document.getElementById('tag-input');
-        const tagName = tagInput.value.trim();
-
-        if (tagName) {
-            addTagToContainer(tagName);
-            tagInput.value = '';
-            updateTagsJson();
-        }
-    });
-
-    // Обработка нажатия Enter в поле ввода тега
-    document.getElementById('tag-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('add-tag-btn').click();
-        }
-    });
-
-    // Функция для добавления тега в контейнер
-    function addTagToContainer(tagName) {
-        const tagsContainer = document.getElementById('tags-container');
-
-        // Проверяем, что такого тега ещё нет
-        const existingTags = tagsContainer.querySelectorAll('.badge');
-        for (const tag of existingTags) {
-            if (tag.textContent.trim().replace('×', '').trim() === tagName) {
-                return; // Тег уже существует
-            }
-        }
-
-        // Создаём элемент тега
-        const tagElement = document.createElement('span');
-        tagElement.className = 'badge bg-secondary p-2 d-flex align-items-center';
-        tagElement.innerHTML = `
-            ${tagName}
-            <button type="button" class="btn-close btn-close-white ms-2 remove-tag-btn" aria-label="Удалить"></button>
-        `;
-
-        // Добавляем обработчик удаления
-        tagElement.querySelector('.remove-tag-btn').addEventListener('click', function() {
-            tagElement.remove();
-            updateTagsJson();
+        // Инициализация кнопки добавления билетов
+        document.getElementById('addTicketRow').addEventListener('click', function() {
+            addTicketRow();
+            updateTicketTypesHiddenField();
         });
 
-        tagsContainer.appendChild(tagElement);
-        updateTagsJson();
-    }
-
-    // Обработка клика по кнопке удаления тега (делегирование событий)
-    document.getElementById('tags-container').addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-tag-btn')) {
-            e.target.closest('.badge').remove();
-            updateTagsJson();
-        }
-    });
-
-    // Функция для обновления скрытого поля с JSON-массивом тегов
-    function updateTagsJson() {
-        const tagsContainer = document.getElementById('tags-container');
-        const tags = Array.from(tagsContainer.querySelectorAll('.badge')).map(tag => {
-            return tag.textContent.trim().replace('×', '').trim();
+        // Инициализация обработчиков удаления строк билетов
+        document.querySelectorAll('.remove-ticket-row').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('tr').remove();
+                updateTicketTypesHiddenField();
+            });
         });
-        document.getElementById('tags-json').value = JSON.stringify(tags);
-    }
 
-    // Инициализация тегов при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-        updateTagsJson();
+        // Инициализация валидации полей цены и количества
+        document.querySelectorAll('#ticketTable tbody').forEach(tbody => {
+            tbody.addEventListener('input', function(e) {
+                const target = e.target;
+                if (target.matches('input[name="ticket_price[]"], input[name="ticket_quantity[]"]')) {
+                    validateIntegerInput(target);
+                    updateTicketTypesHiddenField();
+                }
+            });
+        });
+
+        // Инициализация скрытого поля билетов
+        updateTicketTypesHiddenField();
     });
 </script>
 {% endblock %}

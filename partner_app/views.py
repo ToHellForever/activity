@@ -128,6 +128,47 @@ def create_event(request):
         ticket_prices = request.POST.getlist("ticket_price[]")
         ticket_quantities = request.POST.getlist("ticket_quantity[]")
 
+        # Проверяем, есть ли одновременно бесплатные и платные билеты
+        has_free_tickets = False
+        has_paid_tickets = False
+
+        for price in ticket_prices:
+            if price:
+                try:
+                    price_value = (
+                        float(price.replace(",", ".")) if "," in price else float(price)
+                    )
+                    if price_value == 0:
+                        has_free_tickets = True
+                    else:
+                        has_paid_tickets = True
+                except (ValueError, TypeError):
+                    continue
+
+        # Если есть и бесплатные, и платные билеты одновременно
+        if has_free_tickets and has_paid_tickets:
+            messages.error(
+                request,
+                "Невозможно создать мероприятие с бесплатными и платными билетами одновременно.",
+            )
+            return render(
+                request,
+                "partner/event_form.html",
+                {
+                    "form": form,
+                    "is_edit": False,
+                    "ticket_data": [
+                        {"name": name, "price": price, "quantity": quantity}
+                        for name, price, quantity in zip(
+                            ticket_names, ticket_prices, ticket_quantities
+                        )
+                        if name and price and quantity
+                    ],
+                    "rejection_messages": get_rejection_messages(request),
+                    "all_tags": Tag.objects.all(),
+                },
+            )
+
         for name, price, quantity in zip(
             ticket_names, ticket_prices, ticket_quantities
         ):
@@ -248,6 +289,49 @@ def edit_event(request, event_id):
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
+
+            # Проверяем, есть ли одновременно бесплатные и платные билеты
+            has_free_tickets = False
+            has_paid_tickets = False
+
+            for price in ticket_prices:
+                if price:
+                    try:
+                        price_value = (
+                            float(price.replace(",", "."))
+                            if "," in price
+                            else float(price)
+                        )
+                        if price_value == 0:
+                            has_free_tickets = True
+                        else:
+                            has_paid_tickets = True
+                    except (ValueError, TypeError):
+                        continue
+
+            # Если есть и бесплатные, и платные билеты одновременно
+            if has_free_tickets and has_paid_tickets:
+                messages.error(
+                    request,
+                    "Невозможно создать мероприятие с бесплатными и платными билетами одновременно.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": True,
+                        "ticket_data": [
+                            {"name": name, "price": price, "quantity": quantity}
+                            for name, price, quantity in zip(
+                                ticket_names, ticket_prices, ticket_quantities
+                            )
+                            if name and price and quantity
+                        ],
+                        "rejection_messages": get_rejection_messages(request),
+                        "all_tags": Tag.objects.all(),
+                    },
+                )
 
             for name, price, quantity in zip(
                 ticket_names, ticket_prices, ticket_quantities

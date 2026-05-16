@@ -10,3 +10,6 @@ debug.log
 # Environment files
 .env
 activity/__pycache__/settings.cpython-313.pyc
+
+# Refact tool
+.refact/
