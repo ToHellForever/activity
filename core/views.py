@@ -4,7 +4,7 @@ from django.shortcuts import (
     get_object_or_404,
     HttpResponseRedirect,
     reverse,
-) 
+)
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
@@ -86,7 +86,9 @@ def yookassa_webhook(request):
 
         # Обновляем статус заказа
         order = Order.objects.get(id=order_id)
-        logger.info(f"Обработка события {event} для заказа {order_id}, текущий статус is_paid: {order.is_paid}")
+        logger.info(
+            f"Обработка события {event} для заказа {order_id}, текущий статус is_paid: {order.is_paid}"
+        )
         if event == "payment.succeeded" and not order.is_paid:
             order.is_paid = True
             order.payment_status = "succeeded"
@@ -95,24 +97,36 @@ def yookassa_webhook(request):
                 f"Order {order_id} marked as paid (payment {payment_data['id']})"
             )
             # Отправляем уведомление о покупке билетов
-            logger.info(f"Начало отправки уведомления о покупке билетов для заказа {order_id}")
+            logger.info(
+                f"Начало отправки уведомления о покупке билетов для заказа {order_id}"
+            )
             try:
                 # Получаем email пользователя из данных заказа
-                email = order.participant_data.get('email')
+                email = order.participant_data.get("email")
                 if not email:
-                    logger.warning(f"Не удалось отправить уведомление: отсутствует email в данных заказа {order.id}")
+                    logger.warning(
+                        f"Не удалось отправить уведомление: отсутствует email в данных заказа {order.id}"
+                    )
                     return
 
                 # Получаем пользователя по email
                 user = CustomUser.objects.get(email=email)
                 # Отправляем уведомление
                 send_multiple_tickets_notification(user, [order])
-                logger.info(f"Уведомление о покупке билетов успешно отправлено пользователю {user.email}")
+                logger.info(
+                    f"Уведомление о покупке билетов успешно отправлено пользователю {user.email}"
+                )
             except CustomUser.DoesNotExist:
-                logger.warning(f"Не удалось отправить уведомление: пользователь с email {email} не найден")
+                logger.warning(
+                    f"Не удалось отправить уведомление: пользователь с email {email} не найден"
+                )
             except Exception as e:
-                logger.exception(f"Ошибка отправки уведомления о покупке билетов: {str(e)}")
-            logger.info(f"Завершение отправки уведомления о покупке билетов для заказа {order_id}")
+                logger.exception(
+                    f"Ошибка отправки уведомления о покупке билетов: {str(e)}"
+                )
+            logger.info(
+                f"Завершение отправки уведомления о покупке билетов для заказа {order_id}"
+            )
         elif event == "payment.canceled":
             order.payment_status = "canceled"
             order.save()
@@ -409,9 +423,8 @@ def event_list(request):
 
     # Получаем все теги для фильтра, отсортированные по популярности
     from django.db.models import Count
-    all_tags = Tag.objects.annotate(
-        event_count=Count('event')
-    ).order_by('-event_count')
+
+    all_tags = Tag.objects.annotate(event_count=Count("event")).order_by("-event_count")
 
     # Получаем выбранные теги из GET-запроса
     selected_tags = request.GET.getlist("tags")
@@ -434,6 +447,134 @@ def event_list(request):
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
+
+
+@require_http_methods(["GET", "POST"])
+def handle_platform_request(request, event, user, ticket, quantity):
+    """
+    Обработка заявки на участие в мероприятии (отправка организатору).
+    Используется когда purchase_type = "platform_request"
+    """
+    question = request.POST.get("question", "")
+
+    # Создаем заявку в поддержку
+    from core.models import SupportTicket, SupportMessage
+
+    ticket_request = SupportTicket.objects.create(
+        user=user,
+        subject=f"Заявка на участие в мероприятии: {event.title}",
+        event=event,
+    )
+
+    # Создаем первое сообщение с вопросом
+    SupportMessage.objects.create(
+        ticket=ticket_request,
+        user=user,
+        is_from_user=True,
+        text=f"Вопрос от участника:\n{question}",
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Ваша заявка успешно отправлена организатору. Мы свяжемся с вами в ближайшее время.",
+        }
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def send_event_request(request, event_id, question=""):
+    """
+    Обработка заявки на участие в мероприятии (отправка организатору).
+    Используется когда purchase_type = "platform_request"
+    """
+    event = get_object_or_404(Event, id=event_id)
+
+    if request.method == "GET":
+        return redirect("event_detail", event_id=event_id)
+
+    # Получаем данные из формы
+    email = (request.POST.get("email") or "").strip()
+    first_name = (request.POST.get("first_name") or "").strip()
+    last_name = (request.POST.get("last_name") or "").strip()
+    phone = (request.POST.get("phone") or "").strip()
+
+    # Используем переданный вопрос или берем из POST
+    question = question or request.POST.get("question", "")
+
+    # Создаём или получаем пользователя по email
+    user, created = CustomUser.objects.get_or_create(
+        email=email,
+        defaults={
+            "first_name": first_name,
+            "last_name": last_name,
+            "user_type": "guest",
+            "username": email,
+        },
+    )
+
+    # Обновляем данные пользователя, если он уже существовал
+    if not created:
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+    if created:
+        user.set_unusable_password()
+        user.save()
+
+    try:
+        with transaction.atomic():
+            # Создаем заявку в поддержку
+            from core.models import SupportTicket, SupportMessage
+
+            ticket = SupportTicket.objects.create(
+                user=user,
+                subject=f"Заявка на участие в мероприятии: {event.title}",
+                event=event,
+            )
+
+            # Создаем первое сообщение с вопросом
+            SupportMessage.objects.create(
+                ticket=ticket,
+                user=user,
+                is_from_user=True,
+                text=f"Вопрос от участника:\n{question}",
+            )
+
+            # Проверяем, является ли запрос AJAX
+            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Ваша заявка успешно отправлена организатору. Мы свяжемся с вами в ближайшее время.",
+                        "request_id": ticket.id,
+                    }
+                )
+            else:
+                messages.success(
+                    request,
+                    "Ваша заявка успешно отправлена организатору. Мы свяжемся с вами в ближайшее время.",
+                )
+                return redirect("event_detail", event_id=event_id)
+
+    except Exception as e:
+        logger.error(f"Ошибка при создании заявки: {str(e)}")
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.",
+                },
+                status=500,
+            )
+        else:
+            messages.error(
+                request,
+                "Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.",
+            )
+            return redirect("event_detail", event_id=event_id)
 
 
 @require_http_methods(["GET", "POST"])
@@ -518,7 +659,7 @@ def buy_ticket(request, event_id):
             },
         )
 
-    if not ticket_quantities:
+    if not ticket_quantities and purchase_type != "platform_request":
         messages.error(request, "Пожалуйста, выберите хотя бы один билет")
         return render(
             request,
@@ -532,6 +673,12 @@ def buy_ticket(request, event_id):
 
     # Определяем тип покупки
     purchase_type = request.POST.get("purchase_type", "paid_ticket")
+
+    # Если это заявка организатору, перенаправляем на отдельную обработку
+    if purchase_type == "platform_request":
+        return send_event_request(
+            request, event_id, question=request.POST.get("question", "")
+        )
 
     # Проверяем, нужно ли оплачивать сразу или можно забронировать
     is_booking_without_payment = (
@@ -584,15 +731,6 @@ def buy_ticket(request, event_id):
                         total_price = 0
                         platform_commission = 0
                         is_paid = True
-                    elif purchase_type == "platform_request":
-                        # Создаем заявку в поддержку
-                        from core.models import SupportTicket
-
-                        SupportTicket.objects.create(
-                            user=user,
-                            subject=f"Заявка на участие в мероприятии: {event.title}",
-                            event=event,
-                        )
 
                     order = Order.objects.create(
                         ticket=ticket,
@@ -767,6 +905,7 @@ def buy_ticket(request, event_id):
                 logger.debug(
                     f"Создание заказа для билета {ticket.id}, количество: {quantity}"
                 )
+
                 order = Order.objects.create(
                     ticket=ticket,
                     participant_data={
@@ -774,7 +913,7 @@ def buy_ticket(request, event_id):
                         "first_name": first_name,
                         "last_name": last_name,
                         "phone": phone,
-                    }, 
+                    },
                     total_price=ticket.price * quantity,
                     quantity=quantity,
                     is_paid=(
@@ -951,7 +1090,9 @@ def send_multiple_tickets_notification(user, orders, request=None):
                 </div>
                 """
             except Exception as e:
-                logger.exception(f"Ошибка генерации QR-кода для билета {i} заказа {order.id}: {str(e)}")
+                logger.exception(
+                    f"Ошибка генерации QR-кода для билета {i} заказа {order.id}: {str(e)}"
+                )
                 tickets_info += f"""
                 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <p><strong>Тип билета:</strong> {order.ticket.name}</p>

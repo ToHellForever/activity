@@ -11,23 +11,80 @@
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
 
     <script>
+        // Обработчик изменения типа покупки
+        document.addEventListener('DOMContentLoaded', function() {
+            const purchaseTypeSelect = document.getElementById('purchaseType');
+            const ticketSelection = document.getElementById('ticket-selection');
+            const bookWithoutPaymentCheckbox = document.getElementById('bookWithoutPayment');
+            const questionFieldContainer = document.getElementById('questionFieldContainer');
+
+            // Функция для обновления видимости полей
+            function updateFieldVisibility() {
+                const isPlatformRequest = purchaseTypeSelect.value === 'platform_request';
+
+                // Отключаем выбор билетов и опцию "Забронировать без оплаты" для заявки организатору
+                if (ticketSelection) {
+                    const quantityInputs = ticketSelection.querySelectorAll('input[type="number"]');
+                    quantityInputs.forEach(input => {
+                        input.disabled = isPlatformRequest;
+                        if (isPlatformRequest) input.value = 0;
+                    });
+                }
+
+                if (bookWithoutPaymentCheckbox) {
+                    bookWithoutPaymentCheckbox.disabled = isPlatformRequest;
+                    if (isPlatformRequest) bookWithoutPaymentCheckbox.checked = false;
+                }
+
+                // Показываем поле для вопросов только для заявки организатору
+                if (questionFieldContainer) {
+                    questionFieldContainer.style.display = isPlatformRequest ? 'block' : 'none';
+                }
+
+                // Обновляем текст кнопки в зависимости от типа покупки
+                if (buyButton) {
+                    buyButton.textContent = isPlatformRequest ? 'Отправить заявку' : 'Подтвердить выбор';
+                }
+            }
+
+            // Инициализация при загрузке страницы
+            updateFieldVisibility();
+
+            // Обновление при изменении типа покупки
+            if (purchaseTypeSelect) {
+                purchaseTypeSelect.addEventListener('change', updateFieldVisibility);
+            }
+        });
+
         // Обработчик нажатия на кнопку покупки
         document.addEventListener('DOMContentLoaded', function() {
             const buyButton = document.getElementById('buyButton');
             if (buyButton) {
                 buyButton.addEventListener('click', function() {
-                    // Проверяем, что выбрано хотя бы одно количество билетов
-                    let hasTickets = false;
-                    const quantityInputs = document.querySelectorAll('input[type="number"]');
-                    quantityInputs.forEach(input => {
-                        if (parseInt(input.value) > 0) {
-                            hasTickets = true;
-                        }
-                    });
+                    // Проверяем, что выбрано хотя бы одно количество билетов (кроме случая заявки организатору)
+                    const purchaseTypeSelect = document.getElementById('purchaseType');
+                    const isPlatformRequest = purchaseTypeSelect.value === 'platform_request';
 
-                    if (!hasTickets) {
-                        alert('Пожалуйста, выберите хотя бы один билет');
-                        return;
+                    if (!isPlatformRequest) {
+                        let hasTickets = false;
+                        const quantityInputs = document.querySelectorAll('input[type="number"]');
+                        quantityInputs.forEach(input => {
+                            if (parseInt(input.value) > 0) {
+                                hasTickets = true;
+                            }
+                        });
+
+                        if (!hasTickets) {
+                            alert('Пожалуйста, выберите хотя бы один билет');
+                            return;
+                        }
+                    } else {
+                        // Для заявки организатору проверяем, что вопрос не пустой
+                        const question = document.getElementById('question').value.trim();
+                        if (!question) {
+                            alert('Пожалуйста, напишите ваш вопрос организатору');
+                            return;
+                        }
                     }
 
                     // Собираем данные формы
@@ -38,22 +95,59 @@
                     buyButton.disabled = true;
                     buyButton.textContent = 'Обработка...';
 
-                    // Отправляем AJAX-запрос для создания заказов и получения токена платежа
-                    fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Сетевая ошибка');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
+                      // Определяем тип покупки
+                      const purchaseType = purchaseTypeSelect.value;
+                      const eventId = {{ event.id }};
+
+                      // Если это заявка организатору, отправляем на отдельную обработку
+                      if (purchaseType === 'platform_request') {
+                          fetch(`/send-event-request/${eventId}/`, {
+                             method: 'POST',
+                             body: formData,
+                             headers: {
+                                 'X-Requested-With': 'XMLHttpRequest'
+                             }
+                         })
+                         .then(response => {
+                             if (!response.ok) {
+                                 throw new Error('Сетевая ошибка');
+                             }
+                             return response.json();
+                         })
+                         .then(data => {
+                             if (data.success) {
+                                 alert(data.message);
+                                 buyButton.disabled = false;
+                                 buyButton.textContent = 'Отправить заявку';
+                             } else {
+                                 throw new Error(data.message || 'Ошибка при отправке заявки');
+                             }
+                         })
+                         .catch(error => {
+                             console.error('Ошибка:', error);
+                             alert('Произошла ошибка при отправке заявки: ' + error.message);
+                             buyButton.disabled = false;
+                             buyButton.textContent = 'Отправить заявку';
+                         });
+                         return;
+                     }
+
+                     // Для покупки билетов продолжаем стандартную обработку
+                     fetch(form.action, {
+                         method: 'POST',
+                         body: formData,
+                         headers: {
+                             'X-Requested-With': 'XMLHttpRequest'
+                         }
+                     })
+                     .then(response => {
+                         if (!response.ok) {
+                             throw new Error('Сетевая ошибка');
+                         }
+                         return response.json();
+                     })
+                     .then(data => {
+                         if (data.success) {
                             // Создаем контейнер для виджета, если его еще нет
                             let widgetContainer = document.getElementById('payment-widget-container');
                             if (!widgetContainer) {
@@ -194,6 +288,12 @@
                     {% endif %}
                 {% endif %}
             </select>
+        </div>
+
+        <!-- Поле для вопросов, скрытое по умолчанию -->
+        <div class="mb-3" id="questionFieldContainer" style="display: none;">
+            <label for="question" class="form-label">Ваш вопрос организатору:</label>
+            <textarea class="form-control" name="question" id="question" rows="3" placeholder="Напишите ваш вопрос здесь..."></textarea>
         </div>
 
         <button type="button" class="btn btn-primary" id="buyButton">
