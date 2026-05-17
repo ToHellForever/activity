@@ -13,14 +13,13 @@ from core.views import (
     send_support_message,
     event_list,
     event_detail,
-    buy_ticket,
     send_event_request,
     activate_account,
     forgot_password,
     update_ticket_status,
-    yookassa_webhook,
     sales_register,
 )
+from visitor_app.views import buy_ticket, yookassa_webhook
 app_name = "venues"
 
 urlpatterns = [
