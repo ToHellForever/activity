@@ -52,7 +52,6 @@ import base64
 
 logger = logging.getLogger(__name__)
 
-
 @csrf_exempt
 def yookassa_webhook(request):
     # Логируем все входящие данные (для отладки)
@@ -98,16 +97,16 @@ def yookassa_webhook(request):
             logger.info(
                 f"Order {order_id} marked as paid (payment {payment_data['id']})"
             )
-            
+
             # Проверяем параметр reserve_order для оплаты забронированных билетов
             if request.GET.get('reserve_order'):
                 logger.info(f"Оплата забронированного билета для заказа {order_id}")
-                
+
             # Проверяем параметр reserve_order в POST данных
             if request.POST.get('reserve_order'):
                 reserve_order_id = request.POST.get('reserve_order')
                 logger.info(f"Обработка оплаты для забронированного заказа {reserve_order_id}")
-            
+
             # Отправляем уведомление о покупке билетов
             logger.info(
                 f"Начало отправки уведомления о покупке билетов для заказа {order_id}"
@@ -140,6 +139,9 @@ def yookassa_webhook(request):
     except Order.DoesNotExist:
         logger.error(f"Order {order_id} not found")
 
+    # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
+    return HttpResponse(status=200)
+
 def send_reservation_notification(order):
     """Отправляет уведомление о бронировании билета."""
     from django.contrib.sites.shortcuts import get_current_site
@@ -170,59 +172,43 @@ def send_reservation_notification(order):
         [user_email],
         html_message=html_message,
     )
-    
-    
-    def send_ticket_notification_to_email(order):
-        """Отправляет уведомление о покупке билета на email."""
-        from django.contrib.sites.shortcuts import get_current_site
-        
-        user_email = order.participant_data.get('email')
-        if not user_email:
-            return
-        
-            event = order.ticket.event
-            payment_link = generate_payment_link(order)
-            
-            subject = f"Ваш билет на мероприятие {event.title}"
-            
-            context = {
-                'order': order,
-                'event': event,
-                'payment_link': payment_link,
-                'site_name': get_current_site(None).name,
-            }
-            
-            html_message = render_to_string('emails/ticket_notification.html', context)
-            plain_message = strip_tags(html_message)
-            
-            send_mail(
-                subject,
-                plain_message,
-                'noreply@eventplatform.com',
-                [user_email],
-                html_message=html_message,
-            )
-            logger.info(
-                f"Уведомление о покупке билетов успешно отправлено на email {email}"
-            )
 
-            logger.info(
-                f"Завершение отправки уведомления о покупке билетов для заказа {order_id}"
-            )
-        elif event == "payment.canceled":
-            order.payment_status = "canceled"
-            order.save()
-            logger.info(
-                f"Order {order_id} marked as canceled (payment {payment_data['id']})"
-            )
+def send_ticket_notification_to_email(order):
+    """Отправляет уведомление о покупке билета на email."""
+    from django.contrib.sites.shortcuts import get_current_site
 
-    # Всегда возвращаем HTTP 200 (ЮKassa ждет этого ответа)
-    return HttpResponse(status=200)
+    user_email = order.participant_data.get('email')
+    if not user_email:
+        return
 
+    event = order.ticket.event
+    payment_link = generate_payment_link(order)
+
+    subject = f"Ваш билет на мероприятие {event.title}"
+
+    context = {
+        'order': order,
+        'event': event,
+        'payment_link': payment_link,
+        'site_name': get_current_site(None).name,
+    }
+
+    html_message = render_to_string('emails/ticket_notification.html', context)
+    plain_message = strip_tags(html_message)
+
+    send_mail(
+        subject,
+        plain_message,
+        'noreply@eventplatform.com',
+        [user_email],
+        html_message=html_message,
+    )
+    logger.info(
+        f"Уведомление о покупке билетов успешно отправлено на email {user_email}"
+    )
 
 def landing_page(request):
     return render(request, "landing.html")
-
 
 @login_required
 def change_password(request):
@@ -236,7 +222,6 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
     return render(request, "change_password.html", {"password_form": password_form})
-
 
 @never_cache
 def login_view(request):
@@ -261,12 +246,10 @@ def login_view(request):
 
     return render(request, "registration/login.html", {"form": form})
 
-
 def generate_temporary_password(length=10):
     """Генерация временного пароля."""
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(length))
-
 
 @never_cache
 def forgot_password(request):
@@ -312,7 +295,6 @@ def forgot_password(request):
             )
     return render(request, "registration/forgot_password.html")
 
-
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
@@ -335,7 +317,6 @@ def register_view(request):
 
     return render(request, "registration/register.html", {"form": form})
 
-
 def custom_logout(request):
     """
     Кастомная функция для выхода из системы.
@@ -346,7 +327,6 @@ def custom_logout(request):
 
     # Редиректим на страницу входа по имени URL
     return redirect("login")
-
 
 @login_required
 def support_dashboard(request):
@@ -426,7 +406,6 @@ def support_dashboard(request):
     }
     return render(request, "support_dashboard.html", context)
 
-
 @require_POST
 @login_required
 def send_support_message(request):
@@ -459,7 +438,6 @@ def send_support_message(request):
     messages.error(request, "Ошибка отправки сообщения.")
     return redirect("support_dashboard")
 
-
 def upload_image(request):
     if request.method == "POST":
         data_url = request.POST.get("data")
@@ -473,10 +451,8 @@ def upload_image(request):
 
     return HttpResponseBadRequest("Некорректный запрос")
 
-
 def is_moderator(user):
     return user.is_superuser or user.groups.filter(name="Модераторы").exists()
-
 
 @user_passes_test(is_moderator, login_url="/login/")
 @login_required
@@ -508,14 +484,12 @@ def moderator_dashboard(request):
     }
     return render(request, "moderator_dashboard.html", context)
 
-
 def update_ticket_status(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)
     new_status = request.POST.get("status")
     ticket.status = new_status
     ticket.save()
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
-
 
 def event_list(request):
     active_events = Event.objects.filter(status="active").order_by("date_time")
@@ -542,11 +516,9 @@ def event_list(request):
         },
     )
 
-
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     return render(request, "events/event_detail.html", {"event": event})
-
 
 @require_http_methods(["GET", "POST"])
 def handle_platform_request(request, event, user, ticket, quantity):
@@ -579,7 +551,6 @@ def handle_platform_request(request, event, user, ticket, quantity):
             "message": "Ваша заявка успешно отправлена организатору. Мы свяжемся с вами в ближайшее время.",
         }
     )
-
 
 @require_http_methods(["GET", "POST"])
 def send_event_request(request, event_id, question=""):
@@ -675,11 +646,10 @@ def send_event_request(request, event_id, question=""):
             )
             return redirect("event_detail", event_id=event_id)
 
-
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
     """Представление для покупки билетов на мероприятие.
-    
+
     Обрабатывает:
     - Покупку платных билетов
     - Бесплатную регистрацию
@@ -986,12 +956,25 @@ def buy_ticket(request, event_id):
                                 )
                         else:
                             # Если все билеты бесплатные или забронированные, сразу возвращаем успех
-                            return JsonResponse(
-                                {
-                                    "success": True,
-                                    "message": "Регистрация успешно завершена. Билеты отправлены на ваш email.",
-                                }
-                            )
+                            if is_booking:
+                                # Для бронирования возвращаем специальное сообщение с информацией о сроке оплаты
+                                payment_deadline_str = order.payment_deadline.strftime("%d.%m.%Y %H:%M")
+                                return JsonResponse(
+                                    {
+                                        "success": True,
+                                        "message": f"Бронирование успешно завершено! Ваши билеты забронированы до {payment_deadline_str}. "
+                                                   f"Оплатите их до этого времени, иначе бронь будет автоматически отменена. "
+                                                   f"Информация отправлена на ваш email.",
+                                    }
+                                )
+                            else:
+                                # Для бесплатной регистрации или успешной оплаты - стандартное сообщение
+                                return JsonResponse(
+                                    {
+                                        "success": True,
+                                        "message": "Регистрация успешно завершена. Билеты отправлены на ваш email.",
+                                    }
+                                )
 
                     except Exception as e:
                         logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
@@ -1017,10 +1000,14 @@ def buy_ticket(request, event_id):
                     )
                 else:
                     # Если оплата не требуется (бронирование без оплаты), сразу возвращаем успех
+                    # Получаем дедлайн оплаты из первого заказа (все заказы в этом случае имеют одинаковый дедлайн)
+                    payment_deadline_str = orders[0].payment_deadline.strftime("%d.%m.%Y %H:%M")
                     return JsonResponse(
                         {
                             "success": True,
-                            "message": "Бронирование успешно завершено. Информация отправлена на ваш email.",
+                            "message": f"Бронирование успешно завершено! Ваши билеты забронированы до {payment_deadline_str}. "
+                                       f"Оплатите их до этого времени, иначе бронь будет автоматически отменена. "
+                                       f"Информация отправлена на ваш email.",
                         }
                     )
 
@@ -1199,7 +1186,6 @@ def buy_ticket(request, event_id):
     url = reverse("landing_page") + "?success=ticket_purchased"
     return redirect(url)
 
-
 def send_multiple_tickets_notification(user, orders, request=None):
     subject = "Ваши электронные билеты"
     activation_link = None
@@ -1285,7 +1271,8 @@ def send_multiple_tickets_notification(user, orders, request=None):
                 """
         total_amount += order.total_price
 
-    message = f"""\n    <html>
+    message = f"""
+    <html>
     <body>
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Здравствуйте, {user.get_full_name() or user.email}!</h2>
@@ -1331,7 +1318,6 @@ def send_multiple_tickets_notification(user, orders, request=None):
     send_mail(
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
-
 
 def send_ticket_notification(user, order, request=None):
     subject = "Ваш электронный билет"
@@ -1436,7 +1422,6 @@ def send_ticket_notification(user, order, request=None):
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
 
-
 def send_partner_all_tickets_sold_notification(event):
     """
     Отправляет уведомление партнёру о том, что все билеты на мероприятие выкуплены.
@@ -1473,7 +1458,6 @@ def send_partner_all_tickets_sold_notification(event):
     </body>
     </html>
     """
-
     send_mail(
         subject,
         "",
@@ -1481,7 +1465,6 @@ def send_partner_all_tickets_sold_notification(event):
         [organizer_email],
         html_message=message,
     )
-
 
 def activate_account(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
@@ -1492,7 +1475,6 @@ def activate_account(request, pk):
         user.save()
         return redirect("login")
     return render(request, "activate_account.html")
-
 
 @staff_member_required
 def sales_register(request):
@@ -1542,9 +1524,7 @@ def sales_register(request):
             "end_date": end_date,
         }
         return render(request, "admin/sales_register.html", context)
-
     return render(request, "admin/sales_register_form.html")
-
 
 def generate_sales_register(partner, start_date, end_date):
     """
