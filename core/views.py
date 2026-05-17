@@ -39,7 +39,8 @@ import io
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce
 from django.contrib.admin.views.decorators import staff_member_required
-
+# transaction
+from django.db import transaction
 logger = logging.getLogger(__name__)
 
 def landing_page(request):

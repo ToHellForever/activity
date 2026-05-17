@@ -6,7 +6,16 @@ from core.models import Order, Ticket
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.views.decorators.http import require_http_methods
-from core.models import Event, Ticket, Tag, SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
+from core.models import (
+    Event,
+    Ticket,
+    Tag,
+    SupportTicket,
+    SupportMessage,
+    SupportAttachment,
+    CustomUser,
+    Order,
+)
 from django.db import models, transaction, IntegrityError
 import logging
 from django.http import JsonResponse
@@ -29,7 +38,6 @@ from django.shortcuts import (
     reverse,
 )
 from django.utils import timezone
-
 
 logger = logging.getLogger(__name__)
 
@@ -139,13 +147,15 @@ def yookassa_webhook(request):
             )
 
             # Проверяем параметр reserve_order для оплаты забронированных билетов
-            if request.GET.get('reserve_order'):
+            if request.GET.get("reserve_order"):
                 logger.info(f"Оплата забронированного билета для заказа {order_id}")
 
             # Проверяем параметр reserve_order в POST данных
-            if request.POST.get('reserve_order'):
-                reserve_order_id = request.POST.get('reserve_order')
-                logger.info(f"Обработка оплаты для забронированного заказа {reserve_order_id}")
+            if request.POST.get("reserve_order"):
+                reserve_order_id = request.POST.get("reserve_order")
+                logger.info(
+                    f"Обработка оплаты для забронированного заказа {reserve_order_id}"
+                )
 
             # Отправляем уведомление о покупке билетов
             logger.info(
@@ -315,13 +325,13 @@ def send_multiple_tickets_notification(user, orders, request=None):
     send_mail(
         subject, "", "dim.anosoff2018@yandex.ru", [user.email], html_message=message
     )
-    
-    
+
+
 def send_reservation_notification(order):
     """Отправляет уведомление о бронировании билета."""
     from django.contrib.sites.shortcuts import get_current_site
 
-    user_email = order.participant_data.get('email')
+    user_email = order.participant_data.get("email")
     if not user_email:
         return
 
@@ -331,28 +341,29 @@ def send_reservation_notification(order):
     subject = f"Ваш билет на мероприятие {event.title} забронирован"
 
     context = {
-        'order': order,
-        'event': event,
-        'payment_link': payment_link,
-        'site_name': get_current_site(None).name,
+        "order": order,
+        "event": event,
+        "payment_link": payment_link,
+        "site_name": get_current_site(None).name,
     }
 
-    html_message = render_to_string('emails/reservation_notification.html', context)
+    html_message = render_to_string("emails/reservation_notification.html", context)
     plain_message = strip_tags(html_message)
 
     send_mail(
         subject,
         plain_message,
-        'noreply@eventplatform.com',
+        "noreply@eventplatform.com",
         [user_email],
         html_message=html_message,
     )
+
 
 def send_ticket_notification_to_email(order):
     """Отправляет уведомление о покупке билета на email."""
     from django.contrib.sites.shortcuts import get_current_site
 
-    user_email = order.participant_data.get('email')
+    user_email = order.participant_data.get("email")
     if not user_email:
         return
 
@@ -362,19 +373,19 @@ def send_ticket_notification_to_email(order):
     subject = f"Ваш билет на мероприятие {event.title}"
 
     context = {
-        'order': order,
-        'event': event,
-        'payment_link': payment_link,
-        'site_name': get_current_site(None).name,
+        "order": order,
+        "event": event,
+        "payment_link": payment_link,
+        "site_name": get_current_site(None).name,
     }
 
-    html_message = render_to_string('emails/ticket_notification.html', context)
+    html_message = render_to_string("emails/ticket_notification.html", context)
     plain_message = strip_tags(html_message)
 
     send_mail(
         subject,
         plain_message,
-        'noreply@eventplatform.com',
+        "noreply@eventplatform.com",
         [user_email],
         html_message=html_message,
     )
@@ -383,411 +394,70 @@ def send_ticket_notification_to_email(order):
     )
 
 
-@require_http_methods(["GET", "POST"])
-def buy_ticket(request, event_id):
-    """Представление для покупки билетов на мероприятие.
+def _get_ticket_quantities_and_validate(request, event):
+    """Собирает и валидирует выбранные билеты."""
+    tickets = event.tickets.all()
+    ticket_quantities = {}
+    error_message = None
 
-    Обрабатывает:
-    - Покупку платных билетов
-    - Бесплатную регистрацию
-    - Бронирование билетов с отложенной оплатой
-    """
-    event = get_object_or_404(Event, id=event_id)
+    for ticket in tickets:
+        quantity_key = f"quantity_{ticket.id}"
+        quantity = int(request.POST.get(quantity_key, 0) or 0)
+        if quantity > 0:
+            if not ticket.is_available(quantity):
+                error_message = f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
+                break
+            ticket_quantities[ticket] = quantity
 
-    if request.method == "GET":
-        # Показываем форму покупки
-        tickets = event.tickets.all()
+    if not ticket_quantities:
+        error_message = "Пожалуйста, выберите хотя бы один билет"
 
-        # Проверяем, есть ли платные билеты, требующие оплаты через ЮKassa
-        yookassa_payment_token = None
-        has_paid_tickets = any(ticket.price > 0 for ticket in tickets)
+    return ticket_quantities, error_message
 
-        if has_paid_tickets:
-            try:
-                # Генерируем тестовый токен для отображения виджета (если это нужно)
-                # В реальном сценарии токен должен генерироваться при POST-запросе
-                # Но для отображения формы оплаты при первой загрузке можно использовать тестовый токен
-                # Или оставить None и обрабатывать генерацию только при AJAX-запросе
-                pass
-            except Exception as e:
-                logger.error(f"Ошибка при подготовке платежного токена: {str(e)}")
 
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-                "yookassa_payment_token": yookassa_payment_token,
-            },
-        )
-
-    # Проверяем, является ли запрос AJAX (для обработки виджета оплаты)
-    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
-
-    # Обработка POST-запроса
+def _create_or_update_user(request):
+    """Создаёт или обновляет пользователя по email."""
     email = (request.POST.get("email") or "").strip()
     first_name = (request.POST.get("first_name") or "").strip()
     last_name = (request.POST.get("last_name") or "").strip()
     phone = (request.POST.get("phone") or "").strip()
 
-    # Создаём или получаем пользователя по email
     user, created = CustomUser.objects.get_or_create(
         email=email,
         defaults={
             "first_name": first_name,
             "last_name": last_name,
+            "phone": phone,
             "user_type": "guest",
-            "username": email,  # Используем email как username
+            "username": email,
         },
     )
-
-    # Обновляем данные пользователя, если он уже существовал
     if not created:
         user.first_name = first_name
         user.last_name = last_name
+        user.phone = phone
         user.save()
-
     if created:
-        # Гость без пароля
         user.set_unusable_password()
         user.save()
+    return user
 
-    # Получаем все билеты события для проверки
-    tickets = event.tickets.all()
-    ticket_quantities = {}
-    total_price = 0
-    error_message = None
 
-    # Собираем информацию о выбранных билетах
-    for ticket in tickets:
-        quantity_key = f"quantity_{ticket.id}"
-        quantity = int(request.POST.get(quantity_key, 0) or 0)
-
-        if quantity > 0:
-            # Проверяем доступность
-            if not ticket.is_available(quantity):
-                error_message = f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
-                break
-
-            ticket_quantities[ticket] = quantity
-            total_price += ticket.price * quantity
-
-    # Если есть ошибка или не выбрано ни одного билета
-    if error_message:
-        messages.error(request, error_message)
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
-
-    if not ticket_quantities and purchase_type != "platform_request":
-        messages.error(request, "Пожалуйста, выберите хотя бы один билет")
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
-
-    # Определяем тип покупки
-    purchase_type = request.POST.get("purchase_type", "paid_ticket")
-
-    # Если это заявка организатору, перенаправляем на отдельную обработку
-    if purchase_type == "platform_request":
-        return send_event_request(
-            request, event_id, question=request.POST.get("question", "")
-        )
-
-    # Проверяем, нужно ли оплачивать сразу или можно забронировать
-    is_booking_without_payment = (
-        event.allow_booking_without_payment
-        and request.POST.get("book_without_payment") == "on"
-    )
-
-    # Если требуется оплата (не бронирование), будем использовать ЮKassa
-    require_payment = not is_booking_without_payment
-
-    # Если это AJAX-запрос, сразу создаем заказы и платеж
-    if is_ajax:
-        # Создаем заказы для каждого типа билетов
-        orders = []
-        try:
-            with transaction.atomic():
-                for ticket, quantity in ticket_quantities.items():
-                    logger.debug(
-                        f"Начало обработки билета {ticket.id}, доступно до блокировки: {ticket.get_available_count()}"
-                    )
-
-                    # Блокируем билет для предотвращения гонки
-                    ticket = Ticket.objects.select_for_update().get(pk=ticket.pk)
-                    logger.debug(
-                        f"Билет {ticket.id} заблокирован, доступно после блокировки: {ticket.get_available_count()}"
-                    )
-
-                    # Повторно проверяем доступность после блокировки
-                    if not ticket.is_available(quantity):
-                        logger.warning(
-                            f"Недостаточно билетов типа '{ticket.name}'. Запрошено: {quantity}, доступно: {ticket.get_available_count()}"
-                        )
-                        return JsonResponse(
-                            {
-                                "success": False,
-                                "message": f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}",
-                            }
-                        )
-
-                    logger.debug(
-                        f"Создание заказа для билета {ticket.id}, количество: {quantity}"
-                    )
-                    total_price = ticket.price * quantity
-                    platform_commission = total_price * (
-                        ticket.event.commission_rate / 100
-                    )
-
-                    # Определяем тип покупки и статус платежа
-                    is_booking = (
-                        event.allow_booking_without_payment
-                        and request.POST.get("book_without_payment") == "on"
-                    )
-
-                    if purchase_type == "free_registration":
-                        total_price = 0
-                        platform_commission = 0
-                        is_paid = True
-                        payment_status = "succeeded"
-                        payment_deadline = None
-                    elif is_booking:
-                        payment_status = "reserved"
-                        is_paid = False
-                        # Устанавливаем дедлайн оплаты - за 24 часа до начала мероприятия
-                        payment_deadline = event.date_time - timezone.timedelta(
-                            hours=24
-                        )
-                    else:
-                        payment_status = "pending"
-                        is_paid = False
-                        payment_deadline = None
-
-                    order = Order.objects.create(
-                        ticket=ticket,
-                        participant_data={
-                            "email": email,
-                            "first_name": first_name,
-                            "last_name": last_name,
-                            "phone": phone,
-                        },
-                        total_price=total_price,
-                        quantity=quantity,
-                        is_paid=is_paid,
-                        payment_status=payment_status,
-                        platform_commission=platform_commission,
-                        purchase_type=purchase_type,
-                        payment_deadline=payment_deadline,
-                        utm_source=request.POST.get("utm_source")
-                        or request.GET.get("utm_source"),
-                        utm_medium=request.POST.get("utm_medium")
-                        or request.GET.get("utm_medium"),
-                        utm_campaign=request.POST.get("utm_campaign")
-                        or request.GET.get("utm_campaign"),
-                        utm_term=request.POST.get("utm_term")
-                        or request.GET.get("utm_term"),
-                        utm_content=request.POST.get("utm_content")
-                        or request.GET.get("utm_content"),
-                    )
-                    orders.append(order)
-                    logger.debug(
-                        f"Заказ для билета {ticket.id} успешно создан, ID заказа: {order.id}"
-                    )
-
-                # Отправляем уведомления о покупке билетов сразу после создания заказов
-                try:
-                    send_multiple_tickets_notification(user, orders, request)
-                    logger.info(
-                        f"Уведомления успешно отправлены пользователю {user.email}"
-                    )
-                except Exception as e:
-                    logger.exception("Ошибка отправки письма: %s", e)
-
-                # Если требуется оплата через ЮKassa, генерируем платежный токен
-                if require_payment:
-                    yookassa_payment_token = None
-                    try:
-                        # Проверяем, есть ли заказы, требующие оплаты (не бесплатные и не забронированные)
-                        has_paid_tickets = any(
-                            order.payment_status == "pending" and order.total_price > 0
-                            for order in orders
-                        )
-
-                        if has_paid_tickets:
-                            # Создаем платеж в ЮKassa для получения токена
-                            total_amount = sum(
-                                ticket.price * quantity
-                                for ticket, quantity in ticket_quantities.items()
-                            )
-
-                            # Подготавливаем данные для создания платежа
-                            # Используем только первый заказ для упрощения
-                            primary_order_id = orders[0].id
-                            payment_data = {
-                                "amount": {
-                                    "value": str(total_amount),
-                                    "currency": "RUB",
-                                },
-                                "confirmation": {"type": "embedded"},
-                                "capture": True,
-                                "metadata": {"order_id": str(primary_order_id)},
-                                "description": f"Оплата билетов на мероприятие {event.title}",
-                            }
-
-                            # Логируем данные для отладки
-                            logger.info(f"Создание платежа в ЮKassa: {payment_data}")
-
-                            # Формируем заголовок Authorization
-                            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
-                            auth_bytes = auth_string.encode("ascii")
-                            auth_base64 = base64.b64encode(auth_bytes).decode("ascii")
-
-                            headers = {
-                                "Idempotence-Key": str(uuid.uuid4()),
-                                "Content-Type": "application/json",
-                                "Authorization": f"Basic {auth_base64}",
-                            }
-                            response = requests.post(
-                                "https://api.yookassa.ru/v3/payments",
-                                headers=headers,
-                                json=payment_data,
-                            )
-
-                            # Добавляем отладочный вывод статуса ответа от ЮKassa
-                            logger.info(
-                                f"Ответ от ЮKassa: {response.status_code}, {response.text}"
-                            )
-
-                            if response.ok:
-                                payment_response = response.json()
-                                yookassa_payment_token = payment_response[
-                                    "confirmation"
-                                ]["confirmation_token"]
-                                logger.info(
-                                    f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
-                                )
-                            else:
-                                logger.error(
-                                    f"Ошибка создания платежа в ЮKassa: {response.text}"
-                                )
-                                return JsonResponse(
-                                    {
-                                        "success": False,
-                                        "message": "Ошибка при создании платежа. Попробуйте еще раз.",
-                                    }
-                                )
-                        else:
-                            # Если все билеты бесплатные или забронированные, сразу возвращаем успех
-                            if is_booking:
-                                # Для бронирования возвращаем специальное сообщение с информацией о сроке оплаты
-                                payment_deadline_str = order.payment_deadline.strftime("%d.%m.%Y %H:%M")
-                                return JsonResponse(
-                                    {
-                                        "success": True,
-                                        "message": f"Бронирование успешно завершено! Ваши билеты забронированы до {payment_deadline_str}. "
-                                                   f"Оплатите их до этого времени, иначе бронь будет автоматически отменена. "
-                                                   f"Информация отправлена на ваш email.",
-                                    }
-                                )
-                            else:
-                                # Для бесплатной регистрации или успешной оплаты - стандартное сообщение
-                                return JsonResponse(
-                                    {
-                                        "success": True,
-                                        "message": "Регистрация успешно завершена. Билеты отправлены на ваш email.",
-                                    }
-                                )
-
-                    except Exception as e:
-                        logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
-                        return JsonResponse(
-                            {
-                                "success": False,
-                                "message": "Ошибка при обработке платежа. Попробуйте еще раз.",
-                            }
-                        )
-
-                    # Формируем абсолютный URL для возврата после оплаты
-                    return_url = (
-                        request.build_absolute_uri(reverse("landing_page"))
-                        + "?success=payment_completed"
-                    )
-
-                    return JsonResponse(
-                        {
-                            "success": True,
-                            "confirmation_token": yookassa_payment_token,
-                            "return_url": return_url,
-                        }
-                    )
-                else:
-                    # Если оплата не требуется (бронирование без оплаты), сразу возвращаем успех
-                    # Получаем дедлайн оплаты из первого заказа (все заказы в этом случае имеют одинаковый дедлайн)
-                    payment_deadline_str = orders[0].payment_deadline.strftime("%d.%m.%Y %H:%M")
-                    return JsonResponse(
-                        {
-                            "success": True,
-                            "message": f"Бронирование успешно завершено! Ваши билеты забронированы до {payment_deadline_str}. "
-                                       f"Оплатите их до этого времени, иначе бронь будет автоматически отменена. "
-                                       f"Информация отправлена на ваш email.",
-                        }
-                    )
-
-        except IntegrityError as e:
-            logger.error(f"Ошибка целостности данных при покупке билетов: {e}")
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз.",
-                }
-            )
-        except ValueError as e:
-            return JsonResponse({"success": False, "message": str(e)})
-
-    # Создаем заказы для обычного POST-запроса (не AJAX)
-    orders = []
+def _create_orders(user, event, ticket_quantities, request):
+    """Создаёт заказы в транзакции."""
     try:
         with transaction.atomic():
+            orders = []
             for ticket, quantity in ticket_quantities.items():
-                logger.debug(
-                    f"Начало обработки билета {ticket.id}, доступно до блокировки: {ticket.get_available_count()}"
-                )
-
-                # Блокируем билет для предотвращения гонки
                 ticket = Ticket.objects.select_for_update().get(pk=ticket.pk)
-                logger.debug(
-                    f"Билет {ticket.id} заблокирован, доступно после блокировки: {ticket.get_available_count()}"
-                )
-
-                # Повторно проверяем доступность после блокировки
                 if not ticket.is_available(quantity):
-                    logger.warning(
-                        f"Недостаточно билетов типа '{ticket.name}'. Запрошено: {quantity}, доступно: {ticket.get_available_count()}"
-                    )
                     raise ValueError(
                         f"Недостаточно билетов типа '{ticket.name}'. Доступно: {ticket.get_available_count()}"
                     )
+                total_price = ticket.price * quantity
+                platform_commission = total_price * (event.commission_rate / 100)
 
-                logger.debug(
-                    f"Создание заказа для билета {ticket.id}, количество: {quantity}"
-                )
-
-                # Определяем тип покупки и статус платежа
+                purchase_type = request.POST.get("purchase_type", "paid_ticket")
                 is_booking = (
                     event.allow_booking_without_payment
                     and request.POST.get("book_without_payment") == "on"
@@ -795,17 +465,15 @@ def buy_ticket(request, event_id):
 
                 if purchase_type == "free_registration":
                     total_price = 0
+                    platform_commission = 0
                     is_paid = True
                     payment_status = "succeeded"
                     payment_deadline = None
                 elif is_booking:
-                    total_price = ticket.price * quantity
                     is_paid = False
                     payment_status = "reserved"
-                    # Устанавливаем дедлайн оплаты - за 24 часа до начала мероприятия
                     payment_deadline = event.date_time - timezone.timedelta(hours=24)
                 else:
-                    total_price = ticket.price * quantity
                     is_paid = False
                     payment_status = "pending"
                     payment_deadline = None
@@ -813,15 +481,16 @@ def buy_ticket(request, event_id):
                 order = Order.objects.create(
                     ticket=ticket,
                     participant_data={
-                        "email": email,
-                        "first_name": first_name,
-                        "last_name": last_name,
-                        "phone": phone,
+                        "email": user.email,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "phone": request.POST.get("phone", ""),
                     },
                     total_price=total_price,
                     quantity=quantity,
                     is_paid=is_paid,
                     payment_status=payment_status,
+                    platform_commission=platform_commission,
                     purchase_type=purchase_type,
                     payment_deadline=payment_deadline,
                     utm_source=request.POST.get("utm_source")
@@ -836,89 +505,174 @@ def buy_ticket(request, event_id):
                     or request.GET.get("utm_content"),
                 )
                 orders.append(order)
-                logger.debug(
-                    f"Заказ для билета {ticket.id} успешно создан, ID заказа: {order.id}"
-                )
+            return orders
     except IntegrityError as e:
-        messages.error(
-            request, "Произошла ошибка при покупке билетов. Попробуйте еще раз."
-        )
         logger.error(f"Ошибка целостности данных при покупке билетов: {e}")
-        logger.error(
-            f"Текущее доступное количество билетов: {ticket.get_available_count()}"
-        )
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
-    except ValueError as e:
-        messages.error(request, str(e))
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
+        return None
 
-    # Устанавливаем флаг has_sold_tickets для события, если билеты проданы
-    if not event.has_sold_tickets:
-        event.has_sold_tickets = True
-        event.save()
 
-        # Устанавливаем дедлайн оплаты для бронирований без оплаты
-        if is_booking_without_payment:
-            # Дедлайн - за 24 часа до начала мероприятия
-            payment_deadline = event.date_time - timezone.timedelta(hours=24)
-            order.payment_deadline = payment_deadline
-            order.save()
+def _process_payment_and_notifications(orders, request, event, user):
+    """Обрабатывает оплату, отправляет уведомления, возвращает результат для AJAX или редирект."""
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    require_payment = not (
+        event.allow_booking_without_payment
+        and request.POST.get("book_without_payment") == "on"
+    )
 
-    # Отправляем одно уведомление с информацией о всех билетах
+    # Отправка уведомлений
     try:
         send_multiple_tickets_notification(user, orders, request)
     except Exception as e:
-        logger.exception("Ошибка отправки письма: %s", e)
+        logger.exception(f"Ошибка отправки письма: {str(e)}")
 
-    # Проверяем, все ли билеты на мероприятие выкуплены
-    all_tickets_sold = True
-    for ticket in event.tickets.all():
-        if ticket.get_available_count() > 0:
-            all_tickets_sold = False
-            break
+    # Проверка, все ли билеты выкуплены
+    all_tickets_sold = all(
+        ticket.get_available_count() == 0 for ticket in event.tickets.all()
+    )
+    if all_tickets_sold and not event.has_sold_tickets:
+        event.has_sold_tickets = True
+        event.save()
+        try:
+            send_partner_all_tickets_sold_notification(event)
+        except Exception as e:
+            logger.exception(f"Ошибка отправки уведомления партнёру: {str(e)}")
 
-    # Логируем результат проверки
-    logger.debug(
-        f"Проверка на выкуп всех билетов для мероприятия {event.id}: {all_tickets_sold}"
+    # Обработка оплаты через ЮKassa (только если требуется оплата)
+    if require_payment:
+        try:
+            total_amount = sum(order.total_price for order in orders)
+            primary_order_id = orders[0].id
+
+            payment_data = {
+                "amount": {"value": str(total_amount), "currency": "RUB"},
+                "confirmation": {"type": "embedded"},
+                "capture": True,
+                "metadata": {"order_id": str(primary_order_id)},
+                "description": f"Оплата билетов на мероприятие {event.title}",
+            }
+
+            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
+            auth_base64 = base64.b64encode(auth_string.encode("ascii")).decode("ascii")
+
+            headers = {
+                "Idempotence-Key": str(uuid.uuid4()),
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth_base64}",
+            }
+            response = requests.post(
+                "https://api.yookassa.ru/v3/payments",
+                headers=headers,
+                json=payment_data,
+            )
+
+            if response.ok:
+                payment_response = response.json()
+                confirmation_token = payment_response["confirmation"][
+                    "confirmation_token"
+                ]
+
+                if is_ajax:
+                    return_url = (
+                        request.build_absolute_uri(reverse("landing_page"))
+                        + "?success=payment_completed"
+                    )
+                    return {
+                        "success": True,
+                        "confirmation_token": confirmation_token,
+                        "return_url": return_url,
+                    }
+                else:
+                    return redirect(
+                        reverse("landing_page") + "?success=payment_completed"
+                    )
+            else:
+                logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
+                messages.error(
+                    request, "Ошибка при создании платежа. Попробуйте еще раз."
+                )
+        except Exception as e:
+            logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
+            messages.error(request, "Ошибка при обработке платежа. Попробуйте еще раз.")
+
+    # Если оплата не требуется (бронирование или бесплатная регистрация)
+    if is_ajax:
+        if (
+            event.allow_booking_without_payment
+            and request.POST.get("book_without_payment") == "on"
+        ):
+            payment_deadline_str = orders[0].payment_deadline.strftime("%d.%m.%Y %H:%M")
+            return {
+                "success": True,
+                "message": f"Бронирование успешно завершено! Ваши билеты забронированы до {payment_deadline_str}. "
+                f"Оплатите их до этого времени, иначе бронь будет автоматически отменена. "
+                f"Информация отправлена на ваш email.",
+            }
+        else:
+            return {
+                "success": True,
+                "message": "Регистрация успешно завершена. Билеты отправлены на ваш email.",
+            }
+    else:
+        return redirect(reverse("landing_page") + "?success=ticket_purchased")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def buy_ticket(request, event_id):
+    """Представление для покупки билетов на мероприятие."""
+    event = get_object_or_404(Event, id=event_id)
+
+    if request.method == "GET":
+        tickets = event.tickets.all()
+        has_paid_tickets = any(ticket.price > 0 for ticket in tickets)
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
+
+    # POST-запрос
+    user = _create_or_update_user(request)
+    ticket_quantities, error_message = _get_ticket_quantities_and_validate(
+        request, event
     )
 
-    # Если все билеты выкуплены, отправляем уведомление партнёру
-    if all_tickets_sold:
-        try:
-            logger.debug(f"Отправка уведомления партнёру для мероприятия {event.id}")
-            send_partner_all_tickets_sold_notification(event)
-            logger.debug(f"Уведомление партнёру для мероприятия {event.id} отправлено")
-        except Exception as e:
-            logger.exception("Ошибка отправки уведомления партнёру: %s", e)
+    if error_message:
+        messages.error(request, error_message)
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": event.tickets.all(),
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
 
-    # Отправляем уведомления о покупке билетов
-    try:
-        # Проверяем, что request передан (для AJAX-запросов он может отсутствовать)
-        if request:
-            send_multiple_tickets_notification(user, orders, request)
-        else:
-            logger.warning(
-                "Не удалось отправить уведомление - отсутствует объект request"
-            )
-    except Exception as e:
-        logger.exception("Ошибка отправки письма: %s", e)
+    orders = _create_orders(user, event, ticket_quantities, request)
+    if not orders:
+        messages.error(
+            request, "Произошла ошибка при покупке билетов. Попробуйте еще раз."
+        )
+        return render(
+            request,
+            "buy_ticket.html",
+            {
+                "event": event,
+                "tickets": event.tickets.all(),
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+            },
+        )
 
-    # Перенаправляем на страницу успешной покупки
-    url = reverse("landing_page") + "?success=ticket_purchased"
-    return redirect(url)
+    # Обработка оплаты и уведомлений
+    result = _process_payment_and_notifications(orders, request, event, user)
+
+    # Если это AJAX — возвращаем JSON, иначе — редирект
+    if isinstance(result, dict):
+        return JsonResponse(result)
+    else:
+        return result
