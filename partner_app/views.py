@@ -22,7 +22,7 @@ from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDeta
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
-
+from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
@@ -1369,4 +1369,50 @@ def change_password(request):
         request,
         "change_password.html",
         {"form": password_form, "rejection_messages": get_rejection_messages(request)},
+    )
+
+
+
+def send_partner_all_tickets_sold_notification(event):
+    """
+    Отправляет уведомление партнёру о том, что все билеты на мероприятие выкуплены.
+    """
+    subject = f"Все билеты на мероприятие '{event.title}' выкуплены"
+    organizer_email = event.organizer.email
+
+    # Формируем сообщение
+    message = f"""
+    <html>
+    <body>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Здравствуйте, {event.organizer.get_full_name()}!</h2>
+
+            <p>Поздравляем! Все билеты на ваше мероприятие <strong>{event.title}</strong> были успешно выкуплены.</p>
+
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Дата и время:</strong> {event.date_time.strftime('%d.%m.%Y %H:%M')}</p>
+                <p><strong>Место проведения:</strong> {event.get_place_address}</p>
+            </div>
+
+            <p>Теперь вы можете подготовиться к проведению мероприятия.</p>
+
+            <div style="
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                font-size: 12px;
+                color: #7f8c8d;
+            ">
+                <p>Если у вас возникли вопросы, обратитесь в нашу <a href="#">службу поддержки</a>.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    send_mail(
+        subject,
+        "",
+        "dim.anosoff2018@yandex.ru",
+        [organizer_email],
+        html_message=message,
     )
