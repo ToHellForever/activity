@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Напоминание об оплате билета</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .event-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .payment-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #28a745;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Напоминание об оплате билета</h2>
+    </div>
+
+    <p>Здравствуйте, {{ order.participant_data.first_name }}!</p>
+
+    <p>Это напоминание о том, что вы забронировали билет на мероприятие "{{ event.title }}", но еще не оплатили его.</p>
+
+    <div class="event-info">
+        <p><strong>Мероприятие:</strong> {{ event.title }}</p>
+        <p><strong>Дата и время:</strong> {{ event.date_time|date:"d.m.Y H:i" }}</p>
+        <p><strong>Тип билета:</strong> {{ order.ticket.name }}</p>
+        <p><strong>Количество:</strong> {{ order.quantity }}</p>
+        <p><strong>Сумма к оплате:</strong> {{ order.total_price }} ₽</p>
+    </div>
+
+    <div class="warning">
+        {% if hours_until_event == 48 %}
+            У вас осталось менее 48 часов до начала мероприятия!
+        {% else %}
+            У вас осталось менее 24 часов до начала мероприятия!
+        {% endif %}
+    </div>
+
+    <p>Пожалуйста, оплатите ваш билет как можно скорее, иначе ваша бронь будет автоматически отменена.</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ payment_link }}" class="payment-button">Оплатить билет</a>
+    </div>
+
+    <p>Если у вас возникли проблемы с оплатой, пожалуйста, свяжитесь с нашей службой поддержки.</p>
+
+    <div class="footer">
+        <p>С уважением, команда {{ site_name }}</p>
+        <p>Это автоматическое сообщение, пожалуйста, не отвечайте на него.</p>
+    </div>
+</body>
+</html>

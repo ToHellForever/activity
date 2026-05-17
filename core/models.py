@@ -512,6 +512,7 @@ class Order(models.Model):
         ("succeeded", "Оплачено"),
         ("canceled", "Отменено"),
         ("refunded", "Возврат"),
+        ("reserved", "Забронировано"),
     ]
     payment_status = models.CharField(
         max_length=20,

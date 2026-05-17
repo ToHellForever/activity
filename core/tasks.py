@@ -128,37 +128,40 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
         time.sleep(delay)
     return False
 
+
 @shared_task(bind=True)
 def process_video_task(
     self, model_name, instance_id, video_field_name, hash_field_name
 ):
     try:
         # Разбираем model_name в формате "app_label.model_name"
-        if isinstance(model_name, str) and '.' in model_name:
-            parts = model_name.split('.')
+        if isinstance(model_name, str) and "." in model_name:
+            parts = model_name.split(".")
             if len(parts) == 2:
                 app_label, model_name = parts
             else:
                 # Если формат неожиданный, используем venues по умолчанию для Venues
-                if 'Venue' in model_name:
-                    app_label = 'venues'
+                if "Venue" in model_name:
+                    app_label = "venues"
                 else:
-                    app_label = 'core'
+                    app_label = "core"
         else:
             # Если нет точки, используем venues по умолчанию для Venues
-            if 'Venue' in str(model_name):
-                app_label = 'venues'
+            if "Venue" in str(model_name):
+                app_label = "venues"
             else:
-                app_label = 'core'
+                app_label = "core"
 
         model = apps.get_model(app_label, model_name)
         instance = model.objects.get(pk=instance_id)
-        
+
         video_field = getattr(instance, video_field_name)
         hash_field = getattr(instance, hash_field_name)
 
         # Двойная проверка на случай гонки сигналов/задач Celery
-        if not video_field or not instance._should_process_video(video_field, hash_field):
+        if not video_field or not instance._should_process_video(
+            video_field, hash_field
+        ):
             return f"Видео не требует обработки: {model_name} {instance_id}"
 
         video_path = video_field.path
@@ -175,17 +178,18 @@ def process_video_task(
 
         # Сжимаем видео и сохраняем во временный файл
         from .validators import compress_video
+
         if not compress_video(video_path, temp_video_path):
             return f"Ошибка: не удалось сжать видео: {video_path}"
 
         # Добавляем водяной знак на временный файл и сохраняем в отдельный файл
         from .utils import add_watermark_to_video
-        
+
         watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
         if not os.path.exists(watermark_path):
             logger.error(f"Файл водяного знака не найден по пути: {watermark_path}")
             return f"Файл водяного знака не найден по пути: {watermark_path}"
-        
+
         if not add_watermark_to_video(
             temp_video_path,
             watermark_path,
@@ -199,19 +203,23 @@ def process_video_task(
             backup_path = f"{video_path}.bak"
             if os.path.exists(backup_path):
                 os.remove(backup_path)  # Удаляем старую бакап если есть (редко нужно)
-            
+
             os.replace(video_path, backup_path)  # Переименовываем исходный в бакап
 
             # Перемещаем обработанный файл на место исходного с правильным именем/расширением!
-            os.replace(watermarked_video_path, video_path) 
-            
+            os.replace(watermarked_video_path, video_path)
+
             # Удаляем временный файл сжатия и бакап (если всё ок)
             for p in [temp_video_path]:
                 if os.path.exists(p):
                     os.remove(p)
-            
+
             # Удаляем бакап только если новый файл успешно записан и имеет ненулевой размер!
-            if os.path.exists(video_path) and os.path.getsize(video_path) > 0 and os.path.exists(backup_path):
+            if (
+                os.path.exists(video_path)
+                and os.path.getsize(video_path) > 0
+                and os.path.exists(backup_path)
+            ):
                 os.remove(backup_path)
 
         except Exception as e:
@@ -228,6 +236,7 @@ def process_video_task(
         logger.error(f"Исключение при обработке видео: {str(e)}")
         return f"Исключение при обработке видео: {str(e)}"
 
+
 @shared_task
 def close_event_sales():
     """
@@ -243,10 +252,147 @@ def close_event_sales():
         # Проверяем, нужно ли автоматически закрывать продажи для этого мероприятия
         if event.auto_close_sales_hours > 0:
             # Вычисляем время закрытия продаж на основе настроек мероприятия
-            close_time = event.date_time - timezone.timedelta(hours=event.auto_close_sales_hours)
+            close_time = event.date_time - timezone.timedelta(
+                hours=event.auto_close_sales_hours
+            )
 
             # Если текущее время больше или равно времени закрытия
             if now >= close_time:
-                logger.info(f"Продажи билетов для мероприятия {event.title} закрыты за {event.auto_close_sales_hours} часов до начала.")
+                logger.info(
+                    f"Продажи билетов для мероприятия {event.title} закрыты за {event.auto_close_sales_hours} часов до начала."
+                )
 
     return f"Проверка и закрытие продаж выполнены: {now}"
+
+
+@shared_task
+def check_reserved_tickets():
+    """
+    Задача Celery для проверки забронированных билетов.
+    Отправляет напоминания об оплате за 48 и 24 часа до мероприятия.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+
+    now = timezone.now()
+
+    # Получаем все забронированные заказы, которые еще не оплачены
+    reserved_orders = Order.objects.filter(
+        payment_status="reserved", is_paid=False
+    ).select_related("ticket__event")
+
+    for order in reserved_orders:
+        event = order.ticket.event
+        time_until_event = (event.date_time - now).total_seconds() / 3600  # в часах
+
+        # Отправляем напоминание за 48 часов
+        if 48 >= time_until_event > 47:
+            send_reservation_reminder(order, 48)
+            logger.info(f"Отправлено напоминание за 48 часов для заказа {order.id}")
+
+        # Отправляем напоминание за 24 часа
+        elif 24 >= time_until_event > 23:
+            send_reservation_reminder(order, 24)
+            logger.info(f"Отправлено напоминание за 24 часа для заказа {order.id}")
+
+        # Проверяем, не истек ли срок оплаты
+        if order.payment_deadline and now > order.payment_deadline:
+            # Отменяем заказ и освобождаем билеты
+            order.payment_status = "canceled"
+            order.is_paid = False
+            order.save()
+
+            # Увеличиваем доступное количество билетов
+            ticket = order.ticket
+            ticket.available_quantity += order.quantity
+            ticket.save()
+
+            # Уведомляем пользователя об отмене
+            send_reservation_cancelation(order)
+            logger.info(
+                f"Заказ {order.id} отменен из-за просрочки оплаты. Билеты возвращены в продажу"
+            )
+
+    return f"Проверка забронированных билетов выполнена: {now}"
+
+
+def send_reservation_reminder(order, hours_until_event):
+    """Отправляет уведомление о необходимости оплаты забронированного билета."""
+    from django.urls import reverse
+    from django.contrib.sites.shortcuts import get_current_site
+
+    user_email = order.participant_data.get("email")
+    if not user_email:
+        return
+
+    event = order.ticket.event
+
+    # Генерируем ссылку для оплаты
+    payment_link = generate_payment_link(order)
+
+    subject = f"Напоминание об оплате билета на мероприятие {event.title}"
+
+    context = {
+        "order": order,
+        "event": event,
+        "hours_until_event": hours_until_event,
+        "payment_link": payment_link,
+        "site_name": get_current_site(None).name,
+    }
+
+    html_message = render_to_string("emails/reservation_reminder.html", context)
+    plain_message = strip_tags(html_message)
+
+    send_mail(
+        subject,
+        plain_message,
+        "noreply@eventplatform.com",
+        [user_email],
+        html_message=html_message,
+    )
+
+
+def send_reservation_cancelation(order):
+    """Отправляет уведомление об отмене бронирования из-за просрочки оплаты."""
+    user_email = order.participant_data.get("email")
+    if not user_email:
+        return
+
+    event = order.ticket.event
+
+    subject = f"Отмена бронирования билета на мероприятие {event.title}"
+
+    context = {
+        "order": order,
+        "event": event,
+    }
+
+    html_message = render_to_string("emails/reservation_canceled.html", context)
+    plain_message = strip_tags(html_message)
+
+    send_mail(
+        subject,
+        plain_message,
+        "noreply@eventplatform.com",
+        [user_email],
+        html_message=html_message,
+    )
+
+
+def generate_payment_link(order):
+    """Генерирует ссылку для оплаты забронированного билета."""
+    from django.urls import reverse
+    from django.contrib.sites.shortcuts import get_current_site
+
+    # Используем стандартный URL покупки билета с параметром order_id
+    url = reverse("buy_ticket", args=[order.ticket.event.id])
+
+    # Добавляем параметры для идентификации заказа
+    payment_url = f"{url}?reserve_order={order.id}"
+
+    # Получаем полный URL с доменом
+    current_site = get_current_site(None)
+    full_url = f"https://{current_site.domain}{payment_url}"
+
+    return full_url

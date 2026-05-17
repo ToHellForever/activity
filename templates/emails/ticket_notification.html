@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ваш билет на мероприятие</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .event-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .ticket-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .payment-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #28a745;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Ваш билет на мероприятие</h2>
+    </div>
+
+    <p>Здравствуйте, {{ order.participant_data.first_name }}!</p>
+
+    <p>Благодарим вас за регистрацию на мероприятие "{{ order.ticket.event.title }}".</p>
+
+    <div class="event-info">
+        <p><strong>Мероприятие:</strong> {{ order.ticket.event.title }}</p>
+        <p><strong>Дата и время:</strong> {{ order.ticket.event.date_time|date:"d.m.Y H:i" }}</p>
+        <p><strong>Адрес:</strong> {{ order.ticket.event.place }}</p>
+    </div>
+
+    <div class="ticket-info">
+        <p><strong>Тип билета:</strong> {{ order.ticket.name }}</p>
+        <p><strong>Количество:</strong> {{ order.quantity }}</p>
+        {% if order.total_price > 0 %}
+            <p><strong>Сумма:</strong> {{ order.total_price }} ₽</p>
+            <p><strong>Статус оплаты:</strong> {% if order.payment_status == "succeeded" %}Оплачено{% elif order.payment_status == "reserved" %}Забронировано{% else %}Ожидает оплаты{% endif %}</p>
+        {% endif %}
+    </div>
+
+    {% if order.payment_status == "reserved" %}
+        <div class="warning">
+            <p>Ваш билет забронирован. Для подтверждения бронирования необходимо оплатить билет до {{ order.payment_deadline|date:"d.m.Y H:i" }}.</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ payment_link }}" class="payment-button">Оплатить билет</a>
+        </div>
+        
+        <p>Если вы не оплатите билет вовремя, ваша бронь будет автоматически отменена.</p>
+    {% endif %}
+
+    {% if order.qr_codes and order.qr_codes|length > 0 %}
+        <div class="qr-code">
+            <p><strong>Ваши QR-коды для входа:</strong></p>
+            {% for qr_code in order.qr_codes %}
+                <img src="{{ qr_code.image.url }}" alt="QR код" width="200" height="200">
+                <p>Код: {{ qr_code.code }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <p>Если у вас возникли вопросы, пожалуйста, свяжитесь с нашей службой поддержки.</p>
+
+    <div class="footer">
+        <p>С уважением, команда {{ site_name }}</p>
+        <p>Это автоматическое сообщение, пожалуйста, не отвечайте на него.</p>
+    </div>
+</body>
+</html>

@@ -2,9 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
-    {% if yookassa_payment_token %}
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
-    {% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -164,6 +162,14 @@
                                  return;
                              }
 
+                             // Проверяем, есть ли confirmation_token в ответе (только для оплаты через ЮKassa)
+                             if (!data.confirmation_token) {
+                                 alert(data.message || 'Бронирование успешно завершено. Информация отправлена на ваш email.');
+                                 buyButton.disabled = false;
+                                 buyButton.textContent = 'Купить выбранные билеты';
+                                 return;
+                             }
+
                             // Создаем контейнер для виджета, если его еще нет
                             let widgetContainer = document.getElementById('payment-widget-container');
                             if (!widgetContainer) {
@@ -179,7 +185,7 @@
 
                             // Инициализируем виджет ЮKassa
                             const checkout = new window.YooMoneyCheckoutWidget({
-                                confirmation_token: data.payment_token,
+                                confirmation_token: data.confirmation_token,
                                 return_url: data.return_url,
                                 error_callback: function(error) {
                                     console.error('Ошибка платежа:', error);
@@ -326,8 +332,5 @@
         </button>
     </form>
 
-    {% if yookassa_payment_token %}
-    <div id="payment-widget-container" style="margin-top: 20px; display: none;"></div>
-    {% endif %}
 </div>
 {% endblock %}
