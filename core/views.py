@@ -317,7 +317,9 @@ def support_dashboard(request):
             models.Q(user=request.user) | models.Q(event__organizer=request.user)
         ).order_by("-created_at")
     else:
-        tickets = SupportTicket.objects.filter(user=request.user).order_by("-created_at")
+        tickets = SupportTicket.objects.filter(user=request.user).order_by(
+            "-created_at"
+        )
 
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
@@ -333,7 +335,11 @@ def support_dashboard(request):
         user_events = Event.objects.filter(organizer=request.user)
     else:
         # Для обычных пользователей показываем только мероприятия с проданными билетами
-        user_events = Event.objects.filter(organizer=request.user, has_sold_tickets=True) if request.user.user_type != "visitor" else []
+        user_events = (
+            Event.objects.filter(organizer=request.user, has_sold_tickets=True)
+            if request.user.user_type != "visitor"
+            else []
+        )
 
     context = {
         "tickets": tickets,
@@ -758,9 +764,12 @@ def buy_ticket(request, event_id):
                         },
                         total_price=total_price,
                         quantity=quantity,
-                        is_paid=(
-                            purchase_type == "free_registration"
-                        ),  # Бесплатная регистрация сразу оплачена
+                        is_paid=(purchase_type == "free_registration"),
+                        payment_status=(
+                            "succeeded"
+                            if purchase_type == "free_registration"
+                            else "pending"
+                        ),
                         platform_commission=platform_commission,
                         purchase_type=purchase_type,
                         utm_source=request.POST.get("utm_source")
@@ -792,63 +801,80 @@ def buy_ticket(request, event_id):
                 if require_payment:
                     yookassa_payment_token = None
                     try:
-                        # Создаем платеж в ЮKassa для получения токена
-                        total_amount = sum(
-                            ticket.price * quantity
-                            for ticket, quantity in ticket_quantities.items()
+                        # Проверяем, есть ли платные билеты в заказе
+                        has_paid_tickets = any(
+                            order.total_price > 0 for order in orders
                         )
 
-                        # Подготавливаем данные для создания платежа
-                        # Используем только первый заказ для упрощения
-                        primary_order_id = orders[0].id
-                        payment_data = {
-                            "amount": {"value": str(total_amount), "currency": "RUB"},
-                            "confirmation": {"type": "embedded"},
-                            "capture": True,
-                            "metadata": {"order_id": str(primary_order_id)},
-                            "description": f"Оплата билетов на мероприятие {event.title}",
-                        }
+                        if has_paid_tickets:
+                            # Создаем платеж в ЮKassa для получения токена
+                            total_amount = sum(
+                                ticket.price * quantity
+                                for ticket, quantity in ticket_quantities.items()
+                            )
 
-                        # Логируем данные для отладки
-                        logger.info(f"Создание платежа в ЮKassa: {payment_data}")
+                            # Подготавливаем данные для создания платежа
+                            # Используем только первый заказ для упрощения
+                            primary_order_id = orders[0].id
+                            payment_data = {
+                                "amount": {
+                                    "value": str(total_amount),
+                                    "currency": "RUB",
+                                },
+                                "confirmation": {"type": "embedded"},
+                                "capture": True,
+                                "metadata": {"order_id": str(primary_order_id)},
+                                "description": f"Оплата билетов на мероприятие {event.title}",
+                            }
 
-                        # Формируем заголовок Authorization
-                        auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
-                        auth_bytes = auth_string.encode("ascii")
-                        auth_base64 = base64.b64encode(auth_bytes).decode("ascii")
+                            # Логируем данные для отладки
+                            logger.info(f"Создание платежа в ЮKassa: {payment_data}")
 
-                        headers = {
-                            "Idempotence-Key": str(uuid.uuid4()),
-                            "Content-Type": "application/json",
-                            "Authorization": f"Basic {auth_base64}",
-                        }
-                        response = requests.post(
-                            "https://api.yookassa.ru/v3/payments",
-                            headers=headers,
-                            json=payment_data,
-                        )
+                            # Формируем заголовок Authorization
+                            auth_string = f"{settings.YOOKASSA_SHOP_ID}:{settings.YOOKASSA_SECRET_KEY}"
+                            auth_bytes = auth_string.encode("ascii")
+                            auth_base64 = base64.b64encode(auth_bytes).decode("ascii")
 
-                        # Добавляем отладочный вывод статуса ответа от ЮKassa
-                        logger.info(
-                            f"Ответ от ЮKassa: {response.status_code}, {response.text}"
-                        )
+                            headers = {
+                                "Idempotence-Key": str(uuid.uuid4()),
+                                "Content-Type": "application/json",
+                                "Authorization": f"Basic {auth_base64}",
+                            }
+                            response = requests.post(
+                                "https://api.yookassa.ru/v3/payments",
+                                headers=headers,
+                                json=payment_data,
+                            )
 
-                        if response.ok:
-                            payment_response = response.json()
-                            yookassa_payment_token = payment_response["confirmation"][
-                                "confirmation_token"
-                            ]
+                            # Добавляем отладочный вывод статуса ответа от ЮKassa
                             logger.info(
-                                f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
+                                f"Ответ от ЮKassa: {response.status_code}, {response.text}"
                             )
+
+                            if response.ok:
+                                payment_response = response.json()
+                                yookassa_payment_token = payment_response[
+                                    "confirmation"
+                                ]["confirmation_token"]
+                                logger.info(
+                                    f"Успешно создан платеж в ЮKassa. Токен: {yookassa_payment_token}"
+                                )
+                            else:
+                                logger.error(
+                                    f"Ошибка создания платежа в ЮKassa: {response.text}"
+                                )
+                                return JsonResponse(
+                                    {
+                                        "success": False,
+                                        "message": "Ошибка при создании платежа. Попробуйте еще раз.",
+                                    }
+                                )
                         else:
-                            logger.error(
-                                f"Ошибка создания платежа в ЮKassa: {response.text}"
-                            )
+                            # Если все билеты бесплатные, сразу возвращаем успех
                             return JsonResponse(
                                 {
-                                    "success": False,
-                                    "message": "Ошибка при создании платежа. Попробуйте еще раз.",
+                                    "success": True,
+                                    "message": "Регистрация успешно завершена. Билеты отправлены на ваш email.",
                                 }
                             )
 
@@ -932,9 +958,12 @@ def buy_ticket(request, event_id):
                     },
                     total_price=ticket.price * quantity,
                     quantity=quantity,
-                    is_paid=(
-                        purchase_type == "free_registration"
-                    ),  # Бесплатная регистрация сразу оплачена
+                    is_paid=(purchase_type == "free_registration"),
+                    payment_status=(
+                        "succeeded"
+                        if purchase_type == "free_registration"
+                        else "pending"
+                    ),
                     purchase_type=purchase_type,
                     utm_source=request.POST.get("utm_source")
                     or request.GET.get("utm_source"),

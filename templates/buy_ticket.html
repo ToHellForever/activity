@@ -43,7 +43,14 @@
 
                 // Обновляем текст кнопки в зависимости от типа покупки
                 if (buyButton) {
-                    buyButton.textContent = isPlatformRequest ? 'Отправить заявку' : 'Подтвердить выбор';
+                    const purchaseType = purchaseTypeSelect.value;
+                    if (purchaseType === 'platform_request') {
+                        buyButton.textContent = 'Отправить заявку';
+                    } else if (purchaseType === 'free_registration') {
+                        buyButton.textContent = 'Зарегистрироваться бесплатно';
+                    } else {
+                        buyButton.textContent = 'Подтвердить выбор';
+                    }
                 }
             }
 
@@ -148,6 +155,15 @@
                      })
                      .then(data => {
                          if (data.success) {
+                             // Если это бесплатная регистрация, просто показываем сообщение об успехе
+                             const purchaseType = purchaseTypeSelect.value;
+                             if (purchaseType === 'free_registration') {
+                                 alert(data.message || 'Регистрация успешно завершена! Билеты отправлены на ваш email.');
+                                 buyButton.disabled = false;
+                                 buyButton.textContent = 'Зарегистрироваться бесплатно';
+                                 return;
+                             }
+
                             // Создаем контейнер для виджета, если его еще нет
                             let widgetContainer = document.getElementById('payment-widget-container');
                             if (!widgetContainer) {
@@ -185,7 +201,15 @@
                         } else {
                             alert(data.message || 'Произошла ошибка при обработке заказа');
                             buyButton.disabled = false;
-                            buyButton.textContent = 'Купить выбранные билеты';
+                            // Восстанавливаем текст кнопки в зависимости от типа покупки
+                            const purchaseType = purchaseTypeSelect.value;
+                            if (purchaseType === 'platform_request') {
+                                buyButton.textContent = 'Отправить заявку';
+                            } else if (purchaseType === 'free_registration') {
+                                buyButton.textContent = 'Зарегистрироваться бесплатно';
+                            } else {
+                                buyButton.textContent = 'Купить выбранные билеты';
+                            }
                         }
                     })
                     .catch(error => {
@@ -287,6 +311,7 @@
                         <option value="platform_request">Отправить заявку организатору</option>
                     {% endif %}
                 {% endif %}
+                <option value="free_registration">Бесплатная регистрация</option>
             </select>
         </div>
 
