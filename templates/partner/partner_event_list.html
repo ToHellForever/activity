@@ -46,15 +46,18 @@
         <td>{{ item.event.date_time|date:"d.m.Y H:i" }}</td>
         <td>{{ item.event.status|title }}</td>
         <td>{{ item.sold }} / {{ item.total }}</td>
-        <td>
-          {% if not item.event.has_sold_tickets %}
-            <a href="{% url 'partner:edit_event' item.event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
-          {% else %}
-            <button class="btn btn-sm btn-secondary" disabled title="Редактирование невозможно, так как на мероприятие проданы билеты. Обратитесь в техподдержку для внесения изменений">Редактировать</button>
-          {% endif %}
-          <a href="{% url 'partner:participant_list' item.event.id %}" class="btn btn-sm btn-info">Участники</a>
-          <a href="{% url 'partner:delete_event' item.event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить это мероприятие?')">Удалить</a>
-        </td>
+<td>
+  {% if not item.event.has_sold_tickets %}
+    <a href="{% url 'partner:edit_event' item.event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+  {% else %}
+    <button class="btn btn-sm btn-secondary" disabled title="Редактирование невозможно, так как на мероприятие проданы билеты. Обратитесь в техподдержку для внесения изменений">Редактировать</button>
+  {% endif %}
+  <a href="{% url 'partner:participant_list' item.event.id %}" class="btn btn-sm btn-info">Участники</a>
+  {% if item.event.allow_platform_requests %}
+    <a href="{% url 'support_dashboard' %}?event_id={{ item.event.id }}" class="btn btn-sm btn-primary">Вопросы</a>
+  {% endif %}
+  <a href="{% url 'partner:delete_event' item.event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить это мероприятие?')">Удалить</a>
+</td>
         <td>{{ item.event.commission_rate }}</td>
       </tr>
       {% empty %}

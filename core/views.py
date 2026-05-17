@@ -26,7 +26,7 @@ from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.conf import settings
-from django.db import transaction, IntegrityError
+from django.db import models, transaction, IntegrityError
 import uuid
 import logging
 import random
@@ -305,16 +305,27 @@ def support_dashboard(request):
             return redirect(f"/support/?ticket_id={ticket.id}")
 
     # --- СТАРАЯ ЛОГИКА: Отображение страницы ---
-    tickets = SupportTicket.objects.filter(user=request.user).order_by("-created_at")
     selected_ticket = None
     chat_messages = []
 
+    # Получаем event_id из GET-запроса
+    event_id = request.GET.get("event_id")
+
+    # Если пользователь - партнёр, показываем тикеты, связанные с его мероприятиями
+    if request.user.user_type == "partner":
+        tickets = SupportTicket.objects.filter(
+            models.Q(user=request.user) | models.Q(event__organizer=request.user)
+        ).order_by("-created_at")
+    else:
+        tickets = SupportTicket.objects.filter(user=request.user).order_by("-created_at")
+
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(
-            SupportTicket, id=ticket_id, user=request.user
-        )
+        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
         chat_messages = selected_ticket.messages.all()
+    # Если указан event_id, фильтруем тикеты по мероприятию
+    elif event_id:
+        tickets = tickets.filter(event_id=event_id)
 
     # Получаем мероприятия пользователя с проданными билетами для формы создания тикета
     user_events = Event.objects.filter(organizer=request.user, has_sold_tickets=True)
