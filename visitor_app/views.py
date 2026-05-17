@@ -645,9 +645,45 @@ def buy_ticket(request, event_id):
     """Представление для покупки билетов на мероприятие."""
     event = get_object_or_404(Event, id=event_id)
 
+    # Проверяем, если это оплата забронированного билета
+    reserve_order_id = request.GET.get("reserve_order") or request.POST.get(
+        "reserve_order"
+    )
+    reserve_order = None
+    if reserve_order_id:
+        try:
+            reserve_order = Order.objects.get(
+                id=reserve_order_id,
+                payment_status="reserved",
+                ticket__event=event,
+                participant_data__email=request.user.email,
+            )
+        except Order.DoesNotExist:
+            reserve_order = None
+
     if request.method == "GET":
         tickets = event.tickets.all()
         has_paid_tickets = any(ticket.price > 0 for ticket in tickets)
+
+        # Если это оплата забронированного билета, заполняем данные из брони
+        if reserve_order:
+            context = {
+                "event": event,
+                "tickets": tickets,
+                "allow_booking_without_payment": event.allow_booking_without_payment,
+                "reserve_order": reserve_order,
+                "prefilled_data": {
+                    "first_name": reserve_order.participant_data.get("first_name", ""),
+                    "last_name": reserve_order.participant_data.get("last_name", ""),
+                    "email": reserve_order.participant_data.get("email", ""),
+                    "phone": reserve_order.participant_data.get("phone", ""),
+                    "quantity_{}".format(
+                        reserve_order.ticket.id
+                    ): reserve_order.quantity,
+                },
+            }
+            return render(request, "buy_ticket.html", context)
+
         return render(
             request,
             "buy_ticket.html",
@@ -659,10 +695,48 @@ def buy_ticket(request, event_id):
         )
 
     # POST-запрос
+
+    # Если это оплата забронированного билета, проверяем валидность брони
+    if reserve_order:
+        # Проверяем, что бронь ещё не оплачена и не просрочена
+        if reserve_order.payment_status != "reserved":
+            messages.error(request, "Этот заказ уже оплачен или отменён.")
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "event": event,
+                    "tickets": event.tickets.all(),
+                    "allow_booking_without_payment": event.allow_booking_without_payment,
+                },
+            )
+
+        # Проверяем срок оплаты
+        if (
+            reserve_order.payment_deadline
+            and reserve_order.payment_deadline < timezone.now()
+        ):
+            messages.error(request, "Срок оплаты этого заказа истёк.")
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "event": event,
+                    "tickets": event.tickets.all(),
+                    "allow_booking_without_payment": event.allow_booking_without_payment,
+                },
+            )
+
     user = _create_or_update_user(request)
-    ticket_quantities, error_message = _get_ticket_quantities_and_validate(
-        request, event
-    )
+
+    # Если это оплата забронированного билета, используем данные из брони
+    if reserve_order:
+        ticket_quantities = {reserve_order.ticket: reserve_order.quantity}
+        error_message = None
+    else:
+        ticket_quantities, error_message = _get_ticket_quantities_and_validate(
+            request, event
+        )
 
     if error_message:
         messages.error(request, error_message)
@@ -675,6 +749,29 @@ def buy_ticket(request, event_id):
                 "allow_booking_without_payment": event.allow_booking_without_payment,
             },
         )
+
+    # Дополнительно проверяем, что бронь не была уже использована для создания другого заказа
+    if reserve_order:  # Только если reserve_order не None
+        existing_orders = Order.objects.filter(
+            participant_data__email=request.user.email,
+            ticket__event=event,
+            payment_status__in=["pending", "succeeded"],
+        ).exclude(id=reserve_order.id)
+
+        if existing_orders.exists():
+            messages.error(
+                request,
+                "Вы уже оплатили этот билет. Невозможно повторно забронировать или оплатить тот же заказ.",
+            )
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "event": event,
+                    "tickets": event.tickets.all(),
+                    "allow_booking_without_payment": event.allow_booking_without_payment,
+                },
+            )
 
     orders = _create_orders(user, event, ticket_quantities, request)
     if not orders:

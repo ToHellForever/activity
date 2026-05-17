@@ -1,5 +1,22 @@
 {% extends 'base.html' %}
 {% load static %}
+{{ block.super }}
+    <script>
+        // JavaScript для предварительного заполнения количества билетов
+        document.addEventListener('DOMContentLoaded', function() {
+            // Если есть предзаполненные данные, устанавливаем их
+            {% if prefilled_data %}
+                {% for key, value in prefilled_data.items %}
+                    {% if key|slice:":9" == "quantity_" %}
+                        const input = document.querySelector('input[name="{{ key }}"]');
+                        if (input) {
+                            input.value = "{{ value }}";
+                        }
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
 
 {% block extra_head %}
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
@@ -259,17 +276,20 @@
         
         <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" name="email" required>
+            <input type="email" name="email" required
+                   value="{% if prefilled_data %}{{ prefilled_data.email }}{% elif request.user.is_authenticated %}{{ request.user.email }}{% endif %}">
         </div>
         
         <div class="form-group">
             <label for="first_name">Имя:</label>
-            <input type="text" name="first_name" required>
+            <input type="text" name="first_name" required
+                   value="{% if prefilled_data %}{{ prefilled_data.first_name }}{% elif request.user.is_authenticated %}{{ request.user.first_name }}{% endif %}">
         </div>
         {% comment %} телефон {% endcomment %}
         <div class="form-group">
             <label for="phone">Телефон:</label>
-            <input type="text" name="phone">
+            <input type="text" name="phone"
+                   value="{% if prefilled_data %}{{ prefilled_data.phone }}{% elif request.user.is_authenticated %}{{ request.user.phone }}{% endif %}">
         </div>
 
         <div id="ticket-selection">
