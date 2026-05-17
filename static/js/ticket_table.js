@@ -116,16 +116,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addTicketRow').addEventListener('click', function() {
         addTicketRow();
         updateTicketTypesHiddenField();
+        setupPriceFieldHandlers();
+        checkFreeTickets();
     });
-    
+
     // Добавляем обработчики удаления для существующих строк
     document.querySelectorAll('.remove-ticket-row').forEach(button => {
         button.addEventListener('click', function() {
             this.closest('tr').remove();
             updateTicketTypesHiddenField();
+            checkFreeTickets();
         });
     });
-    
+
     // Добавляем обработчики валидации для полей цены и количества
     document.querySelectorAll('#ticketTable tbody').forEach(tbody => {
         tbody.addEventListener('input', function(e) {
@@ -136,21 +139,95 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Добавляем обработчик для обновления скрытого поля при изменении данных
     const tableBody = document.querySelector('#ticketTable tbody');
     if (tableBody) {
         tableBody.addEventListener('input', updateTicketTypesHiddenField);
     }
-    
+
     // Инициализируем скрытое поле при загрузке
     updateTicketTypesHiddenField();
-    
+
     // Добавляем первую пустую строку, если таблица пустая
     if (document.querySelectorAll('#ticketTable tbody tr').length === 0) {
         addTicketRow();
     }
+
+    // Настраиваем обработчики для полей цены
+    setupPriceFieldHandlers();
+
+    // Проверяем наличие бесплатных билетов при загрузке страницы
+    checkFreeTickets();
 });
+
+// Функция для проверки наличия бесплатных билетов и обновления чекбоксов
+function checkFreeTickets() {
+    const priceInputs = document.querySelectorAll('input[name="ticket_price[]"]');
+    let hasFreeTickets = false;
+
+    priceInputs.forEach(input => {
+        const priceValue = input.value.trim();
+        if (priceValue) {
+            try {
+                const price = parseFloat(priceValue.replace(",", "."));
+                if (price === 0) {
+                    hasFreeTickets = true;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+    });
+
+    // Обновляем состояние чекбоксов
+    const allowBookingCheckbox = document.getElementById('id_allow_booking_without_payment');
+    const allowPlatformRequestsCheckbox = document.getElementById('id_allow_platform_requests');
+
+    if (allowBookingCheckbox) {
+        allowBookingCheckbox.disabled = hasFreeTickets;
+        if (hasFreeTickets) {
+            allowBookingCheckbox.checked = false;
+        }
+    }
+
+    if (allowPlatformRequestsCheckbox) {
+        allowPlatformRequestsCheckbox.disabled = hasFreeTickets;
+        if (hasFreeTickets) {
+            allowPlatformRequestsCheckbox.checked = false;
+        }
+    }
+}
+
+// Добавляем обработчики для каждого поля цены отдельно
+function setupPriceFieldHandlers() {
+    document.querySelectorAll('input[name="ticket_price[]"]').forEach(input => {
+        input.addEventListener('blur', function() {
+            const priceValue = this.value.trim();
+            if (priceValue) {
+                try {
+                    const price = parseFloat(priceValue.replace(",", "."));
+                    if (price === 0) {
+                        // Если цена стала 0, сразу убираем галочки
+                        const allowBookingCheckbox = document.getElementById('id_allow_booking_without_payment');
+                        const allowPlatformRequestsCheckbox = document.getElementById('id_allow_platform_requests');
+
+                        if (allowBookingCheckbox) {
+                            allowBookingCheckbox.checked = false;
+                        }
+
+                        if (allowPlatformRequestsCheckbox) {
+                            allowPlatformRequestsCheckbox.checked = false;
+                        }
+                    }
+                } catch (e) {
+                    // Игнорируем ошибки парсинга
+                }
+            }
+            checkFreeTickets(); // Полная проверка всех билетов
+        });
+    });
+}
 
 // Функция для проверки перед отправкой формы
 function validateForm(event) {

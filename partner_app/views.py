@@ -217,6 +217,7 @@ def create_event(request):
             "ticket_data": ticket_data,
             "rejection_messages": get_rejection_messages(request),
             "all_tags": Tag.objects.all(),
+            "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
         },
     )
 
@@ -362,6 +363,7 @@ def edit_event(request, event_id):
             "is_edit": True,
             "rejection_messages": get_rejection_messages(request),
             "all_tags": Tag.objects.all(),
+            "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
         },
     )
 

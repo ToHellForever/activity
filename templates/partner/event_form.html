@@ -52,10 +52,21 @@
             {% elif field.name == 'refund_deadline_hours' %}
                 <input type="number" name="refund_deadline_hours" id="id_refund_deadline_hours" value="24" class="form-control">
                 <small class="form-text text-muted">Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.</small>
+            {% elif field.name == 'auto_close_sales_hours' %}
+                {{ field }}
+                {% if has_free_tickets %}
+                    <small class="form-text text-muted">
+                        Все билеты бесплатные - опция забронировать без оплаты недоступна.
+                    </small>
+                {% else %}
+                    <small class="form-text text-muted">
+                        Продажи автоматически будут прекращены за указанное количество часов до начала мероприятия (минимум 24 часа).
+                    </small>
+                {% endif %}
             {% else %}
                 {{ field }}
             {% endif %}
-            {% if field.help_text and field.name != 'refund_deadline_hours' %}
+            {% if field.help_text and field.name != 'refund_deadline_hours' and field.name != 'auto_close_sales_hours' %}
                 <small class="form-text text-muted">{{ field.help_text }}</small>
             {% endif %}
             {% if field.errors %}
@@ -152,12 +163,33 @@
 
     <!-- Флаг для включения заявок через платформу -->
     <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" id="id_allow_platform_requests" name="allow_platform_requests" {{ form.instance.allow_platform_requests|yesno:",checked" }}>
+        <input type="checkbox" class="form-check-input" id="id_allow_platform_requests" name="allow_platform_requests"
+               {% if has_free_tickets %}disabled{% else %}{{ form.instance.allow_platform_requests|yesno:",checked" }}{% endif %}>
         <label class="form-check-label" for="id_allow_platform_requests">
             Разрешить заявки через платформу
         </label>
         <small class="form-text text-muted">
-            Если включено, пользователи смогут оставить заявку на участие вместо покупки билета.
+            {% if has_free_tickets %}
+                Все билеты бесплатные - заявки через платформу недоступны.
+            {% else %}
+                Если включено, пользователи смогут оставить заявку на участие вместо покупки билета.
+            {% endif %}
+        </small>
+    </div>
+
+    <!-- Флаг для возможности бронирования без оплаты -->
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="id_allow_booking_without_payment" name="allow_booking_without_payment"
+               {% if has_free_tickets %}disabled{% else %}{{ form.instance.allow_booking_without_payment|yesno:",checked" }}{% endif %}>
+        <label class="form-check-label" for="id_allow_booking_without_payment">
+            Разрешить бронирование без оплаты
+        </label>
+        <small class="form-text text-muted">
+            {% if has_free_tickets %}
+                Все билеты бесплатные - опция забронировать без оплаты недоступна.
+            {% else %}
+                Если включено, пользователи смогут забронировать билет без оплаты и оплатить позже.
+            {% endif %}
         </small>
     </div>
 
