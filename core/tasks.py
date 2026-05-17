@@ -380,7 +380,7 @@ def send_reservation_cancelation(order):
     )
 
 
-def generate_payment_link(order):
+def generate_payment_link(order, request=None):
     """Генерирует ссылку для оплаты забронированного билета."""
     from django.urls import reverse
     from django.contrib.sites.shortcuts import get_current_site
@@ -392,7 +392,13 @@ def generate_payment_link(order):
     payment_url = f"{url}?reserve_order={order.id}"
 
     # Получаем полный URL с доменом
-    current_site = get_current_site(None)
+    if request:
+        # Если передан request, используем его для получения домена
+        current_site = get_current_site(request)
+    else:
+        # Если request не передан, получаем текущий сайт без request
+        current_site = get_current_site(None)
+    
     full_url = f"https://{current_site.domain}{payment_url}"
 
     return full_url

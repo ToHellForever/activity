@@ -38,6 +38,9 @@ from django.shortcuts import (
     reverse,
 )
 from django.utils import timezone
+from core.tasks import generate_payment_link
+from django.contrib.sites.shortcuts import get_current_site
+from core.tasks import generate_payment_link
 
 logger = logging.getLogger(__name__)
 
@@ -327,24 +330,36 @@ def send_multiple_tickets_notification(user, orders, request=None):
     )
 
 
-def send_reservation_notification(order):
+def send_reservation_notification(order, request=None):
     """Отправляет уведомление о бронировании билета."""
     from django.contrib.sites.shortcuts import get_current_site
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    from core.tasks import generate_payment_link
 
     user_email = order.participant_data.get("email")
     if not user_email:
         return
 
     event = order.ticket.event
-    payment_link = generate_payment_link(order)
+    payment_link = generate_payment_link(order, request)
 
     subject = f"Ваш билет на мероприятие {event.title} забронирован"
+
+    # Получаем имя сайта
+    if request:
+        site_name = get_current_site(request).name
+    else:
+        try:
+            site_name = get_current_site(None).name
+        except AttributeError:
+            site_name = "Event Platform"
 
     context = {
         "order": order,
         "event": event,
         "payment_link": payment_link,
-        "site_name": get_current_site(None).name,
+        "site_name": site_name,
     }
 
     html_message = render_to_string("emails/reservation_notification.html", context)
@@ -353,7 +368,7 @@ def send_reservation_notification(order):
     send_mail(
         subject,
         plain_message,
-        "noreply@eventplatform.com",
+        settings.DEFAULT_FROM_EMAIL,
         [user_email],
         html_message=html_message,
     )
@@ -521,7 +536,15 @@ def _process_payment_and_notifications(orders, request, event, user):
 
     # Отправка уведомлений
     try:
-        send_multiple_tickets_notification(user, orders, request)
+        is_booking = (
+            event.allow_booking_without_payment
+            and request.POST.get("book_without_payment") == "on"
+        )
+        if is_booking:
+            for order in orders:
+                send_reservation_notification(order, request)
+        else:
+            send_multiple_tickets_notification(user, orders, request)
     except Exception as e:
         logger.exception(f"Ошибка отправки письма: {str(e)}")
 
