@@ -327,8 +327,13 @@ def support_dashboard(request):
     elif event_id:
         tickets = tickets.filter(event_id=event_id)
 
-    # Получаем мероприятия пользователя с проданными билетами для формы создания тикета
-    user_events = Event.objects.filter(organizer=request.user, has_sold_tickets=True)
+    # Получаем мероприятия пользователя для формы создания тикета
+    if request.user.user_type == "partner":
+        # Для партнёров показываем все их мероприятия
+        user_events = Event.objects.filter(organizer=request.user)
+    else:
+        # Для обычных пользователей показываем только мероприятия с проданными билетами
+        user_events = Event.objects.filter(organizer=request.user, has_sold_tickets=True) if request.user.user_type != "visitor" else []
 
     context = {
         "tickets": tickets,

@@ -23,31 +23,31 @@
     <!-- НОВЫЙ БЛОК: Кнопка для добавления формы -->
    <button id="new-ticket-btn" class="btn btn-block btn-primary mb-3">Новое обращение</button>
    
-   <!-- НОВАЯ ФОРМА (спрятана по умолчанию) -->
-   <form id="new-ticket-form" method="post" style="display: none; margin-bottom: 20px;" enctype="multipart/form-data">
-     {% csrf_token %}
-     <div class="form-group">
-       <input type="text" name="new_subject" class="form-control" placeholder="Тема обращения" required>
-     </div>
-     <div class="form-group">
-       <textarea name="new_message" class="form-control" rows="3" placeholder="Ваше сообщение..." required></textarea>
-     </div>
-     <div class="form-group">
-       <input type="file" name="attachment" multiple style="margin-right: 5px;">
-     </div>
-     <div class="form-group">
-       <select name="event_id" class="form-control" id="event-select">
-         <option value="">-- Выберите мероприятие (если обращение связано с мероприятием) --</option>
-         {% for event in events %}
-           {% if event.has_sold_tickets %}
-             <option value="{{ event.id }}">{{ event.title }}</option>
-           {% endif %}
-         {% endfor %}
-       </select>
-     </div>
-     <button type="submit" class="btn btn-success">Создать обращение</button>
-     <button type="button" id="cancel-ticket-btn" class="btn btn-secondary">Отмена</button>
-   </form>
+    <!-- НОВАЯ ФОРМА (спрятана по умолчанию) -->
+    <form id="new-ticket-form" method="post" style="display: none; margin-bottom: 20px;" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <input type="text" name="new_subject" class="form-control" placeholder="Тема обращения" required>
+      </div>
+      <div class="form-group">
+        <textarea name="new_message" class="form-control" rows="3" placeholder="Ваше сообщение..." required></textarea>
+      </div>
+      <div class="form-group">
+        <input type="file" name="attachment" multiple style="margin-right: 5px;">
+      </div>
+      {% if request.user.user_type == "partner" %}
+      <div class="form-group">
+        <select name="event_id" class="form-control" id="event-select">
+          <option value="">-- Выберите мероприятие (если обращение связано с мероприятием) --</option>
+          {% for event in events %}
+            <option value="{{ event.id }}">{{ event.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-success">Создать обращение</button>
+      <button type="button" id="cancel-ticket-btn" class="btn btn-secondary">Отмена</button>
+    </form>
     <!-- КОНЕЦ НОВОЙ ФОРМЫ -->
 
     <!-- Список существующих тикетов -->
