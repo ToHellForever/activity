@@ -14,7 +14,6 @@ from django.utils import timezone
 from django.conf import settings
 from core.models import Event, Ticket
 from django.core.management import call_command
-
 logger = logging.getLogger(__name__)
 
 
@@ -385,8 +384,9 @@ def generate_payment_link(order, request=None):
     from django.urls import reverse
     from django.contrib.sites.shortcuts import get_current_site
 
-    # Используем стандартный URL покупки билета с параметром order_id
+    # Используем URL покупки билета без указания event_id
     url = reverse("buy_ticket", args=[order.ticket.event.id])
+
 
     # Добавляем параметры для идентификации заказа
     payment_url = f"{url}?reserve_order={order.id}"
@@ -398,7 +398,7 @@ def generate_payment_link(order, request=None):
     else:
         # Если request не передан, получаем текущий сайт без request
         current_site = get_current_site(None)
-    
-    full_url = f"https://{current_site.domain}{payment_url}"
+
+    full_url = f"http://{current_site.domain}{payment_url}"
 
     return full_url
