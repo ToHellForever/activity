@@ -527,7 +527,6 @@ def _create_orders(user, event, ticket_quantities, request):
 
 
 def _process_payment_and_notifications(orders, request, event, user):
-    """Обрабатывает оплату, отправляет уведомления, возвращает результат для AJAX или редирект."""
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     require_payment = not (
         event.allow_booking_without_payment
@@ -547,6 +546,8 @@ def _process_payment_and_notifications(orders, request, event, user):
             send_multiple_tickets_notification(user, orders, request)
     except Exception as e:
         logger.exception(f"Ошибка отправки письма: {str(e)}")
+        if is_ajax:
+            return JsonResponse({"success": False, "message": "Ошибка при отправке уведомления."})
 
     # Проверка, все ли билеты выкуплены
     all_tickets_sold = all(
@@ -590,9 +591,7 @@ def _process_payment_and_notifications(orders, request, event, user):
 
             if response.ok:
                 payment_response = response.json()
-                confirmation_token = payment_response["confirmation"][
-                    "confirmation_token"
-                ]
+                confirmation_token = payment_response["confirmation"]["confirmation_token"]
 
                 if is_ajax:
                     return_url = (
@@ -610,11 +609,15 @@ def _process_payment_and_notifications(orders, request, event, user):
                     )
             else:
                 logger.error(f"Ошибка создания платежа в ЮKassa: {response.text}")
+                if is_ajax:
+                    return JsonResponse({"success": False, "message": "Ошибка при создании платежа. Попробуйте еще раз."})
                 messages.error(
                     request, "Ошибка при создании платежа. Попробуйте еще раз."
                 )
         except Exception as e:
             logger.error(f"Ошибка при работе с ЮKassa: {str(e)}")
+            if is_ajax:
+                return JsonResponse({"success": False, "message": "Ошибка при обработке платежа. Попробуйте еще раз."})
             messages.error(request, "Ошибка при обработке платежа. Попробуйте еще раз.")
 
     # Если оплата не требуется (бронирование или бесплатная регистрация)
@@ -642,13 +645,10 @@ def _process_payment_and_notifications(orders, request, event, user):
 @login_required
 @require_http_methods(["GET", "POST"])
 def buy_ticket(request, event_id):
-    """Представление для покупки билетов на мероприятие."""
     event = get_object_or_404(Event, id=event_id)
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    # Проверяем, если это оплата забронированного билета
-    reserve_order_id = request.GET.get("reserve_order") or request.POST.get(
-        "reserve_order"
-    )
+    reserve_order_id = request.GET.get("reserve_order") or request.POST.get("reserve_order")
     reserve_order = None
     if reserve_order_id:
         try:
@@ -662,96 +662,58 @@ def buy_ticket(request, event_id):
             reserve_order = None
 
     if request.method == "GET":
+        # Для AJAX GET-запросов не должно быть возврата HTML
+        if is_ajax:
+            return JsonResponse({"success": False, "message": "GET-запросы не поддерживаются для AJAX."})
         tickets = event.tickets.all()
-        has_paid_tickets = any(ticket.price > 0 for ticket in tickets)
-
-        # Если это оплата забронированного билета, заполняем данные из брони
+        context = {
+            "event": event,
+            "tickets": tickets,
+            "allow_booking_without_payment": event.allow_booking_without_payment,
+        }
         if reserve_order:
-            context = {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-                "reserve_order": reserve_order,
-                "prefilled_data": {
-                    "first_name": reserve_order.participant_data.get("first_name", ""),
-                    "last_name": reserve_order.participant_data.get("last_name", ""),
-                    "email": reserve_order.participant_data.get("email", ""),
-                    "phone": reserve_order.participant_data.get("phone", ""),
-                    "quantity_{}".format(
-                        reserve_order.ticket.id
-                    ): reserve_order.quantity,
-                },
+            context["reserve_order"] = reserve_order
+            context["prefilled_data"] = {
+                "first_name": reserve_order.participant_data.get("first_name", ""),
+                "last_name": reserve_order.participant_data.get("last_name", ""),
+                "email": reserve_order.participant_data.get("email", ""),
+                "phone": reserve_order.participant_data.get("phone", ""),
+                "quantity_{}".format(reserve_order.ticket.id): reserve_order.quantity,
             }
-            return render(request, "buy_ticket.html", context)
-
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": tickets,
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
+        return render(request, "buy_ticket.html", context)
 
     # POST-запрос
 
     # Если это оплата забронированного билета, проверяем валидность брони
     if reserve_order:
-        # Проверяем, что бронь ещё не оплачена и не просрочена
         if reserve_order.payment_status != "reserved":
+            if is_ajax:
+                return JsonResponse({"success": False, "message": "Этот заказ уже оплачен или отменён."})
             messages.error(request, "Этот заказ уже оплачен или отменён.")
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "event": event,
-                    "tickets": event.tickets.all(),
-                    "allow_booking_without_payment": event.allow_booking_without_payment,
-                },
-            )
+            return render(request, "buy_ticket.html", {"event": event})
 
-        # Проверяем срок оплаты
-        if (
-            reserve_order.payment_deadline
-            and reserve_order.payment_deadline < timezone.now()
-        ):
+        if reserve_order.payment_deadline and reserve_order.payment_deadline < timezone.now():
+            if is_ajax:
+                return JsonResponse({"success": False, "message": "Срок оплаты этого заказа истёк."})
             messages.error(request, "Срок оплаты этого заказа истёк.")
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "event": event,
-                    "tickets": event.tickets.all(),
-                    "allow_booking_without_payment": event.allow_booking_without_payment,
-                },
-            )
+            return render(request, "buy_ticket.html", {"event": event})
 
     user = _create_or_update_user(request)
 
-    # Если это оплата забронированного билета, используем данные из брони
     if reserve_order:
         ticket_quantities = {reserve_order.ticket: reserve_order.quantity}
         error_message = None
     else:
-        ticket_quantities, error_message = _get_ticket_quantities_and_validate(
-            request, event
-        )
+        ticket_quantities, error_message = _get_ticket_quantities_and_validate(request, event)
 
     if error_message:
+        if is_ajax:
+            return JsonResponse({"success": False, "message": error_message})
         messages.error(request, error_message)
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": event.tickets.all(),
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
+        return render(request, "buy_ticket.html", {"event": event})
 
-    # Дополнительно проверяем, что бронь не была уже использована для создания другого заказа
-    if reserve_order:  # Только если reserve_order не None
+    # Проверка на повторную оплату брони
+    if reserve_order:
         existing_orders = Order.objects.filter(
             participant_data__email=request.user.email,
             ticket__event=event,
@@ -759,39 +721,24 @@ def buy_ticket(request, event_id):
         ).exclude(id=reserve_order.id)
 
         if existing_orders.exists():
+            if is_ajax:
+                return JsonResponse({"success": False, "message": "Вы уже оплатили этот билет. Невозможно повторно забронировать или оплатить тот же заказ."})
             messages.error(
                 request,
                 "Вы уже оплатили этот билет. Невозможно повторно забронировать или оплатить тот же заказ.",
             )
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "event": event,
-                    "tickets": event.tickets.all(),
-                    "allow_booking_without_payment": event.allow_booking_without_payment,
-                },
-            )
+            return render(request, "buy_ticket.html", {"event": event})
 
     orders = _create_orders(user, event, ticket_quantities, request)
     if not orders:
-        messages.error(
-            request, "Произошла ошибка при покупке билетов. Попробуйте еще раз."
-        )
-        return render(
-            request,
-            "buy_ticket.html",
-            {
-                "event": event,
-                "tickets": event.tickets.all(),
-                "allow_booking_without_payment": event.allow_booking_without_payment,
-            },
-        )
+        if is_ajax:
+             return JsonResponse({"success": False, "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз."})
+        messages.error(request, "Произошла ошибка при покупке билетов. Попробуйте еще раз.")
+        return render(request, "buy_ticket.html", {"event": event})
 
-    # Обработка оплаты и уведомлений
     result = _process_payment_and_notifications(orders, request, event, user)
 
-    # Если это AJAX — возвращаем JSON, иначе — редирект
+    # Если результат — словарь (JSON), возвращаем его для AJAX или редирект для обычного запроса
     if isinstance(result, dict):
         return JsonResponse(result)
     else:
