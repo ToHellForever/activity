@@ -714,9 +714,10 @@ def buy_ticket(request, event_id):
 
     # Проверка на повторную оплату брони
     if reserve_order:
+        # Проверяем только заказы для ТОГО ЖЕ БИЛЕТА (ticket), а не для всего мероприятия
         existing_orders = Order.objects.filter(
             participant_data__email=request.user.email,
-            ticket__event=event,
+            ticket=reserve_order.ticket,  # Конкретный билет, а не все билеты мероприятия
             payment_status__in=["pending", "succeeded"],
         ).exclude(id=reserve_order.id)
 
@@ -732,7 +733,7 @@ def buy_ticket(request, event_id):
     orders = _create_orders(user, event, ticket_quantities, request)
     if not orders:
         if is_ajax:
-             return JsonResponse({"success": False, "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз."})
+            return JsonResponse({"success": False, "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз."})
         messages.error(request, "Произошла ошибка при покупке билетов. Попробуйте еще раз.")
         return render(request, "buy_ticket.html", {"event": event})
 

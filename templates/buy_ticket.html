@@ -246,8 +246,18 @@
         });
     </script>
 
+    {{ prefilled_data|json_script:"prefilled-data" }}
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем наличие reserve_order в URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasReserveOrder = urlParams.has('reserve_order');
+
+            if (!hasReserveOrder) {
+                return; // Если reserve_order нет в URL, ничего не делаем
+            }
+
             // 1. Блокировка всех полей и заполнение их данными
             const emailInput = document.querySelector('input[name="email"]');
             const firstNameInput = document.querySelector('input[name="first_name"]');
@@ -256,26 +266,27 @@
             const purchaseTypeSelect = document.getElementById('purchaseType');
             const buyButton = document.getElementById('buyButton');
 
+            // Получаем предзаполненные данные из JSON
+            const prefilled = JSON.parse(document.getElementById('prefilled-data').textContent);
+
             // Функция для блокировки и заполнения полей
             function lockAndPrefillFields() {
-                if (emailInput) {
-                    emailInput.value = "{{ prefilled_data.email }}";
+                if (emailInput && prefilled.email) {
+                    emailInput.value = prefilled.email;
                     emailInput.disabled = true;
                 }
-                if (firstNameInput) {
-                    firstNameInput.value = "{{ prefilled_data.first_name }}";
+                if (firstNameInput && prefilled.first_name) {
+                    firstNameInput.value = prefilled.first_name;
                     firstNameInput.disabled = true;
                 }
-                if (phoneInput) {
-                    phoneInput.value = "{{ prefilled_data.phone }}";
+                if (phoneInput && prefilled.phone) {
+                    phoneInput.value = prefilled.phone;
                     phoneInput.disabled = true;
                 }
 
                 // Блокируем все поля выбора количества билетов и устанавливаем значения
                 quantityInputs.forEach(input => {
                     const ticketId = input.name.replace('quantity_', '');
-                    // prefilled_data уже передан в контекст шаблона как JSON
-                    const prefilled = {{ prefilled_data|safe }};
                     const key = 'quantity_' + ticketId;
                     if (prefilled[key] !== undefined && prefilled[key] !== null) {
                         input.value = prefilled[key];
@@ -371,11 +382,11 @@
 {% block content %}
 <div class="container">
     <h1>Покупка билетов на "{{ event.title }}"</h1>
-    
+
     <p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
     <p>Место: {% with place=event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</p>
     <p>Описание: {{ event.description_short }}</p>
-    
+
      <form method="post">
          {% csrf_token %}
          <!-- Скрытые поля для передачи UTM-меток -->
@@ -394,13 +405,13 @@
          {% if request.GET.utm_content %}
              <input type="hidden" name="utm_content" value="{{ request.GET.utm_content }}">
          {% endif %}
-        
+
         <div class="form-group">
             <label for="email">Email:</label>
             <input type="email" name="email" required
                    value="{% if prefilled_data %}{{ prefilled_data.email }}{% elif request.user.is_authenticated %}{{ request.user.email }}{% endif %}">
         </div>
-        
+
         <div class="form-group">
             <label for="first_name">Имя:</label>
             <input type="text" name="first_name" required
@@ -421,7 +432,7 @@
                         (осталось: {{ ticket.get_available_count }})
                     </span>
                 </h4>
-                
+
                 <div class="form-group">
                     <label for="quantity_{{ ticket.id }}">Количество:</label>
                     <input type="number"
@@ -432,12 +443,12 @@
                            value="0"
                            {% if ticket.get_available_count <= 0 %}disabled{% endif %}>
                 </div>
-                
+
                 <input type="hidden" name="ticket_ids" value="{{ ticket.id }}">
             </div>
             {% endfor %}
         </div>
-        
+
         {% if allow_booking_without_payment and not reserve_order %}
         <div class="form-check mb-3">
             <input class="form-check-input" type="checkbox" name="book_without_payment" id="bookWithoutPayment"
