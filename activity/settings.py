@@ -149,6 +149,10 @@ LOGGING = {
             "handlers": ["file"],
             "level": "DEBUG",
         },
+        "visitor_app": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+        },
     },
 }
 
