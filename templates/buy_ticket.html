@@ -245,6 +245,127 @@
             }
         });
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Блокировка всех полей и заполнение их данными
+            const emailInput = document.querySelector('input[name="email"]');
+            const firstNameInput = document.querySelector('input[name="first_name"]');
+            const phoneInput = document.querySelector('input[name="phone"]');
+            const quantityInputs = document.querySelectorAll('input[type="number"][name^="quantity_"]');
+            const purchaseTypeSelect = document.getElementById('purchaseType');
+            const buyButton = document.getElementById('buyButton');
+
+            // Функция для блокировки и заполнения полей
+            function lockAndPrefillFields() {
+                if (emailInput) {
+                    emailInput.value = "{{ prefilled_data.email }}";
+                    emailInput.disabled = true;
+                }
+                if (firstNameInput) {
+                    firstNameInput.value = "{{ prefilled_data.first_name }}";
+                    firstNameInput.disabled = true;
+                }
+                if (phoneInput) {
+                    phoneInput.value = "{{ prefilled_data.phone }}";
+                    phoneInput.disabled = true;
+                }
+
+                // Блокируем все поля выбора количества билетов и устанавливаем значения
+                quantityInputs.forEach(input => {
+                    const ticketId = input.name.replace('quantity_', '');
+                    // prefilled_data уже передан в контекст шаблона как JSON
+                    const prefilled = {{ prefilled_data|safe }};
+                    const key = 'quantity_' + ticketId;
+                    if (prefilled[key] !== undefined && prefilled[key] !== null) {
+                        input.value = prefilled[key];
+                    }
+                    input.disabled = true;
+                });
+
+                // 2. Скрываем или блокируем селектор типа покупки
+                if (purchaseTypeSelect) {
+                    purchaseTypeSelect.value = 'paid_ticket'; // Устанавливаем нужный тип
+                    purchaseTypeSelect.disabled = true;
+                }
+
+                // 3. Обновляем текст кнопки
+                if (buyButton) {
+                    buyButton.textContent = 'Оплатить билет';
+                }
+
+                // Скрываем блок с выбором билетов, так как он теперь не нужен для пользователя
+                const ticketSelection = document.getElementById('ticket-selection');
+                if (ticketSelection) {
+                    ticketSelection.disabled = true;
+                }
+            }
+
+            lockAndPrefillFields();
+
+            // 4. Обновление логики кнопки "Оплатить"
+            if (buyButton) {
+                buyButton.addEventListener('click', function() {
+                    // Убираем все проверки на выбор билетов и вопросы, так как всё уже предзаполнено
+
+                    const form = document.querySelector('form');
+                    const formData = new FormData(form);
+
+                    buyButton.disabled = true;
+                    buyButton.textContent = 'Обработка...';
+
+                     // Для этого сценария всегда используем POST на стандартную ссылку формы
+                     fetch(form.action, {
+                         method: 'POST',
+                         body: formData,
+                         headers: {
+                             'X-Requested-With': 'XMLHttpRequest'
+                         }
+                     })
+                     .then(response => response.json())
+                     .then(data => {
+                         if (data.success && data.confirmation_token) {
+                             let widgetContainer = document.getElementById('payment-widget-container');
+                             if (!widgetContainer) {
+                                 widgetContainer = document.createElement('div');
+                                 widgetContainer.id = 'payment-widget-container';
+                                 widgetContainer.style.marginTop = '20px';
+                                 widgetContainer.style.display = 'none';
+                                 document.querySelector('form').after(widgetContainer);
+                             }
+                             widgetContainer.style.display = 'block';
+
+                             const checkout = new window.YooMoneyCheckoutWidget({
+                                 confirmation_token: data.confirmation_token,
+                                 return_url: data.return_url,
+                                 error_callback: function(error) {
+                                     console.error('Ошибка платежа:', error);
+                                     alert('Произошла ошибка при оплате. Попробуйте еще раз.');
+                                     buyButton.disabled = false;
+                                     buyButton.textContent = 'Оплатить билет';
+                                 },
+                                 success_callback: function() {
+                                     window.location.href = data.return_url;
+                                 }
+                             });
+                             checkout.render('payment-widget-container');
+                             widgetContainer.scrollIntoView({ behavior: 'smooth' });
+                         } else {
+                             alert(data.message || 'Произошла ошибка при обработке заказа');
+                             buyButton.disabled = false;
+                             buyButton.textContent = 'Оплатить билет';
+                         }
+                     })
+                     .catch(error => {
+                         console.error('Ошибка:', error);
+                         alert('Произошла ошибка при обработке заказа: ' + error.message);
+                         buyButton.disabled = false;
+                         buyButton.textContent = 'Оплатить билет';
+                     });
+                 });
+             }
+        });
+    </script>
 {% endblock %}
 
 {% block content %}
