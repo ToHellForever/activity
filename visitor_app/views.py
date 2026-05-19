@@ -731,12 +731,19 @@ def buy_ticket(request, event_id):
             )
             return render(request, "buy_ticket.html", {"event": event})
 
-    orders = _create_orders(user, event, ticket_quantities, request)
-    if not orders:
-        if is_ajax:
-            return JsonResponse({"success": False, "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз."})
-        messages.error(request, "Произошла ошибка при покупке билетов. Попробуйте еще раз.")
-        return render(request, "buy_ticket.html", {"event": event})
+    # Если это оплата забронированного билета, обновляем статус платежа у существующего заказа
+    if reserve_order:
+        # Обновляем статус платежа у забронированного заказа
+        reserve_order.payment_status = "pending"
+        reserve_order.save()
+        orders = [reserve_order]
+    else:
+        orders = _create_orders(user, event, ticket_quantities, request)
+        if not orders:
+            if is_ajax:
+                return JsonResponse({"success": False, "message": "Произошла ошибка при покупке билетов. Попробуйте еще раз."})
+            messages.error(request, "Произошла ошибка при покупке билетов. Попробуйте еще раз.")
+            return render(request, "buy_ticket.html", {"event": event})
 
     result = _process_payment_and_notifications(orders, request, event, user)
 
