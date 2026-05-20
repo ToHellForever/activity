@@ -19,7 +19,6 @@ from core.views import (
     update_ticket_status,
     sales_register,
 )
-from visitor_app.views import buy_ticket, yookassa_webhook
 app_name = "venues"
 
 urlpatterns = [
@@ -34,12 +33,10 @@ urlpatterns = [
     path("send-message/", send_support_message, name="send_support_message"),
     path("events/", event_list, name="event_list"),
     path("events/<int:event_id>/", event_detail, name="event_detail"),
-    path("buy-ticket/<int:event_id>/", buy_ticket, name="buy_ticket"),
     path("send-event-request/<int:event_id>/", send_event_request, name="send_event_request"),
     path("activate/<int:pk>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
     path("update-ticket-status/<int:ticket_id>/", update_ticket_status, name="update_ticket_status"),
-    path('payment/webhook/', yookassa_webhook, name='yookassa_webhook'),
     path("partner/", include("partner_app.urls")),
     path("visitor/", include("visitor_app.urls")),
     path("venues/", include("venues.urls")),
