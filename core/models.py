@@ -424,7 +424,9 @@ class Ticket(models.Model):
                 # Локальная блокировка через транзакции
                 with transaction.atomic():
                     ticket = Ticket.objects.select_for_update().get(pk=self.pk)
-                    return ticket._check_availability(quantity)
+                    available = ticket._check_availability(quantity)
+                    print(f"Checking availability for ticket {ticket.id}: available_quantity={ticket.available_quantity}, quantity={quantity}, available={available}")
+                    return available
         except Ticket.DoesNotExist:
             return False
 
@@ -436,12 +438,16 @@ class Ticket(models.Model):
                 hours=self.event.auto_close_sales_hours
             )
             if timezone.now() >= close_time:
+                print(f"Sales are closed for event {self.event.id}")
                 return False
 
         sold = sum(
             order.quantity for order in self.orders.exclude(payment_status="refunded")
         )
-        return self.available_quantity >= sold + quantity
+        print(f"Ticket {self.id}: available_quantity={self.available_quantity}, sold={sold}, quantity={quantity}")
+        available = self.available_quantity >= sold + quantity
+        print(f"Availability check result: {available}")
+        return available
 
     def get_available_count(self):
         """Возвращает количество доступных билетов данного типа."""
@@ -491,6 +497,9 @@ class Order(models.Model):
     is_paid = models.BooleanField(default=False, verbose_name="Оплачен")
     payment_deadline = models.DateTimeField(
         null=True, blank=True, verbose_name="Срок оплаты"
+    )
+    payment_id = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа"
     )
     platform_commission = models.DecimalField(
         max_digits=10,
@@ -561,7 +570,11 @@ class Order(models.Model):
         import qrcode
         import uuid
         import os
+        import logging
         from django.conf import settings
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"Generating QR codes for order {self.id}")
 
         # Очищаем старые QR-коды, если они есть
         self.qr_codes = []
@@ -603,6 +616,7 @@ class Order(models.Model):
             qr_path = os.path.join(qr_dir, qr_filename)
 
             img.save(qr_path)
+            logger.info(f"Saved QR code to {qr_path}")
 
             # Сохраняем путь к QR-коду в JSON-поле
             self.qr_codes.append(
