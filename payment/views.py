@@ -152,29 +152,38 @@ def refund_ticket(request, order_id):
     """
     Возврат билета через ЮКассу.
     """
+    import traceback
     try:
+        print("Starting refund process for order_id:", order_id)
         order = get_object_or_404(Order, id=order_id)
+        print("Order found:", order.id, "Status:", order.payment_status, "YooKassa Payment ID:", order.yookassa_payment_id)
+
         if order.payment_status != "succeeded":
-            return JsonResponse({"error": "Заказ не оплачен"}, status=400)
+            return render(request, "refund_error.html", {"error": "Заказ не оплачен"})
 
         # Проверка срока возврата
         if order.ticket.event.get_refund_deadline() < timezone.now():
-            return JsonResponse({"error": "Срок возврата истек"}, status=400)
+            return render(request, "refund_error.html", {"error": "Срок возврата истек"})
 
+        print("Attempting to refund payment with ID:", order.yookassa_payment_id)
+        from yookassa import Refund
         # Создание возврата в ЮКассе
-        refund = Payment.refund(
-            order.yookassa_payment_id,
-            {"amount": {"value": str(order.total_price), "currency": "RUB"}},
+        refund = Refund.create(
+            {"payment_id": order.yookassa_payment_id, "amount": {"value": str(order.total_price), "currency": "RUB"}},
+            uuid.uuid4()
         )
+        print("Refund created successfully:", refund.id)
 
         # Обновление статуса заказа
         order.payment_status = "refunded"
         order.save()
+        print("Order status updated to 'refunded'")
 
-        return JsonResponse({"status": "success", "refund_id": refund.id})
+        return render(request, "refund_success.html")
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        traceback.print_exc()
+        return render(request, "refund_error.html", {"error": str(e)})
 
 
 def payment_success(request, order_id):
