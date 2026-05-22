@@ -45,7 +45,6 @@ from core.tasks import generate_payment_link
 
 logger = logging.getLogger(__name__)
 
-
 @login_required
 def visitor_dashboard(request):
     # Проверяем тип пользователя
@@ -66,7 +65,6 @@ def visitor_dashboard(request):
     context = {"user": request.user, "user_orders": user_orders, "now": timezone.now()}
     return render(request, "visitor/dashboard.html", context)
 
-
 @login_required
 def change_password(request):
     """Отдельная страница для смены пароля в личном кабинете посетителя."""
@@ -81,3 +79,25 @@ def change_password(request):
         password_form = PasswordChangeForm(user=request.user)
 
     return render(request, "change_password.html", {"form": password_form})
+
+def buy_ticket(request, ticket_id=None):
+    """
+    Страница покупки билета.
+    """
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    # Если пользователь авторизован, заполняем форму его данными
+    initial_data = {}
+    if request.user.is_authenticated:
+        initial_data = {
+            'name': request.user.get_full_name() or request.user.username,
+            'email': request.user.email,
+            'phone': getattr(request.user, 'phone_number', '')
+        }
+
+    context = {
+        'ticket': ticket,
+        'initial_data': initial_data
+    }
+
+    return render(request, 'buy_ticket.html', context)

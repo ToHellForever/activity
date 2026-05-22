@@ -64,7 +64,19 @@
     </div>
 {% endif %}
 
-<a href="{% url 'buy_ticket' event.id %}">Купить билет</a>
+{% if tickets %}
+    <h3>Доступные билеты:</h3>
+    <ul>
+        {% for ticket in tickets %}
+            <li>
+                {{ ticket.name }} - {{ ticket.price }} руб.
+                <a href="{% url 'visitor:buy_ticket' ticket.id %}" class="btn btn-primary">Купить</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Билеты отсутствуют.</p>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

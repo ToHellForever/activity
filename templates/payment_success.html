@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h2>Оплата успешна!</h2>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Заказ №{{ order.id }}</h5>
+            <p class="card-text"><strong>Мероприятие:</strong> {{ order.ticket.event.title }}</p>
+            <p class="card-text"><strong>Билет:</strong> {{ order.ticket.name }}</p>
+            <p class="card-text"><strong>Количество:</strong> {{ order.quantity }}</p>
+            <p class="card-text"><strong>Стоимость:</strong> {{ order.total_price }} ₽</p>
+            <p class="card-text"><strong>Статус:</strong> {{ order.get_payment_status_display }}</p>
+
+            <div class="alert alert-success mt-4" role="alert">
+                На вашу почту {{ order.participant_data.email }} отправлено письмо с QR-кодами.
+            </div>
+
+            <a href="{% url 'event_list' %}" class="btn btn-primary mt-3">Вернуться к мероприятиям</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

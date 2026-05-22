@@ -506,6 +506,12 @@ class Order(models.Model):
     payment_id = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа"
     )
+    yookassa_payment_id = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа в ЮКассе"
+    )
+    yookassa_payment_data = models.JSONField(
+        null=True, blank=True, verbose_name="Данные платежа из ЮКассы"
+    )
     platform_commission = models.DecimalField(
         max_digits=10,
         decimal_places=2,

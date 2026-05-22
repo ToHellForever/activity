@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение заказа билета</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 5px 5px 0 0;
+            text-align: center;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+        .event-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        .ticket-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Ваш билет на мероприятие</h2>
+    </div>
+
+    <div class="content">
+        <p>Здравствуйте, {{ order.participant_data.name }}!</p>
+
+        <p>Благодарим вас за покупку билета на мероприятие "{{ order.ticket.event.title }}". Ваш заказ успешно оплачен.</p>
+
+        <div class="event-info">
+            <h3>Информация о мероприятии</h3>
+            <p><strong>Название:</strong> {{ order.ticket.event.title }}</p>
+            <p><strong>Дата и время:</strong> {{ order.ticket.event.date_time|date:"d.m.Y H:i" }}</p>
+            <p><strong>Адрес:</strong> {{ order.ticket.event.get_place_address }}</p>
+            <p><strong>Организатор:</strong> {{ order.ticket.event.organizer.get_full_name }}</p>
+        </div>
+
+        <div class="ticket-info">
+            <h3>Информация о заказе</h3>
+            <p><strong>Номер заказа:</strong> {{ order.id }}</p>
+            <p><strong>Тип билета:</strong> {{ order.ticket.name }}</p>
+            <p><strong>Количество:</strong> {{ order.quantity }}</p>
+            <p><strong>Сумма:</strong> {{ order.total_price }} ₽</p>
+            <p><strong>Статус:</strong> Оплачено</p>
+        </div>
+
+        <div class="qr-code">
+            <h3>Ваши билеты с QR-кодами</h3>
+            <p>Пожалуйста, сохраните или распечатайте эти билеты для предъявления на мероприятии.</p>
+
+            {% for qr_code in order.qr_codes %}
+            <div style="margin-bottom: 30px; padding: 15px; border: 1px dashed #ccc;">
+                <h4>Билет №{{ forloop.counter }}</h4>
+                <img src="{{ qr_code.qr_code_path.url }}" alt="QR код для билета {{ forloop.counter }}" width="200" height="200">
+                <p><strong>Уникальный ID:</strong> {{ qr_code.unique_id }}</p>
+                <p><strong>Данные:</strong> {{ qr_code.data.text_data }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <p>Если у вас возникли вопросы, пожалуйста, свяжитесь с нашей службой поддержки.</p>
+
+        <div class="footer">
+            <p>С уважением, команда {{ site_name }}</p>
+            <p>© {{ now|date:"Y" }} Все права защищены</p>
+        </div>
+    </div>
+</body>
+</html>

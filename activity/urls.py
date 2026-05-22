@@ -19,6 +19,7 @@ from core.views import (
     update_ticket_status,
     sales_register,
 )
+
 app_name = "venues"
 
 urlpatterns = [
@@ -33,18 +34,26 @@ urlpatterns = [
     path("send-message/", send_support_message, name="send_support_message"),
     path("events/", event_list, name="event_list"),
     path("events/<int:event_id>/", event_detail, name="event_detail"),
-    path("send-event-request/<int:event_id>/", send_event_request, name="send_event_request"),
+    path(
+        "send-event-request/<int:event_id>/",
+        send_event_request,
+        name="send_event_request",
+    ),
     path("activate/<int:pk>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
-    path("update-ticket-status/<int:ticket_id>/", update_ticket_status, name="update_ticket_status"),
+    path(
+        "update-ticket-status/<int:ticket_id>/",
+        update_ticket_status,
+        name="update_ticket_status",
+    ),
     path("partner/", include("partner_app.urls")),
     path("visitor/", include("visitor_app.urls")),
     path("venues/", include("venues.urls")),
     path("admin/venues/", include("venues.urls", namespace="admin_venues")),
     path("reports/sales-register/", sales_register, name="sales_register"),
+    path("payment/", include("payment.urls")),
 ]
 
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    

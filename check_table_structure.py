@@ -1,20 +1,25 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+load_dotenv()
 
 conn = psycopg2.connect(
-    dbname="activity_db",
-    user="postgres",
-    password="Dima228anosov",
-    host="localhost",
-    port="5432"
+    dbname=os.getenv("DB_NAME", "activity"),
+    user=os.getenv("DB_USER", "postgres"),
+    password=os.getenv("DB_PASSWORD", "Dima228anosov"),
+    host=os.getenv("DB_HOST", "localhost"),
+    port=os.getenv("DB_PORT", "5432")
 )
 
 cursor = conn.cursor()
 cursor.execute("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'core_order';")
 rows = cursor.fetchall()
 
-with open('table_structure.txt', 'w', encoding='utf-8') as f:
-    for row in rows:
-        f.write(f"{row[0]}: {row[1]}\n")
+print("Структура таблицы core_order:")
+for row in rows:
+    print(f"{row[0]}: {row[1]}")
 
 cursor.close()
 conn.close()
