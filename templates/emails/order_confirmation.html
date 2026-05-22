@@ -68,6 +68,12 @@
         {% endfor %}
     </div>
 
+    {% if payment_url %}
+    <div class="payment-button" style="text-align: center; margin: 20px 0;">
+        <a href="{{ payment_url }}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Оплатить билет</a>
+    </div>
+    {% endif %}
+
     <div class="footer">
         <p>Спасибо за покупку! Приходите ещё!</p>
     </div>

@@ -45,10 +45,39 @@ def send_order_confirmation_email(order):
         fail_silently=False,
     )
 
+def send_reservation_email(order, request):
+    """
+    Отправка письма с кнопкой для оплаты забронированного билета.
+    """
+    participant_email = order.participant_data.get("email")
+    if not participant_email:
+        return
+
+    # Формирование контекста для шаблона письма
+    context = {
+        "order": order,
+        "ticket": order.ticket,
+        "participant_data": order.participant_data,
+        "payment_url": request.build_absolute_uri(f"/payment/pay_reserved/{order.id}/"),
+    }
+
+    # Рендеринг HTML-шаблона письма
+    email_html = render_to_string("emails/order_confirmation.html", context)
+
+    # Отправка письма
+    send_mail(
+        subject=f"Бронирование билета #{order.id}",
+        message=f"Ваш билет #{order.id} забронирован. Для оплаты перейдите по ссылке: {request.build_absolute_uri(f'/payment/pay_reserved/{order.id}/')}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[participant_email],
+        html_message=email_html,
+        fail_silently=False,
+    )
+
 
 def create_payment(request, ticket_id):
     """
-    Создание платежа в ЮКассе для покупки билета.
+    Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
     """
     import traceback
     if request.method != "POST":
@@ -72,39 +101,50 @@ def create_payment(request, ticket_id):
 
         total_price = ticket.price * quantity
 
+        # Проверка, выбран ли чекбокс "Забронировать без оплаты"
+        reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
+
         # Создание заказа
         order = Order.objects.create(
             ticket=ticket,
             participant_data=participant_data,
             total_price=total_price,
             quantity=quantity,
-            payment_status="pending",
+            payment_status="reserved" if reserve_without_payment else "pending",
         )
 
-        # Создание платежа в ЮКассе
-        payment = Payment.create(
-            {
-                "amount": {"value": str(total_price), "currency": "RUB"},
-                "confirmation": {
-                    "type": "redirect",
-                    "return_url": request.build_absolute_uri(
-                        f"/payment/success/{order.id}/"
-                    ),
+        if reserve_without_payment:
+            # Отправка письма с кнопкой для оплаты
+            send_reservation_email(order, request)
+            return JsonResponse({
+                "success": True,
+                "redirect_url": f"/payment/success/{order.id}/"
+            })
+        else:
+            # Создание платежа в ЮКассе
+            payment = Payment.create(
+                {
+                    "amount": {"value": str(total_price), "currency": "RUB"},
+                    "confirmation": {
+                        "type": "redirect",
+                        "return_url": request.build_absolute_uri(
+                            f"/payment/success/{order.id}/"
+                        ),
+                    },
+                    "capture": True,
+                    "description": f"Оплата заказа #{order.id} для мероприятия {ticket.event.title}",
+                    "metadata": {"order_id": order.id},
                 },
-                "capture": True,
-                "description": f"Оплата заказа #{order.id} для мероприятия {ticket.event.title}",
-                "metadata": {"order_id": order.id},
-            },
-            uuid.uuid4(),
-        )
+                uuid.uuid4(),
+            )
 
-        # Сохранение идентификатора платежа в ЮКассе для заказа
-        order.yookassa_payment_id = payment.id
-        order.save()
+            # Сохранение идентификатора платежа в ЮКассе для заказа
+            order.yookassa_payment_id = payment.id
+            order.save()
 
-        return JsonResponse(
-            {"payment_url": payment.confirmation.confirmation_url, "order_id": order.id}
-        )
+            return JsonResponse(
+                {"payment_url": payment.confirmation.confirmation_url, "order_id": order.id}
+            )
 
     except Exception as e:
         traceback.print_exc()
@@ -145,6 +185,7 @@ def yookassa_webhook(request):
         return HttpResponse(status=200)
 
     except Exception as e:
+        print(f"Error in yookassa_webhook: {e}")
         return HttpResponse(status=400)
 
 
@@ -192,3 +233,42 @@ def payment_success(request, order_id):
     """
     order = get_object_or_404(Order, id=order_id)
     return render(request, "payment_success.html", {"order": order})
+
+def pay_reserved_order(request, order_id):
+    """
+    Оплата забронированного билета.
+    """
+    import traceback
+    try:
+        order = get_object_or_404(Order, id=order_id)
+
+        if order.payment_status != "reserved":
+            return render(request, "refund_error.html", {"error": "Этот заказ не может быть оплачен"})
+
+        # Создание платежа в ЮКассе
+        payment = Payment.create(
+            {
+                "amount": {"value": str(order.total_price), "currency": "RUB"},
+                "confirmation": {
+                    "type": "redirect",
+                    "return_url": request.build_absolute_uri(
+                        f"/payment/success/{order.id}/"
+                    ),
+                },
+                "capture": True,
+                "description": f"Оплата заказа #{order.id} для мероприятия {order.ticket.event.title}",
+                "metadata": {"order_id": order.id},
+            },
+            uuid.uuid4(),
+        )
+
+        # Сохранение идентификатора платежа в ЮКассе для заказа
+        order.yookassa_payment_id = payment.id
+        order.payment_status = "pending"
+        order.save()
+
+        return redirect(payment.confirmation.confirmation_url)
+
+    except Exception as e:
+        traceback.print_exc()
+        return render(request, "refund_error.html", {"error": str(e)})

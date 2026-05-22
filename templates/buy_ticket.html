@@ -41,7 +41,14 @@
             <input type="tel" class="form-control" id="phone" name="phone" value="{{ initial_data.phone|default:'' }}" required>
         </div>
 
-        <button type="submit" class="btn btn-primary">Оплатить через ЮКассу</button>
+        {% if ticket.event.allow_booking_without_payment %}
+        <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" id="reserve_without_payment" name="reserve_without_payment">
+            <label class="form-check-label" for="reserve_without_payment">Забронировать без оплаты</label>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">Продолжить</button>
     </form>
 </div>
 {% else %}
@@ -65,6 +72,9 @@ document.getElementById('ticketForm').addEventListener('submit', function(e) {
     .then(data => {
         if (data.payment_url) {
             window.location.href = data.payment_url;
+        } else if (data.success) {
+            alert('Ваш билет забронирован! На вашу почту отправлено письмо с ссылкой для оплаты.');
+            window.location.href = data.redirect_url || '/';
         } else if (data.error) {
             alert('Ошибка: ' + data.error);
         }
