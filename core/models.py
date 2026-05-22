@@ -285,8 +285,9 @@ class Event(models.Model, VideoWatermarkMixin):
         default=False, verbose_name="Разрешить бронирование без оплаты"
     )
     allow_platform_requests = models.BooleanField(
-        default=False, verbose_name="Разрешить заявки через платформу",
-        help_text="Если включено, пользователи смогут оставить заявку с вопросами"
+        default=False,
+        verbose_name="Разрешить заявки через платформу",
+        help_text="Если включено, пользователи смогут оставить заявку с вопросами",
     )
     # Автоматическое закрытие продаж (в часах)
     auto_close_sales_hours = models.PositiveIntegerField(
@@ -425,7 +426,9 @@ class Ticket(models.Model):
                 with transaction.atomic():
                     ticket = Ticket.objects.select_for_update().get(pk=self.pk)
                     available = ticket._check_availability(quantity)
-                    print(f"Checking availability for ticket {ticket.id}: available_quantity={ticket.available_quantity}, quantity={quantity}, available={available}")
+                    print(
+                        f"Checking availability for ticket {ticket.id}: available_quantity={ticket.available_quantity}, quantity={quantity}, available={available}"
+                    )
                     return available
         except Ticket.DoesNotExist:
             return False
@@ -444,7 +447,9 @@ class Ticket(models.Model):
         sold = sum(
             order.quantity for order in self.orders.exclude(payment_status="refunded")
         )
-        print(f"Ticket {self.id}: available_quantity={self.available_quantity}, sold={sold}, quantity={quantity}")
+        print(
+            f"Ticket {self.id}: available_quantity={self.available_quantity}, sold={sold}, quantity={quantity}"
+        )
         available = self.available_quantity >= sold + quantity
         print(f"Availability check result: {available}")
         return available
@@ -482,12 +487,12 @@ class Ticket(models.Model):
 class Order(models.Model):
     """Модель для заказа (покупки)."""
 
-    participant_data = models.JSONField(
-        verbose_name="Данные участника"
-    )  # Хранит имя, email и т.д.
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE, related_name="orders", verbose_name="Билет"
     )
+    participant_data = models.JSONField(
+        verbose_name="Данные участника"
+    )  # Хранит имя, email и т.д.
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Общая стоимость"
@@ -514,7 +519,6 @@ class Order(models.Model):
         verbose_name="QR-коды",
         help_text="Список QR-кодов для каждого купленного билета",
     )
-
     # Статус платежа
     PAYMENT_STATUS_CHOICES = [
         ("pending", "Ожидает оплаты"),

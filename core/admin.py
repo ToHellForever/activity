@@ -317,9 +317,6 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "ticket", "created_at", "total_price", "is_paid")
     list_filter = ("created_at",)
 
-
-# --- Регистрация модели пользователя (если нужна кастомизация) ---
-# Если тебя устраивает стандартное отображение CustomUser, это можно пропустить.
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 

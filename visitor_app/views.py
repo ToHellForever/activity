@@ -56,7 +56,9 @@ def visitor_dashboard(request):
     # Получаем заказы текущего пользователя по email
     user_orders = (
         Order.objects.filter(participant_data__email=request.user.email)
-        .select_related("ticket__event")
+        .only("id", "participant_data", "created_at", "total_price", "quantity", "attended", "is_paid", "payment_deadline", "payment_status", "purchase_type", "ticket")
+        .select_related("ticket")
+        .prefetch_related("ticket__event")
         .order_by("-created_at")
     )
 
@@ -79,5 +81,3 @@ def change_password(request):
         password_form = PasswordChangeForm(user=request.user)
 
     return render(request, "change_password.html", {"form": password_form})
-
-
