@@ -59,13 +59,17 @@
 
     <div class="qr-codes">
         <h2>Ваши QR-коды</h2>
-        {% for qr in qr_codes %}
-        <div class="qr-code">
-            <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
-            <img src="{{ request.scheme }}://{{ request.get_host }}{{ qr.qr_code_path }}" alt="QR-код">
-            <p>{{ qr.data.text_data }}</p>
-        </div>
-        {% endfor %}
+        {% if qr_codes %}
+            {% for qr in qr_codes %}
+            <div class="qr-code">
+                <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
+                <img src="{{ request.scheme }}://{{ request.get_host }}{{ qr.qr_code_path }}" alt="QR-код">
+                <p>{{ qr.data.text_data }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>QR-коды будут доступны после оплаты.</p>
+        {% endif %}
     </div>
 
     {% if payment_url %}

@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['director-rotation-ringtone-caused.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['inserted-defense-rica-unto.trycloudflare.com', 'localhost', '127.0.0.1']
 
 
 # Application definition

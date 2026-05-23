@@ -239,11 +239,22 @@ def pay_reserved_order(request, order_id):
     Оплата забронированного билета.
     """
     import traceback
+    from yookassa import Payment
     try:
         order = get_object_or_404(Order, id=order_id)
 
-        if order.payment_status != "reserved":
+        if order.payment_status not in ["reserved", "pending"]:
             return render(request, "refund_error.html", {"error": "Этот заказ не может быть оплачен"})
+
+        if order.payment_status == "pending" and order.yookassa_payment_id:
+            # Если платеж уже создан, перенаправляем на существующую ссылку для оплаты
+            try:
+                from yookassa import Payment
+                payment = Payment.find_one(order.yookassa_payment_id)
+                if payment and payment.status == "pending":
+                    return redirect(payment.confirmation.confirmation_url)
+            except Exception as e:
+                traceback.print_exc()
 
         # Создание платежа в ЮКассе
         payment = Payment.create(
