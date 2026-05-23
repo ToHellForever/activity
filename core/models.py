@@ -573,6 +573,10 @@ class Order(models.Model):
         if not self.pk or (self.pk and self.quantity != original.quantity):
             self._generate_qr_codes()
 
+        # Удаляем флаг, чтобы избежать двойного вызова
+        if hasattr(self, '_qr_codes_generated'):
+            delattr(self, '_qr_codes_generated')
+
         super().save(*args, **kwargs)
 
     def _generate_qr_codes(self):
@@ -585,6 +589,11 @@ class Order(models.Model):
 
         logger = logging.getLogger(__name__)
         logger.info(f"Generating QR codes for order {self.id}")
+
+        # Проверяем, что у заказа есть ID
+        if not self.id:
+            logger.error("Cannot generate QR codes: Order ID is None")
+            return
 
         # Очищаем старые QR-коды, если они есть
         self.qr_codes = []

@@ -97,14 +97,14 @@
             <h3>Ваши билеты с QR-кодами</h3>
             <p>Пожалуйста, сохраните или распечатайте эти билеты для предъявления на мероприятии.</p>
 
-            {% for qr_code in order.qr_codes %}
-            <div style="margin-bottom: 30px; padding: 15px; border: 1px dashed #ccc;">
-                <h4>Билет №{{ forloop.counter }}</h4>
-                <img src="{{ qr_code.qr_code_path.url }}" alt="QR код для билета {{ forloop.counter }}" width="200" height="200">
-                <p><strong>Уникальный ID:</strong> {{ qr_code.unique_id }}</p>
-                <p><strong>Данные:</strong> {{ qr_code.data.text_data }}</p>
-            </div>
-            {% endfor %}
+             {% for qr_code in order.qr_codes %}
+             <div style="margin-bottom: 30px; padding: 15px; border: 1px dashed #ccc;">
+                 <h4>Билет №{{ forloop.counter }}</h4>
+                 <img src="{{ MEDIA_URL }}{{ qr_code.qr_code_path }}" alt="QR код для билета {{ forloop.counter }}" width="200" height="200">
+                 <p><strong>Уникальный ID:</strong> {{ qr_code.unique_id }}</p>
+                 <p><strong>Данные:</strong> {{ qr_code.data.text_data }}</p>
+             </div>
+             {% endfor %}
         </div>
 
         <p>Если у вас возникли вопросы, пожалуйста, свяжитесь с нашей службой поддержки.</p>

@@ -25,11 +25,13 @@ def send_order_confirmation_email(order):
         return
 
     # Формирование контекста для шаблона письма
+    from django.conf import settings
     context = {
         "order": order,
         "ticket": order.ticket,
         "participant_data": order.participant_data,
         "qr_codes": order.qr_codes,
+        "MEDIA_URL": settings.MEDIA_URL,
     }
 
     # Рендеринг HTML-шаблона письма
@@ -165,6 +167,12 @@ def yookassa_webhook(request):
             order.payment_status = "succeeded"
             order.is_paid = True
             order.yookassa_payment_data = payment
+
+            # Генерация QR-кодов при успешной оплате, если они ещё не сгенерированы
+            if not hasattr(order, '_qr_codes_generated'):
+                order._generate_qr_codes()
+                order._qr_codes_generated = True
+
             order.save()
 
             # Отправка уведомления на почту
