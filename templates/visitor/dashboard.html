@@ -22,7 +22,7 @@
             font-size: 1rem;
         }
         .logout-btn:hover { background-color: #c82333; }
-        
+
         .ticket-card {
             background: white;
             border-radius: 8px;
@@ -85,7 +85,7 @@
         <div class="info">
             <p>Приветствуем, <strong>{{ user.get_full_name|default:user.email }}</strong>!</p>
         </div>
-        
+
         <div class="d-flex justify-content-end mb-3">
             <a href="{% url 'visitor:change_password' %}" class="btn btn-outline-primary">
                 Сменить пароль
@@ -140,24 +140,29 @@
                             <div>{% with place=order.ticket.event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</div>
                         </div>
                         {% if order.ticket.event.status == 'active' %}
-                        <div>
-                            <div class="ticket-label">Действия:</div>
                             <div>
-                                {% with event=order.ticket.event refund_deadline=order.ticket.event.get_refund_deadline %}
-                                    {% if refund_deadline and refund_deadline > now and order.payment_status != 'refunded' %}
-                                        <form method="post" action="{% url 'visitor:refund_ticket' order.id %}" style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Вернуть билет</button>
-                                        </form>
-                                        <small class="text-muted d-block">Возврат возможен до {{ refund_deadline|date:"d.m.Y H:i" }}</small>
-                                    {% elif order.payment_status == 'refunded' %}
-                                        <span class="ticket-refunded">Билет возвращён</span>
-                                    {% else %}
-                                        <span class="text-muted">Возврат невозможен</span>
+                                <div class="ticket-label">Действия:</div>
+                                <div>
+                                    {% with event=order.ticket.event refund_deadline=order.ticket.event.get_refund_deadline %}
+                                        {% if refund_deadline and refund_deadline > now and order.payment_status != 'refunded' %}
+                                            <form method="post" action="{% url 'visitor:refund_ticket' order.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Вернуть билет</button>
+                                            </form>
+                                            <small class="text-muted d-block">Возврат возможен до {{ refund_deadline|date:"d.m.Y H:i" }}</small>
+                                        {% elif order.payment_status == 'refunded' %}
+                                            <span class="ticket-refunded">Билет возвращён</span>
+                                        {% else %}
+                                            <span class="text-muted">Возврат невозможен</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                    {% if 'pending' in order.payment_status or 'reserved' in order.payment_status %}
+                                        {% if not order.is_paid %}
+                                            <a href="{% url 'pay_reserved_order' order.id %}" class="btn btn-sm btn-outline-success">Оплатить билет</a>
+                                        {% endif %}
                                     {% endif %}
-                                {% endwith %}
+                                </div>
                             </div>
-                        </div>
                         {% endif %}
                     </div>
                 </div>

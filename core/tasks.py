@@ -265,6 +265,34 @@ def close_event_sales():
 
 
 @shared_task
+def check_unpaid_tickets():
+    """
+    Задача Celery для проверки неоплаченных билетов.
+    Возвращает билет в продажу, если он не был оплачен в течение 10 минут.
+    """
+    from django.utils import timezone
+    from core.models import Order, Ticket
+
+    now = timezone.now()
+    unpaid_orders = Order.objects.filter(
+        payment_status__in=["pending", "reserved"],
+        is_paid=False,
+        created_at__lte=now - timezone.timedelta(minutes=10)
+    )
+
+    for order in unpaid_orders:
+        # Возвращаем билеты в продажу
+        ticket = order.ticket
+        ticket.available_quantity += order.quantity
+        ticket.save()
+
+        # Обновляем статус заказа
+        order.payment_status = "canceled"
+        order.save()
+
+        logger.info(f"Заказ {order.id} отменен из-за неоплаты. Билеты возвращены в продажу.")
+
+@shared_task
 def check_reserved_tickets():
     """
     Задача Celery для проверки забронированных билетов.

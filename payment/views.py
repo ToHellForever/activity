@@ -50,13 +50,16 @@ def send_order_confirmation_email(order, request=None):
 
     # Вложение QR-кодов в письмо
     for qr_code in order.qr_codes:
-        qr_code_path = os.path.join(settings.MEDIA_ROOT, qr_code['qr_code_path'])
+        qr_code_path = os.path.join(settings.MEDIA_ROOT, qr_code["qr_code_path"])
         if os.path.exists(qr_code_path):
-            with open(qr_code_path, 'rb') as qr_file:
-                email_message.attach(f"qr_code_{qr_code['unique_id']}.png", qr_file.read(), 'image/png')
+            with open(qr_code_path, "rb") as qr_file:
+                email_message.attach(
+                    f"qr_code_{qr_code['unique_id']}.png", qr_file.read(), "image/png"
+                )
 
     # Отправка письма
     email_message.send(fail_silently=False)
+
 
 def send_reservation_email(order, request):
     """
@@ -93,6 +96,7 @@ def create_payment(request, ticket_id):
     Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
     """
     import traceback
+
     if request.method != "POST":
         return JsonResponse({"error": "Метод не поддерживается"}, status=405)
 
@@ -103,7 +107,10 @@ def create_payment(request, ticket_id):
         quantity = int(request.POST.get("quantity", 1))
 
         if not ticket.is_available() or ticket.get_available_count() < quantity:
-            return JsonResponse({"error": f"Запрошенное количество билетов {ticket.name} недоступно"}, status=400)
+            return JsonResponse(
+                {"error": f"Запрошенное количество билетов {ticket.name} недоступно"},
+                status=400,
+            )
 
         # Данные участника из формы
         participant_data = {
@@ -129,10 +136,9 @@ def create_payment(request, ticket_id):
         if reserve_without_payment:
             # Отправка письма с кнопкой для оплаты
             send_reservation_email(order, request)
-            return JsonResponse({
-                "success": True,
-                "redirect_url": f"/payment/success/{order.id}/"
-            })
+            return JsonResponse(
+                {"success": True, "redirect_url": f"/payment/success/{order.id}/"}
+            )
         else:
             # Создание платежа в ЮКассе
             payment = Payment.create(
@@ -156,7 +162,10 @@ def create_payment(request, ticket_id):
             order.save()
 
             return JsonResponse(
-                {"payment_url": payment.confirmation.confirmation_url, "order_id": order.id}
+                {
+                    "payment_url": payment.confirmation.confirmation_url,
+                    "order_id": order.id,
+                }
             )
 
     except Exception as e:
@@ -174,13 +183,18 @@ def yookassa_webhook(request):
         event_json = json.loads(request.body)
         if event_json["event"] == "payment.succeeded":
             payment = event_json["object"]
-            order = Order.objects.get(yookassa_payment_id=payment["id"])
+            try:
+                order = Order.objects.get(yookassa_payment_id=payment["id"])
+            except Order.DoesNotExist:
+                raise Http404(
+                    "Order with the specified Yookassa payment ID does not exist"
+                )
             order.payment_status = "succeeded"
             order.is_paid = True
             order.yookassa_payment_data = payment
 
             # Генерация QR-кодов при успешной оплате, если они ещё не сгенерированы
-            if not hasattr(order, '_qr_codes_generated'):
+            if not hasattr(order, "_qr_codes_generated"):
                 order._generate_qr_codes()
                 order._qr_codes_generated = True
 
@@ -191,13 +205,19 @@ def yookassa_webhook(request):
 
         elif event_json["event"] == "payment.canceled":
             payment = event_json["object"]
-            order = Order.objects.get(yookassa_payment_id=payment["id"])
+            order_id = payment.get("id")
+            if not order_id:
+                raise Http404("Invalid Yookassa payment data")
+            order = Order.objects.get(yookassa_payment_id=order_id)
             order.payment_status = "canceled"
             order.save()
 
         elif event_json["event"] == "refund.succeeded":
             payment = event_json["object"]
-            order = Order.objects.get(yookassa_payment_id=payment["payment_id"])
+            order_id = payment.get("payment_id")
+            if not order_id:
+                raise Http404("Invalid Yookassa refund data")
+            order = Order.objects.get(yookassa_payment_id=order_id)
             order.payment_status = "refunded"
             order.save()
 
@@ -205,7 +225,7 @@ def yookassa_webhook(request):
 
     except Exception as e:
         print(f"Error in yookassa_webhook: {e}")
-        return HttpResponse(status=400)
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 def refund_ticket(request, order_id):
@@ -213,24 +233,42 @@ def refund_ticket(request, order_id):
     Возврат билета через ЮКассу.
     """
     import traceback
+
     try:
         print("Starting refund process for order_id:", order_id)
         order = get_object_or_404(Order, id=order_id)
-        print("Order found:", order.id, "Status:", order.payment_status, "YooKassa Payment ID:", order.yookassa_payment_id)
+        print(
+            "Order found:",
+            order.id,
+            "Status:",
+            order.payment_status,
+            "YooKassa Payment ID:",
+            order.yookassa_payment_id,
+        )
 
-        if order.payment_status != "succeeded":
-            return render(request, "refund_error.html", {"error": "Заказ не оплачен"})
+        if order.payment_status != "succeeded" or not order.is_paid:
+            return render(
+                request,
+                "refund_error.html",
+                {"error": "Заказ не оплачен или билет не был оплачен"},
+            )
 
         # Проверка срока возврата
         if order.ticket.event.get_refund_deadline() < timezone.now():
-            return render(request, "refund_error.html", {"error": "Срок возврата истек"})
+            return render(
+                request, "refund_error.html", {"error": "Срок возврата истек"}
+            )
 
         print("Attempting to refund payment with ID:", order.yookassa_payment_id)
         from yookassa import Refund
+
         # Создание возврата в ЮКассе
         refund = Refund.create(
-            {"payment_id": order.yookassa_payment_id, "amount": {"value": str(order.total_price), "currency": "RUB"}},
-            uuid.uuid4()
+            {
+                "payment_id": order.yookassa_payment_id,
+                "amount": {"value": str(order.total_price), "currency": "RUB"},
+            },
+            uuid.uuid4(),
         )
         print("Refund created successfully:", refund.id)
 
@@ -253,22 +291,29 @@ def payment_success(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, "payment_success.html", {"order": order})
 
+
 def pay_reserved_order(request, order_id):
     """
     Оплата забронированного билета.
     """
     import traceback
     from yookassa import Payment
+
     try:
         order = get_object_or_404(Order, id=order_id)
 
         if order.payment_status not in ["reserved", "pending"]:
-            return render(request, "refund_error.html", {"error": "Этот заказ не может быть оплачен"})
+            return render(
+                request,
+                "refund_error.html",
+                {"error": "Этот заказ не может быть оплачен"},
+            )
 
         if order.payment_status == "pending" and order.yookassa_payment_id:
             # Если платеж уже создан, перенаправляем на существующую ссылку для оплаты
             try:
                 from yookassa import Payment
+
                 payment = Payment.find_one(order.yookassa_payment_id)
                 if payment and payment.status == "pending":
                     return redirect(payment.confirmation.confirmation_url)

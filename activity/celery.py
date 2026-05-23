@@ -14,4 +14,8 @@ app.conf.beat_schedule = {
         'task': 'core.tasks.close_event_sales',
         'schedule': crontab(minute=0),  # Запускать каждый час
     },
+    'check-unpaid-tickets-every-5-minutes': {
+        'task': 'core.tasks.check_unpaid_tickets',
+        'schedule': crontab(minute='*/5'),  # Запускать каждые 5 минут
+    },
 }
