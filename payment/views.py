@@ -16,7 +16,7 @@ Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 
 
-def send_order_confirmation_email(order):
+def send_order_confirmation_email(order, request=None):
     """
     Отправка уведомления на почту с информацией о заказе и QR-кодами.
     """
@@ -24,28 +24,39 @@ def send_order_confirmation_email(order):
     if not participant_email:
         return
 
-    # Формирование контекста для шаблона письма
+    from django.core.mail import EmailMultiAlternatives
     from django.conf import settings
+    import os
+
+    # Формирование контекста для шаблона письма
     context = {
         "order": order,
         "ticket": order.ticket,
         "participant_data": order.participant_data,
         "qr_codes": order.qr_codes,
-        "MEDIA_URL": settings.MEDIA_URL,
     }
 
     # Рендеринг HTML-шаблона письма
     email_html = render_to_string("emails/ticket_confirmation.html", context)
 
-    # Отправка письма
-    send_mail(
+    # Создание объекта EmailMultiAlternatives для поддержки вложений
+    email_message = EmailMultiAlternatives(
         subject=f"Подтверждение заказа #{order.id}",
-        message=f"Ваш заказ #{order.id} успешно оплачен. QR-коды прикреплены к письму.",
+        body=f"Ваш заказ #{order.id} успешно оплачен. QR-коды прикреплены к письму.",
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[participant_email],
-        html_message=email_html,
-        fail_silently=False,
+        to=[participant_email],
     )
+    email_message.attach_alternative(email_html, "text/html")
+
+    # Вложение QR-кодов в письмо
+    for qr_code in order.qr_codes:
+        qr_code_path = os.path.join(settings.MEDIA_ROOT, qr_code['qr_code_path'])
+        if os.path.exists(qr_code_path):
+            with open(qr_code_path, 'rb') as qr_file:
+                email_message.attach(f"qr_code_{qr_code['unique_id']}.png", qr_file.read(), 'image/png')
+
+    # Отправка письма
+    email_message.send(fail_silently=False)
 
 def send_reservation_email(order, request):
     """
@@ -176,7 +187,7 @@ def yookassa_webhook(request):
             order.save()
 
             # Отправка уведомления на почту
-            send_order_confirmation_email(order)
+            send_order_confirmation_email(order, request)
 
         elif event_json["event"] == "payment.canceled":
             payment = event_json["object"]
