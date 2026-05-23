@@ -275,7 +275,7 @@ def check_unpaid_tickets():
 
     now = timezone.now()
     unpaid_orders = Order.objects.filter(
-        payment_status__in=["pending", "reserved"],
+        payment_status__in=["pending"],
         is_paid=False,
         created_at__lte=now - timezone.timedelta(minutes=10)
     )
@@ -317,12 +317,11 @@ def check_reserved_tickets():
         if 48 >= time_until_event > 47:
             send_reservation_reminder(order, 48)
             logger.info(f"Отправлено напоминание за 48 часов для заказа {order.id}")
-
+            
         # Отправляем напоминание за 24 часа
         elif 24 >= time_until_event > 23:
             send_reservation_reminder(order, 24)
             logger.info(f"Отправлено напоминание за 24 часа для заказа {order.id}")
-
         # Проверяем, не истек ли срок оплаты
         if order.payment_deadline and now > order.payment_deadline:
             # Отменяем заказ и освобождаем билеты
