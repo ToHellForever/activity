@@ -28,6 +28,7 @@ from django.contrib import messages
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import uuid
+from django.utils import timezone
 import logging
 import random
 import string
@@ -36,7 +37,8 @@ import json
 import base64
 import qrcode
 import io
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count
 from django.db.models.functions import Coalesce
 from django.contrib.admin.views.decorators import staff_member_required
 # transaction
@@ -328,10 +330,18 @@ def update_ticket_status(request, ticket_id):
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
 
 def event_list(request):
+    # Фильтруем мероприятия по статусу и дате
     active_events = Event.objects.filter(status="active").order_by("date_time")
+    
+    # Фильтруем мероприятия по дате (только те, которые ещё не прошли)
+    current_time = timezone.now()
+    active_events = active_events.exclude(date_time__lte=current_time)
 
-    # Получаем все теги для фильтра, отсортированные по популярности
-    from django.db.models import Count
+# Удаляем фильтрацию по дате, так как она не требуется в текущем контексте
+    active_events = active_events.filter(date_time__gt=current_time)
+    # Фильтруем мероприятия по дате (только те, которые ещё не прошли)
+    current_time = timezone.now()
+    active_events = active_events.exclude(date_time__lte=current_time)
 
     all_tags = Tag.objects.annotate(event_count=Count("event")).order_by("-event_count")
 
