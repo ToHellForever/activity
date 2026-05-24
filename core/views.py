@@ -38,7 +38,7 @@ import base64
 import qrcode
 import io
 
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count, Q
 from django.db.models.functions import Coalesce
 from django.contrib.admin.views.decorators import staff_member_required
 # transaction
@@ -209,12 +209,13 @@ def support_dashboard(request):
     # Если пользователь - партнёр, показываем тикеты, связанные с его мероприятиями
     if request.user.user_type == "partner":
         tickets = SupportTicket.objects.filter(
-            models.Q(user=request.user) | models.Q(event__organizer=request.user)
+            Q(user=request.user) | Q(event__organizer=request.user)
         ).order_by("-created_at")
     else:
-        tickets = SupportTicket.objects.filter(user=request.user).order_by(
-            "-created_at"
-        )
+        # Для обычных пользователей показываем тикеты, связанные с их email
+        tickets = SupportTicket.objects.filter(
+            Q(user=request.user) | Q(user__email=request.user.email)
+        ).order_by("-created_at")
 
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
@@ -332,7 +333,7 @@ def update_ticket_status(request, ticket_id):
 def event_list(request):
     # Фильтруем мероприятия по статусу и дате
     active_events = Event.objects.filter(status="active").order_by("date_time")
-    
+
     # Фильтруем мероприятия по дате (только те, которые ещё не прошли)
     current_time = timezone.now()
     active_events = active_events.exclude(date_time__lte=current_time)

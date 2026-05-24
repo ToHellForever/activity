@@ -141,7 +141,7 @@ def create_payment(request, ticket_id):
                 ticket=support_ticket,
                 user=user,
                 is_from_user=True,
-                text=f"Вопрос организатору: {organizer_question}\n\nДанные участника:\nИмя: {participant_data['name']}\nEmail: {participant_data['email']}\nТелефон: {participant_data['phone']}",
+                text=f"{organizer_question}",
             )
 
             return JsonResponse(
