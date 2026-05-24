@@ -69,8 +69,30 @@ class TagAdmin(admin.ModelAdmin):
     ordering = ("main_tag__name", "name",)
 
 
+class TicketInline(admin.TabularInline):
+    model = Ticket
+    extra = 1
+    fields = ('name', 'price', 'available_quantity', 'get_sold_count', 'get_available_count')
+    readonly_fields = ('get_sold_count', 'get_available_count')
+
+    def get_sold_count(self, obj):
+        """Возвращает количество проданных билетов."""
+        if obj.pk:
+            return sum(order.quantity for order in obj.orders.all())
+        return 0
+
+    def get_available_count(self, obj):
+        """Возвращает количество доступных билетов."""
+        if obj.pk:
+            return obj.get_available_count()
+        return 0
+
+    get_sold_count.short_description = "Продано"
+    get_available_count.short_description = "Доступно"
+
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    inlines = [TicketInline]
     form = EventAdminForm
     """
     Настройка отображения модели Event в админке.
