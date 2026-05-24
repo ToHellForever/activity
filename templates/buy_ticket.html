@@ -25,6 +25,7 @@
             <label for="quantity">Количество билетов</label>
             <input type="number" class="form-control" id="quantity" name="quantity" min="1" max="{{ ticket.get_available_count }}" value="1" required>
         </div>
+        {% if ticket.event.allow_platform_requests %}
         <div class="form-check mb-3">
             <input type="checkbox" class="form-check-input" id="request_to_organizer" name="request_to_organizer">
             <label class="form-check-label" for="request_to_organizer">Заявка организатору</label>
@@ -33,6 +34,7 @@
             <label for="organizer_question">Ваш вопрос организатору</label>
             <textarea class="form-control" id="organizer_question" name="organizer_question" rows="3"></textarea>
         </div>
+        {% endif %}
 
         <div class="form-group mb-3">
             <label for="name">Ваше имя</label>
