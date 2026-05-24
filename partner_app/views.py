@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag
+from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag, MainTag
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
@@ -216,7 +216,7 @@ def create_event(request):
             "is_edit": False,
             "ticket_data": ticket_data,
             "rejection_messages": get_rejection_messages(request),
-            "all_tags": Tag.objects.all(),
+            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
         },
     )
@@ -362,7 +362,7 @@ def edit_event(request, event_id):
             "form": form,
             "is_edit": True,
             "rejection_messages": get_rejection_messages(request),
-            "all_tags": Tag.objects.all(),
+            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
         },
     )

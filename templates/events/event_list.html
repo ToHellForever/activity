@@ -36,19 +36,6 @@
     <a href="{% url 'event_list' %}" class="btn btn-secondary mt-2">Сбросить фильтр</a>
 </form>
 
-<script>
-    // Ограничение на количество выбранных подтегов (не больше 5)
-    document.querySelectorAll('input[name="tags"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const checkedBoxes = document.querySelectorAll('input[name="tags"]:checked');
-            if (checkedBoxes.length > 5) {
-                alert('Вы можете выбрать не больше 5 тегов.');
-                this.checked = false;
-            }
-        });
-    });
-</script>
-
 {% if events %}
     <ul>
         {% for event in events %}
