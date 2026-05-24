@@ -161,38 +161,6 @@
         </button>
     </div>
 
-    <!-- Флаг для включения заявок через платформу -->
-    <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" id="id_allow_platform_requests" name="allow_platform_requests"
-               {% if has_free_tickets %}disabled{% else %}{{ form.instance.allow_platform_requests|yesno:",checked" }}{% endif %}>
-        <label class="form-check-label" for="id_allow_platform_requests">
-            Разрешить заявки через платформу
-        </label>
-        <small class="form-text text-muted">
-            {% if has_free_tickets %}
-                Все билеты бесплатные - заявки через платформу недоступны.
-            {% else %}
-                Если включено, пользователи смогут оставить заявку на участие вместо покупки билета.
-            {% endif %}
-        </small>
-    </div>
-
-    <!-- Флаг для возможности бронирования без оплаты -->
-    <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" id="id_allow_booking_without_payment" name="allow_booking_without_payment"
-               {% if has_free_tickets %}disabled{% else %}{{ form.instance.allow_booking_without_payment|yesno:",checked" }}{% endif %}>
-        <label class="form-check-label" for="id_allow_booking_without_payment">
-            Разрешить бронирование без оплаты
-        </label>
-        <small class="form-text text-muted">
-            {% if has_free_tickets %}
-                Все билеты бесплатные - опция забронировать без оплаты недоступна.
-            {% else %}
-                Если включено, пользователи смогут забронировать билет без оплаты и оплатить позже.
-            {% endif %}
-        </small>
-    </div>
-
     <!-- Контейнер для выбора местоположения -->
     <div class="form-group place-input-container">
         <label for="id_place_address">Местоположение<span class="text-danger">*</span></label>
