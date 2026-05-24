@@ -25,6 +25,14 @@
             <label for="quantity">Количество билетов</label>
             <input type="number" class="form-control" id="quantity" name="quantity" min="1" max="{{ ticket.get_available_count }}" value="1" required>
         </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" id="request_to_organizer" name="request_to_organizer">
+            <label class="form-check-label" for="request_to_organizer">Заявка организатору</label>
+        </div>
+        <div class="form-group mb-3" id="organizerQuestionGroup" style="display: none;">
+            <label for="organizer_question">Ваш вопрос организатору</label>
+            <textarea class="form-control" id="organizer_question" name="organizer_question" rows="3"></textarea>
+        </div>
 
         <div class="form-group mb-3">
             <label for="name">Ваше имя</label>
@@ -58,12 +66,35 @@
 {% endif %}
 
 <script>
+document.getElementById('request_to_organizer').addEventListener('change', function() {
+    const isChecked = this.checked;
+    const quantityInput = document.getElementById('quantity');
+    const reserveCheckbox = document.getElementById('reserve_without_payment');
+    const submitButton = document.querySelector('#ticketForm button[type="submit"]');
+    const organizerQuestionGroup = document.getElementById('organizerQuestionGroup');
+
+    if (isChecked) {
+        quantityInput.disabled = true;
+        if (reserveCheckbox) reserveCheckbox.disabled = true;
+        submitButton.textContent = 'Оставить заявку';
+        organizerQuestionGroup.style.display = 'block';
+    } else {
+        quantityInput.disabled = false;
+        if (reserveCheckbox) reserveCheckbox.disabled = false;
+        submitButton.textContent = 'Продолжить';
+        organizerQuestionGroup.style.display = 'none';
+    }
+});
+
 document.getElementById('ticketForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    const formData = new FormData(this);
+    const isRequestToOrganizer = formData.get('request_to_organizer') === 'on';
+
     fetch(this.action, {
         method: 'POST',
-        body: new FormData(this),
+        body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
@@ -73,7 +104,11 @@ document.getElementById('ticketForm').addEventListener('submit', function(e) {
         if (data.payment_url) {
             window.location.href = data.payment_url;
         } else if (data.success) {
-            alert('Ваш билет забронирован! На вашу почту отправлено письмо с ссылкой для оплаты.');
+            if (isRequestToOrganizer) {
+                alert('Ваша заявка отправлена организатору!');
+            } else {
+                alert('Ваш билет забронирован! На вашу почту отправлено письмо с ссылкой для оплаты.');
+            }
             window.location.href = data.redirect_url || '/';
         } else if (data.error) {
             alert('Ошибка: ' + data.error);

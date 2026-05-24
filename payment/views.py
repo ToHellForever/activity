@@ -104,6 +104,54 @@ def create_payment(request, ticket_id):
         print("POST data:", request.POST)
         print("Ticket ID:", ticket_id)
         ticket = get_object_or_404(Ticket, id=ticket_id)
+
+        # Проверка, выбран ли чекбокс "Заявка организатору"
+        request_to_organizer = request.POST.get("request_to_organizer") == "on"
+        if request_to_organizer:
+            # Обработка заявки организатору
+            from core.models import SupportTicket, SupportMessage, User
+
+            # Данные участника из формы
+            participant_data = {
+                "name": request.POST.get("name"),
+                "email": request.POST.get("email"),
+                "phone": request.POST.get("phone"),
+            }
+
+            # Создаём или получаем пользователя
+            user, created = User.objects.get_or_create(
+                username=participant_data["email"],
+                defaults={
+                    "email": participant_data["email"],
+                    "first_name": participant_data["name"].split()[0] if participant_data["name"] else "",
+                    "last_name": " ".join(participant_data["name"].split()[1:]) if len(participant_data["name"].split()) > 1 else "",
+                }
+            )
+
+            # Создаём тикет
+            support_ticket = SupportTicket.objects.create(
+                user=user,
+                subject=f"Заявка на мероприятие: {ticket.event.title}",
+                event=ticket.event,
+            )
+
+            # Создаём сообщение с вопросом организатору
+            organizer_question = request.POST.get("organizer_question", "")
+            SupportMessage.objects.create(
+                ticket=support_ticket,
+                user=user,
+                is_from_user=True,
+                text=f"Вопрос организатору: {organizer_question}\n\nДанные участника:\nИмя: {participant_data['name']}\nEmail: {participant_data['email']}\nТелефон: {participant_data['phone']}",
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "redirect_url": "/",
+                    "message": "Ваша заявка отправлена организатору!",
+                }
+            )
+
         quantity = int(request.POST.get("quantity", 1))
 
         if not ticket.is_available() or ticket.get_available_count() < quantity:

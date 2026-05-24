@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['entrepreneur-blowing-arguments-captain.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['noted-overhead-drive-sitemap.trycloudflare.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
