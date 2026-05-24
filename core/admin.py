@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage, Tag
+from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag
 from .proxy_models import EventRequestProxy
 from .forms import EventAdminForm
 from django import forms
@@ -47,15 +47,26 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
 
 
+@admin.register(MainTag)
+class MainTagAdmin(admin.ModelAdmin):
+    """
+    Настройка отображения модели MainTag в админке.
+    """
+
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     """
     Настройка отображения модели Tag в админке.
     """
 
-    list_display = ("name",)
-    search_fields = ("name",)
-    ordering = ("name",)
+    list_display = ("name", "main_tag")
+    list_filter = ("main_tag",)
+    search_fields = ("name", "main_tag__name")
+    ordering = ("main_tag__name", "name",)
 
 
 @admin.register(Event)
@@ -463,32 +474,65 @@ class PayoutRequestAdmin(admin.ModelAdmin):
     search_fields = ("id", "payment_details__account_holder", "organizer__email")
     readonly_fields = ("created_at",)
 
-    # Методы для отображения данных из связанных моделей
-    def get_partner_full_name(self, obj):
-        return obj.organizer.get_full_name()
+@admin.register(EventPackage)
+class EventPackageAdmin(admin.ModelAdmin):
+    """Настройка отображения пакетов мероприятий в админке."""
 
-    get_partner_full_name.short_description = "Партнёр"
+    list_display = (
+        "name",
+        "max_active_events",
+        "event_card_type",
+        "description_type",
+        "has_video",
+        "has_program_and_speakers",
+        "max_photos",
+        "visibility_level",
+    )
 
-    def get_bank_name(self, obj):
-        if obj.payment_details:
-            return obj.payment_details.get_bank_name_display()
-        return "-"
+    list_filter = (
+        "event_card_type",
+        "description_type",
+        "has_video",
+        "has_program_and_speakers",
+        "visibility_level",
+    )
 
-    get_bank_name.short_description = "Банк"
+    search_fields = ("name",)
 
-    def get_account_number(self, obj):
-        if obj.payment_details:
-            return obj.payment_details.account_number
-        return "-"
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                    "max_active_events",
+                )
+            },
+        ),
+        (
+            "Настройки отображения",
+            {
+                "fields": (
+                    "event_card_type",
+                    "description_type",
+                    "visibility_level",
+                )
+            },
+        ),
+        (
+            "Функциональные возможности",
+            {
+                "fields": (
+                    "has_program_and_speakers",
+                    "max_photos",
+                    "has_video",
+                    "has_platform_request",
+                    "has_free_registration",
+                    "has_ticket_sales",
+                    "has_collection_participation",
+                )
+            },
+        ),
+    )
 
-    get_account_number.short_description = "Счёт/Карта"
 
-    def get_queryset(self, request):
-        # Подгружаем связанные данные одним запросом
-        qs = super().get_queryset(request)
-        return qs.select_related("organizer", "payment_details")
-
-    def get_status_display(self, obj):
-        return obj.get_status_display()
-
-    get_status_display.short_description = "Статус"

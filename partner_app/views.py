@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag, MainTag
+from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag, MainTag, EventPackage
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
@@ -101,6 +101,26 @@ def create_event(request):
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
+            # Проверяем ограничения пакета
+            package = form.cleaned_data.get("package")
+            if package and not package.can_create_event(request.user):
+                messages.error(
+                    request,
+                    f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": False,
+                        "ticket_data": [],
+                        "rejection_messages": get_rejection_messages(request),
+                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
+                        "has_free_tickets": False,
+                        "packages": EventPackage.objects.all(),
+                    },
+                )
             event = form.save(commit=False)
             event.organizer = request.user
             event.status = "on_moderation"
@@ -218,6 +238,7 @@ def create_event(request):
             "rejection_messages": get_rejection_messages(request),
             "main_tags": MainTag.objects.prefetch_related('subtags').all(),
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
+            "packages": EventPackage.objects.all(),
         },
     )
 
@@ -275,6 +296,26 @@ def edit_event(request, event_id):
         # Флаг 'video_changed' больше не нужен, так как мы удалили старый файл напрямую
 
         if form.is_valid():
+            # Проверяем ограничения пакета
+            package = form.cleaned_data.get("package")
+            if package and not package.can_create_event(request.user):
+                messages.error(
+                    request,
+                    f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": True,
+                        "rejection_messages": get_rejection_messages(request),
+                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
+                        "has_free_tickets": False,
+                        "packages": EventPackage.objects.all(),
+                    },
+                )
+
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
 
@@ -364,6 +405,7 @@ def edit_event(request, event_id):
             "rejection_messages": get_rejection_messages(request),
             "main_tags": MainTag.objects.prefetch_related('subtags').all(),
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
+            "packages": EventPackage.objects.all(),
         },
     )
 

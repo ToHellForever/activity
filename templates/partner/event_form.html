@@ -32,6 +32,28 @@
         text-align: center;
         padding: 20px;
     }
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .tag-selection-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .main-tag {
+        margin-right: 15px;
+    }
+    .subtags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    .form-check {
+        margin-right: 10px;
+    }
 </style>
 {% endblock %}
 
@@ -41,7 +63,7 @@
     {% csrf_token %}
 
     {% for field in form %}
-        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' %}
+        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' and field.name != 'package' %}
         <div class="form-group">
             {{ field.label_tag }}
             {% if field.required %}
@@ -78,7 +100,21 @@
         {% endif %}
     {% endfor %}
 
-<!-- Кастомное поле для выбора тегов -->
+    <!-- Кастомное поле для выбора пакета -->
+    <div class="form-group">
+        <label for="id_package">Пакет мероприятия</label>
+        <select name="package" id="id_package" class="form-control" required>
+            <option value="">Выберите пакет</option>
+            {% for package in packages %}
+                <option value="{{ package.id }}" {% if form.instance.package and form.instance.package.id == package.id %}selected{% endif %}>
+                    {{ package.name }} ({{ package.get_event_card_type_display }}, {{ package.get_description_type_display }}, {{ package.max_photos }} фото)
+                </option>
+            {% endfor %}
+        </select>
+        <small class="form-text text-muted">Выберите пакет для вашего мероприятия</small>
+    </div>
+
+    <!-- Кастомное поле для выбора тегов -->
     <div class="form-group">
         <label>Теги</label>
         <div class="d-flex flex-wrap gap-2">
@@ -247,7 +283,33 @@
                 alert('Вы можете выбрать не больше 5 тегов.');
                 this.checked = false;
             }
+
+            // Обновляем отображение выбранных тегов
+            updateSelectedTagsDisplay();
         });
+    });
+
+    // Функция для обновления отображения выбранных тегов
+    function updateSelectedTagsDisplay() {
+        const checkedBoxes = document.querySelectorAll('input[name="tags"]:checked');
+        const tagsContainer = document.getElementById('tags-container');
+
+        // Очищаем контейнер
+        tagsContainer.innerHTML = '';
+
+        // Добавляем выбранные теги
+        checkedBoxes.forEach(checkbox => {
+            const tagName = checkbox.nextElementSibling.textContent;
+            const tagElement = document.createElement('span');
+            tagElement.className = 'badge bg-secondary p-2 d-flex align-items-center';
+            tagElement.textContent = tagName;
+            tagsContainer.appendChild(tagElement);
+        });
+    }
+
+    // Инициализируем отображение выбранных тегов при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSelectedTagsDisplay();
     });
 
     // Ждём полной загрузки DOM

@@ -16,7 +16,6 @@ except ImportError:
     REDIS_AVAILABLE = False
 from django.utils import timezone
 
-
 class VideoWatermarkMixin:
     """Миксин для обработки видео с водяными знаками."""
 
@@ -44,7 +43,6 @@ class VideoWatermarkMixin:
             except Exception as e:
                 print(f"Ошибка удаления файла: {e}")
         setattr(self, hash_field_name, None)
-
 
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     USER_TYPE_CHOICES = (
@@ -115,9 +113,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
 
         super().save(*args, **kwargs)
 
-
 User = get_user_model()
-
 
 class PartnerDocument(models.Model):
     """
@@ -149,7 +145,6 @@ class PartnerDocument(models.Model):
         verbose_name = "Документ партнёра"
         verbose_name_plural = "Документы партнёров"
 
-
 class Category(models.Model):
     """Модель для категорий мероприятий."""
 
@@ -165,6 +160,48 @@ class Category(models.Model):
         verbose_name_plural = "Категории"
         ordering = ["name"]
 
+class EventPackage(models.Model):
+    """Модель для пакетов мероприятий."""
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название пакета")
+    max_active_events = models.PositiveIntegerField(default=1, verbose_name="Максимум активных мероприятий")
+    event_card_type = models.CharField(max_length=20, choices=[
+        ('basic', 'Базовая'),
+        ('extended', 'Расширенная'),
+        ('priority', 'Приоритетная'),
+    ], default='basic', verbose_name="Тип карточки события")
+    description_type = models.CharField(max_length=20, choices=[
+        ('short', 'Краткое'),
+        ('detailed', 'Подробное'),
+    ], default='short', verbose_name="Тип описания")
+    has_program_and_speakers = models.BooleanField(default=True, verbose_name="Программа и спикеры")
+    max_photos = models.PositiveIntegerField(default=1, verbose_name="Максимум фото")
+    has_video = models.BooleanField(default=False, verbose_name="Видео")
+    has_platform_request = models.BooleanField(default=True, verbose_name="Заявка внутри платформы")
+    has_free_registration = models.BooleanField(default=True, verbose_name="Зарегистрироваться (бесплатное мероприятие)")
+    has_ticket_sales = models.BooleanField(default=True, verbose_name="Покупка билета")
+    visibility_level = models.CharField(max_length=20, choices=[
+        ('basic', 'Базовая'),
+        ('enhanced', 'Повышенная'),
+        ('priority', 'Приоритетная'),
+    ], default='basic', verbose_name="Видимость в каталоге")
+    has_collection_participation = models.BooleanField(default=False, verbose_name="Участие в подборках")
+
+    class Meta:
+        verbose_name = "Пакет мероприятия"
+        verbose_name_plural = "Пакеты мероприятий"
+
+    def __str__(self):
+        return self.name
+
+    def can_create_event(self, user):
+        """Проверяет, может ли пользователь создать новое мероприятие с этим пакетом"""
+        active_events_count = Event.objects.filter(
+            organizer=user,
+            status__in=["active", "on_moderation"],
+            package=self
+        ).count()
+        return active_events_count < self.max_active_events
 
 class MainTag(models.Model):
     """Модель для основных тегов (категорий тегов)."""
@@ -199,7 +236,6 @@ class Tag(models.Model):
         verbose_name = "Подтег"
         verbose_name_plural = "Подтеги"
         ordering = ["main_tag__name", "name"]
-
 
 class Event(models.Model, VideoWatermarkMixin):
     """Модель для мероприятия."""
@@ -334,6 +370,14 @@ class Event(models.Model, VideoWatermarkMixin):
         verbose_name="Проданы билеты",
         help_text="Флаг, указывающий, что на мероприятие проданы билеты",
     )
+    package = models.ForeignKey(
+        EventPackage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Пакет мероприятия",
+        help_text="Выберите пакет для мероприятия",
+    )
     rejection_reason = models.TextField(
         blank=True,
         null=True,
@@ -352,15 +396,7 @@ class Event(models.Model, VideoWatermarkMixin):
                 self.delete_old_video("video_url", "processed_video_url_hash")
                 self.video_processing_status = "pending"
 
-    def save(self, *args, **kwargs):
-        """
-        Сохранение модели с добавлением водяного знака на изображения
-        и обновлением данных о местоположении.
-        """
-        import os
-        import json
-        from django.conf import settings
-        from core.utils import add_watermark_to_image
+        super().save(*args, **kwargs)
 
         # Если есть данные о местоположении в отдельных полях, обновляем place_data
         if hasattr(self, "_place_data_updated"):
@@ -368,6 +404,7 @@ class Event(models.Model, VideoWatermarkMixin):
             place_data = {}
             if isinstance(self.place_data, str):
                 try:
+                    import json
                     place_data = json.loads(self.place_data)
                 except json.JSONDecodeError:
                     place_data = {}
@@ -384,9 +421,8 @@ class Event(models.Model, VideoWatermarkMixin):
 
             self.place_data = place_data
 
-        super().save(*args, **kwargs)
-
         # Путь к логотипу для водяного знака
+        from django.conf import settings
         watermark_path = os.path.join(settings.BASE_DIR, "DejaVuSans-Bold.ttf")
         # Замените на путь к вашему логотипу
         actual_watermark_path = os.path.join(
@@ -396,6 +432,7 @@ class Event(models.Model, VideoWatermarkMixin):
         # Добавляем водяной знак на изображение
         if self.image:
             image_path = self.image.path
+            from core.utils import add_watermark_to_image
             add_watermark_to_image(image_path, actual_watermark_path, image_path)
 
     def get_refund_deadline(self):
@@ -415,7 +452,6 @@ class Event(models.Model, VideoWatermarkMixin):
         if self.place_data and "address" in self.place_data:
             return self.place_data["address"]
         return "Не указано"
-
 
 class Ticket(models.Model):
     """Модель для типа билета (VIP, Стандарт)."""
@@ -503,7 +539,6 @@ class Ticket(models.Model):
     class Meta:
         verbose_name = "Билет"
         verbose_name_plural = "Билеты"
-
 
 class Order(models.Model):
     """Модель для заказа (покупки)."""
@@ -637,13 +672,7 @@ class Order(models.Model):
             }
 
             # Создаем QR-код
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(qr_text_data)
+            qr = qr.make(qr_text_data)
             qr.make(fit=True)
 
             # Сохраняем QR-код в виде изображения
@@ -691,7 +720,6 @@ class Order(models.Model):
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
 
-
 class PayoutDetails(models.Model):
     """Модель для хранения реквизитов партнёра."""
 
@@ -720,7 +748,6 @@ class PayoutDetails(models.Model):
     class Meta:
         verbose_name = "Реквизиты для выплаты"
         verbose_name_plural = "Реквизиты для выплат"
-
 
 class PayoutRequest(models.Model):
     """Модель для запроса выплаты партнером."""
@@ -753,7 +780,6 @@ class PayoutRequest(models.Model):
         verbose_name = "Запрос на выплату"
         verbose_name_plural = "Запросы на выплату"
 
-
 class SupportTicket(models.Model):
     STATUS_CHOICES = [
         ("new", "Новое"),
@@ -782,7 +808,6 @@ class SupportTicket(models.Model):
     def messages(self):
         return self.supportmessage_set.all().order_by("created_at")
 
-
 class SupportAttachment(models.Model):
     """
     Модель для вложений в сообщениях поддержки.
@@ -796,7 +821,6 @@ class SupportAttachment(models.Model):
 
     def __str__(self):
         return f"Вложение для сообщения #{self.message.id}"
-
 
 class SupportMessage(models.Model):
     """

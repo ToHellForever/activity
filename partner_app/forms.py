@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from core.models import Event, PartnerDocument, PayoutDetails
+from core.models import Event, PartnerDocument, PayoutDetails, EventPackage, Tag
 from .models import ReportSchedule
 User = get_user_model()
 
@@ -52,6 +52,29 @@ class EventForm(forms.ModelForm):
             raise forms.ValidationError("Минимальное значение — 24 часа.")
         return auto_close_sales_hours
 
+    def clean(self):
+        cleaned_data = super().clean()
+        package = cleaned_data.get("package")
+        image = cleaned_data.get("image")
+        video_url = cleaned_data.get("video_url")
+        program_file = cleaned_data.get("program_file")
+
+        if package:
+            # Проверка на количество фотографий
+            if package.max_photos == 1 and image and hasattr(image, 'file'):
+                # Для пакета "Старт" можно загрузить только 1 фото
+                pass  # Пока просто пропускаем, так как ограничение на 1 фото уже есть в модели пакета
+
+            # Проверка на наличие видео
+            if not package.has_video and video_url:
+                raise forms.ValidationError("Выбранный пакет не поддерживает загрузку видео.")
+
+            # Проверка на наличие программы
+            if not package.has_program_and_speakers and program_file:
+                raise forms.ValidationError("Выбранный пакет не поддерживает загрузку программы мероприятия.")
+
+        return cleaned_data
+
     class Meta:
         model = Event
         fields = [
@@ -64,13 +87,16 @@ class EventForm(forms.ModelForm):
             "video_url",
             "program_file",
             "category",
+            "tags",
             "allow_booking_without_payment",
             "auto_close_sales_hours",
             "refund_deadline_hours",
             "duration",
             "allow_platform_requests",
+            "package",
         ]
         widgets = {
+            "tags": forms.CheckboxSelectMultiple,
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description_short": forms.Textarea(attrs={"rows": 3}),
             "description_full": forms.Textarea(attrs={"rows": 5}),
