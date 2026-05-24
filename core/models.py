@@ -166,18 +166,39 @@ class Category(models.Model):
         ordering = ["name"]
 
 
-class Tag(models.Model):
-    """Модель для тегов мероприятий."""
+class MainTag(models.Model):
+    """Модель для основных тегов (категорий тегов)."""
 
-    name = models.CharField(max_length=50, unique=True, verbose_name="Название тега")
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название основного тега")
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = "Тег"
-        verbose_name_plural = "Теги"
+        verbose_name = "Основной тег"
+        verbose_name_plural = "Основные теги"
         ordering = ["name"]
+
+class Tag(models.Model):
+    """Модель для подтегов мероприятий."""
+
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название подтега")
+    main_tag = models.ForeignKey(
+        MainTag,
+        on_delete=models.CASCADE,
+        related_name="subtags",
+        verbose_name="Основной тег",
+        help_text="Основной тег, к которому относится этот подтег",
+        default=1  # Временно, для миграции
+    )
+
+    def __str__(self):
+        return f"{self.main_tag.name} - {self.name}"
+
+    class Meta:
+        verbose_name = "Подтег"
+        verbose_name_plural = "Подтеги"
+        ordering = ["main_tag__name", "name"]
 
 
 class Event(models.Model, VideoWatermarkMixin):

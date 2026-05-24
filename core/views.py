@@ -12,11 +12,11 @@ from .forms import CustomAuthenticationForm, CustomUserCreationForm
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import login, authenticate
 from .forms import CustomAuthenticationForm
-from .models import Event, Ticket, Tag
+from .models import Event, Ticket, Tag, MainTag
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
 from django.utils import timezone
-from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
+from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order, MainTag
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
@@ -338,13 +338,8 @@ def event_list(request):
     current_time = timezone.now()
     active_events = active_events.exclude(date_time__lte=current_time)
 
-# Удаляем фильтрацию по дате, так как она не требуется в текущем контексте
-    active_events = active_events.filter(date_time__gt=current_time)
-    # Фильтруем мероприятия по дате (только те, которые ещё не прошли)
-    current_time = timezone.now()
-    active_events = active_events.exclude(date_time__lte=current_time)
-
-    all_tags = Tag.objects.annotate(event_count=Count("event")).order_by("-event_count")
+    # Получаем все основные теги с их подтегами
+    main_tags = MainTag.objects.prefetch_related('subtags').all()
 
     # Получаем выбранные теги из GET-запроса
     selected_tags = request.GET.getlist("tags")
@@ -358,7 +353,7 @@ def event_list(request):
         "events/event_list.html",
         {
             "events": active_events,
-            "all_tags": all_tags,
+            "main_tags": main_tags,
             "selected_tags": selected_tags,
         },
     )
