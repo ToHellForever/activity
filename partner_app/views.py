@@ -269,7 +269,7 @@ def edit_event(request, event_id):
         form = EventForm(request.POST, request.FILES, instance=event)
 
         # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
-        # Эта логика удаляет старое видео с диска, если был загружен новый файл.
+        # Эта логика удаляет старое видео и изображение с диска, если были загружены новые файлы.
         # Она должна выполняться ДО валидации и сохранения формы.
 
         # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_url'
@@ -281,6 +281,14 @@ def edit_event(request, event_id):
             # Метод .delete() у FileField удаляет файл с диска.
             # Параметр save=False важен: мы не хотим сохранять модель сейчас.
             event.video_url.delete(save=False)
+
+        # Проверяем, был ли загружен НОВЫЙ файл для поля 'image'
+        new_image_file = request.FILES.get("image")
+
+        # Если новый файл есть, и у события уже было старое изображение...
+        if new_image_file and event.image:
+            # ...то удаляем старый файл с диска.
+            event.image.delete(save=False)
 
         # --- КОНЕЦ БЛОГА ИЗМЕНЕНИЙ ---
 
