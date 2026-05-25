@@ -702,18 +702,6 @@
                 card.addEventListener('click', handlePackageCardClick);
             });
 
-            // Если ни один пакет не выбран, выбираем базовый пакет по умолчанию
-            if (packageSelect.value === "") {
-                const basicPackageCard = Array.from(packageCards).find(card =>
-                    card.textContent.includes("Базовая")
-                );
-
-                if (basicPackageCard) {
-                    basicPackageCard.classList.add('selected');
-                    packageSelect.value = basicPackageCard.dataset.packageId;
-                }
-            }
-
             // Вызываем функцию при загрузке страницы, чтобы установить начальное состояние
             updateFieldsBasedOnPackage();
         });

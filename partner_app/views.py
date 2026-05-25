@@ -142,9 +142,27 @@ def create_event(request):
             from core.models import EventImage
             max_photos = package.max_photos if package else 1
             if len(images) > max_photos:
-                messages.error(
+                form.add_error(None, f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий.")
+                return render(
                     request,
-                    f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий."
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": False,
+                        "ticket_data": [
+                            {"name": name, "price": price, "quantity": quantity}
+                            for name, price, quantity in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                            )
+                            if name and price and quantity
+                        ],
+                        "rejection_messages": get_rejection_messages(request),
+                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
+                        "has_free_tickets": False,
+                        "packages": EventPackage.objects.all(),
+                    },
                 )
             else:
                 for image in images:
