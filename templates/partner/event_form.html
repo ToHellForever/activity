@@ -237,21 +237,23 @@
         </div>
     <!-- Кастомные поля для медиафайлов -->
     <div class="form-group">
-        <label for="id_image">Изображение мероприятия</label>
-        <div id="image-preview-container" class="media-preview-container mb-2">
-            {% if form.instance.image %}
-            <div class="media-preview">
-                <img src="{{ form.instance.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
-                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
-                        data-media-type="image" data-media-id="{{ form.instance.id }}">
-                    ×
-                </button>
-            </div>
+        <label for="id_images">Фотографии мероприятия</label>
+        <div id="images-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.pk %}
+                {% for image in form.instance.images.all %}
+                <div class="media-preview">
+                    <img src="{{ image.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-image-btn"
+                            data-image-id="{{ image.id }}">
+                        ×
+                    </button>
+                </div>
+                {% endfor %}
             {% endif %}
         </div>
-        <input type="file" name="image" id="id_image" class="custom-media-input" data-media-type="image" style="display: none;">
-        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="image">
-            {% if form.instance.image %}Изменить{% else %}Добавить{% endif %} изображение
+        <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="images">
+            Добавить фотографии
         </button>
     </div>
 
@@ -586,6 +588,37 @@
     </script>
 
     <script>
+        // Обработчик удаления фотографий
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.remove-image-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const imageId = this.dataset.imageId;
+                    const container = this.closest('.media-preview');
+
+                    // Удаляем фотографию через AJAX
+                    fetch(`/partner/remove_event_image/${imageId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            container.remove();
+                        } else {
+                            alert('Ошибка при удалении фотографии: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Произошла ошибка при удалении фотографии.');
+                    });
+                });
+            });
+        });
+
         // Функция для динамической фильтрации полей на основе выбранного пакета
         function updateFieldsBasedOnPackage() {
             const packageId = document.getElementById('id_package').value;

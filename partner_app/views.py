@@ -126,7 +126,7 @@ def create_event(request):
             event.status = "on_moderation"
 
             # Очищаем медиафайлы, если были отмечены соответствующие флаги
-            for field_name in ["image", "video_url", "program_file"]:
+            for field_name in ["video_url", "program_file"]:
                 clear_field_name = f"{field_name}-clear"
                 if clear_field_name in request.POST:
                     current_file = getattr(event, field_name)
@@ -135,6 +135,20 @@ def create_event(request):
                     setattr(event, field_name, None)
 
         event.save()
+
+        # Обработка множественных фотографий
+        images = request.FILES.getlist("images")
+        if images:
+            from core.models import EventImage
+            max_photos = package.max_photos if package else 1
+            if len(images) > max_photos:
+                messages.error(
+                    request,
+                    f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий."
+                )
+            else:
+                for image in images:
+                    EventImage.objects.create(event=event, image=image)
 
         # Обрабатываем теги из массива ID
         tags_ids = request.POST.getlist("tags")
@@ -326,6 +340,23 @@ def edit_event(request, event_id):
 
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()
+
+            # Обработка множественных фотографий
+            images = request.FILES.getlist("images")
+            if images:
+                from core.models import EventImage
+                max_photos = event.package.max_photos if event.package else 1
+                if len(images) > max_photos:
+                    messages.error(
+                        request,
+                        f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий."
+                    )
+                else:
+                    # Удаляем старые фотографии
+                    event.images.all().delete()
+                    # Добавляем новые фотографии
+                    for image in images:
+                        EventImage.objects.create(event=event, image=image)
 
             # Обрабатываем теги из массива ID
             tags_ids = request.POST.getlist("tags")
@@ -1420,6 +1451,23 @@ def change_password(request):
         "change_password.html",
         {"form": password_form, "rejection_messages": get_rejection_messages(request)},
     )
+
+@login_required
+def remove_event_image(request, image_id):
+    """Удаление фотографии мероприятия через AJAX."""
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    try:
+        from core.models import EventImage
+        image = EventImage.objects.get(id=image_id, event__organizer=request.user)
+        image.image.delete(save=False)
+        image.delete()
+        return JsonResponse({"status": "success"})
+    except EventImage.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Image not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 

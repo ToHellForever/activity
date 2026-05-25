@@ -18,7 +18,6 @@ class EventForm(forms.ModelForm):
         self.fields["description_full"].required = True
         self.fields["date_time"].required = True
         self.fields["place_data"].required = False
-        self.fields["image"].required = True
         self.fields["refund_deadline_hours"].required = True
         self.fields["duration"].required = False
 
@@ -83,7 +82,6 @@ class EventForm(forms.ModelForm):
             "description_full",
             "date_time",
             "place_data",
-            "image",
             "video_url",
             "program_file",
             "category",
@@ -100,7 +98,6 @@ class EventForm(forms.ModelForm):
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description_short": forms.Textarea(attrs={"rows": 3}),
             "description_full": forms.Textarea(attrs={"rows": 5}),
-            "image": forms.FileInput(attrs={"class": "custom-media-input", "style": "display: none;"}),
             "video_url": forms.FileInput(attrs={"class": "custom-media-input", "style": "display: none;"}),
             "program_file": forms.FileInput(attrs={"class": "custom-media-input", "style": "display: none;"}),
             "duration": forms.TextInput(
