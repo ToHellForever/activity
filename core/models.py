@@ -840,3 +840,40 @@ class SupportMessage(models.Model):
     def __str__(self):
         return f"Сообщение к тикету #{self.ticket.id}"
     
+
+class EventImage(VideoWatermarkMixin, models.Model):
+    """
+    Модель для хранения фотографий мероприятий.
+    """
+
+    event = models.ForeignKey(
+        "Event",
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="Мероприятие",
+    )
+
+    image = models.ImageField(
+        upload_to="event_images/", verbose_name="Фото мероприятия"
+    )
+
+    def __str__(self):
+        return f"Фото для мероприятия: {self.event.title}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # Обработка водяного знака для изображения
+        if self.image:
+            from django.conf import settings
+            from core.utils import add_watermark_to_image
+
+            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+
+            if os.path.exists(watermark_path):
+                image_path = self.image.path
+                add_watermark_to_image(image_path, watermark_path, image_path)
+
+    class Meta:
+        verbose_name = "Фото мероприятия"
+        verbose_name_plural = "Фото мероприятий"
