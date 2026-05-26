@@ -54,6 +54,9 @@ class CustomUserCreationForm(UserCreationForm):
         initial="visitor",
     )
 
+    phone_number = forms.CharField(max_length=30, required=False)
+    contact_person = forms.CharField(max_length=255, required=False)
+
     class Meta:
         model = CustomUser
         fields = (
@@ -61,6 +64,8 @@ class CustomUserCreationForm(UserCreationForm):
             "password1",
             "password2",
             "user_type",
+            "phone_number",
+            "contact_person",
         )
 
     def clean_email(self):
@@ -72,6 +77,22 @@ class CustomUserCreationForm(UserCreationForm):
                     "Пользователь с таким email уже существует."
                 )
         return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user_type = cleaned_data.get("user_type")
+
+        if user_type == "partner":
+            phone_number = cleaned_data.get("phone_number")
+            contact_person = cleaned_data.get("contact_person")
+
+            if not phone_number:
+                self.add_error("phone_number", "Это поле обязательно для партнёра.")
+
+            if not contact_person:
+                self.add_error("contact_person", "Это поле обязательно для партнёра.")
+
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)

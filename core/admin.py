@@ -365,15 +365,28 @@ class CustomUserAdmin(UserAdmin):
 
     list_display = UserAdmin.list_display + (
         "user_type",
-        "is_verified",
-        "verification_status",
     )
     list_filter = UserAdmin.list_filter + (
         "user_type",
         "is_verified",
         "verification_status",
     )
-    fieldsets = (("Видео-визитка", {"fields": ("video_business_card",)}),)
+
+    fieldsets = UserAdmin.fieldsets + (
+        ("Дополнительная информация", {
+            "fields": (
+                "user_type",
+                "is_verified",
+                "verification_status",
+                "phone_number",
+                "contact_person",
+                "company_name",
+                "logo",
+                "social_links",
+            )
+        }),
+        ("Видео-визитка", {"fields": ("video_business_card",)}),
+    )
 
 
 @admin.register(SupportTicket)

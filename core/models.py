@@ -51,10 +51,10 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         ("partner", "Партнёр"),
     )
     user_type = models.CharField(
-        max_length=10, choices=USER_TYPE_CHOICES, default="guest"
+        max_length=10, choices=USER_TYPE_CHOICES, default="guest", verbose_name='Тип пользователя'
     )
     username = models.CharField(max_length=150, unique=True, verbose_name="Логин")
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False, verbose_name='Подтверждено')
     verification_status = models.CharField(
         max_length=20,
         choices=[
@@ -67,6 +67,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
     )
     company_name = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=30, blank=True, null=True)
+    contact_person = models.CharField(max_length=255, blank=True, null=True, verbose_name="Контактное лицо (ФИО)")
     logo = models.ImageField(upload_to="user_logos/", blank=True, null=True)
     social_links = models.TextField(blank=True, null=True)
     video_business_card = models.FileField(
