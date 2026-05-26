@@ -54,71 +54,6 @@
     .form-check {
         margin-right: 10px;
     }
-
-    .package-card {
-        cursor: pointer;
-        border: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        height: 100%;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        overflow: hidden;
-        position: relative;
-    }
-
-    .package-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(45deg, #007bff, #6c757d);
-        transition: all 0.3s ease;
-    }
-
-    .package-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.2);
-    }
-
-    .package-card:hover::before {
-        width: 6px;
-    }
-
-    .package-card.selected {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        box-shadow: 0 8px 20px rgba(40, 167, 69, 0.2);
-        transform: translateY(-4px);
-    }
-
-    .package-card.selected::before {
-        background: linear-gradient(45deg, #28a745, #20c997);
-        width: 6px;
-    }
-
-    .package-card .card-body {
-        padding: 1.5rem;
-    }
-
-    .package-card .card-title {
-        color: #2c3e50;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
-    }
-
-    .package-card .card-text {
-        color: #343a40;
-        margin-bottom: 0;
-        line-height: 1.5;
-        font-size: 0.95rem;
-    }
-
-    .package-card .card-text strong {
-        color: #212529;
-    }
 </style>
 {% endblock %}
 
@@ -164,40 +99,6 @@
         </div>
         {% endif %}
     {% endfor %}
-
-    <!-- Кастомное поле для выбора пакета -->
-    <div class="form-group">
-        <label>Пакет мероприятия</label>
-        <div class="row package-cards-container">
-            {% for package in packages %}
-            <div class="col-md-4 mb-3">
-                <div class="card package-card {% if form.instance.package and form.instance.package.id == package.id %}selected{% endif %}"
-                     data-package-id="{{ package.id }}"
-                     data-event-card-type="{{ package.event_card_type }}"
-                     data-description-type="{{ package.description_type }}"
-                     data-has-program="{{ package.has_program_and_speakers }}"
-                     data-max-photos="{{ package.max_photos }}"
-                     data-has-video="{{ package.has_video }}"
-                     data-has-platform-request="{{ package.has_platform_request }}"
-                     data-has-free-registration="{{ package.has_free_registration }}"
-                     data-has-ticket-sales="{{ package.has_ticket_sales }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ package.name }}</h5>
-                        <p class="card-text">
-                            Тип карточки: {{ package.get_event_card_type_display }}<br>
-                            Описание: {{ package.get_description_type_display }}<br>
-                            Фото: {{ package.max_photos }}<br>
-                            {% if package.has_video %}Видео: Да{% else %}Видео: Нет{% endif %}<br>
-                            {% if package.has_program_and_speakers %}Программа: Да{% else %}Программа: Нет{% endif %}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <input type="hidden" name="package" id="id_package" required>
-        <small class="form-text text-muted">Выберите пакет для вашего мероприятия</small>
-    </div>
 
     <!-- Кастомное поле для выбора тегов -->
     <div class="form-group">
@@ -617,93 +518,6 @@
                     });
                 });
             });
-        });
-
-        // Функция для динамической фильтрации полей на основе выбранного пакета
-        function updateFieldsBasedOnPackage() {
-            const packageId = document.getElementById('id_package').value;
-            if (!packageId) return;
-
-            // Находим выбранную карточку пакета
-            const selectedCard = document.querySelector(`.package-card[data-package-id="${packageId}"]`);
-            if (!selectedCard) return;
-
-            // Получаем данные о пакете из атрибутов карточки
-            const hasVideo = selectedCard.dataset.hasVideo === 'True';
-            const hasProgram = selectedCard.dataset.hasProgram === 'True';
-            const hasPlatformRequest = selectedCard.dataset.hasPlatformRequest === 'True';
-            const hasFreeRegistration = selectedCard.dataset.hasFreeRegistration === 'True';
-            const hasTicketSales = selectedCard.dataset.hasTicketSales === 'True';
-            const maxPhotos = parseInt(selectedCard.dataset.maxPhotos, 10);
-            const descriptionType = selectedCard.dataset.descriptionType;
-
-            // Поля, которые нужно скрыть/показать
-            const videoUrlGroup = document.querySelector('.form-group:has(#id_video_url)');
-            const programFileGroup = document.querySelector('.form-group:has(#id_program_file)');
-            const allowPlatformRequestsField = document.querySelector('.form-group:has(#id_allow_platform_requests)');
-            const allowBookingWithoutPaymentField = document.querySelector('.form-group:has(#id_allow_booking_without_payment)');
-            const ticketTableContainer = document.querySelector('.ticket-table-container');
-            const descriptionFullGroup = document.querySelector('.form-group:has(#id_description_full)');
-
-            // Скрываем/показываем поля на основе пакета
-            if (videoUrlGroup) {
-                videoUrlGroup.style.display = hasVideo ? 'block' : 'none';
-            }
-
-            if (programFileGroup) {
-                programFileGroup.style.display = hasProgram ? 'block' : 'none';
-            }
-
-            if (allowPlatformRequestsField) {
-                allowPlatformRequestsField.style.display = hasPlatformRequest ? 'block' : 'none';
-            }
-
-            if (allowBookingWithoutPaymentField) {
-                allowBookingWithoutPaymentField.style.display = hasFreeRegistration ? 'block' : 'none';
-            }
-
-            if (ticketTableContainer) {
-                ticketTableContainer.style.display = hasTicketSales ? 'block' : 'none';
-            }
-
-            // Скрываем поле полного описания, если пакет поддерживает только краткое описание
-            if (descriptionFullGroup) {
-                descriptionFullGroup.style.display = (descriptionType === 'short') ? 'none' : 'block';
-            }
-        }
-
-        // Обработчик выбора пакета при клике на карточку
-        function handlePackageCardClick(event) {
-            const card = event.currentTarget;
-            const packageId = card.dataset.packageId;
-
-            // Убираем выделение со всех карточек
-            document.querySelectorAll('.package-card').forEach(c => {
-                c.classList.remove('selected');
-            });
-
-            // Выделяем выбранную карточку
-            card.classList.add('selected');
-
-            // Устанавливаем значение в скрытое поле
-            document.getElementById('id_package').value = packageId;
-
-            // Обновляем поля на основе выбранного пакета
-            updateFieldsBasedOnPackage();
-        }
-
-        // Инициализация обработчика изменения пакета
-        document.addEventListener('DOMContentLoaded', function() {
-            const packageSelect = document.getElementById('id_package');
-            const packageCards = document.querySelectorAll('.package-card');
-
-            // Обработчики клика на карточки пакетов
-            packageCards.forEach(card => {
-                card.addEventListener('click', handlePackageCardClick);
-            });
-
-            // Вызываем функцию при загрузке страницы, чтобы установить начальное состояние
-            updateFieldsBasedOnPackage();
         });
     </script>
 {% endblock %}

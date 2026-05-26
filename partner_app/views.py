@@ -88,6 +88,7 @@ def partner_dashboard(request):
         "monthly_sales_sum": monthly_sales,
         "pending_payouts_count": pending_payouts,
         "rejection_messages": rejection_messages,
+        "packages": EventPackage.objects.all(),
     }
     return render(request, "partner/dashboard.html", context)
 
