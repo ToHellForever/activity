@@ -121,6 +121,18 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const userTypeRadios = document.querySelectorAll('input[name="user_type"]');
                 const partnerFields = document.getElementById('partner-fields');
+                const phoneNumberInput = document.querySelector('input[name="phone_number"]');
+                const contactPersonInput = document.querySelector('input[name="contact_person"]');
+
+                // Проверяем, есть ли значения в полях телефона и контактного лица
+                const hasPhoneNumber = phoneNumberInput && phoneNumberInput.value;
+                const hasContactPerson = contactPersonInput && contactPersonInput.value;
+
+                // Если есть значения, показываем поля
+                if (hasPhoneNumber || hasContactPerson) {
+                    partnerFields.style.display = 'block';
+                    document.querySelector('input[name="user_type"][value="partner"]').checked = true;
+                }
 
                 userTypeRadios.forEach(radio => {
                     radio.addEventListener('change', function() {
