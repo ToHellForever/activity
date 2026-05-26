@@ -139,21 +139,97 @@ def register_view(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()  # Сохраняем пользователя в БД
-            # Указываем бэкенд для пользователя (нужно при нескольких бэкендах)
+            user = form.save(commit=False)  # Сохраняем пользователя в БД, но не коммитим
             user.backend = "core.backends.EmailBackend"
-            # Сразу логиним пользователя после регистрации
-            login(request, user)
+            user.save()
 
-            # Редирект в зависимости от выбранной роли при регистрации
-            if user.user_type == "partner":
-                return redirect("partner:dashboard")
-            else:
-                return redirect("visitor:dashboard")
+            # Отправляем код подтверждения на почту
+            form.send_verification_code(request)
+
+            # Сохраняем пользователя в сессии для дальнейшего подтверждения
+            request.session['unverified_user_id'] = user.id
+
+            # Редирект на страницу ввода кода подтверждения
+            return redirect("verify_email")
     else:
         form = CustomUserCreationForm()
 
     return render(request, "registration/register.html", {"form": form})
+
+def verify_email_view(request):
+    """Обрабатывает ввод кода подтверждения."""
+    if 'unverified_user_id' not in request.session:
+        return redirect('login')
+
+    user_id = request.session['unverified_user_id']
+    user = get_object_or_404(CustomUser, id=user_id)
+
+    if request.method == "POST":
+        code1 = request.POST.get("code1")
+        code2 = request.POST.get("code2")
+        code3 = request.POST.get("code3")
+        code4 = request.POST.get("code4")
+        code5 = request.POST.get("code5")
+
+        entered_code = f"{code1}{code2}{code3}{code4}{code5}"
+
+        # Проверяем код
+        from .models import EmailVerificationCode
+        verification_code = EmailVerificationCode.objects.filter(
+            user=user,
+            code=entered_code,
+            is_used=False
+        ).first()
+
+        if verification_code:
+            # Код верный, подтверждаем пользователя
+            user.is_verified = True
+            user.save()
+
+            # Помечаем код как использованный
+            verification_code.is_used = True
+            verification_code.save()
+
+            # Логиним пользователя
+            user.backend = "core.backends.EmailBackend"
+            login(request, user)
+
+            # Очищаем сессию
+            if 'unverified_user_id' in request.session:
+                del request.session['unverified_user_id']
+
+            # Редирект в зависимости от роли
+            if user.user_type == "partner":
+                return redirect("partner:dashboard")
+            else:
+                return redirect("visitor:dashboard")
+        else:
+            # Код неверный
+            return render(request, "registration/verify_email.html", {
+                "error_message": "Неверный код подтверждения. Пожалуйста, попробуйте еще раз."
+            })
+
+    return render(request, "registration/verify_email.html")
+
+@require_POST
+def resend_verification_code(request):
+    """Повторная отправка кода подтверждения."""
+    if 'unverified_user_id' not in request.session:
+        return JsonResponse({'success': False, 'message': 'Сессия истекла. Пожалуйста, начните регистрацию заново.'}, status=400)
+
+    user_id = request.session['unverified_user_id']
+    user = get_object_or_404(CustomUser, id=user_id)
+
+    # Делаем все предыдущие коды недействительными
+    from .models import EmailVerificationCode
+    EmailVerificationCode.objects.filter(user=user, is_used=False).update(is_used=True)
+
+    # Отправляем новый код
+    from .forms import CustomUserCreationForm
+    form = CustomUserCreationForm(instance=user)
+    form.send_verification_code(request)
+
+    return JsonResponse({'success': True, 'message': 'Код подтверждения был успешно отправлен повторно.'})
 
 def custom_logout(request):
     """

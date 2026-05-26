@@ -840,7 +840,23 @@ class SupportMessage(models.Model):
 
     def __str__(self):
         return f"Сообщение к тикету #{self.ticket.id}"
-    
+
+class EmailVerificationCode(models.Model):
+    """
+    Модель для хранения кодов подтверждения почты.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    code = models.CharField(max_length=5, verbose_name="Код подтверждения")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    is_used = models.BooleanField(default=False, verbose_name="Использован")
+
+    def __str__(self):
+        return f"Код подтверждения для {self.user.email}"
+
+    class Meta:
+        verbose_name = "Код подтверждения почты"
+        verbose_name_plural = "Коды подтверждения почты"
 
 class EventImage(VideoWatermarkMixin, models.Model):
     """

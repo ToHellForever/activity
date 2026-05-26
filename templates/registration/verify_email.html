@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение почты</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .verify-box {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        .verify-box h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .code-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        .code-inputs input {
+            width: 40px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.7rem;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="verify-box">
+    <h2>Подтверждение почты</h2>
+
+    {% if error_message %}
+        <div class="error-message">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <p>На вашу почту отправлен код подтверждения.</p>
+    <p>Пожалуйста, введите его в поля ниже.</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="code-inputs">
+            <input type="text" name="code1" maxlength="1" required autofocus>
+            <input type="text" name="code2" maxlength="1" required>
+            <input type="text" name="code3" maxlength="1" required>
+            <input type="text" name="code4" maxlength="1" required>
+            <input type="text" name="code5" maxlength="1" required>
+        </div>
+
+        <button type="submit">Подтвердить</button>
+    </form>
+    <p>Не получили код? <span id="timer-display" style="font-weight: bold;">1:00</span></p>
+    <button id="resend-code-button" style="display: none; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 0.5rem 1rem; margin-top: 1rem;">Отправить код повторно</button>
+</div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const inputs = document.querySelectorAll('.code-inputs input');
+                const resendButton = document.getElementById('resend-code-button');
+                const timerDisplay = document.getElementById('timer-display');
+                let timeLeft = 60; // Таймер на 60 секунд
+
+                // Функция для обновления таймера
+                function updateTimer() {
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    timeLeft--;
+
+                    if (timeLeft < 0) {
+                        clearInterval(timerInterval);
+                        resendButton.style.display = 'block';
+                        timerDisplay.style.display = 'none';
+                    }
+                }
+
+                // Запускаем таймер
+                const timerInterval = setInterval(updateTimer, 1000);
+                updateTimer(); // Обновляем сразу, чтобы не ждать 1 секунду
+
+                // Обработчики для полей ввода
+                inputs.forEach((input, index) => {
+                    input.addEventListener('input', function() {
+                        if (this.value.length === 1) {
+                            if (index < inputs.length - 1) {
+                                inputs[index + 1].focus();
+                            }
+                        }
+                    });
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Backspace' && this.value.length === 0) {
+                            if (index > 0) {
+                                inputs[index - 1].focus();
+                            }
+                        }
+                    });
+                });
+
+                // Обработчик для кнопки повторной отправки кода
+                resendButton.addEventListener('click', function() {
+                    fetch('/resend-verification-code/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Код подтверждения был успешно отправлен повторно.');
+                            // Скрываем кнопку и показываем таймер
+                            resendButton.style.display = 'none';
+                            timerDisplay.style.display = 'inline';
+                            timeLeft = 60; // Сбрасываем таймер
+                            updateTimer();
+                        } else {
+                            alert('Произошла ошибка при отправке кода: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Произошла ошибка: ' + error);
+                    });
+                });
+            });
+        </script>
+
+</body>
+</html>

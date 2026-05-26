@@ -18,6 +18,8 @@ from core.views import (
     forgot_password,
     update_ticket_status,
     sales_register,
+    verify_email_view,
+    resend_verification_code,
 )
 
 app_name = "venues"
@@ -41,6 +43,8 @@ urlpatterns = [
     ),
     path("activate/<int:pk>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
+    path("verify-email/", verify_email_view, name="verify_email"),
+    path("resend-verification-code/", resend_verification_code, name="resend_verification_code"),
     path(
         "update-ticket-status/<int:ticket_id>/",
         update_ticket_status,

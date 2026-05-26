@@ -101,6 +101,28 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
         return user
 
+    def send_verification_code(self, request):
+        """Отправляет код подтверждения на почту пользователя."""
+        import random
+        from django.core.mail import EmailMultiAlternatives
+        from django.conf import settings
+        from django.template.loader import render_to_string
+
+        # Генерация случайного 5-значного кода
+        code = ''.join([str(random.randint(0, 9)) for _ in range(5)])
+
+        # Сохраняем код в базе данных
+        from .models import EmailVerificationCode
+        EmailVerificationCode.objects.create(user=self.instance, code=code)
+
+        # Отправляем код на почту
+        subject = "Подтверждение почты"
+        context = {'code': code}
+        html_content = render_to_string('emails/email_verification.html', context)
+        msg = EmailMultiAlternatives(subject, '', settings.DEFAULT_FROM_EMAIL, [self.instance.email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
 
 # --- ФОРМА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ПАРТНЕРА ---
 class PartnerProfileForm(forms.ModelForm):
