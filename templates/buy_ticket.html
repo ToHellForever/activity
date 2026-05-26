@@ -19,6 +19,12 @@
         </div>
     </div>
 
+    {% if error_message %}
+    <div class="alert alert-danger">
+        {{ error_message }}
+    </div>
+    {% endif %}
+
     <form id="ticketForm" method="post" action="{% url 'create_payment' ticket.id %}">
         {% csrf_token %}
         <div class="form-group mb-3">
@@ -88,38 +94,44 @@ document.getElementById('request_to_organizer').addEventListener('change', funct
     }
 });
 
-document.getElementById('ticketForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    document.getElementById('ticketForm').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    const formData = new FormData(this);
-    const isRequestToOrganizer = formData.get('request_to_organizer') === 'on';
+        const formData = new FormData(this);
+        const isRequestToOrganizer = formData.get('request_to_organizer') === 'on';
 
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.payment_url) {
-            window.location.href = data.payment_url;
-        } else if (data.success) {
-            if (isRequestToOrganizer) {
-                alert('Ваша заявка отправлена организатору!');
-            } else {
-                alert('Ваш билет забронирован! На вашу почту отправлено письмо с ссылкой для оплаты.');
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-            window.location.href = data.redirect_url || '/';
-        } else if (data.error) {
-            alert('Ошибка: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при обработке платежа');
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.payment_url) {
+                window.location.href = data.payment_url;
+            } else if (data && data.success) {
+                if (isRequestToOrganizer) {
+                    alert('Ваша заявка отправлена организатору!');
+                } else {
+                    alert('Ваш билет забронирован! На вашу почту отправлено письмо с ссылкой для оплаты.');
+                }
+                window.location.href = data.redirect_url || '/';
+            } else if (data && data.error) {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при обработке платежа');
+        });
     });
-});
 </script>
 {% endblock %}

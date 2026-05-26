@@ -105,18 +105,30 @@ def create_payment(request, ticket_id):
         print("Ticket ID:", ticket_id)
         ticket = get_object_or_404(Ticket, id=ticket_id)
 
+        # Данные участника из формы
+        participant_data = {
+            "name": request.POST.get("name"),
+            "email": request.POST.get("email"),
+            "phone": request.POST.get("phone"),
+        }
+
         # Проверка, выбран ли чекбокс "Заявка организатору"
         request_to_organizer = request.POST.get("request_to_organizer") == "on"
         if request_to_organizer:
             # Обработка заявки организатору
             from core.models import SupportTicket, SupportMessage, User
 
-            # Данные участника из формы
-            participant_data = {
-                "name": request.POST.get("name"),
-                "email": request.POST.get("email"),
-                "phone": request.POST.get("phone"),
-            }
+            # Проверка обязательных полей
+            if not all(participant_data.values()):
+                from django.shortcuts import render
+                return render(
+                    request,
+                    "buy_ticket.html",
+                    {
+                        "ticket": ticket,
+                        "error_message": "Все поля обязательны для заполнения."
+                    },
+                )
 
             # Создаём или получаем пользователя
             user, created = User.objects.get_or_create(
@@ -153,19 +165,77 @@ def create_payment(request, ticket_id):
             )
 
         quantity = int(request.POST.get("quantity", 1))
+        if not ticket.is_available() or ticket.get_available_count() < quantity:
+            from django.shortcuts import render
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "ticket": ticket,
+                    "error_message": f"Запрошенное количество билетов {ticket.name} недоступно"
+                },
+            )
 
+        # Проверка максимального количества билетов за один заказ для бесплатных билетов
+        if ticket.price == 0:
+            max_tickets_per_order = 2  # Максимальное количество бесплатных билетов за один заказ
+            if quantity > max_tickets_per_order:
+                from django.shortcuts import render
+                return render(
+                    request,
+                    "buy_ticket.html",
+                    {
+                        "ticket": ticket,
+                        "error_message": f"За один заказ можно получить не более {max_tickets_per_order} бесплатных билетов."
+                    },
+                )
+
+        # Проверка доступности билетов
         if not ticket.is_available() or ticket.get_available_count() < quantity:
             return JsonResponse(
                 {"error": f"Запрошенное количество билетов {ticket.name} недоступно"},
                 status=400,
             )
 
-        # Данные участника из формы
-        participant_data = {
-            "name": request.POST.get("name"),
-            "email": request.POST.get("email"),
-            "phone": request.POST.get("phone"),
-        }
+        # Проверка на бесплатные билеты
+        if ticket.price == 0:
+            # Проверка количества бесплатных билетов на одно устройство
+            device_id = request.session.session_key
+            free_tickets_count = Order.objects.filter(
+                participant_data__email=participant_data["email"],
+                ticket__price=0,
+                payment_status="succeeded"
+            ).count()
+
+            if free_tickets_count >= 2:
+                from django.shortcuts import render
+                return render(
+                    request,
+                    "buy_ticket.html",
+                    {
+                        "ticket": ticket,
+                        "error_message": "На одно устройство можно получить не более 2 бесплатных билетов."
+                    },
+                )
+
+            # Создание заказа для бесплатного билета
+            order = Order.objects.create(
+                ticket=ticket,
+                participant_data=participant_data,
+                total_price=0,
+                quantity=quantity,
+                payment_status="succeeded",
+                is_paid=True,
+                purchase_type="free_registration",
+            )
+
+            # Генерация QR-кодов
+            order._generate_qr_codes()
+
+            # Отправка билетов на почту
+            send_order_confirmation_email(order, request)
+
+            return redirect(f"/payment/success/{order.id}/")
 
         total_price = ticket.price * quantity
 
@@ -184,9 +254,7 @@ def create_payment(request, ticket_id):
         if reserve_without_payment:
             # Отправка письма с кнопкой для оплаты
             send_reservation_email(order, request)
-            return JsonResponse(
-                {"success": True, "redirect_url": f"/payment/success/{order.id}/"}
-            )
+            return redirect(f"/payment/success/{order.id}/")
         else:
             # Создание платежа в ЮКассе
             payment = Payment.create(

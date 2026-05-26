@@ -673,7 +673,13 @@ class Order(models.Model):
             }
 
             # Создаем QR-код
-            qr = qr.make(qr_text_data)
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_text_data)
             qr.make(fit=True)
 
             # Сохраняем QR-код в виде изображения

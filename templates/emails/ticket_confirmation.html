@@ -89,7 +89,7 @@
             <p><strong>Номер заказа:</strong> {{ order.id }}</p>
             <p><strong>Тип билета:</strong> {{ order.ticket.name }}</p>
             <p><strong>Количество:</strong> {{ order.quantity }}</p>
-            <p><strong>Сумма:</strong> {{ order.total_price }} ₽</p>
+            <p><strong>Сумма:</strong> {% if order.total_price == 0 %}Бесплатно{% else %}{{ order.total_price }} ₽{% endif %}</p>
             <p><strong>Статус:</strong> Оплачено</p>
         </div>
 
