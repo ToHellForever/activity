@@ -165,6 +165,7 @@ class EventPackage(models.Model):
     """Модель для пакетов мероприятий."""
 
     name = models.CharField(max_length=100, unique=True, verbose_name="Название пакета")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Цена пакета")
     max_active_events = models.PositiveIntegerField(default=1, verbose_name="Максимум активных мероприятий")
     event_card_type = models.CharField(max_length=20, choices=[
         ('basic', 'Базовая'),

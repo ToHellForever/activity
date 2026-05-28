@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag
+from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription
 from .proxy_models import EventRequestProxy
 from .forms import EventAdminForm
 from django import forms
@@ -9,8 +10,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
 from django.utils.html import mark_safe
-from django.db.models import F
+from django.db.models import F, Count
+from django.contrib.auth import get_user_model
 
+CustomUser = get_user_model()
 
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
@@ -46,7 +49,6 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
                 obj.user.save()
             super().save_model(request, obj, form, change)
 
-
 @admin.register(MainTag)
 class MainTagAdmin(admin.ModelAdmin):
     """
@@ -67,7 +69,6 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ("main_tag",)
     search_fields = ("name", "main_tag__name")
     ordering = ("main_tag__name", "name",)
-
 
 class TicketInline(admin.TabularInline):
     model = Ticket
@@ -312,7 +313,6 @@ class EventAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     """
@@ -341,7 +341,6 @@ class TicketAdmin(admin.ModelAdmin):
 
     get_available_count.short_description = "Доступно"
 
-
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     """
@@ -351,43 +350,16 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "ticket", "created_at", "total_price", "is_paid")
     list_filter = ("created_at",)
 
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth import get_user_model
+class SubscriptionInline(admin.TabularInline):
+    model = UserPackageSubscription
+    extra = 0
+    readonly_fields = ('package', 'start_date', 'end_date', 'is_active')
 
-CustomUser = get_user_model()
+    def has_add_permission(self, request, obj=None):
+        return False
 
-
-@admin.register(CustomUser)
-class CustomUserAdmin(UserAdmin):
-    """
-    Настройка отображения нашей кастомной модели пользователя.
-    """
-
-    list_display = UserAdmin.list_display + (
-        "user_type",
-    )
-    list_filter = UserAdmin.list_filter + (
-        "user_type",
-        "is_verified",
-        "verification_status",
-    )
-
-    fieldsets = UserAdmin.fieldsets + (
-        ("Дополнительная информация", {
-            "fields": (
-                "user_type",
-                "is_verified",
-                "verification_status",
-                "phone_number",
-                "contact_person",
-                "company_name",
-                "logo",
-                "social_links",
-            )
-        }),
-        ("Видео-визитка", {"fields": ("video_business_card",)}),
-    )
-
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
@@ -416,7 +388,6 @@ class SupportTicketAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.filter(event__isnull=True)
-
 
 @admin.register(EventRequestProxy)
 class EventRequestAdmin(admin.ModelAdmin):
@@ -470,8 +441,6 @@ class EventRequestAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-
-# Отдельная модель для заявок на мероприятия
 class EventRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "event", "status", "created_at", "get_event_title")
     list_filter = ("status", "created_at", "event")
@@ -495,7 +464,6 @@ class EventRequestAdmin(admin.ModelAdmin):
     def get_model_perms(self, request):
         return {}
 
-
 @admin.register(PayoutRequest)
 class PayoutRequestAdmin(admin.ModelAdmin):
     list_display = (
@@ -515,6 +483,7 @@ class EventPackageAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
+        "price",
         "max_active_events",
         "event_card_type",
         "description_type",
@@ -540,6 +509,7 @@ class EventPackageAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "name",
+                    "price",
                     "max_active_events",
                 )
             },
@@ -570,4 +540,185 @@ class EventPackageAdmin(admin.ModelAdmin):
         ),
     )
 
+# Кастомная админка для партнёров
+class PartnerSubscriptionInline(admin.TabularInline):
+    model = UserPackageSubscription
+    extra = 0
+    readonly_fields = ('package', 'start_date', 'end_date', 'is_active')
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+class PartnerEventInline(admin.TabularInline):
+    model = Event
+    extra = 0
+    readonly_fields = ('title', 'status', 'date_time', 'package')
+    fields = ('title', 'status', 'date_time', 'package')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+class PartnerPayoutInline(admin.TabularInline):
+    model = PayoutRequest
+    extra = 0
+    readonly_fields = ('amount', 'status', 'created_at')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+@admin.register(CustomUser)
+class PartnerAdmin(admin.ModelAdmin):
+    """
+    Кастомная админка для партнёров с полной информацией о подписках, пакетах и активности.
+    """
+
+    list_display = (
+        'username', 'email', 'company_name', 'contact_person',
+        'phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases'
+    )
+
+    list_filter = (
+        'user_type',
+        'is_verified',
+        'verification_status',
+    )
+
+    search_fields = (
+        'username', 'email', 'company_name', 'contact_person', 'phone_number'
+    )
+
+    inlines = [PartnerSubscriptionInline, PartnerEventInline, PartnerPayoutInline]
+
+    fieldsets = (
+        (None, {
+            'fields': ('username', 'email', 'first_name', 'last_name')
+        }),
+        ('Компания', {
+            'fields': ('company_name', 'contact_person', 'phone_number', 'logo', 'social_links')
+        }),
+        ('Статус', {
+            'fields': ('user_type', 'is_verified', 'verification_status')
+        }),
+        ('Видео-визитка', {
+            'fields': ('video_business_card', 'video_business_card_processing_status')
+        }),
+    )
+
+    def get_active_subscriptions(self, obj):
+        """Возвращает количество активных подписок партнёра"""
+        return obj.userpackagesubscription_set.filter(is_active=True).count()
+    get_active_subscriptions.short_description = "Активные подписки"
+
+    def has_active_subscription(self, obj):
+        """Возвращает визуальный индикатор активной подписки (галочка/крестик)"""
+        has_active = obj.userpackagesubscription_set.filter(is_active=True).exists()
+        if has_active:
+            return mark_safe('<span style="color: green; font-weight: bold;">✓</span>')
+        else:
+            return mark_safe('<span style="color: red; font-weight: bold;">✗</span>')
+    has_active_subscription.short_description = "Активная подписка"
+    has_active_subscription.allow_tags = True
+
+    def get_total_purchases(self, obj):
+        """Возвращает общее количество покупок пакетов"""
+        return obj.userpackagesubscription_set.count()
+    get_total_purchases.short_description = "Всего покупок"
+
+    def get_queryset(self, request):
+        """Фильтруем только партнёров"""
+        qs = super().get_queryset(request)
+        return qs.filter(user_type='partner').prefetch_related(
+            'userpackagesubscription_set',
+            'event_set',
+            'payoutrequest_set'
+        )
+
+    def get_inline_instances(self, request, obj=None):
+        """Показываем инлайны только для партнёров"""
+        if obj and obj.user_type == 'partner':
+            return super().get_inline_instances(request, obj)
+        return []
+
+# Создаем прокси-модель для не-партнёров
+class NonPartnerUser(CustomUser):
+    class Meta:
+        proxy = True
+        verbose_name = "Не-партнёр"
+        verbose_name_plural = "Не-партнёры"
+
+# Кастомная админка для не-партнёров (гости и посетители)
+@admin.register(NonPartnerUser)
+class NonPartnerAdmin(admin.ModelAdmin):
+    """
+    Кастомная админка для пользователей, которые не являются партнёрами.
+    """
+
+    list_display = (
+        'username', 'email', 'first_name', 'last_name',
+        'user_type', 'is_verified', 'verification_status'
+    )
+
+    list_filter = (
+        'user_type',
+        'is_verified',
+        'verification_status',
+    )
+
+    search_fields = (
+        'username', 'email', 'first_name', 'last_name'
+    )
+
+    fieldsets = (
+        (None, {
+            'fields': ('username', 'email', 'first_name', 'last_name')
+        }),
+        ('Статус', {
+            'fields': ('user_type', 'is_verified', 'verification_status')
+        }),
+    )
+
+    def get_queryset(self, request):
+        """Фильтруем только не-партнёров"""
+        qs = super().get_queryset(request)
+        return qs.exclude(user_type='partner')
+
+    def get_inline_instances(self, request, obj=None):
+        """Не показываем инлайны для не-партнёров"""
+        return []
+
+# Регистрируем модели, которые ещё не зарегистрированы
+try:
+    admin.site.unregister(CustomUser)
+except:
+    pass
+
+# Регистрируем админку для партнёров
+admin.site.register(CustomUser, PartnerAdmin)
+
+# Регистрируем подписки на пакеты
+@admin.register(UserPackageSubscription)
+class UserPackageSubscriptionAdmin(admin.ModelAdmin):
+    """
+    Админка для управления подписками пользователей на пакеты.
+    """
+
+    list_display = ('user', 'package', 'start_date', 'end_date', 'is_active')
+    list_filter = ('is_active', 'package', 'start_date')
+    search_fields = ('user__username', 'user__email', 'package__name')
+
+    readonly_fields = ('start_date', 'end_date')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
