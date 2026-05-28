@@ -4,47 +4,34 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> 
 <style>  
     .package-card {
-        cursor: pointer;
         border: none;
         border-radius: 12px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         height: 100%;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         overflow: hidden;
         position: relative;
     }
 
-    .package-card::before {
-        content: '';
+    .package-card.subscribed {
+        border: 2px solid #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    }
+
+    .package-card.subscribed::after {
+        content: 'АКТИВНАЯ ПОДПИСКА';
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(45deg, #007bff, #6c757d);
-        transition: all 0.3s ease;
+        top: 10px;
+        right: 10px;
+        background: #28a745;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        z-index: 1;
     }
 
-    .package-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.2);
-    }
 
-    .package-card:hover::before {
-        width: 6px;
-    }
-
-    .package-card.selected {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        box-shadow: 0 8px 20px rgba(40, 167, 69, 0.2);
-        transform: translateY(-4px);
-    }
-
-    .package-card.selected::before {
-        background: linear-gradient(45deg, #28a745, #20c997);
-        width: 6px;
-    }
 
     .package-card .card-body {
         padding: 1.5rem;
@@ -67,7 +54,7 @@
     .package-card .card-text strong {
         color: #212529;
     }
-</style> 
+</style>
 {% endblock extra_css %}
 {% block content %}
     <h1>Партнерский кабинет</h1>
@@ -80,7 +67,7 @@
         <div class="row package-cards-container">
             {% for package in packages %}
             <div class="col-md-4 mb-3">
-                <div class="card package-card {% if form.instance.package and form.instance.package.id == package.id %}selected{% endif %}"
+                <div class="card package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% endif %}"
                      data-package-id="{{ package.id }}"
                      data-event-card-type="{{ package.event_card_type }}"
                      data-description-type="{{ package.description_type }}"
@@ -119,11 +106,15 @@
             {% csrf_token %}
             <input type="hidden" id="modal-package-id" name="package_id">
             <div>
-                <label for="subscription-type">Тип подписки:</label>
-                <select id="subscription-type" name="subscription_type" required style="padding: 8px; width: 100%;">
-                    <option value="one_time">Разовая покупка</option>
-                    <option value="monthly">Ежемесячная подписка</option>
+                <label for="payment-method">Способ оплаты:</label>
+                <select id="payment-method" name="payment_method" required style="padding: 8px; width: 100%;">
+                    <option value="yookassa">ЮКасса (для физ. лиц и самозанятых)</option>
+                    <option value="invoice">Классический счет (для юр. лиц)</option>
                 </select>
+            </div>
+            <div id="invoice-admin-field" style="display: none;">
+                <label for="admin-email">Email администратора для выставления счета:</label>
+                <input type="email" id="admin-email" name="admin_email" style="padding: 8px; width: 100%;">
             </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" onclick="closeBuyPackageModal()" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Отмена</button>
@@ -345,39 +336,88 @@
         document.getElementById('buy-package-modal').style.display = "none";
     }
 
+    // Обработчик изменения способа оплаты
+    function handlePaymentMethodChange() {
+        const paymentMethod = document.getElementById('payment-method').value;
+        const invoiceAdminField = document.getElementById('invoice-admin-field');
+
+        if (paymentMethod === 'invoice') {
+            invoiceAdminField.style.display = 'block';
+        } else {
+            invoiceAdminField.style.display = 'none';
+        }
+    }
+
     // Обработчик отправки формы покупки пакета
     document.getElementById("buy-package-form").addEventListener("submit", function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
         const packageId = formData.get("package_id");
-        const subscriptionType = formData.get("subscription_type");
+        const paymentMethod = formData.get("payment_method");
         const submitBtn = this.querySelector("button[type='submit']");
         submitBtn.disabled = true;
         submitBtn.textContent = "Обработка...";
 
-        fetch(`/payment/create_package_payment/${packageId}/`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.payment_url) {
-                window.location.href = data.payment_url;
-            } else {
-                alert("Ошибка: " + data.error);
+        if (paymentMethod === 'yookassa') {
+            // Для оплаты через ЮКассу
+            fetch(`/payment/create_package_payment/${packageId}/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.payment_url) {
+                    window.location.href = data.payment_url;
+                } else {
+                    alert("Ошибка: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("Произошла ошибка: " + error);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Купить";
+            });
+        } else if (paymentMethod === 'invoice') {
+            // Для оплаты через счет
+            const adminEmail = formData.get("admin_email");
+            if (!adminEmail) {
+                alert("Пожалуйста, укажите email администратора для выставления счета");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Купить";
+                return;
             }
-        })
-        .catch(error => {
-            alert("Произошла ошибка: " + error);
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Купить";
-        });
+
+            fetch(`/payment/create_invoice/${packageId}/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Заявка на выставление счета успешно отправлена администратору. Счет будет выставлен в ближайшее время, и вы получите уведомление на указанный email.");
+                    closeBuyPackageModal();
+                    window.location.reload();
+                } else {
+                    alert("Ошибка: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("Произошла ошибка: " + error);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Купить";
+            });
+        }
     });
 
     // Инициализация обработчика изменения пакета
@@ -385,6 +425,7 @@
         const packageSelect = document.getElementById('id_package');
         const packageCards = document.querySelectorAll('.package-card');
         const buyPackageButtons = document.querySelectorAll('.buy-package-btn');
+        const paymentMethodSelect = document.getElementById('payment-method');
 
         // Обработчики клика на карточки пакетов
         packageCards.forEach(card => {
@@ -395,6 +436,9 @@
         buyPackageButtons.forEach(button => {
             button.addEventListener('click', handleBuyPackageClick);
         });
+
+        // Обработчик изменения способа оплаты
+        paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
 
         // Вызываем функцию при загрузке страницы, чтобы установить начальное состояние
         updateFieldsBasedOnPackage();

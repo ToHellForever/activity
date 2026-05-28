@@ -230,6 +230,14 @@ class UserPackageSubscription(models.Model):
         default=True,
         verbose_name="Активна"
     )
+    subscription_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('monthly', 'Ежемесячная подписка'),
+        ],
+        default='monthly',
+        verbose_name="Тип подписки"
+    )
 
     class Meta:
         verbose_name = "Подписка на пакет"

@@ -82,6 +82,13 @@ def partner_dashboard(request):
         organizer=request.user, status="pending"
     ).count()
 
+    # Получаем активную подписку пользователя
+    from core.models import UserPackageSubscription
+    user_subscription = UserPackageSubscription.objects.filter(
+        user=request.user,
+        is_active=True
+    ).select_related('package').first()
+
     context = {
         "user": request.user,
         "active_events_count": active_events,
@@ -89,6 +96,7 @@ def partner_dashboard(request):
         "pending_payouts_count": pending_payouts,
         "rejection_messages": rejection_messages,
         "packages": EventPackage.objects.all(),
+        "user_subscription": user_subscription,
     }
     return render(request, "partner/dashboard.html", context)
 
