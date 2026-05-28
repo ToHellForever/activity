@@ -1,79 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% block title %}БИЗНЕС АФИША{% endblock %}
 {% block content %}
-{% block extra_css %}
-<style>
-    .landing-container {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 50px;
-    }
-    .landing-inner {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    .landing-button {
-        display: inline-block;
-        padding: 10px 20px;
-        margin: 10px;
-        background-color: #007bff;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-    }
-    .success-notification {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #d4edda;
-        color: #155724;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        max-width: 400px;
-        display: none;
-    }
-    .success-notification.show {
-        display: block;
-    }
-</style>
-{% endblock %}
-
-<div class="success-notification" id="ticketSuccessNotification">
-    <h3>Поздравляем!</h3>
-    <p>Ваш билет успешно куплен!</p>
-    <p>Информация о билете отправлена на вашу электронную почту.</p>
-</div>
-
-<div class="landing-container">
-    <div class="landing-inner">
-        <h1>Добро пожаловать на наш сайт!</h1>
-        <p>Изучайте мероприятия, покупайте билеты и управляйте своими заказами.</p>
-
-        <a href="{% url 'login' %}" class="landing-button">Войти</a>
-        <a href="{% url 'register' %}" class="landing-button">Зарегистрироваться</a>
-        <a href="{% url 'event_list' %}" class="landing-button">Список мероприятий</a>
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<!-- Навигационное меню -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        </style>
+        <a class="navbar-brand" href="#">БИЗНЕС<br>АФИША</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Главная</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">О нас</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">События</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Контакты</a>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Проверяем наличие параметра success в URL
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('success') && urlParams.get('success') === 'ticket_purchased') {
-            const notification = document.getElementById('ticketSuccessNotification');
-            notification.classList.add('show');
-
-            // Скрываем уведомление через 5 секунд
-            setTimeout(function() {
-                notification.classList.remove('show');
-            }, 5000);
-        }
-    });
-</script>
+</nav>
 {% endblock %}
