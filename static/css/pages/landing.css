@@ -1,5 +1,76 @@
+.landing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 40px 10px;
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    font-family: 'Montserrat', sans-serif;
+    width: 100%;
+}
+
+.logo {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+    line-height: 1.2;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    margin: 0 40px;
+}
+
 .nav-link {
-    font-family: 'Montserrat', sans-serif !important;
+    text-decoration: none;
+    color: #333;
     font-weight: 500;
-    font-size: 1.3rem;
+    font-size: 1rem;
+    padding: 5px 0;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+}
+
+.divider {
+    margin: 0 10px;
+    color: #666;
+}
+
+.right-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.nav-icons {
+    display: flex;
+    gap: 20px;
+}
+
+.icon {
+    font-size: 1.5rem;
+    color: #5DADE2;
+    cursor: pointer;
+}
+
+.auth-block {
+    text-align: right;
+}
+
+.auth-link {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    padding: 5px 10px;
+    display: inline-block;
+}
+
+.city {
+    color: #666;
+    font-size: 1rem;
+    margin-top: 5px;
+    text-align: right;
 }

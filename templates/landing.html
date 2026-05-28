@@ -3,30 +3,32 @@
 {% block title %}БИЗНЕС АФИША{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
-<!-- Навигационное меню -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
-        </style>
-        <a class="navbar-brand" href="#">БИЗНЕС<br>АФИША</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Главная</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">О нас</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">События</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Контакты</a>
-                </li>
-            </ul>
+<div class="landing-header">
+    <div class="logo">БИЗНЕС<br>АФИША</div>
+    <div class="nav-links">
+        <a href="#" class="nav-link">Главная</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">Каталог мероприятий</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">Каталог залов</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">Для организаторов</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">О платформе</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">FAQ</a>
+        <span class="divider">|</span>
+        <a href="#" class="nav-link">Контакты</a>
+    </div>
+    <div class="right-section">
+        <div class="nav-icons">
+            <i class="icon">💬</i>
+            <i class="icon">🔧</i>
+        </div>
+        <div class="auth-block">
+            <a href="#" class="auth-link">Вход / регистрация</a>
+            <div class="city">Новосибирск</div>
         </div>
     </div>
-</nav>
+</div>
 {% endblock %}
