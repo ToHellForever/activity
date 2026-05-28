@@ -104,12 +104,21 @@ def create_event(request):
         if form.is_valid():
             # Проверяем ограничения пакета
             package = form.cleaned_data.get("package")
-            if package and not package.can_create_event(request.user):
-                messages.error(
-                    request,
-                    f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
-                )
-                return render(
+            if package:
+                # Проверяем наличие активной подписки
+                from core.models import UserPackageSubscription
+                subscription = UserPackageSubscription.objects.filter(
+                    user=request.user,
+                    package=package,
+                    is_active=True
+                ).first()
+
+                if not subscription and not package.can_create_event(request.user):
+                    messages.error(
+                        request,
+                        f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
+                    )
+                    return render(
                     request,
                     "partner/event_form.html",
                     {
@@ -339,23 +348,32 @@ def edit_event(request, event_id):
         if form.is_valid():
             # Проверяем ограничения пакета
             package = form.cleaned_data.get("package")
-            if package and not package.can_create_event(request.user):
-                messages.error(
-                    request,
-                    f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
-                )
-                return render(
-                    request,
-                    "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": True,
-                        "rejection_messages": get_rejection_messages(request),
-                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
-                        "has_free_tickets": False,
-                        "packages": EventPackage.objects.all(),
-                    },
-                )
+            if package:
+                # Проверяем наличие активной подписки
+                from core.models import UserPackageSubscription
+                subscription = UserPackageSubscription.objects.filter(
+                    user=request.user,
+                    package=package,
+                    is_active=True
+                ).first()
+
+                if not subscription and not package.can_create_event(request.user):
+                    messages.error(
+                        request,
+                        f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": True,
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
 
             # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
             event = form.save()

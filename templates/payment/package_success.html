@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    <h1 style="text-align: center; color: #4CAF50;">Пакет успешно оплачен!</h1>
+    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin-top: 20px;">
+        <h2 style="text-align: center;">Поздравляем!</h2>
+        <p style="text-align: center; font-size: 18px;">Вы успешно приобрели пакет "{{ package.name }}".</p>
+        <p style="text-align: center;">Теперь вы можете создавать мероприятия с выбранным пакетом.</p>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'partner:dashboard' %}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Перейти в кабинет</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

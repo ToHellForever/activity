@@ -187,6 +187,7 @@ class EventPackage(models.Model):
         ('priority', 'Приоритетная'),
     ], default='basic', verbose_name="Видимость в каталоге")
     has_collection_participation = models.BooleanField(default=False, verbose_name="Участие в подборках")
+    is_monthly = models.BooleanField(default=False, verbose_name="Ежемесячная подписка")
 
     class Meta:
         verbose_name = "Пакет мероприятия"
@@ -203,6 +204,45 @@ class EventPackage(models.Model):
             package=self
         ).count()
         return active_events_count < self.max_active_events
+
+class UserPackageSubscription(models.Model):
+    """Модель для хранения информации о подписках пользователей на пакеты."""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь"
+    )
+    package = models.ForeignKey(
+        EventPackage,
+        on_delete=models.CASCADE,
+        verbose_name="Пакет"
+    )
+    start_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата начала подписки"
+    )
+    end_date = models.DateTimeField(
+        verbose_name="Дата окончания подписки"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна"
+    )
+
+    class Meta:
+        verbose_name = "Подписка на пакет"
+        verbose_name_plural = "Подписки на пакеты"
+
+    def __str__(self):
+        return f"{self.user.email} - {self.package.name}"
+
+    def save(self, *args, **kwargs):
+        """Обновляем статус активности подписки и дату окончания при сохранении."""
+        self.end_date = timezone.now() + timezone.timedelta(days=30)
+        if self.end_date < timezone.now():
+            self.is_active = False
+        super().save(*args, **kwargs)
 
 class MainTag(models.Model):
     """Модель для основных тегов (категорий тегов)."""

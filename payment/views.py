@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from core.models import Order, Ticket, Event
+from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser
 import json
 import uuid
 from yookassa import Configuration, Payment
@@ -89,6 +89,87 @@ def send_reservation_email(order, request):
         html_message=email_html,
         fail_silently=False,
     )
+
+def send_package_purchase_email(subscription, request=None):
+    """
+    Отправка уведомления на почту с информацией о покупке пакета.
+    """
+    user_email = subscription.user.email
+    if not user_email:
+        return
+
+    # Формирование контекста для шаблона письма
+    context = {
+        "subscription": subscription,
+        "package": subscription.package,
+        "user": subscription.user,
+        "request": request,
+    }
+
+    # Рендеринг HTML-шаблона письма
+    email_html = render_to_string("emails/package_purchase_confirmation.html", context)
+
+    # Отправка письма
+    send_mail(
+        subject=f"Подтверждение покупки пакета {subscription.package.name}",
+        message=f"Вы успешно приобрели пакет {subscription.package.name}.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user_email],
+        html_message=email_html,
+        fail_silently=False,
+    )
+
+def create_package_payment(request, package_id):
+    """
+    Создание платежа в ЮКассе для покупки пакета.
+    """
+    import traceback
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+
+    try:
+        package = get_object_or_404(EventPackage, id=package_id)
+        user = request.user
+
+        # Проверка, что пользователь авторизован
+        if not user.is_authenticated:
+            return JsonResponse({"error": "Пользователь не авторизован"}, status=403)
+
+        # Проверка, что пакет доступен для покупки
+        if not package:
+            return JsonResponse({"error": "Пакет не найден"}, status=404)
+
+        # Определяем цену пакета (в реальном проекте цена должна быть в модели пакета)
+        package_price = package.price  # Используем реальную цену пакета
+
+        # Создание платежа в ЮКассе
+        payment = Payment.create(
+            {
+                "amount": {"value": str(package_price), "currency": "RUB"},
+                "confirmation": {
+                    "type": "redirect",
+                    "return_url": request.build_absolute_uri(
+                        f"/payment/package_success/{package_id}/"
+                    ),
+                },
+                "capture": True,
+                "description": f"Оплата пакета {package.name} для пользователя {user.email}",
+                "metadata": {"package_id": package_id, "user_id": user.id},
+            },
+            uuid.uuid4(),
+        )
+
+        return JsonResponse(
+            {
+                "payment_url": payment.confirmation.confirmation_url,
+                "package_id": package_id,
+            }
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def create_payment(request, ticket_id):
@@ -299,25 +380,64 @@ def yookassa_webhook(request):
         event_json = json.loads(request.body)
         if event_json["event"] == "payment.succeeded":
             payment = event_json["object"]
-            try:
-                order = Order.objects.get(yookassa_payment_id=payment["id"])
-            except Order.DoesNotExist:
-                raise Http404(
-                    "Order with the specified Yookassa payment ID does not exist"
+            metadata = payment.get("metadata", {})
+
+            # Проверяем, является ли платеж за пакет
+            if "package_id" in metadata and "user_id" in metadata:
+                package_id = metadata["package_id"]
+                user_id = metadata["user_id"]
+
+                # Создаем подписку для пользователя
+                package = EventPackage.objects.get(id=package_id)
+                user = CustomUser.objects.get(id=user_id)
+
+                # Определяем дату окончания подписки
+                if package.is_monthly:
+                    end_date = timezone.now() + timezone.timedelta(days=30)
+                    subscription_type = "monthly"
+                else:
+                    end_date = timezone.now() + timezone.timedelta(days=365)
+                    subscription_type = "one_time"
+
+                # Создаем или обновляем подписку
+                subscription, created = UserPackageSubscription.objects.get_or_create(
+                    user=user,
+                    package=package,
+                    defaults={
+                        "end_date": end_date,
+                        "subscription_type": subscription_type,
+                    }
                 )
-            order.payment_status = "succeeded"
-            order.is_paid = True
-            order.yookassa_payment_data = payment
 
-            # Генерация QR-кодов при успешной оплате, если они ещё не сгенерированы
-            if not hasattr(order, "_qr_codes_generated"):
-                order._generate_qr_codes()
-                order._qr_codes_generated = True
+                if not created:
+                    subscription.end_date = end_date
+                    subscription.subscription_type = subscription_type
+                    subscription.save()
 
-            order.save()
+                # Отправка уведомления на почту
+                send_package_purchase_email(subscription, request)
 
-            # Отправка уведомления на почту
-            send_order_confirmation_email(order, request)
+            else:
+                # Обработка платежа за билет
+                try:
+                    order = Order.objects.get(yookassa_payment_id=payment["id"])
+                except Order.DoesNotExist:
+                    raise Http404(
+                        "Order with the specified Yookassa payment ID does not exist"
+                    )
+                order.payment_status = "succeeded"
+                order.is_paid = True
+                order.yookassa_payment_data = payment
+
+                # Генерация QR-кодов при успешной оплате, если они ещё не сгенерированы
+                if not hasattr(order, "_qr_codes_generated"):
+                    order._generate_qr_codes()
+                    order._qr_codes_generated = True
+
+                order.save()
+
+                # Отправка уведомления на почту
+                send_order_confirmation_email(order, request)
 
         elif event_json["event"] == "payment.canceled":
             payment = event_json["object"]
@@ -463,3 +583,10 @@ def pay_reserved_order(request, order_id):
     except Exception as e:
         traceback.print_exc()
         return render(request, "refund_error.html", {"error": str(e)})
+
+def package_success(request, package_id):
+    """
+    Страница успешной оплаты пакета.
+    """
+    package = get_object_or_404(EventPackage, id=package_id)
+    return render(request, "payment/package_success.html", {"package": package})

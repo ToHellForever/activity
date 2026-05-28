@@ -74,7 +74,7 @@
 
     <div>
         <p>Приветствуем, <strong>{{ user.email }}</strong>!</p>
-    <!-- Кастомное поле для выбора пакета -->
+<!-- Кастомное поле для выбора пакета -->
     <div class="form-group">
         <label>Пакет мероприятия</label>
         <div class="row package-cards-container">
@@ -89,7 +89,8 @@
                      data-has-video="{{ package.has_video }}"
                      data-has-platform-request="{{ package.has_platform_request }}"
                      data-has-free-registration="{{ package.has_free_registration }}"
-                     data-has-ticket-sales="{{ package.has_ticket_sales }}">
+                     data-has-ticket-sales="{{ package.has_ticket_sales }}"
+                     data-is-monthly="{{ package.is_monthly }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ package.name }}</h5>
                         <p class="card-text">
@@ -97,8 +98,10 @@
                             Описание: {{ package.get_description_type_display }}<br>
                             Фото: {{ package.max_photos }}<br>
                             {% if package.has_video %}Видео: Да{% else %}Видео: Нет{% endif %}<br>
-                            {% if package.has_program_and_speakers %}Программа: Да{% else %}Программа: Нет{% endif %}
+                            {% if package.has_program_and_speakers %}Программа: Да{% else %}Программа: Нет{% endif %}<br>
+                            {% if package.is_monthly %}Подписка: Ежемесячная{% else %}Подписка: Разовый пакет{% endif %}
                         </p>
+                        <button class="btn btn-primary buy-package-btn" data-package-id="{{ package.id }}">Купить</button>
                     </div>
                 </div>
             </div>
@@ -107,6 +110,28 @@
         <input type="hidden" name="package" id="id_package" required>
         <small class="form-text text-muted">Выберите пакет для вашего мероприятия</small>
     </div>
+
+<!-- Модальное окно для покупки пакета -->
+<div id="buy-package-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background-color: white; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%;">
+        <h3>Покупка пакета</h3>
+        <form id="buy-package-form" method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+            <input type="hidden" id="modal-package-id" name="package_id">
+            <div>
+                <label for="subscription-type">Тип подписки:</label>
+                <select id="subscription-type" name="subscription_type" required style="padding: 8px; width: 100%;">
+                    <option value="one_time">Разовая покупка</option>
+                    <option value="monthly">Ежемесячная подписка</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeBuyPackageModal()" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Отмена</button>
+                <button type="submit" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Купить</button>
+            </div>
+        </form>
+    </div>
+</div>
         <!-- Блок с навигацией по разделам -->
         <h2>Навигация</h2>
         <ul>
@@ -307,14 +332,68 @@
         updateFieldsBasedOnPackage();
     }
 
+    // Обработчик клика на кнопку покупки пакета
+    function handleBuyPackageClick(event) {
+        event.stopPropagation();
+        const packageId = event.currentTarget.dataset.packageId;
+        document.getElementById('modal-package-id').value = packageId;
+        document.getElementById('buy-package-modal').style.display = "flex";
+    }
+
+    // Закрытие модального окна покупки пакета
+    function closeBuyPackageModal() {
+        document.getElementById('buy-package-modal').style.display = "none";
+    }
+
+    // Обработчик отправки формы покупки пакета
+    document.getElementById("buy-package-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const packageId = formData.get("package_id");
+        const subscriptionType = formData.get("subscription_type");
+        const submitBtn = this.querySelector("button[type='submit']");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Обработка...";
+
+        fetch(`/payment/create_package_payment/${packageId}/`, {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.payment_url) {
+                window.location.href = data.payment_url;
+            } else {
+                alert("Ошибка: " + data.error);
+            }
+        })
+        .catch(error => {
+            alert("Произошла ошибка: " + error);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Купить";
+        });
+    });
+
     // Инициализация обработчика изменения пакета
     document.addEventListener('DOMContentLoaded', function() {
         const packageSelect = document.getElementById('id_package');
         const packageCards = document.querySelectorAll('.package-card');
+        const buyPackageButtons = document.querySelectorAll('.buy-package-btn');
 
         // Обработчики клика на карточки пакетов
         packageCards.forEach(card => {
             card.addEventListener('click', handlePackageCardClick);
+        });
+
+        // Обработчики клика на кнопки покупки пакета
+        buyPackageButtons.forEach(button => {
+            button.addEventListener('click', handleBuyPackageClick);
         });
 
         // Вызываем функцию при загрузке страницы, чтобы установить начальное состояние
