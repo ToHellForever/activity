@@ -1,3 +1,4 @@
+/* Основной хедер */
 .landing-header {
     display: flex;
     color: black;
@@ -5,8 +6,167 @@
     padding: 15px 40px 5px;
     font-family: 'Montserrat', sans-serif;
     width: 100%;
+    position: relative;
 }
 
+/* Логотип */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    margin-right: 20px;
+}
+
+/* Бургер-иконка (справа) */
+.burger-menu-icon {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 2rem;
+    height: 1.5rem;
+    cursor: pointer;
+    margin-left: auto; /* Прижимает иконку вправо */
+}
+
+.burger-line {
+    width: 100%;
+    height: 3px;
+    background-color: black;
+}
+
+/* Бургер-меню (на всю страницу, центрированное содержимое) */
+.burger-menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Крестик для закрытия бургер-меню */
+.burger-close-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.close-line {
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background-color: black;
+    left: 0;
+}
+
+.close-line.first {
+    transform: rotate(45deg);
+}
+
+.close-line.second {
+    transform: rotate(-45deg);
+}
+
+.burger-menu.active {
+    display: flex;
+    justify-content: center; /* Центрирование по горизонтали */
+    align-items: center; /* Центрирование по вертикали */
+}
+
+.burger-menu-content {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-width: 500px; /* Максимальная ширина для содержимого */
+    width: 100%;
+    text-align: center; /* Центрирование текста */
+}
+
+.burger-auth-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.city-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.burger-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.burger-nav-link {
+    text-decoration: none;
+    color: black;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.burger-icons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.burger-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.burger-footer-link {
+    text-decoration: none;
+    color: black;
+    font-size: 0.9rem;
+}
+
+.desktop-only {
+    display: block;
+}
+
+.burger-menu-icon {
+    display: none;
+}
+
+/* Адаптивность для мобильных устройств (экраны ≤ 1024px) */
+@media (max-width: 1024px) {
+    .landing-header {
+        justify-content: flex-start; /* Логотип слева, бургер-иконка справа */
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .burger-menu-icon {
+        display: flex;
+        margin-left: auto; /* Прижимает иконку вправо */
+    }
+
+    .logo {
+        margin-right: 20px; /* Отступ справа от логотипа */
+    }
+}
+
+/* Остальные стили */
 .logo {
     font-size: 1.5rem;
     font-weight: 500;
@@ -32,11 +192,12 @@
     white-space: nowrap;
 }
 
-
 .right-section {
     display: flex;
     align-items: flex-start;
+    margin-left: auto; /* Прижимает правую часть к правому краю */
 }
+
 .nav-icons {
     display: flex;
     margin: auto;
@@ -47,9 +208,11 @@
 .nav-icon-1 {
     width: 2.3rem;
 }
+
 .nav-icon-2 {
     width: 2rem;
 }
+
 .nav-icon-profile {
     width: 2.3rem;
 }
@@ -58,7 +221,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-left: auto;
     margin-top: 1.5rem;
 }
 
@@ -74,7 +236,7 @@
     font-size: 1rem;
     white-space: nowrap;
     font-weight: 500;
-    margin:auto;
+    margin: auto;
 }
 
 .auth-link-container {
