@@ -139,7 +139,7 @@
 }
 
 .desktop-only {
-    display: block;
+    display: block !important;
 }
 
 .burger-menu-icon {
@@ -160,6 +160,8 @@
         display: flex;
         margin-left: auto; /* Прижимает иконку вправо */
     }
+
+    /* Удалено, так как элементы обернуты в desktop-only */
 
     .logo {
         margin-right: 20px; /* Отступ справа от логотипа */
