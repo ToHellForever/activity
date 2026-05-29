@@ -40,16 +40,18 @@
 .nav-icons {
     display: flex;
     margin: auto;
+    gap: 10px;
     align-items: center;
 }
 
-.nav-icon {
+.nav-icon-1 {
+    width: 2.3rem;
+}
+.nav-icon-2 {
     width: 2rem;
-    margin-right: 0.3rem;
-    cursor: pointer;
 }
 .nav-icon-profile {
-    width: 2rem;
+    width: 2.3rem;
 }
 
 .auth-block {
