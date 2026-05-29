@@ -1,0 +1,21 @@
+.filters-landing {
+    background: #00056E;
+    padding: 3rem;
+    border-radius: 31px;
+    height: auto;
+}
+.landing-title {
+    width: 65%;
+    font-family: 'Verdana';
+    font-weight: 700;
+    color: #FFFFFF;
+    font-size: 4.3rem;
+}
+.landing-text {
+    font-family: 'Verdana';
+    font-weight: 400;
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    margin-top: 20px;
+    margin-bottom: 2rem;
+}
