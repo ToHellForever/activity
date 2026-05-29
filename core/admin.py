@@ -118,7 +118,7 @@ class EventAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Оптимизируем загрузку связанных данных для списка мероприятий."""
         queryset = super().get_queryset(request)
-        return queryset.select_related('organizer', 'category', 'package').prefetch_related('tags')
+        return queryset.select_related('organizer', 'category', 'package').prefetch_related('tags', 'images')
 
     def get_duration(self, obj):
         if obj.duration:
@@ -178,6 +178,14 @@ class EventAdmin(admin.ModelAdmin):
                     )
                 },
             ),
+            # Добавляем блок для отображения фотографий
+            (
+                "Фотографии мероприятия",
+                {
+                    "fields": ("get_images_display",),
+                    "description": "Все фотографии, загруженные для мероприятия (основное изображение и дополнительные фотографии)",
+                },
+            ),
             # Добавляем блок для отображения статуса
             (
                 "Статусы",
@@ -212,9 +220,41 @@ class EventAdmin(admin.ModelAdmin):
 
     get_tags_display.short_description = "Теги"
 
+    # Настройка отображения фотографий мероприятия
+    def get_images_display(self, obj):
+        """Отображает все фотографии мероприятия, включая основное изображение и фотографии из EventImage."""
+        images_html = ""
+
+        # Основное изображение
+        if obj.image:
+            images_html += f'<div style="margin: 5px; display: inline-block;">'
+            images_html += f'<img src="{obj.image.url}" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 5px;">'
+            images_html += f'<div style="text-align: center; font-size: 12px;">Основное изображение</div>'
+            images_html += f'</div>'
+
+        # Дополнительные фотографии из EventImage
+        event_images = obj.images.all()
+        if event_images:
+            for img in event_images:
+                images_html += f'<div style="margin: 5px; display: inline-block;">'
+                images_html += f'<img src="{img.image.url}" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 5px;">'
+                images_html += f'<div style="text-align: center; font-size: 12px;">Дополнительное фото</div>'
+                images_html += f'</div>'
+
+        if not images_html:
+            return "Нет фотографий"
+
+        return mark_safe(f'<div style="display: flex; flex-wrap: wrap;">{images_html}</div>')
+
+    get_images_display.short_description = "Фотографии мероприятия"
+
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
-        return ["approved_status", "get_tags_display"]
+        readonly_fields = ["approved_status", "get_tags_display"]
+        # Добавляем отображение фотографий только для существующих объектов
+        if obj:
+            readonly_fields.append("get_images_display")
+        return readonly_fields
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
@@ -321,6 +361,7 @@ class EventAdmin(admin.ModelAdmin):
             # Загружаем все связанные данные заранее
             obj.tags.prefetch_related(None)  # Сбрасываем предыдущий prefetch
             obj.tickets.prefetch_related('orders').all()  # Загружаем билеты с заказами
+            obj.images.all()  # Загружаем фотографии мероприятия
 
         return form
 
