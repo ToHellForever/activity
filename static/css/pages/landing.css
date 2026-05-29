@@ -40,7 +40,14 @@
     align-items: center;
     height: 100%;
 }
-
 .filter-button {
-    width: 70%;
+    width: 60%;
+    background: #FF8348;
+    border: none;
+    border-radius: 20px;
+    color: #FFFFFF;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 8px 0;
 }
