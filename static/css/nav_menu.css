@@ -15,6 +15,23 @@
     font-weight: 500;
     line-height: 1.2;
     margin-right: 60px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Стили для десктопа */
+@media (min-width: 1025px) {
+    .logo {
+        flex-direction: column;
+    }
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 1024px) {
+    .logo {
+        flex-direction: row;
+        gap: 0.5rem; /* Добавлен пробел между словами */
+    }
 }
 
 /* Бургер-иконка (справа) */
@@ -30,8 +47,9 @@
 
 .burger-line {
     width: 100%;
-    height: 3px;
-    background-color: black;
+    height: 4px;
+    border-radius: 2px;
+    background-color: #02369C;
 }
 
 /* Бургер-меню (на всю страницу, центрированное содержимое) */
@@ -145,11 +163,14 @@
 .burger-menu-icon {
     display: none;
 }
-
+.mobile-icons {
+    display: none;
+}
 /* Адаптивность для мобильных устройств (экраны ≤ 1024px) */
 @media (max-width: 1024px) {
     .landing-header {
-        justify-content: flex-start; /* Логотип слева, бургер-иконка справа */
+        justify-content: space-between; 
+        padding: 10px;
     }
     .auth-block {
         display: none !important;
@@ -158,9 +179,14 @@
         display: none !important;
     }
 
+    .mobile-icons {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Пробел между иконками */
+    }
+
     .burger-menu-icon {
         display: flex;
-        margin-left: auto; /* Прижимает иконку вправо */
     }
 }
 
@@ -172,6 +198,7 @@
 .nav-links {
     display: flex;
     align-items: center;
+    justify-content: space-between;
 }
 
 .nav-link {
