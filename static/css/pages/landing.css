@@ -19,3 +19,28 @@
     margin-top: 20px;
     margin-bottom: 2rem;
 }
+
+
+
+.filter-label {
+    color: #9A9A9A; 
+    font-family: 'Montserrat';
+    font-weight: 500;
+}
+
+.filter-input {
+    width: 100%;
+    border-radius: 20px;
+    margin-top: 10px;
+}
+
+.filter-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.filter-button {
+    width: 70%;
+}
