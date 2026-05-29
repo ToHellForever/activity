@@ -94,8 +94,9 @@
 .burger-auth-block {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 30px;
+    width: 100%;
 }
 
 .city-block {
@@ -123,8 +124,8 @@
     display: flex;
     gap: 15px;
     margin-bottom: 30px;
+    justify-content: center;
 }
-
 .burger-footer {
     display: flex;
     flex-direction: column;
@@ -151,7 +152,9 @@
     .landing-header {
         justify-content: flex-start; /* Логотип слева, бургер-иконка справа */
     }
-
+    .auth-block {
+        display: none !important;
+    }
     .desktop-only {
         display: none !important;
     }
@@ -194,12 +197,6 @@
     white-space: nowrap;
 }
 
-.right-section {
-    display: flex;
-    align-items: flex-start;
-    margin-left: auto; /* Прижимает правую часть к правому краю */
-}
-
 .nav-icons {
     display: flex;
     margin: auto;
@@ -224,6 +221,7 @@
     flex-direction: column;
     align-items: center;
     margin-top: 1.5rem;
+    margin-left: auto;
 }
 
 .auth-link {
