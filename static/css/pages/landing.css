@@ -36,8 +36,8 @@
 
 .filter-button-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    margin-left: 2rem;
+    align-items: flex-end;
     height: 100%;
 }
 .filter-button {
