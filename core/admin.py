@@ -76,16 +76,22 @@ class TicketInline(admin.TabularInline):
     fields = ('name', 'price', 'available_quantity', 'get_sold_count', 'get_available_count')
     readonly_fields = ('get_sold_count', 'get_available_count')
 
+    def get_queryset(self, request):
+        """Оптимизируем загрузку связанных заказов для всех билетов."""
+        queryset = super().get_queryset(request)
+        return queryset.prefetch_related('orders')
+
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""
         if obj.pk:
-            return sum(order.quantity for order in obj.orders.all())
+            return sum(order.quantity for order in obj.orders.exclude(payment_status="refunded"))
         return 0
 
     def get_available_count(self, obj):
         """Возвращает количество доступных билетов."""
         if obj.pk:
-            return obj.get_available_count()
+            sold = sum(order.quantity for order in obj.orders.exclude(payment_status="refunded"))
+            return obj.available_quantity - sold
         return 0
 
     get_sold_count.short_description = "Продано"
@@ -108,6 +114,11 @@ class EventAdmin(admin.ModelAdmin):
         "status",
         "commission_rate",
     )
+
+    def get_queryset(self, request):
+        """Оптимизируем загрузку связанных данных для списка мероприятий."""
+        queryset = super().get_queryset(request)
+        return queryset.select_related('organizer', 'category', 'package').prefetch_related('tags')
 
     def get_duration(self, obj):
         if obj.duration:
@@ -302,7 +313,15 @@ class EventAdmin(admin.ModelAdmin):
     to_completed.short_description = "Завершено"
 
     def get_form(self, request, obj=None, **kwargs):
+        """Оптимизируем загрузку связанных данных для формы редактирования."""
         form = super().get_form(request, obj, **kwargs)
+
+        # Если редактируется существующее мероприятие, оптимизируем загрузку связанных данных
+        if obj:
+            # Загружаем все связанные данные заранее
+            obj.tags.prefetch_related(None)  # Сбрасываем предыдущий prefetch
+            obj.tickets.prefetch_related('orders').all()  # Загружаем билеты с заказами
+
         return form
 
     def save_model(self, request, obj, form, change):
