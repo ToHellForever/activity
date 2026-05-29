@@ -57,6 +57,16 @@
     border-radius: 20px;
     margin-top: 10px;
     padding-right: 40px; /* Space for the button */
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.filter-input:hover,
+.filter-input:focus {
+    border: none;
+    outline: none;
+    box-shadow: none;
 }
 
 .input-button {
@@ -65,7 +75,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 49px;
-    height: 39px;
+    height: 37px;
     background: #FF8348;
     border: none;
     border-radius: 20px;
