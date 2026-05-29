@@ -193,11 +193,13 @@
 
 .nav-links-container {
     justify-content: center;
+    width: 60%;
 }
 
 .nav-links {
     display: flex;
     align-items: center;
+    width: 100%; 
     justify-content: space-between;
 }
 
@@ -214,7 +216,7 @@
     margin: auto;
     gap: 10px;
     align-items: center;
-    margin-left: 30px;
+    margin-left: 130px;
 }
 
 .nav-icon-1 {
