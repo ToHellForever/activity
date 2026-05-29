@@ -114,7 +114,7 @@ class EventAdmin(admin.ModelAdmin):
         "status",
         "commission_rate",
     )
-
+ 
     def get_queryset(self, request):
         """Оптимизируем загрузку связанных данных для списка мероприятий."""
         queryset = super().get_queryset(request)
