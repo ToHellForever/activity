@@ -37,6 +37,7 @@
   color: #9a9a9a;
   font-family: "Montserrat";
   font-weight: 500;
+  font-size: 1vw;
 }
 
 .filter-button-container {
@@ -53,7 +54,7 @@
   color: #ffffff;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 1vw;
   padding: 8px 0;
 }
 
@@ -128,4 +129,48 @@
   height: 100% !important;
   border-radius: 20px;
   object-fit: cover; 
+}
+
+.active-event-info {
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.7vw;
+  background: #FF8348;
+  border-radius: 19.28px;
+  padding: 7px 10px 7px 10px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+  display: block;
+}
+
+.active-event-info a {
+  color: #ffffff !important;
+}
+
+/* Стили для кнопок навигации карусели */
+.carousel-control-prev,
+.carousel-control-next {
+  width: auto;
+  background: none;
+  opacity: 1;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 0.8;
+}
+
+.carousel-arrow {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  margin-left: 15px;
+}
+
+.carousel-arrow-right {
+    transform: rotate(180deg);
+    margin-right: 15px;
 }

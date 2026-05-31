@@ -11,7 +11,7 @@
 
 /* Логотип */
 .logo {
-    font-size: 1.5rem;
+    font-size: 1.5vw;
     font-weight: 500;
     line-height: 1.2;
     margin-right: 60px;
@@ -206,8 +206,8 @@
 .nav-link {
     text-decoration: none;
     font-weight: 500;
-    font-size: 1rem;
-    margin-right: 2.5rem;
+    font-size: 1vw;
+    margin-right: 2.5vw;
     white-space: nowrap;
 }
 
@@ -220,15 +220,16 @@
 }
 
 .nav-icon-1 {
-    width: 2.3rem;
+    width: 2vw;
 }
 
 .nav-icon-2 {
-    width: 2rem;
+    width: 1.7vw;
 }
 
 .nav-icon-profile {
-    width: 2.3rem;
+    width: 2.1vw;
+    margin-top: px;
 }
 
 .auth-block {
@@ -243,12 +244,13 @@
     color: black;
     text-decoration: none;
     font-weight: 500;
+    font-size: 1vw;
     padding: 5px 10px;
     white-space: nowrap;
 }
 
 .city {
-    font-size: 1rem;
+    font-size: 1vw;
     white-space: nowrap;
     font-weight: 500;
     margin: auto;

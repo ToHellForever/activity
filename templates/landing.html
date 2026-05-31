@@ -60,12 +60,6 @@
     <div class='col-4'>
         <div class="events-carousel-wrapper">
             <div id="activeEventsCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-indicators">
-                    {% for ev in active_events %}
-                        <button type="button" data-bs-target="#activeEventsCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ forloop.counter }}"></button>
-                    {% endfor %}
-                </div>
-
                 <div class="carousel-inner">
                     {% for ev in active_events %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
@@ -76,13 +70,10 @@
                             {% endif %}
 
                             <div class="carousel-caption d-none d-md-block">
-                                <div class="active-event-title">
+                                <div class="active-event-info">
                                     <a href="{% url 'event_detail' ev.id %}" class="text-decoration-none">
-                                        {{ ev.title }}
+                                        {{ ev.title }} | {{ ev.organizer.get_full_name|default:ev.organizer.username }}
                                     </a>
-                                </div>
-                                <div class="active-event-author">
-                                    {{ ev.organizer.get_full_name|default:ev.organizer.username }}
                                 </div>
                             </div>
                         </div>
@@ -96,11 +87,11 @@
                 </div>
 
                 <button class="carousel-control-prev" type="button" data-bs-target="#activeEventsCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <img src="media/icon/arrow_carousel.png" alt="Previous" class="carousel-arrow">
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#activeEventsCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <img src='media/icon/arrow_carousel.png' alt="Next" class="carousel-arrow carousel-arrow-right">
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
