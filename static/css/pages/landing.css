@@ -174,3 +174,15 @@
     transform: rotate(180deg);
     margin-right: 15px;
 }
+
+.arrow-right {
+  width: 0;
+  height: 0;
+  border-top: 15px solid transparent;
+  border-bottom: 15px solid transparent;
+  border-left: 25px solid rgb(0, 0, 0);
+  margin-left: 10px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: -4px;
+}

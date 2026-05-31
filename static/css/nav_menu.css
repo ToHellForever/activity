@@ -254,6 +254,7 @@
     white-space: nowrap;
     font-weight: 500;
     margin: auto;
+    margin-top: -8px;
 }
 
 .auth-link-container {
