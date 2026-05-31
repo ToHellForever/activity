@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['closer-existed-test-absorption.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['distance-bracket-handmade-ruling.trycloudflare.com', 'localhost', '127.0.0.1']
 
 # Application definition
 
