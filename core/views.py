@@ -46,7 +46,20 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 def landing_page(request):
-    return render(request, "landing.html")
+    active_events = (
+        Event.objects.filter(status="active")
+        .select_related("organizer", "category")
+        .prefetch_related("images")
+        .order_by("date_time")
+    )
+
+    return render(
+        request,
+        "landing.html",
+        {
+            "active_events": active_events,
+        },
+    )
 
 @login_required
 def change_password(request):

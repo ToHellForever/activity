@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from core.models import Event, PartnerDocument, PayoutDetails, EventPackage, Tag
 from .models import ReportSchedule
+
 User = get_user_model()
 
 
@@ -9,6 +10,7 @@ class EventForm(forms.ModelForm):
     """
     Форма для создания и редактирования мероприятия.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -24,7 +26,9 @@ class EventForm(forms.ModelForm):
         # Настройка поля auto_close_sales_hours
         self.fields["auto_close_sales_hours"].required = True
         self.fields["auto_close_sales_hours"].widget.attrs["min"] = 24
-        self.fields["auto_close_sales_hours"].help_text = "Продажи автоматически будут прекращены за указанное количество часов до начала мероприятия (минимум 24 часа)."
+        self.fields["auto_close_sales_hours"].help_text = (
+            "Продажи автоматически будут прекращены за указанное количество часов до начала мероприятия (минимум 24 часа)."
+        )
 
         # Кастомные сообщения об ошибках
         self.fields["date_time"].error_messages = {
@@ -60,17 +64,21 @@ class EventForm(forms.ModelForm):
 
         if package:
             # Проверка на количество фотографий
-            if package.max_photos == 1 and image and hasattr(image, 'file'):
+            if package.max_photos == 1 and image and hasattr(image, "file"):
                 # Для пакета "Старт" можно загрузить только 1 фото
                 pass  # Пока просто пропускаем, так как ограничение на 1 фото уже есть в модели пакета
 
             # Проверка на наличие видео
             if not package.has_video and video_url:
-                raise forms.ValidationError("Выбранный пакет не поддерживает загрузку видео.")
+                raise forms.ValidationError(
+                    "Выбранный пакет не поддерживает загрузку видео."
+                )
 
             # Проверка на наличие программы
             if not package.has_program_and_speakers and program_file:
-                raise forms.ValidationError("Выбранный пакет не поддерживает загрузку программы мероприятия.")
+                raise forms.ValidationError(
+                    "Выбранный пакет не поддерживает загрузку программы мероприятия."
+                )
 
         return cleaned_data
 
@@ -98,8 +106,12 @@ class EventForm(forms.ModelForm):
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description_short": forms.Textarea(attrs={"rows": 3}),
             "description_full": forms.Textarea(attrs={"rows": 5}),
-            "video_url": forms.FileInput(attrs={"class": "custom-media-input", "style": "display: none;"}),
-            "program_file": forms.FileInput(attrs={"class": "custom-media-input", "style": "display: none;"}),
+            "video_url": forms.FileInput(
+                attrs={"class": "custom-media-input", "style": "display: none;"}
+            ),
+            "program_file": forms.FileInput(
+                attrs={"class": "custom-media-input", "style": "display: none;"}
+            ),
             "duration": forms.TextInput(
                 attrs={
                     "class": "form-control",
@@ -227,8 +239,6 @@ class ReportScheduleForm(forms.ModelForm):
         frequency = cleaned_data.get("frequency")
         period_type = cleaned_data.get("period_type")
 
-        print("Cleaning form data:", cleaned_data)  # Отладочный вывод
-
         # Проверка обязательных полей в зависимости от частоты
         if frequency == "weekly" and "day_of_week" not in cleaned_data:
             self.add_error(
@@ -246,7 +256,6 @@ class ReportScheduleForm(forms.ModelForm):
                 "Укажите количество дней для произвольного периода",
             )
 
-        print("Form errors after cleaning:", self.errors)  # Отладочный вывод
         return cleaned_data
 
     def save(self, commit=True):
@@ -255,21 +264,18 @@ class ReportScheduleForm(forms.ModelForm):
 
         if commit:
             instance.save()
-            print(
-                f"Saved schedule for {instance.partner.email}: {instance.frequency}, {instance.report_format}"
-            )  # Отладочный вывод
         return instance
 
 
 class PayoutDetailsForm(forms.ModelForm):
     class Meta:
         model = PayoutDetails
-        fields = ['bank_name', 'account_number', 'account_holder', 'inn']
-        
+        fields = ["bank_name", "account_number", "account_holder", "inn"]
+
         # Добавим более понятные подсказки (лейблы)
         labels = {
-            'bank_name': 'Банк',
-            'account_number': 'Номер счёта или карты',
-            'account_holder': 'ФИО владельца счёта',
-            'inn': 'ИНН (необязательно)',
+            "bank_name": "Банк",
+            "account_number": "Номер счёта или карты",
+            "account_holder": "ФИО владельца счёта",
+            "inn": "ИНН (необязательно)",
         }

@@ -137,6 +137,25 @@
             {% endif %}
         </div>
     <!-- Кастомные поля для медиафайлов -->
+
+    <!-- Основное фото мероприятия (Event.image) -->
+    <div class="form-group">
+        <label>Основное фото мероприятия</label>
+        <div id="main-image-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.pk and form.instance.image %}
+                <div class="media-preview">
+                    <img src="{{ form.instance.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
+                </div>
+            {% endif %}
+        </div>
+
+        <input type="file" name="image" id="id_image" class="custom-media-input" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="image">
+            {% if form.instance.image %}Изменить основное фото{% else %}Добавить основное фото{% endif %}
+        </button>
+    </div>
+
+    <!-- Дополнительные фото мероприятия (EventImage) -->
     <div class="form-group">
         <label for="id_images">Фотографии мероприятия</label>
         <div id="images-preview-container" class="media-preview-container mb-2">

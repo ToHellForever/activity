@@ -137,15 +137,54 @@ def create_event(request):
                         current_file.delete(save=False)  # Не сохраняем модель здесь
                     setattr(event, field_name, None)
 
-        event.save()
+            # Основное фото (отдельный input image), если он есть в запросе
+            # (EventForm может сохранить поле сам, но здесь делаем явную обработку,
+            # чтобы гарантировать поддержку сценария "основное + доп. фото вместе")
+            main_image = request.FILES.get("image")
+            if main_image:
+                event.image = main_image
 
-        # Обработка множественных фотографий
-        images = request.FILES.getlist("images")
-        if images:
-            from core.models import EventImage
+            event.save()
 
-            for image in images:
-                EventImage.objects.create(event=event, image=image)
+            # Дополнительные фото (много, input images)
+            images = request.FILES.getlist("images")
+            if images:
+                from core.models import EventImage
+
+                for image in images:
+                    EventImage.objects.create(event=event, image=image)
+
+        else:
+            # если форма не валидна — не создаём/сохраняем event здесь
+            # дальнейшая логика отрисует форму (ticket_data ниже тоже сработает)
+            event = None
+
+        if event is None:
+            # просто отдадим форму как есть (предыдущая логика уже делает ticket_data для невалидного POST)
+            # чтобы не падать на event.save() и не создавать объект при невалидной форме
+            form = EventForm(request.POST, request.FILES)
+            ticket_data = [
+                {"name": name, "price": price, "quantity": quantity}
+                for name, price, quantity in zip(
+                    request.POST.getlist("ticket_name[]"),
+                    request.POST.getlist("ticket_price[]"),
+                    request.POST.getlist("ticket_quantity[]"),
+                )
+                if name and price and quantity
+            ]
+            return render(
+                request,
+                "partner/event_form.html",
+                {
+                    "form": form,
+                    "is_edit": False,
+                    "ticket_data": ticket_data,
+                    "rejection_messages": get_rejection_messages(request),
+                    "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                    "has_free_tickets": False,
+                    "packages": EventPackage.objects.all(),
+                },
+            )
 
         # Обрабатываем теги из массива ID
         tags_ids = request.POST.getlist("tags")
@@ -333,7 +372,13 @@ def edit_event(request, event_id):
             # Сохраняем форму (без валидации лимитов пакета)
             event = form.save()
 
-            # Обработка множественных фотографий
+            # Основное фото (отдельный input image): если пришло — заменяем
+            main_image = request.FILES.get("image")
+            if main_image:
+                event.image = main_image
+                event.save(update_fields=["image"])
+
+            # Дополнительные фото (input images - list): заменяем только если реально пришли
             images = request.FILES.getlist("images")
             if images:
                 from core.models import EventImage
