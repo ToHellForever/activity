@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription
+from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category
 from .proxy_models import EventRequestProxy
 from .forms import EventAdminForm
 from django import forms
@@ -58,6 +58,7 @@ class MainTagAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
     ordering = ("name",)
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -782,3 +783,12 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    """
+    Админка для управления категориями мероприятий.
+    """
+    list_display = ('name',)
+    search_fields = ('name',)
+    ordering = ('name',)
