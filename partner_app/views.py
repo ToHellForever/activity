@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.core.files.base import ContentFile
+from django.forms.models import model_to_dict
 from django.core.mail import send_mail, EmailMessage
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
@@ -17,12 +18,22 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-from core.models import Event, Ticket, Order, PayoutRequest, PayoutDetails, Tag, MainTag, EventPackage
+from core.models import (
+    Event,
+    Ticket,
+    Order,
+    PayoutRequest,
+    PayoutDetails,
+    Tag,
+    MainTag,
+    EventPackage,
+)
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
 from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
 from django.utils import timezone
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,10 +95,12 @@ def partner_dashboard(request):
 
     # Получаем активную подписку пользователя
     from core.models import UserPackageSubscription
-    user_subscription = UserPackageSubscription.objects.filter(
-        user=request.user,
-        is_active=True
-    ).select_related('package').first()
+
+    user_subscription = (
+        UserPackageSubscription.objects.filter(user=request.user, is_active=True)
+        .select_related("package")
+        .first()
+    )
 
     context = {
         "user": request.user,
@@ -107,38 +120,10 @@ def create_event(request):
     View для создания нового мероприятия.
     Видео обрабатывается автоматически через сигналы и Celery.
     """
+
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
-            # Проверяем ограничения пакета
-            package = form.cleaned_data.get("package")
-            if package:
-                # Проверяем наличие активной подписки
-                from core.models import UserPackageSubscription
-                subscription = UserPackageSubscription.objects.filter(
-                    user=request.user,
-                    package=package,
-                    is_active=True
-                ).first()
-
-                if not subscription and not package.can_create_event(request.user):
-                    messages.error(
-                        request,
-                        f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
-                    )
-                    return render(
-                    request,
-                    "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": False,
-                        "ticket_data": [],
-                        "rejection_messages": get_rejection_messages(request),
-                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
-                        "has_free_tickets": False,
-                        "packages": EventPackage.objects.all(),
-                    },
-                )
             event = form.save(commit=False)
             event.organizer = request.user
             event.status = "on_moderation"
@@ -158,33 +143,9 @@ def create_event(request):
         images = request.FILES.getlist("images")
         if images:
             from core.models import EventImage
-            max_photos = package.max_photos if package else 1
-            if len(images) > max_photos:
-                form.add_error(None, f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий.")
-                return render(
-                    request,
-                    "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": False,
-                        "ticket_data": [
-                            {"name": name, "price": price, "quantity": quantity}
-                            for name, price, quantity in zip(
-                                request.POST.getlist("ticket_name[]"),
-                                request.POST.getlist("ticket_price[]"),
-                                request.POST.getlist("ticket_quantity[]"),
-                            )
-                            if name and price and quantity
-                        ],
-                        "rejection_messages": get_rejection_messages(request),
-                        "main_tags": MainTag.objects.prefetch_related('subtags').all(),
-                        "has_free_tickets": False,
-                        "packages": EventPackage.objects.all(),
-                    },
-                )
-            else:
-                for image in images:
-                    EventImage.objects.create(event=event, image=image)
+
+            for image in images:
+                EventImage.objects.create(event=event, image=image)
 
         # Обрабатываем теги из массива ID
         tags_ids = request.POST.getlist("tags")
@@ -264,6 +225,34 @@ def create_event(request):
         )
         return redirect("partner:partner_event_list")
     else:
+        # При загрузке страницы (GET) выводим пакет, который сейчас активен по подписке пользователя
+        from core.models import UserPackageSubscription
+
+        active_subscription = (
+            UserPackageSubscription.objects.filter(
+                user=request.user,
+                is_active=True,
+            )
+            .select_related("package")
+            .first()
+        )
+
+        if active_subscription:
+            package = active_subscription.package
+            package_snapshot = model_to_dict(
+                package, fields=[f.name for f in package._meta.fields]
+            )
+            sub_snapshot = model_to_dict(
+                active_subscription,
+                fields=[f.name for f in active_subscription._meta.fields],
+            )
+
+            # print убран: больше не выводим снапшот пакета/подписки в консоль
+            pass
+        else:
+            # print убран: больше не выводим снапшот пакета/подписки в консоль
+            pass
+
         form = EventForm()
 
     ticket_data = []
@@ -286,7 +275,7 @@ def create_event(request):
             "is_edit": False,
             "ticket_data": ticket_data,
             "rejection_messages": get_rejection_messages(request),
-            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
+            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
             "packages": EventPackage.objects.all(),
         },
@@ -305,6 +294,8 @@ def edit_event(request, event_id):
     View для редактирования мероприятия.
     Видео обрабатывается автоматически при замене файла.
     """
+    from django.forms.models import model_to_dict
+
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
     if event.has_sold_tickets:
@@ -319,27 +310,14 @@ def edit_event(request, event_id):
         form = EventForm(request.POST, request.FILES, instance=event)
 
         # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
-        # Эта логика удаляет старое видео и изображение с диска, если были загружены новые файлы.
-        # Она должна выполняться ДО валидации и сохранения формы.
-
-        # Проверяем, был ли загружен НОВЫЙ файл для поля 'video_url'
+        # Удаляем старые файлы, если пришли новые
         new_video_file = request.FILES.get("video_url")
-
-        # Если новый файл есть, и у события уже было старое видео...
         if new_video_file and event.video_url:
-            # ...то удаляем старый файл с диска.
-            # Метод .delete() у FileField удаляет файл с диска.
-            # Параметр save=False важен: мы не хотим сохранять модель сейчас.
             event.video_url.delete(save=False)
 
-        # Проверяем, был ли загружен НОВЫЙ файл для поля 'image'
         new_image_file = request.FILES.get("image")
-
-        # Если новый файл есть, и у события уже было старое изображение...
         if new_image_file and event.image:
-            # ...то удаляем старый файл с диска.
             event.image.delete(save=False)
-
         # --- КОНЕЦ БЛОГА ИЗМЕНЕНИЙ ---
 
         # Очищаем медиафайлы (изображение, программа), если были отмечены флажки в форме
@@ -351,72 +329,31 @@ def edit_event(request, event_id):
                     current_file.delete(save=False)
                 setattr(event, field_name, None)
 
-        # Флаг 'video_changed' больше не нужен, так как мы удалили старый файл напрямую
-
         if form.is_valid():
-            # Проверяем ограничения пакета
-            package = form.cleaned_data.get("package")
-            if package:
-                # Проверяем наличие активной подписки
-                from core.models import UserPackageSubscription
-                subscription = UserPackageSubscription.objects.filter(
-                    user=request.user,
-                    package=package,
-                    is_active=True
-                ).first()
-
-                if not subscription and not package.can_create_event(request.user):
-                    messages.error(
-                        request,
-                        f"Вы достигли лимита активных мероприятий ({package.max_active_events}) для выбранного пакета '{package.name}'."
-                    )
-                    return render(
-                        request,
-                        "partner/event_form.html",
-                        {
-                            "form": form,
-                            "is_edit": True,
-                            "rejection_messages": get_rejection_messages(request),
-                            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
-                            "has_free_tickets": False,
-                            "packages": EventPackage.objects.all(),
-                        },
-                    )
-
-            # Сохраняем форму. Это обновит путь к видео в БД на новый (если он был загружен).
+            # Сохраняем форму (без валидации лимитов пакета)
             event = form.save()
 
             # Обработка множественных фотографий
             images = request.FILES.getlist("images")
             if images:
                 from core.models import EventImage
-                max_photos = event.package.max_photos if event.package else 1
-                if len(images) > max_photos:
-                    messages.error(
-                        request,
-                        f"Выбранный пакет позволяет загрузить не более {max_photos} фотографий."
-                    )
-                else:
-                    # Удаляем старые фотографии
-                    event.images.all().delete()
-                    # Добавляем новые фотографии
-                    for image in images:
-                        EventImage.objects.create(event=event, image=image)
 
-            # Обрабатываем теги из массива ID
+                event.images.all().delete()
+                for image in images:
+                    EventImage.objects.create(event=event, image=image)
+
+            # Теги
             tags_ids = request.POST.getlist("tags")
             if tags_ids:
-                # Ограничиваем количество тегов до 5
                 selected_tags = tags_ids[:5]
                 event.tags.set(selected_tags)
 
-            # Обработка данных о билетах: удаляем старые и создаем новые
+            # Билеты
             event.tickets.all().delete()
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
 
-            # Проверяем, есть ли одновременно бесплатные и платные билеты
             has_free_tickets = False
             has_paid_tickets = False
 
@@ -435,7 +372,6 @@ def edit_event(request, event_id):
                     except (ValueError, TypeError):
                         continue
 
-            # Если есть и бесплатные, и платные билеты одновременно
             if has_free_tickets and has_paid_tickets:
                 messages.error(
                     request,
@@ -450,7 +386,9 @@ def edit_event(request, event_id):
                         "ticket_data": [
                             {"name": name, "price": price, "quantity": quantity}
                             for name, price, quantity in zip(
-                                ticket_names, ticket_prices, ticket_quantities
+                                ticket_names,
+                                ticket_prices,
+                                ticket_quantities,
                             )
                             if name and price and quantity
                         ],
@@ -477,8 +415,70 @@ def edit_event(request, event_id):
                         continue
 
             return redirect("partner:partner_event_list")
+
     else:
+        # GET: выводим пакет, который сейчас привязан к событию (event.package),
+        # а также пакет из активной подписки пользователя (fallback),
+        # чтобы информация всегда была доступна как в create_event.
         form = EventForm(instance=event)
+
+        from core.models import UserPackageSubscription
+
+        # 1) Пакет события (если заполнен)
+        if event.package:
+            package = event.package
+            active_subscription = (
+                UserPackageSubscription.objects.filter(
+                    user=request.user,
+                    package=package,
+                    is_active=True,
+                )
+                .select_related("package")
+                .first()
+            )
+
+            package_snapshot = model_to_dict(
+                package, fields=[f.name for f in package._meta.fields]
+            )
+            sub_snapshot = (
+                model_to_dict(
+                    active_subscription,
+                    fields=[f.name for f in active_subscription._meta.fields],
+                )
+                if active_subscription
+                else None
+            )
+
+            # print убран: больше не выводим снапшот пакета/подписки в консоль
+            pass
+
+        # 2) Fallback: активная подписка пользователя (как в create_event)
+        fallback_subscription = (
+            UserPackageSubscription.objects.filter(
+                user=request.user,
+                is_active=True,
+            )
+            .select_related("package")
+            .first()
+        )
+
+        if fallback_subscription:
+            fallback_package = fallback_subscription.package
+            package_snapshot = model_to_dict(
+                fallback_package,
+                fields=[f.name for f in fallback_package._meta.fields],
+            )
+            sub_snapshot = model_to_dict(
+                fallback_subscription,
+                fields=[f.name for f in fallback_subscription._meta.fields],
+            )
+
+            # print убран: больше не выводим снапшот пакета/подписки в консоль
+            pass
+        else:
+            if not event.package:
+                # print убран: больше не выводим снапшот пакета/подписки в консоль
+                pass
 
     return render(
         request,
@@ -487,8 +487,8 @@ def edit_event(request, event_id):
             "form": form,
             "is_edit": True,
             "rejection_messages": get_rejection_messages(request),
-            "main_tags": MainTag.objects.prefetch_related('subtags').all(),
-            "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
+            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+            "has_free_tickets": False,
             "packages": EventPackage.objects.all(),
         },
     )
@@ -1497,23 +1497,28 @@ def change_password(request):
         {"form": password_form, "rejection_messages": get_rejection_messages(request)},
     )
 
+
 @login_required
 def remove_event_image(request, image_id):
     """Удаление фотографии мероприятия через AJAX."""
     if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+        return JsonResponse(
+            {"status": "error", "message": "Method not allowed"}, status=405
+        )
 
     try:
         from core.models import EventImage
+
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
         image.image.delete(save=False)
         image.delete()
         return JsonResponse({"status": "success"})
     except EventImage.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Image not found"}, status=404)
+        return JsonResponse(
+            {"status": "error", "message": "Image not found"}, status=404
+        )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
 
 
 def send_partner_all_tickets_sold_notification(event):
