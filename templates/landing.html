@@ -4,7 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <script src="{% static 'js/pages/landing.js' %}" defer></script>
-
+<div class="container-fluid">
 <div class='row mt-5'>
     <div class='col-7'>
         <div class='filters-landing'>
@@ -70,9 +70,9 @@
                     {% for ev in active_events %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
                             {% if ev.image %}
-                                <img src="{{ ev.image.url }}" class="d-block w-100" alt="{{ ev.title }}">
+                                <img src="{{ ev.image.url }}"  alt="{{ ev.title }}">
                             {% elif ev.images.all %}
-                                <img src="{{ ev.images.all.0.image.url }}" class="d-block w-100" alt="{{ ev.title }}">
+                                <img src="{{ ev.images.all.0.image.url }}" alt="{{ ev.title }}">
                             {% endif %}
 
                             <div class="carousel-caption d-none d-md-block">
@@ -106,5 +106,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
