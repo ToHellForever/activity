@@ -112,10 +112,10 @@
 <div class="card-body">
     <h5 class="card-title">{{ ev.title }}</h5>
     {% if ev.organizer.is_verified %}
-    <p class="card-text"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
     {% endif %}
-    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d.m.Y H:i" }}</span></p>
-    <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
+    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
     {% if ev.tags.all %}
     <p class="card-label">
         Теги:

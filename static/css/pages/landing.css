@@ -34,12 +34,7 @@
 
 .card-title {
     font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-}
-
-.card-text {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
 }
 
 .btn-primary {
@@ -239,7 +234,7 @@
   color: #000000;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 1vw;
+  font-size: 1.2vw;
 }
 
 .icon-calendar {
@@ -260,8 +255,12 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.9vw;
+  margin: 0;
+  margin-top: 2px;
 }
-
+.block-text {
+  margin-top: -20px;
+}
 .arrow-card {
   width: 15px;
   height: 15px;
@@ -281,7 +280,9 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8vw;
-
+  margin-left: 5px;
+  padding: 3px 8px;
+  display: inline-block;
 }
 .buy-button {
   background: #FF8348;
@@ -293,11 +294,14 @@
   font-size: 1.1vw;
   padding: 10px 10px 10px 10px;
   text-decoration: none;
+  margin-top: 20px;
 }
 
 .button-others {
   border: solid 3px rgba(2, 54, 156, 1);
+  display: block;
   width: 100%;
+  padding: 12px 0;
   color: rgba(0, 0, 0, 1);
   text-decoration: none;
   text-align: center;
@@ -305,4 +309,5 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 1.3vw;
+  box-sizing: border-box;
 }
