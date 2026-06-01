@@ -112,19 +112,19 @@
 <div class="card-body">
     <h5 class="card-title">{{ ev.title }}</h5>
     {% if ev.organizer.is_verified %}
-    <p class="card-text"><span class="badge bg-success">Проверенный организатор</span></p>
+    <p class="card-text"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
     {% endif %}
-    <p class="card-text"><strong>Дата:</strong> {{ ev.date_time|date:"d.m.Y H:i" }}</p>
-    <p class="card-text"><strong>Категория:</strong> {{ ev.category.name }}</p>
+    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d.m.Y H:i" }}</span></p>
+    <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
     {% if ev.tags.all %}
-    <p class="card-text">
-        <strong>Теги:</strong>
+    <p class="card-label">
+        Теги:
         {% for tag in ev.tags.all %}
-            <span class="badge bg-secondary">{{ tag.name }}</span>
+            <span class="badge">{{ tag.name }}</span>
         {% endfor %}
     </p>
     {% endif %}
-<a href="{% url 'event_detail' ev.id %}" class="btn btn-primary">Купить билет</a>
+<a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
             </div>
         </div>
     </div>
@@ -132,7 +132,7 @@
 </div>
 
 <div class="text-center mt-4">
-    <a href="{% url 'event_list' %}" class="btn btn-secondary">Смотреть остальные мероприятия</a>
+    <a href="{% url 'event_list' %}" class="button-others">Смотреть остальные мероприятия</a>
 </div>
 </div>
 {% endblock %}

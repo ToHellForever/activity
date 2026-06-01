@@ -177,7 +177,7 @@
 .active-event-info {
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.7vw;
+  font-size: 0.9vw;
   background: #FF8348;
   border-radius: 19.28px;
   padding: 7px 10px 7px 10px;
@@ -228,4 +228,81 @@
   display: inline-block;
   vertical-align: middle;
   margin-top: -4px;
+}
+
+.card {
+  border-radius: 23.14px;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+}
+
+.card-title {
+  color: #000000;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 1vw;
+}
+
+.icon-calendar {
+  margin-bottom: 3px;
+  width: 20px;
+  height: 20px;
+}
+.card-date {
+  margin-left: 10px;
+  font-size: 0.9vw;
+  color: #000000;
+  font-family: "Verdana";
+  font-weight: 700;
+}
+
+.card-label {
+  color:#777A8D;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.9vw;
+}
+
+.arrow-card {
+  width: 15px;
+  height: 15px;
+}
+
+.card-verified {
+  color: #777A8D;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.9vw;
+  margin-left: 10px;
+}
+
+.badge {
+  color: #070707;
+  border-radius: 20px;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.8vw;
+
+}
+.buy-button {
+  background: #FF8348;
+  text-align: center;
+  color: #ffffff;
+  border-radius: 20px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 1.1vw;
+  padding: 10px 10px 10px 10px;
+  text-decoration: none;
+}
+
+.button-others {
+  border: solid 3px rgba(2, 54, 156, 1);
+  width: 100%;
+  color: rgba(0, 0, 0, 1);
+  text-decoration: none;
+  text-align: center;
+  border-radius: 19.28px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 1.3vw;
 }
