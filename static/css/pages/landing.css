@@ -4,7 +4,6 @@
   color: rgba(38, 37, 37, 1);
   font-size: 2rem;
 }
-
 .landing-block > .row {
     display: flex;
     align-items: stretch;
@@ -366,7 +365,6 @@
 
 
 
-
 .area-text {
   width: 60%;
   font-family: "Montserrat";
@@ -376,47 +374,27 @@
   line-height: 1.3;
 }
 
-/* Venues Carousel Styles */
-.venues-carousel-wrapper {
-  width: 100%;
-  height: 400px;
+.venue-adress {
+  font-family: "Montserrat";
+  font-weight: 500;
+  color: rgba(119, 122, 141, 1);
+  font-size: 0.9rem;
+  margin-left: 5px;
 }
-
-#activeVenuesCarousel {
-  height: 100% !important;
+.card-label-venue {
+  color: rgba(119, 122, 141, 1);
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.8vw;
 }
-
-.venue-info {
+.card-price-venue {
+  color: rgba(7, 7, 7, 1);
   font-family: "Verdana";
-  font-weight: 400;
-  font-size: 0.9vw;
-  background: rgba(0, 5, 110, 0.9);
-  border-radius: 19.28px;
-  padding: 15px;
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  max-width: 100%;
-  display: block;
-  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
-.venue-info h5 {
-  color: #FF8348;
-  font-size: 1.2vw;
-  margin-bottom: 10px;
-}
 
-.venue-info p {
-  margin-bottom: 5px;
-  font-size: 0.9vw;
-}
-
-.venue-info a {
-  color: #ffffff !important;
-  text-decoration: none;
-}
 
 .book-button {
   background: #FF8348;
@@ -442,4 +420,22 @@
 
 .text-and-button {
   text-align: center;
+}
+
+.two-button {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.find-button {
+  background: rgba(255, 131, 72, 1);
+  border: none; 
+  border-radius: 19.28px;
+  font-family: "Montserrat";
+  font-weight: 500; 
+  font-size: 1rem;
+  padding: 7px 50px 7px 50px;
+  color: white;
 }
