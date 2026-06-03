@@ -101,7 +101,7 @@
 </div>
 
 <div class='landing-block mt-3'>
-    <h2>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
+    <h2 class='landing-h mb-4'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
 <div class="row">
     {% for ev in active_events %}
     <div class="col-md-3 mb-4">
@@ -134,5 +134,60 @@
 <div class="text-center mt-4">
     <a href="{% url 'event_list' %}" class="button-others">Смотреть остальные мероприятия</a>
 </div>
+</div>
+
+<div class="landing-block mt-5">
+    <h2 class='landing-h mb-4'>ЧЕМ БИЗНЕС АФИША ОТЛИЧАЕТСЯ ОТ ОБЫЧНЫХ АФИШ?</h2>
+    <div class="row">
+        <div class="col-12 stats-col">
+            <div class="stats-block">
+                <div class="stats-item">
+                    <div class="stats-number">1</div>
+                    <div class="stats-content">
+                        <h3 class="stats-title">ТОЛЬКО ДЕЛОВАЯ ТЕМАТИКА</h3>
+                        <p class="stats-text">На платформе размещаются мероприятия, направленные на развитие бизнеса, управления и профессиональных навыков.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 stats-col">
+            <div class="stats-block">
+                <div class="stats-item">
+                    <div class="stats-number">2</div>
+                    <div class="stats-content">
+                        <h3 class="stats-title">ТОЛЬКО ОФЛАЙН-ФОРМАТ</h3>
+                        <p class="stats-text">Живые мероприятия с возможностью общения, практики и нетворкинга.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 stats-col">
+            <div class="stats-block">
+                <div class="stats-item">
+                    <div class="stats-number">3</div>
+                    <div class="stats-content">
+                        <h3 class="stats-title">ПРОВЕРЕННЫЕ УЧАСТНИКИ</h3>
+                        <p class="stats-text">Организаторы проходят проверку документов и получают статус подтверждённого партнёра.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 stats-col">
+            <div class="stats-block">
+                <div class="stats-item">
+                    <div class="stats-number">4</div>
+                    <div class="stats-content">
+                        <h3 class="stats-title">ВСЯ ДЕЛОВАЯ ЖИЗНЬ - НА ОДНОЙ ПЛАТФОРМЕ</h3>
+                        <p class="stats-text">События, обучение, организаторы и площадки собраны в единой системе.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="carousel-area mt-5">
+<h2 class='landing-h'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
+<p class="area-text">Размещайте мероприятия и проводите мероприятия на наших площадках, подтверждайте статус и привлекайте аудиторию, которая уже ищет обучение.</p>
 </div>
 {% endblock %}

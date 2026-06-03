@@ -1,5 +1,8 @@
-.landing-block {
-    width: 97%;
+.landing-h {
+  font-family: "Verdana";
+  font-weight: 700;
+  color: rgba(38, 37, 37, 1);
+  font-size: 2rem;
 }
 
 .landing-block > .row {
@@ -22,8 +25,10 @@
 
 .card-img-top {
     width: 100%;
-    height: auto;
+    height: 100%;
     object-fit: cover;
+    border-top-left-radius: 23.14px;
+    border-top-right-radius: 23.14px;
 }
 
 .card-body {
@@ -218,7 +223,7 @@
   height: 0;
   border-top: 15px solid transparent;
   border-bottom: 15px solid transparent;
-  border-left: 25px solid rgb(0, 0, 0);
+  border-left: 25px solid rgba(38, 37, 37, 1);
   margin-left: 10px;
   display: inline-block;
   vertical-align: middle;
@@ -234,17 +239,17 @@
   color: #000000;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 1.2vw;
+  font-size: 1vw;
 }
 
 .icon-calendar {
   margin-bottom: 3px;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 .card-date {
   margin-left: 10px;
-  font-size: 0.9vw;
+  font-size: 0.7vw;
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -254,7 +259,7 @@
   color:#777A8D;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.9vw;
+  font-size: 0.8vw;
   margin: 0;
   margin-top: 2px;
 }
@@ -270,7 +275,7 @@
   color: #777A8D;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.9vw;
+  font-size: 0.8vw;
   margin-left: 10px;
 }
 
@@ -280,7 +285,7 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8vw;
-  margin-left: 5px;
+  margin-left: -10px;
   padding: 3px 8px;
   display: inline-block;
 }
@@ -291,7 +296,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1.1vw;
+  font-size: 0.9vw;
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   margin-top: 20px;
@@ -308,6 +313,65 @@
   border-radius: 19.28px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1.3vw;
+  font-size: 1vw;
   box-sizing: border-box;
+}
+
+
+
+.stats-col {
+  margin-bottom: 10px !important;
+}
+.stats-block {
+  background: rgba(0, 5, 110, 1);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.stats-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: auto;
+}
+
+.stats-number {
+  color: #FF8348;
+  font-family: "Verdana";
+  font-weight: 700;
+  font-size: 6rem;
+  margin-right: 30px;
+  margin-left: 20px;
+}
+
+.stats-content {
+  flex: 1;
+}
+
+.stats-title {
+  color: white;
+  font-family: "Verdana";
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.stats-text {
+  color: white;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+
+
+
+.area-text {
+  width: 60%;
+  font-family: "Montserrat";
+  font-weight: 500;
+  color: rgba(10, 10, 10, 1);
+  font-size: 1rem;
+  line-height: 1.3;
 }
