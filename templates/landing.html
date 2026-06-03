@@ -189,5 +189,39 @@
 <div class="carousel-area mt-5">
 <h2 class='landing-h'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
 <p class="area-text">Размещайте мероприятия и проводите мероприятия на наших площадках, подтверждайте статус и привлекайте аудиторию, которая уже ищет обучение.</p>
+<div class="row">
+    {% for venue in active_venues %}
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            {% if venue.images.all %}
+            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ venue.title }}</h5>
+    <p class="card-label-venue"><img src="/media/icon/geo-gray.png" alt="" class="icon-calendar"><span class="venue-adress">{{ venue.address }}</span></p>
+    <p class="card-label-venue" style='margin-top: -10px !important;'><img src="/media/icon/S.png" alt="" class="icon-calendar">{{ venue.area|floatformat }} м²</p>
+    <p class="card-label-venue">до {{ venue.max_capacity }} человек</p>
+    <p class="card-label-venue"><span class="badge">
+        {% if venue.price_unit == 'hour' %}
+        {{ venue.price|floatformat }}. - час
+        {% elif venue.price_unit == 'day' %}
+        {{ venue.price|floatformat }}. - день
+        {% else %}
+        {{ venue.price }} руб (по запросу)
+        {% endif %}
+    </span></p>
+<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<div class='text-and-button mt-5'>
+<h2 class='landing-h'>ПРИСОЕДИНЯЙТЕСЬ К ДЕЛОВОЙ ЖИЗНИ ГОРОДА</h2>
+<div class="two-button">
+
+</div>
 </div>
 {% endblock %}

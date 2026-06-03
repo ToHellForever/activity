@@ -11,7 +11,6 @@ from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import login, authenticate
-from .forms import CustomAuthenticationForm
 from .models import Event, Ticket, Tag, MainTag
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
@@ -20,6 +19,7 @@ from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from .models import EmailVerificationCode
 from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
@@ -43,6 +43,7 @@ from django.db.models.functions import Coalesce
 from django.contrib.admin.views.decorators import staff_member_required
 # transaction
 from django.db import transaction
+from venues.models import Venue
 logger = logging.getLogger(__name__)
 
 
@@ -54,11 +55,20 @@ def landing_page(request):
         .order_by("date_time")
     )
 
+    # Get published venues for the carousel
+    active_venues = (
+        Venue.objects.filter(status="published")
+        .select_related("venue_type")
+        .prefetch_related("images")
+        .order_by("-tariff", "title")[:10]
+    )
+
     return render(
         request,
         "landing.html",
         {
             "active_events": active_events,
+            "active_venues": active_venues,
         },
     )
 

@@ -375,3 +375,71 @@
   font-size: 1rem;
   line-height: 1.3;
 }
+
+/* Venues Carousel Styles */
+.venues-carousel-wrapper {
+  width: 100%;
+  height: 400px;
+}
+
+#activeVenuesCarousel {
+  height: 100% !important;
+}
+
+.venue-info {
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.9vw;
+  background: rgba(0, 5, 110, 0.9);
+  border-radius: 19.28px;
+  padding: 15px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+  display: block;
+  color: white;
+}
+
+.venue-info h5 {
+  color: #FF8348;
+  font-size: 1.2vw;
+  margin-bottom: 10px;
+}
+
+.venue-info p {
+  margin-bottom: 5px;
+  font-size: 0.9vw;
+}
+
+.venue-info a {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+.book-button {
+  background: #FF8348;
+  text-align: center;
+  color: #ffffff;
+  border-radius: 20px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.9vw;
+  padding: 10px 20px;
+  text-decoration: none;
+  margin-top: 15px;
+  display: inline-block;
+}
+
+.book-button:hover {
+  background: #e6743c;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+
+
+.text-and-button {
+  text-align: center;
+}
