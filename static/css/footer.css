@@ -1,0 +1,99 @@
+/* Стили для футера */
+
+.footer-header {
+  display: flex;
+  align-items: center;
+  color: black;
+  padding: 15px 40px;
+  font-family: "Montserrat", sans-serif;
+  width: 100%;
+  position: relative;
+  gap: 20px;
+}
+
+.footer-header .nav-links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-right: auto;
+}
+
+.footer-header .nav-links {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.footer-header .nav-links:last-child {
+  justify-content: flex-start;
+  gap: 20px;
+  width: auto;
+}
+
+.footer-header .nav-links:last-child .nav-link {
+  color: rgba(119, 122, 141, 1);
+}
+
+.footer-header .nav-link {
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1vw;
+  margin-right: 2.5vw;
+  white-space: nowrap;
+}
+
+.footer-header .nav-links:first-child {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-header .auth-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-left: auto;
+}
+
+.footer-header .auth-link-container {
+  display: flex;
+  align-items: center;
+  font-size: 1vw;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 5px 10px;
+}
+
+.footer-header .contacts-links {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.footer-header .contact-icon {
+  width: 1.5vw;
+  height: auto;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 1024px) {
+  .footer-header {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .footer-header .nav-links-container {
+    width: 100%;
+    order: 2;
+  }
+
+  .footer-header .auth-block {
+    width: 100%;
+    order: 3;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}
