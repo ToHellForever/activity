@@ -79,6 +79,31 @@ def generate_sales_register(partner, start_date, end_date):
     }
 
 
+def resize_image_to_800px(input_image_path, output_image_path=None):
+    """
+    Приводит изображение к размеру 800x800 пикселей.
+
+    Args:
+        input_image_path: путь к исходному изображению.
+        output_image_path: путь для сохранения результата. Если None, перезаписывает исходное изображение.
+
+    Returns:
+        bool: True, если операция прошла успешно, False в случае ошибки.
+    """
+    try:
+        image = Image.open(input_image_path)
+        image = image.resize((800, 600), Image.LANCZOS)
+
+        if output_image_path:
+            image.save(output_image_path)
+        else:
+            image.save(input_image_path)
+
+        return True
+    except Exception as e:
+        print(f"Ошибка при изменении размера изображения: {e}")
+        return False
+
 def add_watermark_to_image(
     input_image_path,
     watermark_image_path,
@@ -97,7 +122,11 @@ def add_watermark_to_image(
         opacity: прозрачность водяного знака (0.0 - 1.0).
     """
     try:
-        base_image = Image.open(input_image_path).convert("RGBA")
+        # Приводим изображение к размеру 800x800 пикселей
+        temp_image_path = "temp_resized_image.png"
+        resize_image_to_800px(input_image_path, temp_image_path)
+
+        base_image = Image.open(temp_image_path).convert("RGBA")
         watermark = Image.open(watermark_image_path).convert("RGBA")
 
         # Изменяем размер водяного знака пропорционально
@@ -122,6 +151,9 @@ def add_watermark_to_image(
             watermarked_image.save(output_image_path)
         else:
             watermarked_image.save(input_image_path)
+
+        # Удаляем временный файл
+        os.remove(temp_image_path)
 
         return True
     except Exception as e:
