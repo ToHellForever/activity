@@ -24,7 +24,6 @@
 
 .card-img-top {
   width: 100%;
-  object-fit: contain;
   border-top-left-radius: 23.14px;
   border-top-right-radius: 23.14px;
 }
@@ -169,7 +168,6 @@
   width: 100% !important;
   height: 100% !important;
   border-radius: 20px;
-  object-fit: cover;
 }
 
 .active-event-info {
