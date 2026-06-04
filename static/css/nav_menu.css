@@ -1,264 +1,265 @@
 /* Основной хедер */
 .landing-header {
-    display: flex;
-    color: black;
-    align-items: center;
-    padding: 15px 40px 5px;
-    font-family: 'Montserrat', sans-serif;
-    width: 100%;
-    position: relative;
+  display: flex;
+  align-items: center;
+  color: black;
+  padding: 15px 40px;
+  font-family: "Montserrat", sans-serif;
+  width: 100%;
+  position: relative;
+  gap: 20px;
 }
 
 /* Логотип */
 .logo {
-    font-size: 1.5vw;
-    font-weight: 500;
-    line-height: 1.2;
-    margin-right: 60px;
-    display: flex;
-    flex-direction: column;
+  font-size: 1.5vw;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-right: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Стили для десктопа */
 @media (min-width: 1025px) {
-    .logo {
-        flex-direction: column;
-    }
+  .logo {
+    flex-direction: column;
+  }
 }
 
 /* Стили для мобильных устройств */
 @media (max-width: 1024px) {
-    .logo {
-        flex-direction: row;
-        gap: 0.5rem; /* Добавлен пробел между словами */
-    }
+  .logo {
+    flex-direction: row;
+    gap: 0.5rem; /* Добавлен пробел между словами */
+  }
 }
 
 /* Бургер-иконка (справа) */
 .burger-menu-icon {
-    display: none;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 2rem;
-    height: 1.5rem;
-    cursor: pointer;
-    margin-left: auto; /* Прижимает иконку вправо */
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 2rem;
+  height: 1.5rem;
+  cursor: pointer;
+  margin-left: auto; /* Прижимает иконку вправо */
 }
 
 .burger-line {
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background-color: #02369C;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #02369c;
 }
 
 /* Бургер-меню (на всю страницу, центрированное содержимое) */
 .burger-menu {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    z-index: 1000;
-    padding: 20px;
-    overflow-y: auto;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 /* Крестик для закрытия бургер-меню */
 .burger-close-icon {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 2rem;
-    height: 2rem;
-    cursor: pointer;
-    z-index: 1001;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  z-index: 1001;
 }
 
 .close-line {
-    position: absolute;
-    width: 100%;
-    height: 3px;
-    background-color: black;
-    left: 0;
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background-color: black;
+  left: 0;
 }
 
 .close-line.first {
-    transform: rotate(45deg);
+  transform: rotate(45deg);
 }
 
 .close-line.second {
-    transform: rotate(-45deg);
+  transform: rotate(-45deg);
 }
 
 .burger-menu.active {
-    display: flex;
-    justify-content: center; /* Центрирование по горизонтали */
-    align-items: center; /* Центрирование по вертикали */
+  display: flex;
+  justify-content: center; /* Центрирование по горизонтали */
+  align-items: center; /* Центрирование по вертикали */
 }
 
 .burger-menu-content {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    max-width: 500px; /* Максимальная ширина для содержимого */
-    width: 100%;
-    text-align: center; /* Центрирование текста */
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-width: 500px; /* Максимальная ширина для содержимого */
+  width: 100%;
+  text-align: center; /* Центрирование текста */
 }
 
 .burger-auth-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
 }
 
 .city-block {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .burger-nav-links {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
 }
 
 .burger-nav-link {
-    text-decoration: none;
-    color: black;
-    font-weight: 500;
-    font-size: 1rem;
+  text-decoration: none;
+  color: black;
+  font-weight: 500;
+  font-size: 1rem;
 }
 
 .burger-icons {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 30px;
-    justify-content: center;
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  justify-content: center;
 }
 .burger-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
 }
 
 .burger-footer-link {
-    text-decoration: none;
-    color: #777A8D;
-    font-size: 0.9rem;
+  text-decoration: none;
+  color: #777a8d;
+  font-size: 0.9rem;
 }
 
 .desktop-only {
-    display: block !important;
+  display: block !important;
 }
 
 .burger-menu-icon {
-    display: none;
+  display: none;
 }
 .mobile-icons {
-    display: none;
+  display: none;
 }
 /* Адаптивность для мобильных устройств (экраны ≤ 1024px) */
 @media (max-width: 1024px) {
-    .landing-header {
-        justify-content: space-between; 
-        padding: 10px;
-    }
-    .auth-block {
-        display: none !important;
-    }
-    .desktop-only {
-        display: none !important;
-    }
+  .landing-header {
+    justify-content: space-between;
+    padding: 10px;
+  }
+  .auth-block {
+    display: none !important;
+  }
+  .desktop-only {
+    display: none !important;
+  }
 
-    .mobile-icons {
-        display: flex;
-        align-items: center;
-        gap: 10px; /* Пробел между иконками */
-    }
+  .mobile-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Пробел между иконками */
+  }
 
-    .burger-menu-icon {
-        display: flex;
-    }
+  .burger-menu-icon {
+    display: flex;
+  }
 }
 
-
 .nav-links-container {
-    justify-content: center;
-    width: 60%;
+  justify-content: center;
+  width: 60%;
 }
 
 .nav-links {
-    display: flex;
-    align-items: center;
-    width: 100%; 
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .nav-link {
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1vw;
-    margin-right: 2.5vw;
-    white-space: nowrap;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1vw;
+  margin-right: 2.5vw;
+  white-space: nowrap;
 }
 
 .nav-icons {
-    display: flex;
-    margin: auto;
-    gap: 10px;
-    align-items: center;
-    margin-left: 130px;
+  display: flex;
+  margin: auto;
+  gap: 10px;
+  align-items: center;
+  margin-left: 130px;
 }
 
 .nav-icon-1 {
-    width: 2vw;
+  width: 2vw;
 }
 
 .nav-icon-2 {
-    width: 1.7vw;
+  width: 1.7vw;
 }
 
 .nav-icon-profile {
-    width: 2.1vw;
-    margin-top: px;
+  width: 2vw;
+  display: block;
 }
 
 .auth-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 1.5rem;
-    margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  margin-left: auto;
+  gap: 0;
 }
 
 .auth-link {
-    color: black;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1vw;
-    padding: 5px 10px;
-    white-space: nowrap;
+  color: black;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1vw;
+  padding: 5px 10px;
+  white-space: nowrap;
 }
 
 .city {
-    font-size: 1vw;
-    white-space: nowrap;
-    font-weight: 500;
-    margin: auto;
-    margin-top: -8px;
+  font-size: 1vw;
+  white-space: nowrap;
+  font-weight: 500;
+  margin: 0;
 }
 
 .auth-link-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  margin-top: 25px;
 }
