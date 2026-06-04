@@ -5,49 +5,49 @@
   font-size: 2rem;
 }
 .landing-block > .row {
-    display: flex;
-    align-items: stretch;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
-.landing-block > .row > [class*='col-'] {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 20px;
+.landing-block > .row > [class*="col-"] {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-img-top {
-    width: 100%;
-    object-fit: cover;
-    border-top-left-radius: 23.14px;
-    border-top-right-radius: 23.14px;
+  width: 100%;
+  object-fit: contain;
+  border-top-left-radius: 23.14px;
+  border-top-right-radius: 23.14px;
 }
 
 .card-body {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title {
-    font-size: 1.25rem;
-    margin-bottom: 0;
+  font-size: 1.25rem;
+  margin-bottom: 0;
 }
 
 .btn-primary {
-    margin-top: auto;
+  margin-top: auto;
 }
 
 .btn-secondary {
-    width: 100%;
-    padding: 10px 20px;
-    font-size: 1.25rem;
+  width: 100%;
+  padding: 10px 20px;
+  font-size: 1.25rem;
 }
 
 .filters-landing {
@@ -176,7 +176,7 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.9vw;
-  background: #FF8348;
+  background: #ff8348;
   border-radius: 19.28px;
   padding: 7px 10px 7px 10px;
   white-space: normal;
@@ -212,8 +212,8 @@
 }
 
 .carousel-arrow-right {
-    transform: rotate(180deg);
-    margin-right: 15px;
+  transform: rotate(180deg);
+  margin-right: 15px;
 }
 
 .arrow-right {
@@ -254,13 +254,18 @@
 }
 
 .card-label {
-  color:#777A8D;
+  color: #777a8d;
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8vw;
   margin: 0;
   margin-top: 2px;
 }
+
+.card-label:last-of-type {
+  margin-bottom: 10px;
+}
+
 .block-text {
   margin-top: -20px;
 }
@@ -270,7 +275,7 @@
 }
 
 .card-verified {
-  color: #777A8D;
+  color: #777a8d;
   font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8vw;
@@ -288,7 +293,7 @@
   display: inline-block;
 }
 .buy-button {
-  background: #FF8348;
+  background: #ff8348;
   text-align: center;
   color: #ffffff;
   border-radius: 20px;
@@ -297,7 +302,9 @@
   font-size: 0.9vw;
   padding: 10px 10px 10px 10px;
   text-decoration: none;
-  margin-top: 20px;
+  margin-top: auto;
+  width: 100%;
+  display: block;
 }
 
 .button-others {
@@ -314,8 +321,6 @@
   font-size: 1vw;
   box-sizing: border-box;
 }
-
-
 
 .stats-col {
   margin-bottom: 10px !important;
@@ -335,7 +340,7 @@
 }
 
 .stats-number {
-  color: #FF8348;
+  color: #ff8348;
   font-family: "Verdana";
   font-weight: 700;
   font-size: 6rem;
@@ -361,8 +366,6 @@
   font-size: 1rem;
   margin-bottom: 0;
 }
-
-
 
 .area-text {
   width: 60%;
@@ -391,12 +394,11 @@
   font-family: "Verdana";
   font-weight: 700;
   font-size: 0.9rem;
+  margin-top: auto;
 }
 
-
-
 .book-button {
-  background: #FF8348;
+  background: #ff8348;
   text-align: center;
   color: #ffffff;
   border-radius: 20px;
@@ -415,8 +417,6 @@
   text-decoration: none;
 }
 
-
-
 .text-and-button {
   text-align: center;
 }
@@ -430,10 +430,10 @@
 
 .find-button {
   background: rgba(255, 131, 72, 1);
-  border: none; 
+  border: none;
   border-radius: 19.28px;
   font-family: "Montserrat";
-  font-weight: 500; 
+  font-weight: 500;
   font-size: 1rem;
   padding: 7px 50px 7px 50px;
   color: white;
