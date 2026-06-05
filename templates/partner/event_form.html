@@ -629,52 +629,70 @@
             updatePhotosCounter();
         });
 
-    // Обработчик удаления фотографий
-        document.querySelectorAll('.remove-image-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const imageId = this.dataset.imageId;
-                const container = this.closest('.media-preview');
+// Обработчик удаления фотографий
+document.querySelectorAll('.remove-image-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const imageId = this.dataset.imageId;
+        const container = this.closest('.media-preview');
 
-                // Удаляем фотографию через AJAX
-                fetch(`/partner/remove_event_image/${imageId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        container.remove();
-                        updatePhotosCounterAfterDeletion();
-                    } else {
-                        showToast('Ошибка при удалении фотографии: ' + data.message, true);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                    showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
-                });
-            });
-        });
+        console.log('Нажата кнопка удаления для фото с ID:', imageId);
 
-    // Обработчик удаления фотографий из превью (до загрузки)
-        document.querySelectorAll('#images-preview-container .media-preview button').forEach(button => {
-            button.addEventListener('click', function() {
-                const container = this.closest('.media-preview');
+        // Удаляем фотографию через AJAX
+        fetch(`/partner/remove_event_image/${imageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Фото успешно удалено с сервера');
                 container.remove();
-                updatePhotosCounter();
-            });
+                updatePhotosCounterAfterDeletion();
+                console.log('Счётчик обновлён после удаления фото');
+            } else {
+                showToast('Ошибка при удалении фотографии: ' + data.message, true);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
         });
+    });
+});
+
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.querySelectorAll('#images-preview-container .media-preview button').forEach(button => {
+    button.addEventListener('click', function() {
+        const container = this.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    });
+});
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.getElementById('images-preview-container').addEventListener('click', function(e) {
+    if (e.target && e.target.dataset.preview === 'true') {
+        const container = e.target.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    }
+});
 
         // Делегирование событий для динамически созданных кнопок удаления
         document.getElementById('images-preview-container').addEventListener('click', function(e) {
@@ -758,45 +776,54 @@
         updatePhotosCounter();
     }
 
-    // Функция для обновления счетчика загруженных фото
-    function updatePhotosCounter() {
-        const mainImageInput = document.getElementById('id_image');
-        const imagesInput = document.getElementById('id_images');
-        const uploadedCountElement = document.getElementById('photos-uploaded-count');
-        const maxCountElement = document.getElementById('photos-max-count');
+// Функция для обновления счетчика загруженных фото
+function updatePhotosCounter() {
+    const mainImageInput = document.getElementById('id_image');
+    const imagesInput = document.getElementById('id_images');
+    const uploadedCountElement = document.getElementById('photos-uploaded-count');
+    const maxCountElement = document.getElementById('photos-max-count');
 
-        if (!uploadedCountElement || !maxCountElement) return;
+    if (!uploadedCountElement || !maxCountElement) return;
 
-        const maxPhotos = parseInt(maxCountElement.textContent);
-        let uploadedCount = 0;
+    const maxPhotos = parseInt(maxCountElement.textContent);
+    let uploadedCount = 0;
 
-        // Считаем основное фото
-        if (mainImageInput.files.length > 0) {
-            uploadedCount += 1;
-        } else if (document.querySelector('#main-image-preview-container img')) {
-            uploadedCount += 1;
-        }
-
-        // Считаем дополнительные фото
-        if (imagesInput.files.length > 0) {
-            uploadedCount += imagesInput.files.length;
-        } else {
-            // Считаем уже загруженные дополнительные фото
-            uploadedCount += document.querySelectorAll('#images-preview-container .media-preview').length;
-        }
-
-        // Обновляем счетчик
-        uploadedCountElement.textContent = uploadedCount;
-
-        // Проверяем не превышен ли лимит
-        if (uploadedCount > maxPhotos) {
-            uploadedCountElement.classList.add('text-danger');
-            uploadedCountElement.classList.remove('text-success');
-        } else {
-            uploadedCountElement.classList.remove('text-danger');
-            uploadedCountElement.classList.add('text-success');
-        }
+    // Считаем основное фото
+    if (mainImageInput.files.length > 0) {
+        uploadedCount += 1;
+    } else if (document.querySelector('#main-image-preview-container img')) {
+        uploadedCount += 1;
     }
+
+    // Считаем дополнительные фото
+    if (imagesInput.files.length > 0) {
+        uploadedCount += imagesInput.files.length;
+    } else {
+        // Считаем уже загруженные дополнительные фото
+        uploadedCount += document.querySelectorAll('#images-preview-container .media-preview').length;
+    }
+
+    // Обновляем счетчик
+    uploadedCountElement.textContent = uploadedCount;
+
+    // Проверяем не превышен ли лимит
+    if (uploadedCount > maxPhotos) {
+        uploadedCountElement.classList.add('text-danger');
+        uploadedCountElement.classList.remove('text-success');
+    } else {
+        uploadedCountElement.classList.remove('text-danger');
+        uploadedCountElement.classList.add('text-success');
+    }
+}
+
+// Функция для обновления счетчика после удаления фотографий
+function updatePhotosCounterAfterDeletion() {
+    const imagesInput = document.getElementById('id_images');
+    if (imagesInput) {
+        imagesInput.value = ''; // Сбрасываем значение input
+    }
+    updatePhotosCounter();
+}
 
     // Функция для обновления счетчика после удаления фотографий
     function updatePhotosCounterAfterDeletion() {
