@@ -334,6 +334,8 @@ class EventAdmin(admin.ModelAdmin):
 
     # Действие для установки статуса "На модерации"
     def to_moderation(self, request, queryset):
+        for event in queryset:
+            self._check_active_events_limit(request, event)
         updated = queryset.update(status="on_moderation")
         self.message_user(request, f"{updated} мероприятий переведено на модерацию.")
 
@@ -341,6 +343,8 @@ class EventAdmin(admin.ModelAdmin):
 
     # Действие для установки статуса "Активно"
     def to_active(self, request, queryset):
+        for event in queryset:
+            self._check_active_events_limit(request, event, is_activating=True)
         updated = queryset.update(status="active")
         self.message_user(request, f"{updated} мероприятий активировано.")
 
@@ -375,7 +379,68 @@ class EventAdmin(admin.ModelAdmin):
         if isinstance(place_data_field, str) and "updated" in form.data:
             obj._place_data_updated = True
 
+        # Сохраняем оригинальный статус для сравнения
+        original_status = None
+        if change and obj.pk:
+            original_event = Event.objects.get(pk=obj.pk)
+            original_status = original_event.status
+
+        # Проверяем ограничение на количество активных мероприятий только при изменении статуса
+        if (obj.status in ["active", "on_moderation"] and
+            (not change or (change and original_status != obj.status))):
+            self._check_active_events_limit(request, obj, original_status)
+
         super().save_model(request, obj, form, change)
+ 
+    def _check_active_events_limit(self, request, event, original_status=None, is_activating=False):
+        """Проверяет, не превышает ли количество активных мероприятий лимит пакета."""
+        from .models import Event
+
+        # Если это существующее мероприятие и статус не меняется, пропускаем проверку
+        if event.pk and original_status == event.status:
+            return
+
+        # Получаем активную подписку пользователя
+        active_subscription = event.organizer.userpackagesubscription_set.filter(is_active=True).first()
+        if not active_subscription:
+            self.message_user(
+                request,
+                f"У пользователя {event.organizer.username} нет активной подписки на пакет.",
+                level=messages.ERROR
+            )
+            raise forms.ValidationError("У пользователя нет активной подписки на пакет.")
+
+        # Получаем пакет пользователя
+        package = event.package or active_subscription.package
+        if not package:
+            self.message_user(
+                request,
+                f"У пользователя {event.organizer.username} не выбран пакет.",
+                level=messages.ERROR
+            )
+            raise forms.ValidationError("У пользователя не выбран пакет.")
+
+        # Считаем количество ТОЛЬКО активных мероприятий (status="active")
+        active_events_count = Event.objects.filter(
+            organizer=event.organizer,
+            status="active"
+        ).exclude(pk=event.pk).count()
+
+        # Если это активация мероприятия (перевод в статус "active"), учитываем его в лимитах
+        if is_activating or event.status == "active":
+            active_events_count += 1
+
+        # Проверяем не превышает ли количество активных мероприятий лимит пакета
+        if active_events_count > package.max_active_events:
+            self.message_user(
+                request,
+                f"У пользователя {event.organizer.username} уже {active_events_count-1} активных мероприятий. "
+                f"Его пакет '{package.name}' позволяет максимум {package.max_active_events} активных мероприятий.",
+                level=messages.ERROR
+            )
+            raise forms.ValidationError(
+                f"Превышен лимит активных мероприятий ({package.max_active_events}) для пакета '{package.name}'."
+            )
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
