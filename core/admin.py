@@ -357,6 +357,9 @@ class EventAdmin(admin.ModelAdmin):
         """Оптимизируем загрузку связанных данных для формы редактирования."""
         form = super().get_form(request, obj, **kwargs)
 
+        # Убедимся, что поле description_full не обязательное
+        form.base_fields['description_full'].required = False
+
         # Если редактируется существующее мероприятие, оптимизируем загрузку связанных данных
         if obj:
             # Загружаем все связанные данные заранее
