@@ -168,6 +168,21 @@
 .mobile-icons {
   display: none;
 }
+/* Адаптивность для средних экранов (например, планшеты) */
+@media (max-width: 1200px) {
+  .nav-link {
+    padding: 0 6px;
+  }
+}
+
+/* Адаптивность для малых экранов */
+@media (max-width: 992px) {
+  .nav-link {
+    padding: 0 4px;
+    font-size: 0.85rem;
+  }
+}
+
 /* Адаптивность для мобильных устройств (экраны ≤ 1024px) */
 @media (max-width: 1024px) {
   .landing-header {
@@ -194,22 +209,25 @@
 
 .nav-links-container {
   justify-content: center;
-  width: 60%;
+  width: 100%;
+  flex-grow: 1;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
   width: 100%;
-  justify-content: space-between;
+  justify-content: space-evenly;
 }
 
 .nav-link {
   text-decoration: none;
   font-weight: 500;
   font-size: 0.9rem;
-  margin-right: 1rem;
   white-space: nowrap;
+  text-align: center;
+  padding: 0 10px;
+  min-width: 0;
 }
 
 .nav-icons {
@@ -261,4 +279,3 @@
   align-items: center;
   margin-top: 25px;
 }
- 
