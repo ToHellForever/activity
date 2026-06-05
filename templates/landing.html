@@ -100,8 +100,8 @@
 </div>
 </div>
 
-<div class='landing-block mt-3'>
-    <h2 class='landing-h mb-4'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
+<div class='landing-block'>
+    <h2 class='landing-h mb-3'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
 <div class="row">
     {% for ev in active_events %}
     <div class="col-md-3 mb-4">
@@ -131,13 +131,13 @@
     {% endfor %}
 </div>
 
-<div class="text-center mt-4">
+<div class="text-center mt-2">
     <a href="{% url 'event_list' %}" class="button-others">Смотреть остальные мероприятия</a>
 </div>
 </div>
 
-<div class="landing-block mt-5">
-    <h2 class='landing-h mb-4'>ЧЕМ БИЗНЕС АФИША ОТЛИЧАЕТСЯ ОТ ОБЫЧНЫХ АФИШ?</h2>
+<div class="landing-block mt-4">
+    <h2 class='landing-h mb-3'>ЧЕМ БИЗНЕС АФИША ОТЛИЧАЕТСЯ ОТ ОБЫЧНЫХ АФИШ?</h2>
     <div class="row">
         <div class="col-12 stats-col">
             <div class="stats-block">
@@ -186,8 +186,7 @@
     </div>
 </div>
 
-<div class="carousel-area mt-5">
-<h2 class='landing-h'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
+<h2 class='landing-h mt-3'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
 <p class="area-text">Размещайте мероприятия и проводите мероприятия на наших площадках, подтверждайте статус и привлекайте аудиторию, которая уже ищет обучение.</p>
 <div class="row">
     {% for venue in active_venues %}
@@ -214,7 +213,6 @@
         </div>
     </div>
     {% endfor %}
-</div>
 </div>
 
 <div class='text-and-button mt-5'>

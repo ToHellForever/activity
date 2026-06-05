@@ -314,7 +314,7 @@
   color: rgba(0, 0, 0, 1);
   text-decoration: none;
   text-align: center;
-  border-radius: 19.28px;
+  border-radius: 25px;
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 1vw;
@@ -442,18 +442,223 @@
 
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 768px) {
-  .filters-landing {
-    border-radius: 9px;
-    padding-top: 15px;
-    margin-right: -20px;
+  .landing-block > .row {
+    flex-direction: column;
   }
+
+  .landing-block > .row > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100%;
+    margin-bottom: 10px;
+  }
+
+  /* Скрываем карусель на мобильной версии */
+  .events-carousel-wrapper {
+    display: none;
+  }
+
+  .filters-landing {
+    background: #00056e;
+    border-radius: 20px;
+    padding: 20px 15px;
+    margin-right: 0;
+    margin-bottom: 20px;
+  }
+  
   .landing-title {
-    width: 90%;
-    font-size: 1.5rem;
+    width: 100%;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .arrow-right {
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 15px solid rgba(38, 37, 37, 1);
   }
   .landing-text {
-    margin-top: 0px;
-    font-size: 0.8rem;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+  }
+
+  /* Фильтры в столбик */
+  .filers-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filers-col {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  .filter-item {
+    width: 100%;
+  }
+
+  .filter-label {
+    color: #9a9a9a;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.75rem;
     margin-bottom: 5px;
+  }
+
+  .filter-input {
+    width: 100%;
+    border-radius: 15px;
+    margin-top: 5px;
+    padding: 10px 40px 10px 12px;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    font-size: 0.9rem;
+  }
+
+  .input-button {
+    position: absolute;
+    right: 0px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 43px;
+    background: #ff8348;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .input-with-button {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Кнопка НАЙТИ */
+  .filter-button-container {
+    display: flex;
+    margin-left: 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    margin-top: 5px;
+  }
+
+  .filter-button {
+    width: 100%;
+    background: #ff8348;
+    border: none;
+    border-radius: 15px;
+    color: #ffffff;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 12px 0;
+  }
+
+  /* Карточки событий - 1 в ряд на мобильной */
+  .landing-block > .row .col-md-3 {
+    width: 100% !important;
+  }
+
+  .card {
+    border-radius: 15px;
+  }
+
+  .card-img-top {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    object-fit: cover;
+  }
+
+  .card-title {
+    font-size: 1rem;
+  }
+
+  .card-date {
+    font-size: 0.75rem;
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+  }
+
+  .card-verified {
+    font-size: 0.7rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+
+  .buy-button {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    border-radius: 15px;
+  }
+
+  /* Стили для блока статистики на мобильной */
+  .stats-block {
+    border-radius: 15px;
+    padding: 5px;
+  }
+
+  .stats-number {
+    font-size: 3rem;
+    margin-right: 15px;
+    margin-left: 10px;
+  }
+
+  .stats-title {
+    font-size: 1rem;
+    margin-bottom: 3px;
+  }
+
+  .stats-text {
+    font-size: 0.8rem;
+  }
+
+  .landing-h {
+    font-size: 1.1rem;
+  }
+
+  .area-text {
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .card-label-venue {
+    font-size: 0.75rem;
+  }
+
+  .venue-adress {
+    font-size: 0.8rem;
+  }
+
+  .card-price-venue {
+    font-size: 0.85rem;
+  }
+
+  .button-others {
+    font-size: 0.9rem;
+    padding: 10px 0;
+  }
+
+  .two-button {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .find-button {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 12px 0;
   }
 }
