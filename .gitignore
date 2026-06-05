@@ -17,3 +17,8 @@ activity/__pycache__/settings.cpython-313.pyc
 # Ignore all generated and existing QR code files
 media/qr_codes/
 qr_code*
+
+# Ignore all media files except icons
+media/*
+!media/icon/
+!media/icon/*
