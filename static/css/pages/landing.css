@@ -554,7 +554,7 @@
     width: 100%;
     background: #ff8348;
     border: none;
-    height: 100%;z
+    height: 100%;
     border-radius: 15px;
     color: #ffffff;
     font-family: "Montserrat";
@@ -563,10 +563,19 @@
     padding: 12px 0;
   }
 
-  /* Карточки событий - 1 в ряд на мобильной */
-  .landing-block > .row .col-md-3 {
-    width: 100% !important;
-  }
+   /* Карточки событий - 2 в ряд на мобильной */
+   .landing-block > .row .col-md-3 {
+     width: 50% !important;
+     padding: 0 5px;
+     box-sizing: border-box;
+   }
+   .landing-block > .row {
+     display: flex;
+     flex-wrap: wrap;
+   }
+   .landing-block > .row > [class*="col-"] {
+     margin-bottom: 10px;
+   }
 
   .card {
     border-radius: 15px;
