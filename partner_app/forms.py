@@ -5,19 +5,19 @@ from .models import ReportSchedule
 
 User = get_user_model()
 
-
 class EventForm(forms.ModelForm):
     """
     Форма для создания и редактирования мероприятия.
     """
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.current_package = kwargs.pop('current_package', None)
         super().__init__(*args, **kwargs)
 
         # Делаем поля обязательными
         self.fields["title"].required = True
         self.fields["description_short"].required = True
-        self.fields["description_full"].required = True
         self.fields["date_time"].required = True
         self.fields["place_data"].required = False
         self.fields["refund_deadline_hours"].required = True
@@ -34,6 +34,44 @@ class EventForm(forms.ModelForm):
         self.fields["date_time"].error_messages = {
             "required": "Пожалуйста, укажите дату и время проведения мероприятия."
         }
+
+        # Настройка полей в зависимости от пакета
+        if self.current_package:
+            self._setup_package_restrictions()
+
+    def _setup_package_restrictions(self):
+        """Настраивает ограничения формы в зависимости от текущего пакета пользователя."""
+        package = self.current_package
+
+        # Ограничение на тип описания
+        if package.description_type == 'short':
+            self.fields['description_full'].widget = forms.HiddenInput()
+            self.fields['description_full'].required = False
+            self.fields['description_full'].help_text = "Ваш пакет не поддерживает подробное описание"
+
+        # Ограничение на видео
+        if not package.has_video:
+            self.fields['video_url'].widget = forms.HiddenInput()
+            self.fields['video_url'].required = False
+            self.fields['video_url'].help_text = "Ваш пакет не поддерживает загрузку видео"
+
+        # Ограничение на программу мероприятия
+        if not package.has_program_and_speakers:
+            self.fields['program_file'].widget = forms.HiddenInput()
+            self.fields['program_file'].required = False
+            self.fields['program_file'].help_text = "Ваш пакет не поддерживает загрузку программы"
+
+        # Ограничение на заявки через платформу
+        if not package.has_platform_request:
+            self.fields['allow_platform_requests'].widget = forms.HiddenInput()
+            self.fields['allow_platform_requests'].required = False
+            self.fields['allow_platform_requests'].help_text = "Ваш пакет не поддерживает заявки через платформу"
+
+        # Ограничение на бесплатную регистрацию
+        if not package.has_free_registration:
+            self.fields['allow_booking_without_payment'].widget = forms.HiddenInput()
+            self.fields['allow_booking_without_payment'].required = False
+            self.fields['allow_booking_without_payment'].help_text = "Ваш пакет не поддерживает бесплатную регистрацию"
 
     def clean_duration(self):
         duration = self.cleaned_data.get("duration")
@@ -57,27 +95,56 @@ class EventForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        package = cleaned_data.get("package")
-        image = cleaned_data.get("image")
+        package = cleaned_data.get("package") or self.current_package
         video_url = cleaned_data.get("video_url")
         program_file = cleaned_data.get("program_file")
+        description_full = cleaned_data.get("description_full")
+
+        # Проверяем, что у пользователя есть активный пакет
+        if not self.current_package and not package:
+            raise forms.ValidationError(
+                "У вас нет активного пакета. Пожалуйста, выберите пакет для создания мероприятия."
+            )
+
+        # Используем текущий пакет пользователя если не выбран другой
+        if not package and self.current_package:
+            cleaned_data['package'] = self.current_package
+            package = self.current_package
 
         if package:
-            # Проверка на количество фотографий
-            if package.max_photos == 1 and image and hasattr(image, "file"):
-                # Для пакета "Старт" можно загрузить только 1 фото
-                pass  # Пока просто пропускаем, так как ограничение на 1 фото уже есть в модели пакета
+            # Проверка на тип описания
+            if package.description_type == 'short' and description_full:
+                self.add_error(
+                    'description_full',
+                    "Ваш пакет поддерживает только краткое описание. Полное описание не должно быть заполнено."
+                )
 
             # Проверка на наличие видео
             if not package.has_video and video_url:
-                raise forms.ValidationError(
-                    "Выбранный пакет не поддерживает загрузку видео."
+                self.add_error(
+                    'video_url',
+                    "Ваш пакет не поддерживает загрузку видео."
                 )
 
             # Проверка на наличие программы
             if not package.has_program_and_speakers and program_file:
-                raise forms.ValidationError(
-                    "Выбранный пакет не поддерживает загрузку программы мероприятия."
+                self.add_error(
+                    'program_file',
+                    "Ваш пакет не поддерживает загрузку программы мероприятия."
+                )
+
+            # Проверка на бесплатную регистрацию
+            if not package.has_free_registration and cleaned_data.get('allow_booking_without_payment'):
+                self.add_error(
+                    'allow_booking_without_payment',
+                    "Ваш пакет не поддерживает бесплатную регистрацию."
+                )
+
+            # Проверка на заявки через платформу
+            if not package.has_platform_request and cleaned_data.get('allow_platform_requests'):
+                self.add_error(
+                    'allow_platform_requests',
+                    "Ваш пакет не поддерживает заявки через платформу."
                 )
 
         return cleaned_data
@@ -122,7 +189,6 @@ class EventForm(forms.ModelForm):
             ),
         }
 
-
 class DocumentUploadForm(forms.ModelForm):
     """
     Форма для загрузки документов партнёром.
@@ -151,7 +217,6 @@ class DocumentUploadForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
 
 class ReportScheduleForm(forms.ModelForm):
     """
@@ -265,7 +330,6 @@ class ReportScheduleForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
 
 class PayoutDetailsForm(forms.ModelForm):
     class Meta:

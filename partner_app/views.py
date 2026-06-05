@@ -27,6 +27,7 @@ from core.models import (
     Tag,
     MainTag,
     EventPackage,
+    UserPackageSubscription,
 )
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
@@ -35,7 +36,6 @@ from core.forms import PartnerProfileForm, PasswordChangeForm
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
-
 
 def get_rejection_messages(request):
     """Возвращает сообщения об отклонении мероприятий для текущего пользователя."""
@@ -51,7 +51,6 @@ def get_rejection_messages(request):
             )
 
     return rejection_messages
-
 
 @login_required
 def partner_dashboard(request):
@@ -94,8 +93,6 @@ def partner_dashboard(request):
     ).count()
 
     # Получаем активную подписку пользователя
-    from core.models import UserPackageSubscription
-
     user_subscription = (
         UserPackageSubscription.objects.filter(user=request.user, is_active=True)
         .select_related("package")
@@ -113,7 +110,6 @@ def partner_dashboard(request):
     }
     return render(request, "partner/dashboard.html", context)
 
-
 @login_required
 def create_event(request):
     """
@@ -121,9 +117,124 @@ def create_event(request):
     Видео обрабатывается автоматически через сигналы и Celery.
     """
 
+    # Проверяем наличие активного пакета у пользователя
+    active_subscription = (
+        UserPackageSubscription.objects.filter(
+            user=request.user,
+            is_active=True,
+        )
+        .select_related("package")
+        .first()
+    )
+
     if request.method == "POST":
-        form = EventForm(request.POST, request.FILES)
+        # Если это редактирование существующего мероприятия
+        if 'event_id' in request.POST:
+            event = Event.objects.filter(id=request.POST['event_id'], organizer=request.user).first()
+            if event and event.package:
+                # Если у события уже есть пакет, используем его
+                package = event.package
+            else:
+                # Если нет активного пакета - перенаправляем на покупку
+                if not active_subscription:
+                    messages.error(
+                        request,
+                        "Для создания мероприятий необходимо приобрести пакет. Пожалуйста, выберите и оплатите подходящий пакет."
+                    )
+                    return redirect("payment:package_selection")
+                package = active_subscription.package
+        else:
+            # Если это создание нового мероприятия
+            if not active_subscription:
+                messages.error(
+                    request,
+                    "Для создания мероприятий необходимо приобрести пакет. Пожалуйста, выберите и оплатите подходящий пакет."
+                )
+                return redirect("payment:package_selection")
+            package = active_subscription.package
+
+        form = EventForm(request.POST, request.FILES, user=request.user, current_package=package)
         if form.is_valid():
+            # Проверяем типы загружаемых файлов
+            video_file = request.FILES.get("video_url")
+            if video_file:
+                # Проверяем расширение видео
+                valid_video_extensions = ['.mp4', '.mov', '.avi']
+                if not any(video_file.name.lower().endswith(ext) for ext in valid_video_extensions):
+                    messages.error(
+                        request,
+                        "Неверный формат видео. Разрешены только файлы MP4, MOV, AVI"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": False,
+                            "ticket_data": [],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            pdf_file = request.FILES.get("program_file")
+            if pdf_file:
+                # Проверяем расширение PDF
+                if not pdf_file.name.lower().endswith('.pdf'):
+                    messages.error(
+                        request,
+                        "Неверный формат файла. Разрешены только PDF файлы"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": False,
+                            "ticket_data": [],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            # Проверяем ограничения пакета на количество фотографий
+            main_image = request.FILES.get("image")
+            additional_images = request.FILES.getlist("images")
+
+            # Считаем общее количество загружаемых фото
+            total_images = 0
+            if main_image:
+                total_images += 1
+            if additional_images:
+                total_images += len(additional_images)
+
+            # Проверяем не превышаем ли лимит пакета
+            if total_images > package.max_photos:
+                additional_photos_allowed = package.max_photos - 1
+                messages.error(
+                    request,
+                    f"Ваш пакет позволяет загрузить не более {package.max_photos} фотографий "
+                    f"(1 основное + {additional_photos_allowed} дополнительных). "
+                    f"Вы пытаетесь загрузить {total_images} фото."
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": False,
+                        "ticket_data": [],
+                        "rejection_messages": get_rejection_messages(request),
+                        "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                        "has_free_tickets": False,
+                        "packages": EventPackage.objects.all(),
+                    },
+                )
+
             event = form.save(commit=False)
             event.organizer = request.user
             event.status = "on_moderation"
@@ -138,8 +249,6 @@ def create_event(request):
                     setattr(event, field_name, None)
 
             # Основное фото (отдельный input image), если он есть в запросе
-            # (EventForm может сохранить поле сам, но здесь делаем явную обработку,
-            # чтобы гарантировать поддержку сценария "основное + доп. фото вместе")
             main_image = request.FILES.get("image")
             if main_image:
                 event.image = main_image
@@ -150,19 +259,16 @@ def create_event(request):
             images = request.FILES.getlist("images")
             if images:
                 from core.models import EventImage
-
                 for image in images:
                     EventImage.objects.create(event=event, image=image)
 
         else:
             # если форма не валидна — не создаём/сохраняем event здесь
-            # дальнейшая логика отрисует форму (ticket_data ниже тоже сработает)
             event = None
 
         if event is None:
             # просто отдадим форму как есть (предыдущая логика уже делает ticket_data для невалидного POST)
-            # чтобы не падать на event.save() и не создавать объект при невалидной форме
-            form = EventForm(request.POST, request.FILES)
+            form = EventForm(request.POST, request.FILES, user=request.user, current_package=active_subscription.package)
             ticket_data = [
                 {"name": name, "price": price, "quantity": quantity}
                 for name, price, quantity in zip(
@@ -265,34 +371,14 @@ def create_event(request):
         return redirect("partner:partner_event_list")
     else:
         # При загрузке страницы (GET) выводим пакет, который сейчас активен по подписке пользователя
-        from core.models import UserPackageSubscription
-
-        active_subscription = (
-            UserPackageSubscription.objects.filter(
-                user=request.user,
-                is_active=True,
+        if not active_subscription:
+            messages.warning(
+                request,
+                "У вас нет активного пакета. Пожалуйста, выберите и купите пакет для создания мероприятий."
             )
-            .select_related("package")
-            .first()
-        )
+            return redirect("payment:package_selection")
 
-        if active_subscription:
-            package = active_subscription.package
-            package_snapshot = model_to_dict(
-                package, fields=[f.name for f in package._meta.fields]
-            )
-            sub_snapshot = model_to_dict(
-                active_subscription,
-                fields=[f.name for f in active_subscription._meta.fields],
-            )
-
-            # print убран: больше не выводим снапшот пакета/подписки в консоль
-            pass
-        else:
-            # print убран: больше не выводим снапшот пакета/подписки в консоль
-            pass
-
-        form = EventForm()
+        form = EventForm(user=request.user, current_package=active_subscription.package)
 
     ticket_data = []
     if request.method == "POST" and not form.is_valid():
@@ -320,12 +406,10 @@ def create_event(request):
         },
     )
 
-
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
     send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
-
 
 @login_required
 def edit_event(request, event_id):
@@ -334,6 +418,16 @@ def edit_event(request, event_id):
     Видео обрабатывается автоматически при замене файла.
     """
     from django.forms.models import model_to_dict
+
+    # Получаем активную подписку пользователя
+    active_subscription = (
+        UserPackageSubscription.objects.filter(
+            user=request.user,
+            is_active=True,
+        )
+        .select_related("package")
+        .first()
+    )
 
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
@@ -346,7 +440,9 @@ def edit_event(request, event_id):
 
     if request.method == "POST":
         # Передаем request.FILES, чтобы обработать загрузку нового видео
-        form = EventForm(request.POST, request.FILES, instance=event)
+        # Определяем текущий пакет для передачи в форму
+        current_package = event.package if event.package else (active_subscription.package if active_subscription else None)
+        form = EventForm(request.POST, request.FILES, instance=event, current_package=current_package)
 
         # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
         # Удаляем старые файлы, если пришли новые
@@ -369,7 +465,122 @@ def edit_event(request, event_id):
                 setattr(event, field_name, None)
 
         if form.is_valid():
-            # Сохраняем форму (без валидации лимитов пакета)
+            # Проверяем типы загружаемых файлов
+            video_file = request.FILES.get("video_url")
+            if video_file:
+                # Проверяем расширение видео
+                valid_video_extensions = ['.mp4', '.mov', '.avi']
+                if not any(video_file.name.lower().endswith(ext) for ext in valid_video_extensions):
+                    messages.error(
+                        request,
+                        "Неверный формат видео. Разрешены только файлы MP4, MOV, AVI"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": True,
+                            "ticket_data": [
+                                {"name": name, "price": price, "quantity": quantity}
+                                for name, price, quantity in zip(
+                                    request.POST.getlist("ticket_name[]"),
+                                    request.POST.getlist("ticket_price[]"),
+                                    request.POST.getlist("ticket_quantity[]"),
+                                )
+                                if name and price and quantity
+                            ],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            pdf_file = request.FILES.get("program_file")
+            if pdf_file:
+                # Проверяем расширение PDF
+                if not pdf_file.name.lower().endswith('.pdf'):
+                    messages.error(
+                        request,
+                        "Неверный формат файла. Разрешены только PDF файлы"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": True,
+                            "ticket_data": [
+                                {"name": name, "price": price, "quantity": quantity}
+                                for name, price, quantity in zip(
+                                    request.POST.getlist("ticket_name[]"),
+                                    request.POST.getlist("ticket_price[]"),
+                                    request.POST.getlist("ticket_quantity[]"),
+                                )
+                                if name and price and quantity
+                            ],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            # Проверяем ограничения пакета на количество фотографий
+            main_image = request.FILES.get("image")
+            additional_images = request.FILES.getlist("images")
+
+            # Считаем общее количество загружаемых фото
+            total_images = 0
+            if main_image:
+                total_images += 1
+            if additional_images:
+                total_images += len(additional_images)
+
+            # Считаем уже существующие фото (если не заменяем основное)
+            existing_images_count = 0
+            if not main_image and event.image:
+                existing_images_count += 1
+            if not additional_images:
+                existing_images_count += event.images.count()
+
+            # Общее количество фото после загрузки
+            final_images_count = existing_images_count + total_images
+
+            # Проверяем не превышаем ли лимит пакета
+            package = event.package if event.package else (active_subscription.package if active_subscription else None)
+            if package and final_images_count > package.max_photos:
+                additional_photos_allowed = package.max_photos - 1
+                messages.error(
+                    request,
+                    f"Ваш пакет позволяет загрузить не более {package.max_photos} фотографий "
+                    f"(1 основное + {additional_photos_allowed} дополнительных). "
+                    f"Вы пытаетесь загрузить {final_images_count} фото."
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": True,
+                        "ticket_data": [
+                            {"name": name, "price": price, "quantity": quantity}
+                            for name, price, quantity in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                            )
+                            if name and price and quantity
+                        ],
+                        "rejection_messages": get_rejection_messages(request),
+                        "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                        "has_free_tickets": False,
+                        "packages": EventPackage.objects.all(),
+                    },
+                )
+
+            # Сохраняем форму
             event = form.save()
 
             # Основное фото (отдельный input image): если пришло — заменяем
@@ -465,9 +676,8 @@ def edit_event(request, event_id):
         # GET: выводим пакет, который сейчас привязан к событию (event.package),
         # а также пакет из активной подписки пользователя (fallback),
         # чтобы информация всегда была доступна как в create_event.
-        form = EventForm(instance=event)
-
-        from core.models import UserPackageSubscription
+        current_package = event.package if event.package else (active_subscription.package if active_subscription else None)
+        form = EventForm(instance=event, current_package=current_package)
 
         # 1) Пакет события (если заполнен)
         if event.package:
@@ -494,9 +704,6 @@ def edit_event(request, event_id):
                 else None
             )
 
-            # print убран: больше не выводим снапшот пакета/подписки в консоль
-            pass
-
         # 2) Fallback: активная подписка пользователя (как в create_event)
         fallback_subscription = (
             UserPackageSubscription.objects.filter(
@@ -518,13 +725,6 @@ def edit_event(request, event_id):
                 fields=[f.name for f in fallback_subscription._meta.fields],
             )
 
-            # print убран: больше не выводим снапшот пакета/подписки в консоль
-            pass
-        else:
-            if not event.package:
-                # print убран: больше не выводим снапшот пакета/подписки в консоль
-                pass
-
     return render(
         request,
         "partner/event_form.html",
@@ -537,7 +737,6 @@ def edit_event(request, event_id):
             "packages": EventPackage.objects.all(),
         },
     )
-
 
 @login_required
 def partner_event_list(request):
@@ -591,7 +790,6 @@ def partner_event_list(request):
     }
     return render(request, "partner/partner_event_list.html", context)
 
-
 @login_required
 def delete_event(request, event_id):
     """
@@ -616,7 +814,6 @@ def delete_event(request, event_id):
         "partner/event_confirm_delete.html",
         {"event": event},
     )
-
 
 @login_required
 def bulk_delete_events(request):
@@ -664,7 +861,6 @@ def bulk_delete_events(request):
         return redirect("partner:partner_event_list")
 
     return redirect("partner:partner_event_list")
-
 
 @login_required
 def reports(request):
@@ -740,7 +936,6 @@ def reports(request):
     }
     return render(request, "partner/reports.html", context)
 
-
 @login_required
 def participant_list(request, event_id):
     """
@@ -784,7 +979,6 @@ def participant_list(request, event_id):
     }
     context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/participant_list.html", context)
-
 
 def export_participant_list(orders, event, export_format):
     """
@@ -1010,7 +1204,6 @@ def export_participant_list(orders, event, export_format):
 
     return HttpResponse("Неверный формат экспорта", status=400)
 
-
 @login_required
 def mark_attendance(request, event_id, order_id):
     """
@@ -1033,7 +1226,6 @@ def mark_attendance(request, event_id, order_id):
 
     return redirect("partner:participant_list", event_id=event.id)
 
-
 @login_required
 def check_ticket(request, order_id):
     """
@@ -1046,7 +1238,6 @@ def check_ticket(request, order_id):
         "is_valid": True,
     }
     return render(request, "partner/ticket_check.html", context)
-
 
 @login_required
 def finances(request):
@@ -1092,7 +1283,6 @@ def finances(request):
     }
     context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/finances.html", context)
-
 
 @require_POST
 @csrf_exempt
@@ -1175,7 +1365,6 @@ def request_payout(request):
             {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
         )
 
-
 @require_POST
 @login_required
 def cancel_payout(request, payout_id):
@@ -1210,7 +1399,6 @@ def cancel_payout(request, payout_id):
         return JsonResponse(
             {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
         )
-
 
 @require_POST
 @csrf_exempt
@@ -1255,7 +1443,6 @@ def delete_reports(request):
             {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
         )
 
-
 @login_required
 def payout_details(request):
     """
@@ -1281,7 +1468,6 @@ def payout_details(request):
         "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/payout_details.html", context)
-
 
 @login_required
 def profile_edit(request):
@@ -1346,7 +1532,6 @@ def profile_edit(request):
         "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/profile_edit.html", context)
-
 
 @login_required
 def generate_report(request):
@@ -1436,7 +1621,6 @@ def generate_report(request):
         status=405,
     )
 
-
 @login_required
 def report_schedule(request):
     """
@@ -1471,7 +1655,6 @@ def report_schedule(request):
         logger.exception("Ошибка в представлении report_schedule: %s", str(e))
         messages.error(request, f"Произошла ошибка: {str(e)}")
         return redirect("partner:dashboard")
-
 
 @login_required
 def remove_media(request, media_type, media_id):
@@ -1518,10 +1701,8 @@ def remove_media(request, media_type, media_id):
         return JsonResponse(
             {"status": "error", "message": "Media not found"}, status=404
         )
-
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
 
 @login_required
 def change_password(request):
@@ -1541,7 +1722,6 @@ def change_password(request):
         "change_password.html",
         {"form": password_form, "rejection_messages": get_rejection_messages(request)},
     )
-
 
 @login_required
 def remove_event_image(request, image_id):
@@ -1564,7 +1744,6 @@ def remove_event_image(request, image_id):
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
 
 def send_partner_all_tickets_sold_notification(event):
     """

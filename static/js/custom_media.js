@@ -8,15 +8,32 @@ function initMediaHandlers() {
             const mediaContainer = this.closest('.media-preview-container');
             
             // Удаление через AJAX
-            fetch(`/partner/remove_media/${mediaType}/${mediaId}/`, {
+            let url = '';
+            if (mediaType === 'program_file') {
+                url = `/partner/remove_media/program_file/${mediaId}/`;
+            } else if (mediaType === 'video_url') {
+                url = `/partner/remove_media/video_url/${mediaId}/`;
+            } else if (mediaType === 'image') {
+                // Для основного изображения используем другой URL
+                const imageId = document.querySelector('.remove-image-btn')?.getAttribute('data-image-id');
+                if (imageId) {
+                    url = `/partner/remove_event_image/${imageId}/`;
+                }
+            }
+
+            if (!url) {
+                console.error('Не удалось определить URL для удаления');
+                return;
+            }
+
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({
-                    media_id: mediaId,
-                    media_type: mediaType
+                body: new URLSearchParams({
+                    'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
                 })
             })
             .then(response => {

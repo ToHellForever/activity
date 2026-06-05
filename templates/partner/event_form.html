@@ -59,6 +59,21 @@
 
 {% block content %}
 
+<!-- Toast уведомления -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="toastContainer"></div>
+</div>
+
+<!-- Сообщения Django -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
@@ -73,7 +88,9 @@
                 <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" class="form-control">
             {% elif field.name == 'refund_deadline_hours' %}
                 <input type="number" name="refund_deadline_hours" id="id_refund_deadline_hours" value="24" class="form-control">
-                <small class="form-text text-muted">Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.</small>
+                <small class="form-text text-muted">
+                    Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.
+                </small>
             {% elif field.name == 'auto_close_sales_hours' %}
                 {{ field }}
                 {% if has_free_tickets %}
@@ -156,15 +173,28 @@
     </div>
 
     <!-- Дополнительные фото мероприятия (EventImage) -->
+    {% if form.current_package and form.current_package.max_photos > 1 %}
     <div class="form-group">
         <label for="id_images">Фотографии мероприятия</label>
-        <div id="images-preview-container" class="media-preview-container mb-2">
+
+        <!-- Информация о лимитах пакета -->
+        <div class="alert alert-info mb-3">
+            Ваш пакет позволяет загрузить:
+            <strong>{{ form.current_package.max_photos }} фотографий</strong>
+            (1 основное + {{ form.current_package.max_photos|add:-1 }} дополнительных)
+            <div class="photo-counter mt-2">
+                Загружено: <span id="photos-uploaded-count">0</span> /
+                <span id="photos-max-count">{{ form.current_package.max_photos }}</span>
+            </div>
+        </div>
+
+        <div id="images-preview-container" class="media-preview-container mb-2 d-flex flex-wrap gap-2">
             {% if form.instance.pk %}
                 {% for image in form.instance.images.all %}
-                <div class="media-preview">
-                    <img src="{{ image.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
-                    <button type="button" class="btn btn-danger btn-sm remove-image-btn"
-                            data-image-id="{{ image.id }}">
+                <div class="media-preview position-relative">
+                    <img src="{{ image.image.url }}" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 4px;">
+                    <button type="button" class="btn btn-danger btn-sm remove-image-btn position-absolute top-0 end-0 m-1"
+                            data-image-id="{{ image.id }}" style="width: 24px; height: 24px; padding: 0; line-height: 1;">
                         ×
                     </button>
                 </div>
@@ -176,7 +206,9 @@
             Добавить фотографии
         </button>
     </div>
+    {% endif %}
 
+    {% if form.current_package and form.current_package.has_video %}
     <div class="form-group">
         <label for="id_video_url">Видео мероприятия</label>
         <div id="video_url-preview-container" class="media-preview-container mb-2">
@@ -198,6 +230,7 @@
             {% if form.instance.video_url %}Изменить{% else %}Добавить{% endif %} видео
         </button>
     </div>
+    {% endif %}
 
     <div class="form-group">
         <label for="id_program_file">Программа мероприятия (PDF)</label>
@@ -505,38 +538,317 @@
         // Инициализация скрытого поля билетов
         updateTicketTypesHiddenField();
     });
-    </script>
 
-    <script>
-        // Обработчик удаления фотографий
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.remove-image-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const imageId = this.dataset.imageId;
-                    const container = this.closest('.media-preview');
+    // Toast notifications script
+    document.addEventListener('DOMContentLoaded', function() {
+        // Функция для отображения toast-уведомления
+        function showToast(message, isError = true) {
+            const toastContainer = document.getElementById('toastContainer');
 
-                    // Удаляем фотографию через AJAX
-                    fetch(`/partner/remove_event_image/${imageId}/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                            'Content-Type': 'application/json'
-                        }
+            const toastElement = document.createElement('div');
+            toastElement.className = `toast align-items-center text-white ${isError ? 'bg-danger' : 'bg-success'}`;
+            toastElement.setAttribute('role', 'alert');
+            toastElement.setAttribute('aria-live', 'assertive');
+            toastElement.setAttribute('aria-atomic', 'true');
+
+            const toastBody = document.createElement('div');
+            toastBody.className = 'd-flex';
+
+            const toastMessage = document.createElement('div');
+            toastMessage.className = 'toast-body';
+            toastMessage.textContent = message;
+
+            const toastClose = document.createElement('button');
+            toastClose.type = 'button';
+            toastClose.className = 'btn-close btn-close-white me-2 m-auto';
+            toastClose.setAttribute('data-bs-dismiss', 'toast');
+            toastClose.setAttribute('aria-label', 'Close');
+
+            toastBody.appendChild(toastMessage);
+            toastBody.appendChild(toastClose);
+            toastElement.appendChild(toastBody);
+
+            toastContainer.appendChild(toastElement);
+
+            // Инициализируем и показываем toast
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+
+            // Удаляем toast после закрытия
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+
+        // Проверяем, есть ли ошибки в форме при загрузке страницы
+        {% if form.errors %}
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    showToast("{{ error }}", true);
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+
+        // Обработка отправки формы
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            // Проверяем количество загруженных фото перед отправкой
+            const uploadedCountElement = document.getElementById('photos-uploaded-count');
+            const maxCountElement = document.getElementById('photos-max-count');
+
+            if (uploadedCountElement && maxCountElement) {
+                const uploadedCount = parseInt(uploadedCountElement.textContent);
+                const maxCount = parseInt(maxCountElement.textContent);
+
+                if (uploadedCount > maxCount) {
+                    e.preventDefault(); // Отменяем отправку формы
+                    showToast(`Превышен лимит фотографий. Ваш пакет позволяет загрузить не более ${maxCount} фотографий (1 основное + ${maxCount - 1} дополнительных)`, true);
+                    return false;
+                }
+            }
+        });
+    });
+
+    // Обработчик загрузки и превью фотографий
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация счетчика загруженных фото
+        updatePhotosCounter();
+
+        // Обработчик загрузки основного фото
+        document.getElementById('id_image').addEventListener('change', function(e) {
+            previewImage(e, 'main-image-preview-container', true);
+            updatePhotosCounter();
+        });
+
+        // Обработчик загрузки дополнительных фото
+        document.getElementById('id_images').addEventListener('change', function(e) {
+            previewMultipleImages(e, 'images-preview-container');
+            updatePhotosCounter();
+        });
+
+    // Обработчик удаления фотографий
+        document.querySelectorAll('.remove-image-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const imageId = this.dataset.imageId;
+                const container = this.closest('.media-preview');
+
+                // Удаляем фотографию через AJAX
+                fetch(`/partner/remove_event_image/${imageId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            container.remove();
-                        } else {
-                            alert('Ошибка при удалении фотографии: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Ошибка:', error);
-                        alert('Произошла ошибка при удалении фотографии.');
-                    });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        container.remove();
+                        updatePhotosCounterAfterDeletion();
+                    } else {
+                        showToast('Ошибка при удалении фотографии: ' + data.message, true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
                 });
             });
         });
-    </script>
+
+    // Обработчик удаления фотографий из превью (до загрузки)
+        document.querySelectorAll('#images-preview-container .media-preview button').forEach(button => {
+            button.addEventListener('click', function() {
+                const container = this.closest('.media-preview');
+                container.remove();
+                updatePhotosCounter();
+            });
+        });
+
+        // Делегирование событий для динамически созданных кнопок удаления
+        document.getElementById('images-preview-container').addEventListener('click', function(e) {
+            if (e.target && e.target.dataset.preview === 'true') {
+                const container = e.target.closest('.media-preview');
+                container.remove();
+                updatePhotosCounter();
+            }
+        });
+    });
+
+    // Функция для отображения превью основного фото
+    function previewImage(event, containerId, isMain) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'media-preview position-relative';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = isMain ? '200px' : '150px';
+                img.style.maxHeight = isMain ? '200px' : '150px';
+                img.style.borderRadius = '4px';
+
+                previewDiv.appendChild(img);
+                container.appendChild(previewDiv);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Функция для отображения превью нескольких фото
+    function previewMultipleImages(event, containerId) {
+        const container = document.getElementById(containerId);
+        const files = event.target.files;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'media-preview position-relative';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '150px';
+                img.style.maxHeight = '150px';
+                img.style.borderRadius = '4px';
+
+                // Кнопка удаления для превью (до загрузки)
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1';
+                removeBtn.style.width = '24px';
+                removeBtn.style.height = '24px';
+                removeBtn.style.padding = '0';
+                removeBtn.style.lineHeight = '1';
+                removeBtn.textContent = '×';
+                removeBtn.dataset.preview = 'true'; // Маркер для динамических кнопок
+
+                previewDiv.appendChild(img);
+                previewDiv.appendChild(removeBtn);
+                container.appendChild(previewDiv);
+
+                // Обновляем счетчик после добавления превью
+                updatePhotosCounter();
+            }
+
+            reader.readAsDataURL(file);
+        }
+
+        // Обновляем счетчик после добавления всех превью
+        updatePhotosCounter();
+    }
+
+    // Функция для обновления счетчика загруженных фото
+    function updatePhotosCounter() {
+        const mainImageInput = document.getElementById('id_image');
+        const imagesInput = document.getElementById('id_images');
+        const uploadedCountElement = document.getElementById('photos-uploaded-count');
+        const maxCountElement = document.getElementById('photos-max-count');
+
+        if (!uploadedCountElement || !maxCountElement) return;
+
+        const maxPhotos = parseInt(maxCountElement.textContent);
+        let uploadedCount = 0;
+
+        // Считаем основное фото
+        if (mainImageInput.files.length > 0) {
+            uploadedCount += 1;
+        } else if (document.querySelector('#main-image-preview-container img')) {
+            uploadedCount += 1;
+        }
+
+        // Считаем дополнительные фото
+        if (imagesInput.files.length > 0) {
+            uploadedCount += imagesInput.files.length;
+        } else {
+            // Считаем уже загруженные дополнительные фото
+            uploadedCount += document.querySelectorAll('#images-preview-container .media-preview').length;
+        }
+
+        // Обновляем счетчик
+        uploadedCountElement.textContent = uploadedCount;
+
+        // Проверяем не превышен ли лимит
+        if (uploadedCount > maxPhotos) {
+            uploadedCountElement.classList.add('text-danger');
+            uploadedCountElement.classList.remove('text-success');
+        } else {
+            uploadedCountElement.classList.remove('text-danger');
+            uploadedCountElement.classList.add('text-success');
+        }
+    }
+
+    // Функция для обновления счетчика после удаления фотографий
+    function updatePhotosCounterAfterDeletion() {
+        const imagesInput = document.getElementById('id_images');
+        if (imagesInput) {
+            imagesInput.value = ''; // Сбрасываем значение input
+        }
+        updatePhotosCounter();
+    }
+
+    // Валидация типов файлов
+    document.addEventListener('DOMContentLoaded', function() {
+        // Валидация видео
+        const videoInput = document.getElementById('id_video_url');
+        if (videoInput) {
+            videoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Проверяем тип и расширение файла для видео
+                    const validVideoTypes = ['video/mp4', 'video/mov', 'video/avi'];
+                    const validVideoExtensions = ['.mp4', '.mov', '.avi'];
+                    const fileName = file.name.toLowerCase();
+
+                    const isValidType = validVideoTypes.includes(file.type);
+                    const isValidExtension = validVideoExtensions.some(ext => fileName.endsWith(ext));
+
+                    if (!isValidType && !isValidExtension) {
+                        showToast('Неверный формат видео. Разрешены только файлы MP4, MOV, AVI', true);
+                        e.target.value = ''; // Очищаем поле
+                        return;
+                    }
+                }
+            });
+        }
+
+        // Валидация PDF
+        const pdfInput = document.getElementById('id_program_file');
+        if (pdfInput) {
+            pdfInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Проверяем тип и расширение файла для PDF
+                    const fileName = file.name.toLowerCase();
+
+                    if (!fileName.endsWith('.pdf')) {
+                        showToast('Неверный формат файла. Разрешены только PDF файлы', true);
+                        e.target.value = ''; // Очищаем поле
+                        return;
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
