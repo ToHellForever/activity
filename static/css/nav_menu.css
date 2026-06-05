@@ -12,7 +12,7 @@
 
 /* Логотип */
 .logo {
-  font-size: 1.5vw;
+  font-size: 1.5rem;
   font-weight: 500;
   line-height: 1.2;
   margin-right: 60px;
@@ -207,8 +207,8 @@
 .nav-link {
   text-decoration: none;
   font-weight: 500;
-  font-size: 1vw;
-  margin-right: 2.5vw;
+  font-size: 1rem;
+  margin-right: auto;
   white-space: nowrap;
 }
 
@@ -221,15 +221,15 @@
 }
 
 .nav-icon-1 {
-  width: 2vw;
+  width: 2rem;
 }
 
 .nav-icon-2 {
-  width: 1.7vw;
+  width: 1.7rem;
 }
 
 .nav-icon-profile {
-  width: 2vw;
+  width: 2rem;
   display: block;
 }
 
@@ -246,13 +246,13 @@
   color: black;
   text-decoration: none;
   font-weight: 500;
-  font-size: 1vw;
+  font-size: 1rem;
   padding: 5px 10px;
   white-space: nowrap;
 }
 
 .city {
-  font-size: 1vw;
+  font-size: 1rem;
   white-space: nowrap;
   font-weight: 500;
   margin: 0;

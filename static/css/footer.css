@@ -38,8 +38,8 @@
 .footer-header .nav-link {
   text-decoration: none;
   font-weight: 500;
-  font-size: 1vw;
-  margin-right: 2.5vw;
+  font-size: 1rem;
+  margin-right: 2.5rem;
   white-space: nowrap;
 }
 
@@ -60,7 +60,7 @@
 .footer-header .auth-link-container {
   display: flex;
   align-items: center;
-  font-size: 1vw;
+  font-size: 1rem;
   font-weight: 500;
   white-space: nowrap;
   padding: 5px 10px;
@@ -73,7 +73,7 @@
 }
 
 .footer-header .contact-icon {
-  width: 1.5vw;
+  width: 1.5rem;
   height: auto;
 }
 
