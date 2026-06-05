@@ -263,12 +263,24 @@
   text-decoration: none;
   font-weight: 500;
   font-size: 0.9rem;
-  padding: 5px 10px;
+  padding: 5px 5px;
   white-space: nowrap;
 }
 
+.auth-links {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.auth-separator {
+  font-size: 0.9rem;
+  color: black;
+  font-weight: 500;
+}
+
 .city {
-  font-size: 1rem;
+  font-size: 0.9rem;
   white-space: nowrap;
   font-weight: 500;
   margin: 0;

@@ -36,10 +36,18 @@
         </div>
     </div>
         <div class="auth-block">
-            <div class="auth-link-container">
-                <i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></i>
-                <a href="{% url 'login' %}" class="auth-link">Вход / регистрация</a>
-            </div>
+<div class="auth-link-container">
+<i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></i>
+    {% if user.is_authenticated %}
+<a href="{% url 'visitor:dashboard' %}" class="auth-link">Личный кабинет</a>
+    {% else %}
+        <div class="auth-links">
+            <a href="{% url 'login' %}" class="auth-link">Вход</a>
+            <span class="auth-separator">/</span>
+            <a href="{% url 'register' %}" class="auth-link">Регистрация</a>
+        </div>
+    {% endif %}
+</div>
             <div class="city">Новосибирск</div>
         </div>
     <!-- Бургер-меню (показывается на маленьких экранах) -->
@@ -52,14 +60,22 @@
     <div class="burger-menu-content">
             <div class="burger-auth-block">
                 <div class="auth-link-container">
-                    <div style="text-align: center;">
-                        <i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto;"></i>
-                        <a href="#" class="auth-link" style="display: block;">Вход / регистрация</a>
-                    </div>
+<div style="text-align: center;">
+    <i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto;"></i>
+    {% if user.is_authenticated %}
+<a href="{% url 'visitor:dashboard' %}" class="auth-link" style="display: block;">Личный кабинет</a>
+    {% else %}
+        <div class="auth-links" style="display: flex; justify-content: center; gap: 5px;">
+            <a href="{% url 'login' %}" class="auth-link" style="display: block;">Вход</a>
+            <span class="auth-separator" style="display: block;">/</span>
+            <a href="{% url 'register' %}" class="auth-link" style="display: block;">Регистрация</a>
+        </div>
+    {% endif %}
+</div>
                 </div>
                 <div class="city-block">
                     <div style="text-align: center;">
-                        <i><img src="/media/icon/geo-blue.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto;"></i>
+                        <i><img src="/media/icon/geo-blue.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto; margin-bottom: 5px; width: 1.7rem;"></i>
                         <div class="city" style="display: block;">Новосибирск</div>
                     </div>
                 </div>
@@ -75,7 +91,7 @@
             </div>
             <div class="burger-icons">
                 <i><img src="/media/icon/phone.png" alt="" class="nav-icon-1"></i>
-                <i><img src="/media/icon/tg.png" alt="" class="nav-icon-2"></i>
+                <i><img src="/media/icon/tg.png" alt="" class="nav-icon-2" style='margin-top: 2px;'></i>
             </div>
             <div class="burger-footer">
                 <a href="#" class="burger-footer-link">Публичная оферта</a>
