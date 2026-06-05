@@ -92,7 +92,7 @@
                     Укажите, за сколько часов до начала мероприятия можно вернуть билет. По умолчанию: 24 часа.
                 </small>
             {% elif field.name == 'auto_close_sales_hours' %}
-                {{ field }}
+                <input type="number" name="auto_close_sales_hours" id="id_auto_close_sales_hours" value="24" class="form-control">
                 {% if has_free_tickets %}
                     <small class="form-text text-muted">
                         Все билеты бесплатные - опция забронировать без оплаты недоступна.
