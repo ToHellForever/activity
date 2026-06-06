@@ -546,9 +546,7 @@ def create_payment(request, ticket_id):
 
 @csrf_exempt
 def yookassa_webhook(request):
-    """
-    Обработка уведомлений от ЮКассы (вебхуки).
-    """
+    """Обработка уведомлений от ЮКассы (вебхуки)."""
     try:
         # Получение и проверка данных из вебхука
         event_json = json.loads(request.body)
@@ -561,32 +559,39 @@ def yookassa_webhook(request):
                 package_id = metadata["package_id"]
                 user_id = metadata["user_id"]
 
-                # Создаем подписку для пользователя
-                package = EventPackage.objects.get(id=package_id)
-                user = CustomUser.objects.get(id=user_id)
-
-                # Определяем дату окончания подписки
-                if package.is_monthly:
-                    end_date = timezone.now() + timezone.timedelta(days=30)
-                    subscription_type = "monthly"
-                else:
-                    end_date = timezone.now() + timezone.timedelta(days=365)
-                    subscription_type = "one_time"
-
-                # Создаем или обновляем подписку
-                subscription, created = UserPackageSubscription.objects.get_or_create(
-                    user=user,
-                    package=package,
-                    defaults={
-                        "end_date": end_date,
-                        "subscription_type": subscription_type,
-                    }
+                # Используем filter() вместо get()
+                subscriptions = UserPackageSubscription.objects.filter(
+                    user_id=user_id,
+                    package_id=package_id,
+                    is_active=True
                 )
 
-                if not created:
-                    subscription.end_date = end_date
-                    subscription.subscription_type = subscription_type
+                if subscriptions.exists():
+                    # Если подписка уже существует, обновляем её
+                    subscription = subscriptions.first()
+                    subscription.end_date = timezone.now() + timezone.timedelta(days=30 if subscription.package.is_monthly else 365)
                     subscription.save()
+                else:
+                    # Если подписки нет, создаем новую
+                    package = EventPackage.objects.get(id=package_id)
+                    user = CustomUser.objects.get(id=user_id)
+
+                    # Определяем дату окончания подписки
+                    if package.is_monthly:
+                        end_date = timezone.now() + timezone.timedelta(days=30)
+                        subscription_type = "monthly"
+                    else:
+                        end_date = timezone.now() + timezone.timedelta(days=365)
+                        subscription_type = "one_time"
+
+                    # Создаем новую подписку
+                    subscription = UserPackageSubscription.objects.create(
+                        user=user,
+                        package=package,
+                        end_date=end_date,
+                        subscription_type=subscription_type,
+                        is_active=True
+                    )
 
                 # Отправка уведомления на почту
                 send_package_purchase_email(subscription, request)
