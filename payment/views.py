@@ -171,6 +171,73 @@ def create_package_payment(request, package_id):
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
+def create_invoice(request, package_id):
+    """
+    Создание счета для юридических лиц.
+    """
+    import traceback
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+
+    try:
+        package = get_object_or_404(EventPackage, id=package_id)
+        user = request.user
+        admin_email = request.POST.get("admin_email")
+
+        # Проверка, что пользователь авторизован
+        if not user.is_authenticated:
+            return JsonResponse({"error": "Пользователь не авторизован"}, status=403)
+
+        # Проверка, что пакет доступен для покупки
+        if not package:
+            return JsonResponse({"error": "Пакет не найден"}, status=404)
+
+        # Проверка, что указан email администратора
+        if not admin_email:
+            return JsonResponse({"error": "Не указан email администратора"}, status=400)
+
+        # Здесь должна быть логика создания счета для юридического лица
+        # Например, сохранение заявки в базу данных или отправка уведомления администратору
+
+        # Отправка уведомления администратору
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        subject = f"Заявка на выставление счета для пакета {package.name}"
+        message = f"""
+        Пользователь {user.email} запросил выставление счета для покупки пакета {package.name}.
+
+        Детали:
+        - Пакет: {package.name}
+        - Цена: {package.price} RUB
+        - Пользователь: {user.email} ({user.first_name} {user.last_name})
+        - Email для связи: {admin_email}
+
+        Пожалуйста, свяжитесь с пользователем и выставите счет вручную.
+        """
+
+        # Отправка письма администратору
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[admin_email, settings.DEFAULT_FROM_EMAIL],  # Отправляем и администратору, и на основной email
+            fail_silently=False,
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Заявка на выставление счета успешно отправлена администратору",
+                "package_id": package_id,
+            }
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
 
 def create_payment(request, ticket_id):
     """
