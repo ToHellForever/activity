@@ -217,7 +217,8 @@ class UserPackageSubscription(models.Model):
     package = models.ForeignKey(
         EventPackage,
         on_delete=models.CASCADE,
-        verbose_name="Пакет"
+        verbose_name="Пакет",
+        related_name="active_subscriptions"
     )
     start_date = models.DateTimeField(
         auto_now_add=True,
@@ -234,9 +235,25 @@ class UserPackageSubscription(models.Model):
         max_length=20,
         choices=[
             ('monthly', 'Ежемесячная подписка'),
+            ('one_time', 'Разовый пакет'),
         ],
         default='monthly',
         verbose_name="Тип подписки"
+    )
+    scheduled_change_to = models.ForeignKey(
+        EventPackage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Запланированный пакет",
+        help_text="Пакет, на который будет переключена подписка после окончания текущей",
+        related_name="scheduled_subscriptions"
+    )
+    scheduled_change_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата запланированного изменения",
+        help_text="Дата, когда должен вступить в силу запланированный пакет"
     )
 
     class Meta:
@@ -248,10 +265,46 @@ class UserPackageSubscription(models.Model):
 
     def save(self, *args, **kwargs):
         """Обновляем статус активности подписки и дату окончания при сохранении."""
-        self.end_date = timezone.now() + timezone.timedelta(days=30)
+        # Only set end_date automatically for new subscriptions
+        if not self.pk:  # If this is a new subscription
+            if self.subscription_type == 'monthly':
+                self.end_date = timezone.now() + timezone.timedelta(days=30)
+            else:  # one_time
+                self.end_date = timezone.now() + timezone.timedelta(days=365)
+
         if self.end_date < timezone.now():
             self.is_active = False
         super().save(*args, **kwargs)
+
+    def can_change_package(self):
+        """Проверяет, может ли пользователь изменить пакет."""
+        return self.is_active
+
+    def schedule_package_change(self, new_package):
+        """Планирует изменение пакета после окончания текущего."""
+        self.scheduled_change_to = new_package
+        self.scheduled_change_date = self.end_date
+        self.save()
+
+    def apply_scheduled_change(self):
+        """Применяет запланированное изменение пакета."""
+        if self.scheduled_change_to and self.scheduled_change_date <= timezone.now():
+            # Create new subscription with the scheduled package
+            new_subscription = UserPackageSubscription.objects.create(
+                user=self.user,
+                package=self.scheduled_change_to,
+                subscription_type='monthly' if self.scheduled_change_to.is_monthly else 'one_time',
+                is_active=True
+            )
+
+            # Clear scheduled change
+            self.scheduled_change_to = None
+            self.scheduled_change_date = None
+            self.is_active = False
+            self.save()
+
+            return new_subscription
+        return None
 
 class MainTag(models.Model):
     """Модель для основных тегов (категорий тегов)."""

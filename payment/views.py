@@ -140,6 +140,27 @@ def create_package_payment(request, package_id):
         if not package:
             return JsonResponse({"error": "Пакет не найден"}, status=404)
 
+        # Проверяем, есть ли у пользователя активная подписка
+        active_subscription = UserPackageSubscription.objects.filter(
+            user=user, is_active=True
+        ).first()
+
+        if active_subscription:
+            # Если есть активная подписка, предлагаем выбор: изменить сейчас или запланировать
+            return JsonResponse({
+                "has_active_subscription": True,
+                "current_package": {
+                    "id": active_subscription.package.id,
+                    "name": active_subscription.package.name,
+                    "end_date": active_subscription.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                },
+                "new_package": {
+                    "id": package.id,
+                    "name": package.name,
+                    "price": str(package.price)
+                }
+            })
+
         # Определяем цену пакета (в реальном проекте цена должна быть в модели пакета)
         package_price = package.price  # Используем реальную цену пакета
 
@@ -166,6 +187,92 @@ def create_package_payment(request, package_id):
                 "package_id": package_id,
             }
         )
+
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
+def handle_package_change_choice(request):
+    """Обработка выбора пользователя при смене пакета."""
+    import traceback
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        package_id = data.get("package_id")
+        change_type = data.get("change_type")  # "immediate" или "scheduled"
+        user = request.user
+
+        if not user.is_authenticated:
+            return JsonResponse({"error": "Пользователь не авторизован"}, status=403)
+
+        package = get_object_or_404(EventPackage, id=package_id)
+        active_subscription = UserPackageSubscription.objects.filter(
+            user=user, is_active=True
+        ).first()
+
+        if not active_subscription:
+            return JsonResponse({"error": "Активная подписка не найдена"}, status=404)
+
+        if change_type == "immediate":
+            # Немедленная смена пакета - отменяем текущую подписку
+            active_subscription.is_active = False
+            active_subscription.save()
+
+            # Создаем новую подписку с выбранным пакетом
+            new_subscription = UserPackageSubscription.objects.create(
+                user=user,
+                package=package,
+                subscription_type='monthly' if package.is_monthly else 'one_time',
+                is_active=True
+            )
+
+            # Создаем платеж в ЮКассе для новой подписки
+            payment = Payment.create(
+                {
+                    "amount": {"value": str(package.price), "currency": "RUB"},
+                    "confirmation": {
+                        "type": "redirect",
+                        "return_url": request.build_absolute_uri(
+                            f"/payment/package_success/{package_id}/"
+                        ),
+                    },
+                    "capture": True,
+                    "description": f"Оплата пакета {package.name} для пользователя {user.email}",
+                    "metadata": {"package_id": package_id, "user_id": user.id},
+                },
+                uuid.uuid4(),
+            )
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Пакет успешно изменен",
+                "new_subscription": {
+                    "id": new_subscription.id,
+                    "package_name": new_subscription.package.name,
+                    "end_date": new_subscription.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                },
+                "payment_url": payment.confirmation.confirmation_url
+            })
+
+        elif change_type == "scheduled":
+            # Запланированная смена пакета - планируем изменение на дату окончания текущей подписки
+            active_subscription.schedule_package_change(package)
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Изменение пакета запланировано",
+                "scheduled_change": {
+                    "current_package": active_subscription.package.name,
+                    "new_package": package.name,
+                    "change_date": active_subscription.scheduled_change_date.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            })
+
+        else:
+            return JsonResponse({"error": "Неверный тип изменения"}, status=400)
 
     except Exception as e:
         traceback.print_exc()

@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> 
-<style>  
+<style>
     .package-card {
         border: none;
         border-radius: 12px;
@@ -10,6 +10,11 @@
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         overflow: hidden;
         position: relative;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     .package-card.subscribed {
@@ -348,77 +353,258 @@
         }
     }
 
-    // Обработчик отправки формы покупки пакета
-    document.getElementById("buy-package-form").addEventListener("submit", function(e) {
-        e.preventDefault();
+        // Обработчик отправки формы покупки пакета
+        document.getElementById("buy-package-form").addEventListener("submit", function(e) {
+            e.preventDefault();
 
-        const formData = new FormData(this);
-        const packageId = formData.get("package_id");
-        const paymentMethod = formData.get("payment_method");
-        const submitBtn = this.querySelector("button[type='submit']");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Обработка...";
+            const formData = new FormData(this);
+            const packageId = formData.get("package_id");
+            const paymentMethod = formData.get("payment_method");
+            const submitBtn = this.querySelector("button[type='submit']");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Обработка...";
 
-        if (paymentMethod === 'yookassa') {
-            // Для оплаты через ЮКассу
-            fetch(`/payment/create_package_payment/${packageId}/`, {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.payment_url) {
-                    window.location.href = data.payment_url;
-                } else {
-                    alert("Ошибка: " + data.error);
+            if (paymentMethod === 'yookassa') {
+                // Для оплаты через ЮКассу
+                fetch(`/payment/create_package_payment/${packageId}/`, {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else if (data.has_active_subscription) {
+                        // Если есть активная подписка, показываем модальное окно с выбором
+                        showPackageChangeChoiceModal(data);
+                    } else {
+                        alert("Ошибка: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert("Произошла ошибка: " + error);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Купить";
+                });
+            } else if (paymentMethod === 'invoice') {
+                // Для оплаты через счет
+                const adminEmail = formData.get("admin_email");
+                if (!adminEmail) {
+                    alert("Пожалуйста, укажите email администратора для выставления счета");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Купить";
+                    return;
                 }
-            })
-            .catch(error => {
-                alert("Произошла ошибка: " + error);
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Купить";
-            });
-        } else if (paymentMethod === 'invoice') {
-            // Для оплаты через счет
-            const adminEmail = formData.get("admin_email");
-            if (!adminEmail) {
-                alert("Пожалуйста, укажите email администратора для выставления счета");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Купить";
-                return;
+
+                fetch(`/payment/create_invoice/${packageId}/`, {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        alert("Заявка на выставление счета успешно отправлена администратору. Счет будет выставлен в ближайшее время, и вы получите уведомление на указанный email.");
+                        closeBuyPackageModal();
+                        window.location.reload();
+                    } else {
+                        alert("Ошибка: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert("Произошла ошибка: " + error);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Купить";
+                });
             }
+        });
 
-            fetch(`/payment/create_invoice/${packageId}/`, {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                },
+    // Функция для показа модального окна выбора способа смены пакета
+    function showPackageChangeChoiceModal(data) {
+        // Закрываем текущее модальное окно покупки
+        closeBuyPackageModal();
+
+        // Создаем модальное окно для выбора способа смены пакета
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.zIndex = '2000';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '8px';
+        modalContent.style.width = '500px';
+        modalContent.style.maxWidth = '90%';
+
+        modalContent.innerHTML = `
+            <h3>Выбор способа смены пакета</h3>
+            <p>У вас уже есть активная подписка на пакет <strong>${data.current_package.name}</strong>, которая действует до <strong>${data.current_package.end_date}</strong>.</p>
+            <p>Вы можете:</p>
+
+            <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
+                <button id="immediate-change-btn" style="padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                    Изменить пакет сразу
+                </button>
+                <p style="text-align: center; color: #666;">или</p>
+                <button id="scheduled-change-btn" style="padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                    Запланировать смену пакета после окончания текущей подписки
+                </button>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                    <strong>Новый пакет:</strong> ${data.new_package.name}<br>
+                    <strong>Стоимость:</strong> ${data.new_package.price} ₽
+                </p>
+                <button id="cancel-package-change-btn" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Отмена
+                </button>
+            </div>
+        `;
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Обработчики кнопок
+        document.getElementById('immediate-change-btn').addEventListener('click', function() {
+            handlePackageChangeSelection(data.new_package.id, 'immediate');
+            document.body.removeChild(modal);
+        });
+
+        document.getElementById('scheduled-change-btn').addEventListener('click', function() {
+            handlePackageChangeSelection(data.new_package.id, 'scheduled');
+            document.body.removeChild(modal);
+        });
+
+        document.getElementById('cancel-package-change-btn').addEventListener('click', function() {
+            document.body.removeChild(modal);
+        });
+    }
+
+    // Функция для обработки выбора способа смены пакета
+    function handlePackageChangeSelection(packageId, changeType) {
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.zIndex = '2000';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '8px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+
+        modalContent.innerHTML = `
+            <h3>Обработка запроса</h3>
+            <p>Пожалуйста, подождите, идет обработка вашего запроса...</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4CAF50; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+            </div>
+        `;
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Отправляем запрос на сервер
+        fetch('/payment/handle_package_change_choice/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+                package_id: packageId,
+                change_type: changeType
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    alert("Заявка на выставление счета успешно отправлена администратору. Счет будет выставлен в ближайшее время, и вы получите уведомление на указанный email.");
-                    closeBuyPackageModal();
-                    window.location.reload();
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.body.removeChild(modal);
+
+            if (data.status === 'success') {
+                if (changeType === 'immediate') {
+                    // Перенаправляем на страницу оплаты, если выбран способ оплаты через ЮКассу
+                    if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else {
+                        showSuccessModal('Пакет успешно изменен', `Теперь у вас активен пакет ${data.new_subscription.package_name} до ${data.new_subscription.end_date}`);
+                    }
                 } else {
-                    alert("Ошибка: " + data.error);
+                    showSuccessModal('Изменение пакета запланировано', `После окончания текущей подписки будет активирован пакет ${data.scheduled_change.new_package} (${data.scheduled_change.change_date})`);
                 }
-            })
-            .catch(error => {
-                alert("Произошла ошибка: " + error);
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Купить";
-            });
-        }
-    });
+            } else {
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            document.body.removeChild(modal);
+            alert('Произошла ошибка: ' + error);
+        });
+    }
+
+    // Функция для показа модального окна с успехом
+    function showSuccessModal(title, message) {
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.zIndex = '2000';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '8px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.textAlign = 'center';
+
+        modalContent.innerHTML = `
+            <h3 style="color: #4CAF50;">✓ ${title}</h3>
+            <p style="margin: 20px 0;">${message}</p>
+            <button id="success-ok-btn" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                Хорошо
+            </button>
+        `;
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        document.getElementById('success-ok-btn').addEventListener('click', function() {
+            document.body.removeChild(modal);
+            window.location.reload();
+        });
+    }
 
     // Инициализация обработчика изменения пакета
     document.addEventListener('DOMContentLoaded', function() {

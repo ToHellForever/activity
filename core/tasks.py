@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Celery задачи для мониторинга и управления системой.
-"""
 
 from celery import shared_task
 from django.db.models import Count
@@ -15,7 +11,6 @@ from django.conf import settings
 from core.models import Event, Ticket
 from django.core.management import call_command
 logger = logging.getLogger(__name__)
-
 
 @shared_task
 def check_race_conditions_task():
@@ -33,7 +28,6 @@ def check_race_conditions_task():
     except Exception as e:
         logger.error(f"Error during scheduled race condition check: {str(e)}")
         return f"Error: {str(e)}"
-
 
 @shared_task
 def monitor_ticket_consistency():
@@ -88,7 +82,6 @@ def monitor_ticket_consistency():
         logger.error(f"Ticket consistency monitoring error: {str(e)}")
         return f"Error: {str(e)}"
 
-
 @shared_task
 def clean_up_inconsistent_tickets():
     """
@@ -119,14 +112,12 @@ def clean_up_inconsistent_tickets():
         logger.error(f"Ticket data cleanup error: {str(e)}")
         return f"Error: {str(e)}"
 
-
 def wait_for_file(file_path, max_attempts=20, delay=1):
     for _ in range(max_attempts):
         if os.path.exists(file_path):
             return True
         time.sleep(delay)
     return False
-
 
 @shared_task(bind=True)
 def process_video_task(
@@ -235,7 +226,6 @@ def process_video_task(
         logger.error(f"Исключение при обработке видео: {str(e)}")
         return f"Исключение при обработке видео: {str(e)}"
 
-
 @shared_task
 def close_event_sales():
     """
@@ -262,7 +252,6 @@ def close_event_sales():
                 )
 
     return f"Проверка и закрытие продаж выполнены: {now}"
-
 
 @shared_task
 def check_unpaid_tickets():
@@ -317,7 +306,7 @@ def check_reserved_tickets():
         if 48 >= time_until_event > 47:
             send_reservation_reminder(order, 48)
             logger.info(f"Отправлено напоминание за 48 часов для заказа {order.id}")
-            
+
         # Отправляем напоминание за 24 часа
         elif 24 >= time_until_event > 23:
             send_reservation_reminder(order, 24)
@@ -341,7 +330,6 @@ def check_reserved_tickets():
             )
 
     return f"Проверка забронированных билетов выполнена: {now}"
-
 
 def send_reservation_reminder(order, hours_until_event):
     """Отправляет уведомление о необходимости оплаты забронированного билета."""
@@ -378,7 +366,6 @@ def send_reservation_reminder(order, hours_until_event):
         html_message=html_message,
     )
 
-
 def send_reservation_cancelation(order):
     """Отправляет уведомление об отмене бронирования из-за просрочки оплаты."""
     user_email = order.participant_data.get("email")
@@ -405,7 +392,6 @@ def send_reservation_cancelation(order):
         html_message=html_message,
     )
 
-
 def generate_payment_link(order, request=None):
     """Генерирует ссылку для оплаты забронированного билета."""
     from django.urls import reverse
@@ -413,7 +399,6 @@ def generate_payment_link(order, request=None):
 
     # Используем URL покупки билета без указания event_id
     url = reverse("buy_ticket", args=[order.ticket.event.id])
-
 
     # Добавляем параметры для идентификации заказа
     payment_url = f"{url}?reserve_order={order.id}"
@@ -429,3 +414,41 @@ def generate_payment_link(order, request=None):
     full_url = f"http://{current_site.domain}{payment_url}"
 
     return full_url
+
+@shared_task
+def check_and_apply_scheduled_package_changes():
+    """
+    Задача Celery для проверки и применения запланированных изменений пакетов.
+    Выполняется периодически для проверки, не настало ли время смены пакета.
+    """
+    from core.models import UserPackageSubscription
+    from django.utils import timezone
+
+    logger.info("Starting scheduled package change check...")
+
+    try:
+        now = timezone.now()
+        subscriptions = UserPackageSubscription.objects.filter(
+            scheduled_change_to__isnull=False,
+            scheduled_change_date__lte=now,
+            is_active=True
+        )
+
+        applied_changes = 0
+
+        for subscription in subscriptions:
+            try:
+                new_subscription = subscription.apply_scheduled_change()
+                if new_subscription:
+                    applied_changes += 1
+                    logger.info(f"Applied scheduled package change for user {subscription.user.email}: {subscription.package.name} -> {new_subscription.package.name}")
+            except Exception as e:
+                logger.error(f"Error applying scheduled package change for subscription {subscription.id}: {str(e)}")
+                continue
+
+        logger.info(f"Scheduled package change check completed. Applied {applied_changes} changes.")
+        return f"Success: Applied {applied_changes} scheduled package changes"
+
+    except Exception as e:
+        logger.error(f"Error during scheduled package change check: {str(e)}")
+        return f"Error: {str(e)}"
