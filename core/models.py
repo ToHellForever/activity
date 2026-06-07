@@ -76,15 +76,27 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
     )
 
     def save(self, *args, **kwargs):
-        # Проверяем замену видео-визитки
+        # Проверяем замену файлов
         if self.pk:
             old = CustomUser.objects.get(pk=self.pk)
+
+            # Удаляем старое видео-визитку, если оно заменено
             if old.video_business_card != self.video_business_card:
                 self.delete_old_video(
                     "video_business_card", "processed_video_business_card_hash"
                 )
 
+            # Удаляем старое лого, если оно заменено
+            if old.logo != self.logo:
+                self.delete_file_field("logo")
+
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Удаляет все связанные файлы при удалении пользователя."""
+        self.delete_file_field("logo")
+        self.delete_file_field("video_business_card")
+        super().delete(*args, **kwargs)
 
 User = get_user_model()
 
@@ -464,12 +476,22 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Проверяем замену видео мероприятия
+        # Проверяем замену файлов
         if self.pk:
             old = Event.objects.get(pk=self.pk)
+
+            # Удаляем старое видео, если оно заменено
             if old.video_url != self.video_url:
                 self.delete_old_video("video_url", "processed_video_url_hash")
                 self.video_processing_status = "pending"
+
+            # Удаляем старое изображение, если оно заменено
+            if old.image != self.image:
+                self.delete_file_field("image")
+
+            # Удаляем старую программу, если она заменена
+            if old.program_file != self.program_file:
+                self.delete_file_field("program_file")
 
         super().save(*args, **kwargs)
 
@@ -513,6 +535,13 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         Возвращает крайний срок возврата билета.
         """
         return self.date_time - timezone.timedelta(hours=self.refund_deadline_hours)
+
+    def delete(self, *args, **kwargs):
+        """Удаляет все связанные файлы при удалении мероприятия."""
+        self.delete_file_field("image")
+        self.delete_file_field("video_url")
+        self.delete_file_field("program_file")
+        super().delete(*args, **kwargs)
 
     class Meta:
         verbose_name = "Мероприятие"
@@ -963,6 +992,11 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
             from django.conf import settings
             watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
             self.add_watermark_to_image_field("image", watermark_path)
+
+    def delete(self, *args, **kwargs):
+        """Удаляет файл изображения при удалении записи."""
+        self.delete_file_field("image")
+        super().delete(*args, **kwargs)
 
     class Meta:
         verbose_name = "Фото мероприятия"

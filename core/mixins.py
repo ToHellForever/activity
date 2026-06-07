@@ -46,6 +46,19 @@ class VideoWatermarkMixin:
                 print(f"Ошибка удаления файла: {e}")
         setattr(self, hash_field_name, None)
 
+    def delete_file_field(self, field_name):
+        """
+        Удаляет файл, связанный с указанным полем модели.
+        Args:
+            field_name: имя поля модели, содержащего файл (FileField или ImageField).
+        """
+        file_field = getattr(self, field_name)
+        if file_field and os.path.exists(file_field.path):
+            try:
+                os.remove(file_field.path)
+            except Exception as e:
+                print(f"Ошибка удаления файла {file_field.path}: {e}")
+
 class ImageWatermarkMixin:
     """Миксин для добавления водяного знака на изображения."""
 
