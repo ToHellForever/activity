@@ -76,6 +76,7 @@
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
 
     {% for field in form %}
         {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' and field.name != 'package' %}
@@ -657,6 +658,12 @@ document.querySelectorAll('.remove-image-btn').forEach(button => {
         .then(data => {
             if (data.status === 'success') {
                 console.log('Фото успешно удалено с сервера');
+
+                // Добавляем ID удалённого фото в скрытое поле
+                const deletedImageIdsInput = document.getElementById('deleted_image_ids');
+                const currentValue = deletedImageIdsInput.value;
+                deletedImageIdsInput.value = currentValue ? currentValue + ',' + imageId : imageId;
+
                 container.remove();
                 updatePhotosCounterAfterDeletion();
                 console.log('Счётчик обновлён после удаления фото');
@@ -734,6 +741,11 @@ document.getElementById('images-preview-container').addEventListener('click', fu
     // Функция для отображения превью нескольких фото
     function previewMultipleImages(event, containerId) {
         const container = document.getElementById(containerId);
+
+        // Удаляем все превью новых фотографий, чтобы избежать дублирования
+        const existingPreviews = container.querySelectorAll('.media-preview[data-preview="true"]');
+        existingPreviews.forEach(preview => preview.remove());
+
         const files = event.target.files;
 
         for (let i = 0; i < files.length; i++) {
@@ -743,6 +755,7 @@ document.getElementById('images-preview-container').addEventListener('click', fu
             reader.onload = function(e) {
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'media-preview position-relative';
+                previewDiv.dataset.preview = 'true'; // Маркер для новых превью
 
                 const img = document.createElement('img');
                 img.src = e.target.result;
@@ -764,9 +777,6 @@ document.getElementById('images-preview-container').addEventListener('click', fu
                 previewDiv.appendChild(img);
                 previewDiv.appendChild(removeBtn);
                 container.appendChild(previewDiv);
-
-                // Обновляем счетчик после добавления превью
-                updatePhotosCounter();
             }
 
             reader.readAsDataURL(file);
@@ -796,12 +806,10 @@ function updatePhotosCounter() {
     }
 
     // Считаем дополнительные фото
-    if (imagesInput.files.length > 0) {
-        uploadedCount += imagesInput.files.length;
-    } else {
-        // Считаем уже загруженные дополнительные фото
-        uploadedCount += document.querySelectorAll('#images-preview-container .media-preview').length;
-    }
+    const existingImagesCount = document.querySelectorAll('#images-preview-container .media-preview').length;
+    const newImagesCount = imagesInput.files.length;
+
+    uploadedCount += existingImagesCount + newImagesCount;
 
     // Обновляем счетчик
     uploadedCountElement.textContent = uploadedCount;

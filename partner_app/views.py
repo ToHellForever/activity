@@ -589,12 +589,22 @@ def edit_event(request, event_id):
                 event.image = main_image
                 event.save(update_fields=["image"])
 
-            # Дополнительные фото (input images - list): заменяем только если реально пришли
+            # Удаляем фотографии, которые были отмечены для удаления
+            deleted_image_ids = request.POST.get("deleted_image_ids", "")
+            if deleted_image_ids:
+                from core.models import EventImage
+                for image_id in deleted_image_ids.split(","):
+                    if image_id:
+                        try:
+                            image = EventImage.objects.get(id=int(image_id), event=event)
+                            image.delete()
+                        except EventImage.DoesNotExist:
+                            pass
+
+            # Дополнительные фото (input images - list): добавляем новые к существующим
             images = request.FILES.getlist("images")
             if images:
                 from core.models import EventImage
-
-                event.images.all().delete()
                 for image in images:
                     EventImage.objects.create(event=event, image=image)
 
