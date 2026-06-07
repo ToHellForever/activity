@@ -1,7 +1,6 @@
 from django.utils import timezone
 from django.db.models import Sum, F, DecimalField
 from django.db.models.functions import Coalesce
-from core.models import Order, Event, PayoutRequest
 import os
 from django.core.files import File
 from PIL import Image, ImageDraw, ImageFont
@@ -29,6 +28,9 @@ def generate_sales_register(partner, start_date, end_date):
             - net_amount: Чистая сумма к выплате (total_sales - total_commission - total_refunds).
             - orders: Список заказов с детализацией.
     """
+    # Импортируем модели локально, чтобы избежать циклического импорта
+    from core.models import Order, Event, PayoutRequest
+
     # Получаем все мероприятия партнёра
     partner_events = Event.objects.filter(organizer=partner)
 

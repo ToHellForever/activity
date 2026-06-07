@@ -5,9 +5,8 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
 from django.utils import timezone
-from core.mixins import VideoWatermarkMixin
+from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
 from core.validators import validate_video_duration, compress_video
-
 try:
     from core.redis_utils import get_lock
 
@@ -16,33 +15,6 @@ except ImportError:
     REDIS_AVAILABLE = False
 from django.utils import timezone
 
-class VideoWatermarkMixin:
-    """Миксин для обработки видео с водяными знаками."""
-
-    def _get_video_hash(self, video_field):
-        if not video_field or not video_field.path:
-            return None
-        try:
-            with open(video_field.path, "rb") as f:
-                import hashlib
-
-                return hashlib.md5(f.read()).hexdigest()
-        except FileNotFoundError:
-            return None
-
-    def _should_process_video(self, video_field, hash_field):
-        current_hash = self._get_video_hash(video_field)
-        return current_hash != hash_field
-
-    def delete_old_video(self, video_field_name, hash_field_name):
-        """Удаляет старый файл видео и обнуляет хэш."""
-        video_field = getattr(self, video_field_name)
-        if video_field and os.path.exists(video_field.path):
-            try:
-                os.remove(video_field.path)
-            except Exception as e:
-                print(f"Ошибка удаления файла: {e}")
-        setattr(self, hash_field_name, None)
 
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     USER_TYPE_CHOICES = (
@@ -340,7 +312,7 @@ class Tag(models.Model):
         verbose_name_plural = "Подтеги"
         ordering = ["main_tag__name", "name"]
 
-class Event(models.Model, VideoWatermarkMixin):
+class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     """Модель для мероприятия."""
 
     STATUS_CHOICES = [
@@ -534,9 +506,7 @@ class Event(models.Model, VideoWatermarkMixin):
 
         # Добавляем водяной знак на изображение
         if self.image:
-            image_path = self.image.path
-            from core.utils import add_watermark_to_image
-            add_watermark_to_image(image_path, actual_watermark_path, image_path)
+            self.add_watermark_to_image_field("image", actual_watermark_path)
 
     def get_refund_deadline(self):
         """
@@ -966,7 +936,7 @@ class EmailVerificationCode(models.Model):
         verbose_name = "Код подтверждения почты"
         verbose_name_plural = "Коды подтверждения почты"
 
-class EventImage(VideoWatermarkMixin, models.Model):
+class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     """
     Модель для хранения фотографий мероприятий.
     """
@@ -991,13 +961,8 @@ class EventImage(VideoWatermarkMixin, models.Model):
         # Обработка водяного знака для изображения
         if self.image:
             from django.conf import settings
-            from core.utils import add_watermark_to_image
-
             watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
-
-            if os.path.exists(watermark_path):
-                image_path = self.image.path
-                add_watermark_to_image(image_path, watermark_path, image_path)
+            self.add_watermark_to_image_field("image", watermark_path)
 
     class Meta:
         verbose_name = "Фото мероприятия"
