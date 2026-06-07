@@ -163,6 +163,39 @@ def add_watermark_to_image(
         return False
 
 
+def compress_image(
+    input_image_path,
+    output_image_path=None,
+    quality=85,
+    max_size=(800, 600),
+):
+    """
+    Сжимает изображение с заданным качеством и максимальным размером.
+
+    Args:
+        input_image_path: путь к исходному изображению.
+        output_image_path: путь для сохранения результата. Если None, перезаписывает исходное изображение.
+        quality: качество сжатия (0-100). По умолчанию 85.
+        max_size: максимальный размер изображения (ширина, высота). По умолчанию (800, 600).
+    """
+    try:
+        image = Image.open(input_image_path)
+
+        # Изменяем размер, если изображение больше заданного
+        if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
+            image.thumbnail(max_size, Image.LANCZOS)
+
+        # Сохраняем с заданным качеством
+        if output_image_path:
+            image.save(output_image_path, quality=quality, optimize=True)
+        else:
+            image.save(input_image_path, quality=quality, optimize=True)
+
+        return True
+    except Exception as e:
+        print(f"Ошибка при сжатии изображения: {e}")
+        return False
+
 def add_watermark_to_video(
     input_video_path,
     watermark_image_path,
