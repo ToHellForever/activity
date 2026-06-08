@@ -626,59 +626,90 @@
         // Инициализация счетчика загруженных фото
         updatePhotosCounter();
 
-        // Обработчики для обновления счетчика при изменении файлов
-        document.getElementById('id_image').addEventListener('change', updatePhotosCounter);
-        document.getElementById('id_images').addEventListener('change', updatePhotosCounter);
-
-        // Обработчик удаления фотографий с сервера
-        document.querySelectorAll('.remove-image-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const imageId = this.dataset.imageId;
-                const container = this.closest('.media-preview');
-
-                console.log('Нажата кнопка удаления для фото с ID:', imageId);
-
-                // Удаляем фотографию через AJAX
-                fetch(`/partner/remove_event_image/${imageId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Фото успешно удалено с сервера');
-
-                        // Добавляем ID удалённого фото в скрытое поле
-                        const deletedImageIdsInput = document.getElementById('deleted_image_ids');
-                        const currentValue = deletedImageIdsInput.value;
-                        deletedImageIdsInput.value = currentValue ? currentValue + ',' + imageId : imageId;
-
-                        container.remove();
-                        updatePhotosCounterAfterDeletion();
-                        console.log('Счётчик обновлён после удаления фото');
-                    } else {
-                        showToast('Ошибка при удалении фотографии: ' + data.message, true);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                    showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
-                });
-            });
+        // Обработчик загрузки основного фото
+        document.getElementById('id_image').addEventListener('change', function(e) {
+            previewImage(e, 'main-image-preview-container', true);
+            updatePhotosCounter();
         });
 
-        // Обработчик удаления фотографий из превью (до загрузки)
+        // Обработчик загрузки дополнительных фото
+        document.getElementById('id_images').addEventListener('change', function(e) {
+            previewMultipleImages(e, 'images-preview-container');
+            updatePhotosCounter();
+        });
+
+// Обработчик удаления фотографий
+document.querySelectorAll('.remove-image-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const imageId = this.dataset.imageId;
+        const container = this.closest('.media-preview');
+
+        console.log('Нажата кнопка удаления для фото с ID:', imageId);
+
+        // Удаляем фотографию через AJAX
+        fetch(`/partner/remove_event_image/${imageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Фото успешно удалено с сервера');
+
+                // Добавляем ID удалённого фото в скрытое поле
+                const deletedImageIdsInput = document.getElementById('deleted_image_ids');
+                const currentValue = deletedImageIdsInput.value;
+                deletedImageIdsInput.value = currentValue ? currentValue + ',' + imageId : imageId;
+
+                container.remove();
+                updatePhotosCounterAfterDeletion();
+                console.log('Счётчик обновлён после удаления фото');
+            } else {
+                showToast('Ошибка при удалении фотографии: ' + data.message, true);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
+        });
+    });
+});
+
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.querySelectorAll('#images-preview-container .media-preview button').forEach(button => {
+    button.addEventListener('click', function() {
+        const container = this.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    });
+});
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.getElementById('images-preview-container').addEventListener('click', function(e) {
+    if (e.target && e.target.dataset.preview === 'true') {
+        const container = e.target.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    }
+});
+
+        // Делегирование событий для динамически созданных кнопок удаления
         document.getElementById('images-preview-container').addEventListener('click', function(e) {
             if (e.target && e.target.dataset.preview === 'true') {
                 const container = e.target.closest('.media-preview');
@@ -688,7 +719,81 @@
         });
     });
 
-    // Функции превью изображений удалены, так как они теперь реализованы в custom_media.js
+    // Функция для отображения превью основного фото
+    function previewImage(event, containerId, isMain) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'media-preview position-relative';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = isMain ? '200px' : '150px';
+                img.style.maxHeight = isMain ? '200px' : '150px';
+                img.style.borderRadius = '4px';
+
+                previewDiv.appendChild(img);
+                container.appendChild(previewDiv);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Функция для отображения превью нескольких фото
+    function previewMultipleImages(event, containerId) {
+        const container = document.getElementById(containerId);
+
+        // Удаляем все превью новых фотографий, чтобы избежать дублирования
+        const existingPreviews = container.querySelectorAll('.media-preview[data-preview="true"]');
+        existingPreviews.forEach(preview => preview.remove());
+
+        const files = event.target.files;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'media-preview position-relative';
+                previewDiv.dataset.preview = 'true'; // Маркер для новых превью
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '150px';
+                img.style.maxHeight = '150px';
+                img.style.borderRadius = '4px';
+
+                // Кнопка удаления для превью (до загрузки)
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1';
+                removeBtn.style.width = '24px';
+                removeBtn.style.height = '24px';
+                removeBtn.style.padding = '0';
+                removeBtn.style.lineHeight = '1';
+                removeBtn.textContent = '×';
+                removeBtn.dataset.preview = 'true'; // Маркер для динамических кнопок
+
+                previewDiv.appendChild(img);
+                previewDiv.appendChild(removeBtn);
+                container.appendChild(previewDiv);
+            }
+
+            reader.readAsDataURL(file);
+        }
+
+        // Обновляем счетчик после добавления всех превью
+        updatePhotosCounter();
+    }
+
 
 // Функция для обновления счетчика загруженных фото
 function updatePhotosCounter() {
