@@ -1,21 +1,31 @@
 // Функция для инициализации обработчиков медиафайлов
 function initMediaHandlers() {
-    // Обработчики для кнопок удаления медиафайлов
+// Обработчики для кнопок удаления медиафайлов
     document.querySelectorAll('.remove-media-btn').forEach(button => {
         button.addEventListener('click', function() {
             const mediaId = this.getAttribute('data-media-id');
             const mediaType = this.getAttribute('data-media-type');
-            const mediaContainer = this.closest('.media-preview-container');
-            
+            const mediaContainer = this.closest('.media-preview');
+
+            // Если это новый файл, который ещё не загружен на сервер, просто удаляем превью
+            if (mediaId === 'new') {
+                mediaContainer.remove();
+                const hiddenInput = document.querySelector(`#id_${mediaType}`);
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
+                return;
+            }
+
             // Удаление через AJAX
             let url = '';
             if (mediaType === 'program_file') {
-                url = `/partner/remove_media/program_file/${mediaId}/`;
+                url = `/partner/remove_event_program_file/${mediaId}/`;
             } else if (mediaType === 'video_url') {
-                url = `/partner/remove_media/video_url/${mediaId}/`;
+                url = `/partner/remove_event_video/${mediaId}/`;
             } else if (mediaType === 'image') {
-                // Для основного изображения используем другой URL
-                const imageId = document.querySelector('.remove-image-btn')?.getAttribute('data-image-id');
+                // Для дополнительных изображений используем другой URL
+                const imageId = this.getAttribute('data-image-id');
                 if (imageId) {
                     url = `/partner/remove_event_image/${imageId}/`;
                 }
@@ -38,6 +48,13 @@ function initMediaHandlers() {
             })
             .then(response => {
                 if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Ошибка при удалении файла');
+                }
+            })
+            .then(data => {
+                if (data.status === 'success') {
                     // Удаляем контейнер с превью
                     mediaContainer.remove();
                     // Обновляем скрытое поле, чтобы удалить ссылку на файл
@@ -46,12 +63,12 @@ function initMediaHandlers() {
                         hiddenInput.value = '';
                     }
                 } else {
-                    alert('Ошибка при удалении файла');
+                    alert('Ошибка при удалении файла: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Ошибка:', error);
-                alert('Ошибка при удалении файла');
+                alert('Ошибка при удалении файла: ' + error.message);
             });
         });
     });
