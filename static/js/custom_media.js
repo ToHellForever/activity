@@ -13,7 +13,7 @@ async function checkVideoDuration(file) {
             // Длительность видео в секундах
             const duration = video.duration;
             // Максимальная длительность - 5 минут (300 секунд)
-            const maxDuration = 310;
+            const maxDuration = 300;
 
             if (duration > maxDuration) {
                 resolve(false);
@@ -32,15 +32,27 @@ async function checkVideoDuration(file) {
     });
 }
 
+// Флаг для отслеживания инициализации обработчиков
+let mediaHandlersInitialized = false;
+
 // Функция для инициализации обработчиков медиафайлов
 function initMediaHandlers() {
-// Обработчики для кнопок удаления медиафайлов
-    document.querySelectorAll('.remove-media-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const mediaId = this.getAttribute('data-media-id');
-            const eventId = this.getAttribute('data-event-id');
-            const mediaType = this.getAttribute('data-media-type');
-            const mediaContainer = this.closest('.media-preview');
+    // Если обработчики уже инициализированы, выходим
+    if (mediaHandlersInitialized) {
+        return;
+    }
+
+    // Устанавливаем флаг, что обработчики инициализированы
+    mediaHandlersInitialized = true;
+
+    // Обработчики для кнопок удаления медиафайлов
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-media-btn')) {
+            const button = e.target;
+            const mediaId = button.getAttribute('data-media-id');
+            const eventId = button.getAttribute('data-event-id');
+            const mediaType = button.getAttribute('data-media-type');
+            const mediaContainer = button.closest('.media-preview');
 
             // Если это новый файл, который ещё не загружен на сервер, просто удаляем превью
             if (mediaId === 'new' || !eventId) {
@@ -60,7 +72,7 @@ function initMediaHandlers() {
                 url = `/partner/remove_media/video_url/${eventId}/`;
             } else if (mediaType === 'image') {
                 // Для дополнительных изображений используем другой URL
-                const imageId = this.getAttribute('data-image-id');
+                const imageId = button.getAttribute('data-image-id');
                 if (imageId) {
                     url = `/partner/remove_event_image/${imageId}/`;
                 } else {
@@ -100,29 +112,33 @@ function initMediaHandlers() {
                         hiddenInput.value = '';
                     }
                 } else {
-                    alert('Ошибка при удалении файла: ' + data.message);
+                    showToast('Ошибка при удалении файла: ' + data.message, true);
                 }
             })
             .catch(error => {
                 console.error('Ошибка:', error);
-                alert('Ошибка при удалении файла: ' + error.message);
+                showToast('Ошибка при удалении файла: ' + error.message, true);
             });
-        });
+        }
     });
 
     // Обработчики для кнопок загрузки новых файлов
-    document.querySelectorAll('.custom-media-upload-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const mediaType = this.getAttribute('data-media-type');
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('custom-media-upload-btn')) {
+            const button = e.target;
+            const mediaType = button.getAttribute('data-media-type');
             const fileInput = document.querySelector(`#id_${mediaType}`);
-            fileInput.click();
-        });
+            if (fileInput) {
+                fileInput.click();
+            }
+        }
     });
 
     // Обработчики для изменения файлов
-    document.querySelectorAll('.custom-media-input').forEach(input => {
-        input.addEventListener('change', async function() {
-            const mediaType = this.getAttribute('data-media-type');
+    document.addEventListener('change', async function(e) {
+        if (e.target && e.target.classList.contains('custom-media-input')) {
+            const input = e.target;
+            const mediaType = input.getAttribute('data-media-type');
             const previewContainer = document.querySelector(`#${mediaType}-preview-container`);
 
             // Очищаем предыдущие ошибки
@@ -132,8 +148,8 @@ function initMediaHandlers() {
             }
 
             // Валидация файла перед показом превью
-            if (this.files && this.files[0]) {
-                const file = this.files[0];
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
                 let isValid = true;
                 let errorMessage = '';
 
@@ -184,7 +200,7 @@ function initMediaHandlers() {
                 // Если файл не прошел валидацию
                 if (!isValid) {
                     showToast(errorMessage, true);
-                    this.value = ''; // Очищаем поле
+                    input.value = ''; // Очищаем поле
 
                     // Показываем ошибку под полем
                     if (errorContainer) {
@@ -211,14 +227,12 @@ function initMediaHandlers() {
                                     </button>
                                 </div>
                             `;
-                            // Добавляем обработчик для новой кнопки удаления
-                            initMediaHandlers();
                         };
                         reader.readAsDataURL(file);
                     }
                     else if (mediaType === 'images') {
                         // Для дополнительных изображений показываем превью картинок
-                        const files = this.files;
+                        const files = input.files;
                         previewContainer.innerHTML = ''; // Очищаем предыдущие превью
 
                         for (let i = 0; i < files.length; i++) {
@@ -246,13 +260,12 @@ function initMediaHandlers() {
                                 removeBtn.style.lineHeight = '1';
                                 removeBtn.textContent = '×';
                                 removeBtn.dataset.preview = 'true';
+                                removeBtn.dataset.mediaType = mediaType;
+                                removeBtn.dataset.mediaId = 'new';
 
                                 previewDiv.appendChild(img);
                                 previewDiv.appendChild(removeBtn);
                                 previewContainer.appendChild(previewDiv);
-
-                                // Добавляем обработчик для новой кнопки удаления
-                                initMediaHandlers();
                             };
                             reader.readAsDataURL(file);
                         }
@@ -272,8 +285,6 @@ function initMediaHandlers() {
                                     </button>
                                 </div>
                             `;
-                            // Добавляем обработчик для новой кнопки удаления
-                            initMediaHandlers();
                         };
                         reader.readAsDataURL(file);
                     }
@@ -287,8 +298,6 @@ function initMediaHandlers() {
                                 </button>
                             </div>
                         `;
-                        // Добавляем обработчик для новой кнопки удаления
-                        initMediaHandlers();
                     }
                 }
             } else {
@@ -297,7 +306,7 @@ function initMediaHandlers() {
                     previewContainer.innerHTML = '';
                 }
             }
-        });
+        }
     });
 }
 
@@ -330,9 +339,6 @@ function validateMediaFilesBeforeSubmit() {
                     if (!isValidType && !isValidExtension) {
                         isValid = false;
                         errorMessage = 'Неверный формат видео. Разрешены только файлы MP4, MOV, AVI';
-                    } else {
-                        // Проверка длительности видео не нужна здесь, так как она уже была проверена при загрузке
-                        // Но если нужно, можно добавить синхронную проверку
                     }
                 }
                 else if (mediaType === 'program_file') {
