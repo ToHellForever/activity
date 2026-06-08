@@ -13,7 +13,7 @@ async function checkVideoDuration(file) {
             // Длительность видео в секундах
             const duration = video.duration;
             // Максимальная длительность - 5 минут (300 секунд)
-            const maxDuration = 300;
+            const maxDuration = 310;
 
             if (duration > maxDuration) {
                 resolve(false);
