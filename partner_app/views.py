@@ -201,9 +201,70 @@ def create_event(request):
                         },
                     )
 
-            # Проверяем ограничения пакета на количество фотографий
+            # Проверяем типы загружаемых изображений
             main_image = request.FILES.get("image")
             additional_images = request.FILES.getlist("images")
+
+            # Валидация основного изображения
+            if main_image:
+                valid_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                if not any(main_image.name.lower().endswith(ext) for ext in valid_image_extensions):
+                    messages.error(
+                        request,
+                        "Неверный формат основного изображения. Разрешены только JPG, PNG, GIF, WEBP"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": False,
+                            "ticket_data": [
+                                {"name": name, "price": price, "quantity": quantity}
+                                for name, price, quantity in zip(
+                                    request.POST.getlist("ticket_name[]"),
+                                    request.POST.getlist("ticket_price[]"),
+                                    request.POST.getlist("ticket_quantity[]"),
+                                )
+                                if name and price and quantity
+                            ],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            # Валидация дополнительных изображений
+            if additional_images:
+                valid_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                for image in additional_images:
+                    if not any(image.name.lower().endswith(ext) for ext in valid_image_extensions):
+                        messages.error(
+                            request,
+                            "Неверный формат дополнительного изображения. Разрешены только JPG, PNG, GIF, WEBP"
+                        )
+                        return render(
+                            request,
+                            "partner/event_form.html",
+                            {
+                                "form": form,
+                                "is_edit": False,
+                                "ticket_data": [
+                                    {"name": name, "price": price, "quantity": quantity}
+                                    for name, price, quantity in zip(
+                                        request.POST.getlist("ticket_name[]"),
+                                        request.POST.getlist("ticket_price[]"),
+                                        request.POST.getlist("ticket_quantity[]"),
+                                    )
+                                    if name and price and quantity
+                                ],
+                                "rejection_messages": get_rejection_messages(request),
+                                "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                                "has_free_tickets": False,
+                                "packages": EventPackage.objects.all(),
+                            },
+                        )
 
             # Считаем общее количество загружаемых фото
             total_images = 0
@@ -526,6 +587,71 @@ def edit_event(request, event_id):
                             "packages": EventPackage.objects.all(),
                         },
                     )
+
+            # Проверяем типы загружаемых изображений
+            main_image = request.FILES.get("image")
+            additional_images = request.FILES.getlist("images")
+
+            # Валидация основного изображения
+            if main_image:
+                valid_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                if not any(main_image.name.lower().endswith(ext) for ext in valid_image_extensions):
+                    messages.error(
+                        request,
+                        "Неверный формат основного изображения. Разрешены только JPG, PNG, GIF, WEBP"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": True,
+                            "ticket_data": [
+                                {"name": name, "price": price, "quantity": quantity}
+                                for name, price, quantity in zip(
+                                    request.POST.getlist("ticket_name[]"),
+                                    request.POST.getlist("ticket_price[]"),
+                                    request.POST.getlist("ticket_quantity[]"),
+                                )
+                                if name and price and quantity
+                            ],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+            # Валидация дополнительных изображений
+            if additional_images:
+                valid_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                for image in additional_images:
+                    if not any(image.name.lower().endswith(ext) for ext in valid_image_extensions):
+                        messages.error(
+                            request,
+                            "Неверный формат дополнительного изображения. Разрешены только JPG, PNG, GIF, WEBP"
+                        )
+                        return render(
+                            request,
+                            "partner/event_form.html",
+                            {
+                                "form": form,
+                                "is_edit": True,
+                                "ticket_data": [
+                                    {"name": name, "price": price, "quantity": quantity}
+                                    for name, price, quantity in zip(
+                                        request.POST.getlist("ticket_name[]"),
+                                        request.POST.getlist("ticket_price[]"),
+                                        request.POST.getlist("ticket_quantity[]"),
+                                    )
+                                    if name and price and quantity
+                                ],
+                                "rejection_messages": get_rejection_messages(request),
+                                "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                                "has_free_tickets": False,
+                                "packages": EventPackage.objects.all(),
+                            },
+                        )
 
             # Проверяем ограничения пакета на количество фотографий
             main_image = request.FILES.get("image")
@@ -1667,7 +1793,7 @@ def report_schedule(request):
         return redirect("partner:dashboard")
 
 @login_required
-def remove_media(request, media_type, media_id):
+def remove_media(request, media_type, event_id):
     """
     View для удаления медиафайлов через AJAX.
     """
@@ -1677,25 +1803,19 @@ def remove_media(request, media_type, media_id):
         )
 
     try:
-        if media_type == "image":
-            event = Event.objects.get(id=media_id, organizer=request.user)
-            if event.image:
+        if media_type in ["image", "video_url", "program_file"]:
+            event = Event.objects.get(id=event_id, organizer=request.user)
+            if media_type == "image" and event.image:
                 event.image.delete(save=False)
                 event.image = None
                 event.save()
                 return JsonResponse({"status": "success"})
-
-        elif media_type == "video_url":
-            event = Event.objects.get(id=media_id, organizer=request.user)
-            if event.video_url:
+            elif media_type == "video_url" and event.video_url:
                 event.video_url.delete(save=False)
                 event.video_url = None
                 event.save()
                 return JsonResponse({"status": "success"})
-
-        elif media_type == "program_file":
-            event = Event.objects.get(id=media_id, organizer=request.user)
-            if event.program_file:
+            elif media_type == "program_file" and event.program_file:
                 event.program_file.delete(save=False)
                 event.program_file = None
                 event.save()
