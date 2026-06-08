@@ -14,6 +14,8 @@ from django.contrib.auth import update_session_auth_hash
 from datetime import datetime, timedelta
 import os
 import json
+import tempfile
+from moviepy import VideoFileClip
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
@@ -164,6 +166,59 @@ def create_event(request):
                     messages.error(
                         request,
                         "Неверный формат видео. Разрешены только файлы MP4, MOV, AVI"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": False,
+                            "ticket_data": [],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+                # Проверяем длительность видео
+                try:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_file:
+                        for chunk in video_file.chunks():
+                            temp_file.write(chunk)
+                        temp_file_path = temp_file.name
+
+                    with VideoFileClip(temp_file_path) as video:
+                        duration = video.duration
+                        max_duration = 310  # 5 минут в секундах
+                        if duration > max_duration:
+                            os.unlink(temp_file_path)  # Удаляем временный файл
+                            messages.error(
+                                request,
+                                "Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут."
+                            )
+                            return render(
+                                request,
+                                "partner/event_form.html",
+                                {
+                                    "form": form,
+                                    "is_edit": False,
+                                    "ticket_data": [],
+                                    "rejection_messages": get_rejection_messages(request),
+                                    "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                                    "has_free_tickets": False,
+                                    "packages": EventPackage.objects.all(),
+                                },
+                            )
+
+                    # Восстанавливаем указатель файла после проверки
+                    video_file.file.seek(0)
+                    os.unlink(temp_file_path)  # Удаляем временный файл
+                except Exception as e:
+                    logger.error(f"Ошибка при проверке длительности видео: {str(e)}")
+                    messages.error(
+                        request,
+                        "Произошла ошибка при проверке длительности видео. Пожалуйста, попробуйте еще раз."
                     )
                     return render(
                         request,
@@ -535,6 +590,75 @@ def edit_event(request, event_id):
                     messages.error(
                         request,
                         "Неверный формат видео. Разрешены только файлы MP4, MOV, AVI"
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        {
+                            "form": form,
+                            "is_edit": True,
+                            "ticket_data": [
+                                {"name": name, "price": price, "quantity": quantity}
+                                for name, price, quantity in zip(
+                                    request.POST.getlist("ticket_name[]"),
+                                    request.POST.getlist("ticket_price[]"),
+                                    request.POST.getlist("ticket_quantity[]"),
+                                )
+                                if name and price and quantity
+                            ],
+                            "rejection_messages": get_rejection_messages(request),
+                            "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                            "has_free_tickets": False,
+                            "packages": EventPackage.objects.all(),
+                        },
+                    )
+
+                # Проверяем длительность видео
+                try:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_file:
+                        for chunk in video_file.chunks():
+                            temp_file.write(chunk)
+                        temp_file_path = temp_file.name
+
+                    with VideoFileClip(temp_file_path) as video:
+                        duration = video.duration
+                        max_duration = 310  # 5 минут в секундах
+                        if duration > max_duration:
+                            os.unlink(temp_file_path)  # Удаляем временный файл
+                            messages.error(
+                                request,
+                                "Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут."
+                            )
+                            return render(
+                                request,
+                                "partner/event_form.html",
+                                {
+                                    "form": form,
+                                    "is_edit": True,
+                                    "ticket_data": [
+                                        {"name": name, "price": price, "quantity": quantity}
+                                        for name, price, quantity in zip(
+                                            request.POST.getlist("ticket_name[]"),
+                                            request.POST.getlist("ticket_price[]"),
+                                            request.POST.getlist("ticket_quantity[]"),
+                                        )
+                                        if name and price and quantity
+                                    ],
+                                    "rejection_messages": get_rejection_messages(request),
+                                    "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+                                    "has_free_tickets": False,
+                                    "packages": EventPackage.objects.all(),
+                                },
+                            )
+
+                    # Восстанавливаем указатель файла после проверки
+                    video_file.file.seek(0)
+                    os.unlink(temp_file_path)  # Удаляем временный файл
+                except Exception as e:
+                    logger.error(f"Ошибка при проверке длительности видео: {str(e)}")
+                    messages.error(
+                        request,
+                        "Произошла ошибка при проверке длительности видео. Пожалуйста, попробуйте еще раз."
                     )
                     return render(
                         request,

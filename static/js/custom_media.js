@@ -1,3 +1,37 @@
+// Функция для проверки длительности видео
+async function checkVideoDuration(file) {
+    return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        const videoUrl = URL.createObjectURL(file);
+        video.src = videoUrl;
+
+        video.onloadedmetadata = function() {
+            // Удаляем объект URL после загрузки метаданных
+            URL.revokeObjectURL(videoUrl);
+
+            // Длительность видео в секундах
+            const duration = video.duration;
+            // Максимальная длительность - 5 минут (300 секунд)
+            const maxDuration = 310;
+
+            if (duration > maxDuration) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        };
+
+        video.onerror = function() {
+            console.error('Ошибка при загрузке метаданных видео');
+            // Удаляем объект URL в случае ошибки
+            URL.revokeObjectURL(videoUrl);
+            // Если не удалось проверить длительность, разрешаем загрузку
+            resolve(true);
+        };
+    });
+}
+
 // Функция для инициализации обработчиков медиафайлов
 function initMediaHandlers() {
 // Обработчики для кнопок удаления медиафайлов
@@ -75,7 +109,7 @@ function initMediaHandlers() {
             });
         });
     });
-    
+
     // Обработчики для кнопок загрузки новых файлов
     document.querySelectorAll('.custom-media-upload-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -84,10 +118,10 @@ function initMediaHandlers() {
             fileInput.click();
         });
     });
-    
+
     // Обработчики для изменения файлов
     document.querySelectorAll('.custom-media-input').forEach(input => {
-        input.addEventListener('change', function() {
+        input.addEventListener('change', async function() {
             const mediaType = this.getAttribute('data-media-type');
             const previewContainer = document.querySelector(`#${mediaType}-preview-container`);
 
@@ -116,6 +150,12 @@ function initMediaHandlers() {
                     if (!isValidType && !isValidExtension) {
                         isValid = false;
                         errorMessage = 'Неверный формат видео. Разрешены только файлы MP4, MOV, AVI';
+                    } else {
+                        // Добавляем проверку длительности видео
+                        isValid = await checkVideoDuration(file);
+                        if (!isValid) {
+                            errorMessage = 'Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут.';
+                        }
                     }
                 }
                 else if (mediaType === 'program_file') {
@@ -290,6 +330,9 @@ function validateMediaFilesBeforeSubmit() {
                     if (!isValidType && !isValidExtension) {
                         isValid = false;
                         errorMessage = 'Неверный формат видео. Разрешены только файлы MP4, MOV, AVI';
+                    } else {
+                        // Проверка длительности видео не нужна здесь, так как она уже была проверена при загрузке
+                        // Но если нужно, можно добавить синхронную проверку
                     }
                 }
                 else if (mediaType === 'program_file') {

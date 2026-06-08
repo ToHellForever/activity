@@ -163,7 +163,7 @@
             {% if form.instance.pk and form.instance.image %}
                 <div class="media-preview">
                     <img src="{{ form.instance.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
-                    <button type="button" class="btn btn-danger btn-sm remove-media-btn" data-media-type="image" data-media-id="{{ form.instance.id }}">
+                    <button type="button" class="btn btn-danger btn-sm remove-media-btn" data-media-type="image" data-event-id="{{ form.instance.id }}">
                         ×
                     </button>
                 </div>
