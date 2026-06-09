@@ -26,7 +26,7 @@ class YandexVideoProcessingStorage(YandexCloudWithProcessingStorage):
             name: имя файла (путь в хранилище)
             
         Returns:
-            str: путь к обработанному файлу
+            tuple: (путь к обработанному файлу, список дополнительных файлов для удаления)
         """
         try:
             # Сжимаем видео
@@ -34,35 +34,30 @@ class YandexVideoProcessingStorage(YandexCloudWithProcessingStorage):
             
             if not self._compress_video(temp_path, compressed_path):
                 logger.error(f"Ошибка при сжатии видео: {temp_path}")
-                return temp_path
-            
+                return temp_path, []
+
             # Добавляем водяной знак
             watermark_path = getattr(settings, 'WATERMARK_PATH',
                                    os.path.join(settings.MEDIA_ROOT, 'watermark.png'))
             
             if not os.path.exists(watermark_path):
                 logger.error(f"Файл водяного знака не найден: {watermark_path}")
-                return compressed_path
-            
+                return compressed_path, [temp_path]
+
             watermarked_path = temp_path.replace('.tmp', '_watermarked.mp4')
             
             if not self._add_watermark(compressed_path, watermark_path, watermarked_path):
                 logger.error(f"Ошибка при добавлении водяного знака: {compressed_path}")
-                return compressed_path
-            
-            # Удаляем сжатый файл без водяного знака
-            if os.path.exists(compressed_path):
-                try:
-                    os.remove(compressed_path)
-                except OSError as e:
-                    logger.warning(f"Не удалось удалить промежуточный файл: {e}")
-            
-            return watermarked_path
-            
+                return compressed_path, [temp_path]
+
+            # Возвращаем путь к файлу с водяным знаком и список файлов для удаления
+            # temp_path и compressed_path нужно удалить
+            return watermarked_path, [temp_path, compressed_path]
+
         except Exception as e:
             logger.error(f"Ошибка при обработке видео {name}: {e}")
             # При ошибке возвращаем исходный файл
-            return temp_path
+            return temp_path, []
     
     def _compress_video(self, input_path, output_path):
         """

@@ -28,7 +28,7 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             name: имя файла (путь в хранилище)
             
         Returns:
-            str: путь к обработанному файлу
+            tuple: (путь к обработанному файлу, список дополнительных файлов для удаления)
         """
         try:
             # Открываем изображение
@@ -74,21 +74,23 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
                     watermark_output = processed_path.replace('.jpg', '_watermarked.jpg')
                     
                     if self._add_watermark(processed_path, watermark_path, watermark_output):
-                        return watermark_output
+                        # Возвращаем путь к файлу с водяным знаком и список файлов для удаления
+                        # processed_path нужно удалить, так как watermark_output - это финальный файл
+                        return watermark_output, [processed_path]
                     else:
                         logger.warning(f"Не удалось добавить водяной знак к изображению: {name}")
-                        return processed_path
-                        
+                        return processed_path, []
+
                 except Exception as e:
                     logger.error(f"Ошибка при добавлении водяного знака: {e}")
-                    return processed_path
-            
-            return processed_path
-            
+                    return processed_path, []
+
+            return processed_path, []
+
         except Exception as e:
             # При ошибке возвращаем исходный файл
             logger.error(f"Ошибка при обработке изображения {name}: {e}")
-            return temp_path
+            return temp_path, []
     
     def _add_watermark(self, input_path, watermark_path, output_path):
         """

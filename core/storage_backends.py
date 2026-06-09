@@ -35,7 +35,7 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
         1. Сохраняет содержимое во временный файл на сервере
         2. Вызывает обработку (переопределяется в подклассах)
         3. Загружает обработанный файл в Yandex Cloud
-        4. Удаляет временный файл
+        4. Удаляет временные файлы
         """
         # Создаем полный путь к временному файлу
         temp_path = os.path.join(self._temp_dir, name)
@@ -43,6 +43,7 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
         os.makedirs(temp_dir, exist_ok=True)
         
         processed_path = None
+        files_to_delete = []  # Список файлов для удаления
         
         try:
             # Сохраняем исходный файл во временное хранилище
@@ -51,10 +52,19 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
                     temp_file.write(chunk)
             
             # Вызываем обработку файла (переопределяется в подклассах)
-            processed_path = self._process_file(temp_path, name)
-            
+            processed_path, additional_files = self._process_file(temp_path, name)
+
+            # Добавляем файлы в список на удаление
+            files_to_delete = [temp_path, processed_path] + additional_files
+
+            # Создаем копию для загрузки (чтобы избежать блокировки файла)
+            import shutil
+            upload_path = processed_path + '.upload'
+            shutil.copy2(processed_path, upload_path)
+            files_to_delete.append(upload_path)
+
             # Загружаем обработанный файл в Yandex Cloud
-            with open(processed_path, 'rb') as processed_file:
+            with open(upload_path, 'rb') as processed_file:
                 # Используем стандартный метод загрузки YandexObjectStorage
                 return super()._save(name, processed_file)
             
@@ -62,20 +72,14 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
             logger.error(f"Ошибка при сохранении файла {name}: {e}")
             raise
         finally:
-            # Удаляем временные файлы
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except OSError as e:
-                    logger.warning(f"Не удалось удалить временный файл {temp_path}: {e}")
-            
-            # Удаляем обработанный файл, если он отличается от временного
-            if processed_path and processed_path != temp_path and os.path.exists(processed_path):
-                try:
-                    os.remove(processed_path)
-                except OSError as e:
-                    logger.warning(f"Не удалось удалить обработанный файл {processed_path}: {e}")
-            
+            # Удаляем все временные файлы
+            for file_path in files_to_delete:
+                if file_path and os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError as e:
+                        logger.warning(f"Не удалось удалить временный файл {file_path}: {e}")
+
             # Очищаем пустые директории
             self._cleanup_empty_dirs(temp_dir)
     
@@ -89,9 +93,9 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
             name: имя файла (путь в хранилище)
             
         Returns:
-            str: путь к обработанному файлу
+            tuple: (путь к обработанному файлу, список дополнительных файлов для удаления)
         """
-        return temp_path
+        return temp_path, []
     
     def _cleanup_empty_dirs(self, dir_path):
         """Удаляет пустые директории."""
