@@ -386,7 +386,10 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет",
     )
     image = models.ImageField(
-        upload_to="event_images/", verbose_name="Изображение", blank=True, null=True
+        upload_to="event_images/", 
+        verbose_name="Изображение", 
+        blank=True,
+        null=True
     )
 
     category = models.ForeignKey(
@@ -411,7 +414,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
             validate_video_duration,
-        ],
+        ]
     )
     processed_video_url_hash = models.CharField(
         max_length=32,
@@ -518,17 +521,9 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 
             self.place_data = place_data
 
-        # Путь к логотипу для водяного знака
-        from django.conf import settings
-        watermark_path = os.path.join(settings.BASE_DIR, "DejaVuSans-Bold.ttf")
-        # Замените на путь к вашему логотипу
-        actual_watermark_path = os.path.join(
-            settings.BASE_DIR, "media", "watermark.png"
-        )
-
-        # Добавляем водяной знак на изображение
-        if self.image:
-            self.add_watermark_to_image_field("image", actual_watermark_path)
+        # Примечание: Обработка изображений (сжатие + водяной знак) теперь выполняется
+        # автоматически на уровне хранилища (YandexImageProcessingStorage или локальная обработка)
+        # Нет необходимости вызывать add_watermark_to_image_field здесь
 
     def get_refund_deadline(self):
         """
@@ -978,20 +973,18 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     )
 
     image = models.ImageField(
-        upload_to="event_images/", verbose_name="Фото мероприятия"
+        upload_to="event_images/", 
+        verbose_name="Фото мероприятия"
     )
 
     def __str__(self):
         return f"Фото для мероприятия: {self.event.title}"
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # Обработка водяного знака для изображения
-        if self.image:
-            from django.conf import settings
-            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
-            self.add_watermark_to_image_field("image", watermark_path)
+            # Обработка водяного знака теперь выполняется на уровне хранилища
+            # (YandexImageProcessingStorage или локальная обработка)
+            # Не нужно добавлять водяной знак здесь
+            super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """Удаляет файл изображения при удалении записи."""

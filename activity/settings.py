@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     "venues",
     "core",
     "payment",
+    'storages',
+    "imagekit",
     "django_celery_beat",
 ]
 
@@ -116,8 +118,42 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+USE_YANDEX_CLOUD = os.getenv('USE_YANDEX_CLOUD', 'False').lower() == 'true'
+
+# Путь к водяному знаку
+WATERMARK_PATH = os.path.join(BASE_DIR, 'media', 'watermark.png')
+
+# Временная директория для обработки файлов
+MEDIA_TEMP_DIR = os.path.join(BASE_DIR, 'media_temp')
+
+if USE_YANDEX_CLOUD:
+    # Используем кастомные хранилища с обработкой
+    DEFAULT_FILE_STORAGE = 'core.storage_backends.YandexCloudWithProcessingStorage'
+    
+    # Специальные хранилища для разных типов файлов
+    EVENT_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
+    EVENT_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
+    
+    # Настройки Yandex Object Storage (S3-совместимый)
+    AWS_ACCESS_KEY_ID = os.getenv('YANDEX_CLOUD_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('YANDEX_CLOUD_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('YANDEX_CLOUD_BUCKET_NAME')
+    AWS_S3_ENDPOINT_URL = os.getenv('YANDEX_CLOUD_ENDPOINT_URL', 'https://storage.yandexcloud.net')
+    AWS_S3_REGION_NAME = 'ru-central1'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None  # Yandex Cloud не требует ACL
+    
+    # CDN URL для изображений (опционально)
+    YANDEX_CLOUD_CDN_URL = os.getenv('YANDEX_CLOUD_CDN_URL', '')
+    
+    # Отключаем локальное хранение медиа в продакшене (опционально)
+    MEDIA_ROOT = '' 
+else:
+    # Локальное хранилище для разработки
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+    # Для локального режима тоже создаем медиа-директорию
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 
