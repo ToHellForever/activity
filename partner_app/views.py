@@ -181,18 +181,23 @@ def create_event(request):
                         },
                     )
 
-                # Проверяем длительность видео
+# Проверяем длительность видео
                 try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_file:
+                    temp_file_path = None
+                    temp_file_path = tempfile.mktemp(suffix=os.path.splitext(video_file.name)[1])
+                    
+                    # Сохраняем видео во временный файл
+                    with open(temp_file_path, 'wb+') as temp_file:
                         for chunk in video_file.chunks():
                             temp_file.write(chunk)
-                        temp_file_path = temp_file.name
 
+                    # Проверяем длительность
                     with VideoFileClip(temp_file_path) as video:
                         duration = video.duration
                         max_duration = 310  # 5 минут в секундах
                         if duration > max_duration:
-                            os.unlink(temp_file_path)  # Удаляем временный файл
+                            if os.path.exists(temp_file_path):
+                                os.unlink(temp_file_path)
                             messages.error(
                                 request,
                                 "Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут."
@@ -211,11 +216,20 @@ def create_event(request):
                                 },
                             )
 
+                    # Удаляем временный файл
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    
                     # Восстанавливаем указатель файла после проверки
                     video_file.file.seek(0)
-                    os.unlink(temp_file_path)  # Удаляем временный файл
                 except Exception as e:
                     logger.error(f"Ошибка при проверке длительности видео: {str(e)}")
+                    # Очищаем временный файл при ошибке
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        try:
+                            os.unlink(temp_file_path)
+                        except:
+                            pass
                     messages.error(
                         request,
                         "Произошла ошибка при проверке длительности видео. Пожалуйста, попробуйте еще раз."
@@ -613,18 +627,23 @@ def edit_event(request, event_id):
                         },
                     )
 
-                # Проверяем длительность видео
+# Проверяем длительность видео
                 try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_file:
+                    temp_file_path = None
+                    temp_file_path = tempfile.mktemp(suffix=os.path.splitext(video_file.name)[1])
+                    
+                    # Сохраняем видео во временный файл
+                    with open(temp_file_path, 'wb+') as temp_file:
                         for chunk in video_file.chunks():
                             temp_file.write(chunk)
-                        temp_file_path = temp_file.name
 
+                    # Проверяем длительность
                     with VideoFileClip(temp_file_path) as video:
                         duration = video.duration
                         max_duration = 310  # 5 минут в секундах
                         if duration > max_duration:
-                            os.unlink(temp_file_path)  # Удаляем временный файл
+                            if os.path.exists(temp_file_path):
+                                os.unlink(temp_file_path)
                             messages.error(
                                 request,
                                 "Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут."
@@ -651,11 +670,20 @@ def edit_event(request, event_id):
                                 },
                             )
 
+                    # Удаляем временный файл
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    
                     # Восстанавливаем указатель файла после проверки
                     video_file.file.seek(0)
-                    os.unlink(temp_file_path)  # Удаляем временный файл
                 except Exception as e:
                     logger.error(f"Ошибка при проверке длительности видео: {str(e)}")
+                    # Очищаем временный файл при ошибке
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        try:
+                            os.unlink(temp_file_path)
+                        except:
+                            pass
                     messages.error(
                         request,
                         "Произошла ошибка при проверке длительности видео. Пожалуйста, попробуйте еще раз."
