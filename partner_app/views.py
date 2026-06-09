@@ -1091,24 +1091,16 @@ def bulk_delete_events(request):
             try:
                 event = Event.objects.get(id=event_id, organizer=request.user)
 
-                # Получаем пути к файлам, чтобы удалить их напрямую
-                image_path = event.image.path if event.image else None
-                video_path = event.video_url.path if event.video_url else None
-                program_file_path = (
-                    event.program_file.path if event.program_file else None
-                )
+                # Удаляем медиафайлы через storage backend
+                if event.image:
+                    event.image.delete()
+                if event.video_url:
+                    event.video_url.delete()
+                if event.program_file:
+                    event.program_file.delete()
 
-                # Удаляем объект без вызова save()
-                event_id = event.id
+                # Удаляем объект мероприятия
                 event.delete()
-
-                # Удаляем файлы напрямую, если они существуют
-                if image_path and os.path.exists(image_path):
-                    os.remove(image_path)
-                if video_path and os.path.exists(video_path):
-                    os.remove(video_path)
-                if program_file_path and os.path.exists(program_file_path):
-                    os.remove(program_file_path)
 
                 deleted_count += 1
             except Event.DoesNotExist:
