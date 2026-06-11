@@ -535,9 +535,6 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 
             self.place_data = place_data
 
-        # Примечание: Обработка изображений (сжатие + водяной знак) теперь выполняется
-        # автоматически на уровне хранилища (YandexImageProcessingStorage или локальная обработка)
-        # Нет необходимости вызывать add_watermark_to_image_field здесь
 
     def get_refund_deadline(self):
         """
