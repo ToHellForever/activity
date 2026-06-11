@@ -477,24 +477,40 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Проверяем замену файлов
+        # Сохраняем старые значения для проверки замены файлов
+        old_image = None
+        old_video_url = None
+        old_video_hash = None
+        old_program_file = None
+        
         if self.pk:
             old = Event.objects.get(pk=self.pk)
-
-            # Удаляем старое видео, если оно заменено
-            if old.video_url != self.video_url:
-                self.delete_old_video("video_url", "processed_video_url_hash")
-                self.video_processing_status = "pending"
-
-            # Удаляем старое изображение, если оно заменено
-            if old.image != self.image:
-                self.delete_file_field("image")
-
-            # Удаляем старую программу, если она заменена
-            if old.program_file != self.program_file:
-                self.delete_file_field("program_file")
+            old_image = old.image
+            old_video_url = old.video_url
+            old_video_hash = old.processed_video_url_hash
+            old_program_file = old.program_file
 
         super().save(*args, **kwargs)
+
+        # Удаляем старые файлы ПОСЛЕ сохранения (чтобы не удалить новые)
+        if self.pk:
+            # Удаляем старое видео, если оно заменено
+            if old_video_url != self.video_url and old_video_url:
+                # Проверяем, что старый файл не совпадает с новым
+                if not self.video_url or old_video_url != self.video_url:
+                    self.delete_old_video_file(old_video_url, old_video_hash)
+
+            # Удаляем старое изображение, если оно заменено
+            if old_image != self.image and old_image:
+                # Проверяем, что старый файл не совпадает с новым
+                if not self.image or old_image != self.image:
+                    self.delete_old_file(old_image)
+
+            # Удаляем старую программу, если она заменена
+            if old_program_file != self.program_file and old_program_file:
+                # Проверяем, что старый файл не совпадает с новым
+                if not self.program_file or old_program_file != self.program_file:
+                    self.delete_old_file(old_program_file)
 
         # Если есть данные о местоположении в отдельных полях, обновляем place_data
         if hasattr(self, "_place_data_updated"):
@@ -528,6 +544,48 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         Возвращает крайний срок возврата билета.
         """
         return self.date_time - timezone.timedelta(hours=self.refund_deadline_hours)
+
+    def delete_old_file(self, old_file):
+        """
+        Удаляет старый файл по пути.
+        Args:
+            old_file: старый файл (FileField/ImageField) или путь к нему.
+        """
+        if not old_file:
+            return
+
+        # Получаем путь к файлу
+        file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
+        
+        try:
+            # Проверяем, существует ли файл
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except NotImplementedError:
+            # Storage не поддерживает absolute paths (облачное хранилище)
+            # Пытаемся удалить через storage
+            try:
+                from django.core.files.storage import default_storage
+                if default_storage.exists(str(old_file)):
+                    default_storage.delete(str(old_file))
+            except Exception as e:
+                print(f"Ошибка удаления файла через storage: {e}")
+        except Exception as e:
+            print(f"Ошибка удаления файла {file_path}: {e}")
+
+    def delete_old_video_file(self, old_video, old_hash):
+        """
+        Удаляет старый видеофайл и обнуляет хэш.
+        Args:
+            old_video: старый видеофайл (FileField) или путь к нему.
+            old_hash: хэш старого видео.
+        """
+        self.delete_old_file(old_video)
+        # Обнуляем хэш, если это поле текущей модели
+        if hasattr(self, 'processed_video_url_hash'):
+            self.processed_video_url_hash = None
+            # Сохраняем только хэш, не затрагивая другие поля
+            Event.objects.filter(pk=self.pk).update(processed_video_url_hash=None)
 
     def delete(self, *args, **kwargs):
         """Удаляет все связанные файлы при удалении мероприятия."""
