@@ -6,7 +6,6 @@ from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
-from core.validators import compress_video
 try:
     from core.redis_utils import get_lock
 

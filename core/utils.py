@@ -6,8 +6,9 @@ from django.core.files import File
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
-from moviepy import VideoFileClip, TextClip, CompositeVideoClip
-from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+from moviepy import VideoFileClip
+from moviepy.video.VideoClip import ImageClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from io import BytesIO
 
 
@@ -222,78 +223,44 @@ def add_watermark_to_video(
             print(f"Файл водяного знака не найден: {watermark_image_path}")
             return False
 
-        watermark = Image.open(watermark_image_path).convert("RGBA")
+        # Открываем водяной знак
+        watermark_img = Image.open(watermark_image_path).convert("RGBA")
 
-        # Изменяем размер водяного знака
+        # Изменяем размер водяного знака (1/4 от ширины видео)
         video_width, video_height = video_clip.size
-        watermark.thumbnail((video_width // 4, video_height // 4))
+        watermark_img.thumbnail((video_width // 4, video_height // 4))
 
-        # Конвертируем водяной знак в формат, подходящий для moviepy
-        watermark_np = np.array(watermark)
-        watermark_np = cv2.cvtColor(watermark_np, cv2.COLOR_RGBA2BGRA)
+        # Создаём клип из водяного знака
+        watermark_clip = (
+            ImageClip(watermark_img)
+            .set_duration(video_clip.duration)
+            .set_position(('right', 'bottom'), relative=False)
+        )
 
-        # Не используем TextClip, так как он вызывает конфликт с аргументом font
-        # Водяной знак добавляется через make_frame
+        # Накладываем прозрачность
+        watermark_clip = watermark_clip.with_opacity(opacity)
 
-        # Используем функцию для наложения изображения
-        def make_frame(t):
-            frame = video_clip.get_frame(t).copy()
-            h, w = frame.shape[:2]
-
-            # Позиционируем водяной знак
-            if position == (1, 1):  # Правый нижний угол
-                x = w - watermark.width - 10
-                y = h - watermark.height - 10
-            else:
-                x, y = position
-
-            # Накладываем водяной знак
-            overlay = frame.copy()
-            overlay[y : y + watermark.height, x : x + watermark.width] = watermark_np[
-                :, :, :3
-            ]
-            alpha = watermark_np[:, :, 3] / 255.0
-            for c in range(3):  # Обрабатываем только RGB-каналы
-                frame[y : y + watermark.height, x : x + watermark.width, c] = (
-                    alpha * watermark_np[:, :, c]
-                    + (1 - alpha)
-                    * frame[y : y + watermark.height, x : x + watermark.width, c]
-                )
-
-            return frame
-
-        # Создаём новый клип из обработанных кадров
-        def frame_generator():
-            for t in np.arange(0, video_clip.duration, 1.0 / video_clip.fps):
-                yield make_frame(t)
-
-        final_clip = ImageSequenceClip(list(frame_generator()), fps=video_clip.fps)
-        final_clip.audio = video_clip.audio
+        # Композит: видео + водяной знак
+        final_clip = CompositeVideoClip([video_clip, watermark_clip])
+        final_clip = final_clip.with_audio(video_clip.audio)
 
         # Сохраняем результат
-        try:
-            output_path = output_video_path if output_video_path else input_video_path
+        output_path = output_video_path if output_video_path else input_video_path
+        output_path = os.path.normpath(output_path).replace("\\", "/")
 
-            # Нормализуем путь для Windows
-            output_path = os.path.normpath(output_path)
-            output_path = output_path.replace("\\", "/")
-
-            final_clip.write_videofile(
-                output_path,
-                codec="libx264",
-                audio_codec="aac",
-                threads=4,
-                preset="fast",
-                ffmpeg_params=[
-                    "-pix_fmt",
-                    "yuv420p",  # Для лучшей совместимости
-                    "-movflags",
-                    "+faststart",  # Для потокового воспроизведения
-                ],
-            )
-        except Exception as e:
-            print(f"Ошибка при сохранении видео с водяным знаком: {str(e)}")
-            return False
+        final_clip.write_videofile(
+            output_path,
+            codec="libx264",
+            audio_codec="aac",
+            threads=4,
+            preset="fast",
+            ffmpeg_params=[
+                "-pix_fmt",
+                "yuv420p",
+                "-movflags",
+                "+faststart",
+            ],
+        )
 
         video_clip.close()
         final_clip.close()

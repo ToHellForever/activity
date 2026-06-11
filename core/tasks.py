@@ -166,12 +166,6 @@ def process_video_task(
         temp_video_path = os.path.join(base_dir, f"{base_name}_temp.mp4")
         watermarked_video_path = os.path.join(base_dir, f"{base_name}_watermarked.mp4")
 
-        # Сжимаем видео и сохраняем во временный файл
-        from .validators import compress_video
-
-        if not compress_video(video_path, temp_video_path):
-            return f"Ошибка: не удалось сжать видео: {video_path}"
-
         # Добавляем водяной знак на временный файл и сохраняем в отдельный файл
         from .utils import add_watermark_to_video
 
