@@ -554,10 +554,10 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         if not old_file:
             return
 
-        # Получаем путь к файлу
-        file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
-        
         try:
+            # Получаем путь к файлу (может вызвать NotImplementedError для remote storage)
+            file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
+            
             # Проверяем, существует ли файл
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -566,12 +566,13 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
             # Пытаемся удалить через storage
             try:
                 from django.core.files.storage import default_storage
-                if default_storage.exists(str(old_file)):
-                    default_storage.delete(str(old_file))
+                file_name = str(old_file)
+                if default_storage.exists(file_name):
+                    default_storage.delete(file_name)
             except Exception as e:
                 print(f"Ошибка удаления файла через storage: {e}")
         except Exception as e:
-            print(f"Ошибка удаления файла {file_path}: {e}")
+            print(f"Ошибка удаления файла: {e}")
 
     def delete_old_video_file(self, old_video, old_hash):
         """
