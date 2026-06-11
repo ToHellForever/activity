@@ -54,8 +54,11 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
             # Вызываем обработку файла (переопределяется в подклассах)
             processed_path, additional_files = self._process_file(temp_path, name)
 
-            # Добавляем файлы в список на удаление
-            files_to_delete = [temp_path, processed_path] + additional_files
+            # Добавляем файлы в список на удаление:
+            # - temp_path: исходный временный файл
+            # - additional_files: промежуточные файлы обработки (например, сжатое видео до водяного знака)
+            # - upload_path: временная копия для загрузки (создаётся ниже)
+            files_to_delete = [temp_path] + additional_files
 
             # Создаем копию для загрузки (чтобы избежать блокировки файла)
             import shutil

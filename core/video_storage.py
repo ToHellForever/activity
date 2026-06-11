@@ -38,20 +38,22 @@ class YandexVideoProcessingStorage(YandexCloudWithProcessingStorage):
 
             # Добавляем водяной знак
             watermark_path = getattr(settings, 'WATERMARK_PATH',
-                                   os.path.join(settings.MEDIA_ROOT, 'watermark.png'))
+                os.path.join(settings.MEDIA_ROOT, 'watermark.png'))
             
             if not os.path.exists(watermark_path):
                 logger.error(f"Файл водяного знака не найден: {watermark_path}")
+                # Возвращаем сжатое видео как итоговое, temp_path нужно удалить
                 return compressed_path, [temp_path]
 
             watermarked_path = temp_path.replace('.tmp', '_watermarked.mp4')
             
             if not self._add_watermark(compressed_path, watermark_path, watermarked_path):
                 logger.error(f"Ошибка при добавлении водяного знака: {compressed_path}")
+                # Возвращаем сжатое видео как итоговое, temp_path нужно удалить
                 return compressed_path, [temp_path]
 
             # Возвращаем путь к файлу с водяным знаком и список файлов для удаления
-            # temp_path и compressed_path нужно удалить
+            # temp_path и compressed_path нужно удалить, watermarked_path останется
             return watermarked_path, [temp_path, compressed_path]
 
         except Exception as e:
