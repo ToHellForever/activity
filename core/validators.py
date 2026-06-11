@@ -32,12 +32,16 @@ def validate_video_duration(value):
             # Пытаемся получить путь, но storage может не поддерживать absolute paths
             try:
                 video_path = value.path
-            except NotImplementedError:
+            except (NotImplementedError, AttributeError):
                 # Storage не поддерживает absolute paths (облачное хранилище)
-                # Пропускаем валидацию, так как проверка уже сделана в views.py
+                # Пропускаем валидацию, так как проверка уже сделана в views.py перед сохранением
                 logger.info("Storage не поддерживает absolute paths, пропускаем валидацию")
                 return
-        
+            except Exception as path_error:
+                # Любая другая ошибка при получении пути - пропускаем валидацию
+                logger.info(f"Ошибка при получении пути к файлу: {path_error}, пропускаем валидацию")
+                return
+
         # Если у нас есть путь к файлу, проверяем его
         if video_path:
             # Проверяем существование файла перед обработкой

@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator, FileExtensionValidator
 from taggit.managers import TaggableManager
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
-from core.validators import validate_video_duration, compress_video
+from core.validators import compress_video
 try:
     from core.redis_utils import get_lock
 
@@ -50,7 +50,6 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
-            validate_video_duration,
         ],
     )
     processed_video_business_card_hash = models.CharField(
@@ -413,7 +412,6 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
-            validate_video_duration,
         ]
     )
     processed_video_url_hash = models.CharField(
