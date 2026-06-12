@@ -133,6 +133,7 @@ if USE_YANDEX_CLOUD:
     # Специальные хранилища для разных типов файлов
     EVENT_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
     EVENT_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
+    EVENT_DOCUMENT_STORAGE = 'core.document_storage.YandexDocumentProcessingStorage'
     
     # Настройки Yandex Object Storage (S3-совместимый)
     AWS_ACCESS_KEY_ID = os.getenv('YANDEX_CLOUD_ACCESS_KEY_ID')

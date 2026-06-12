@@ -36,10 +36,14 @@ class CoreConfig(AppConfig):
         try:
             from .image_storage import YandexImageProcessingStorage
             from .video_storage import YandexVideoProcessingStorage
+            from .document_storage import YandexDocumentProcessingStorage
             from .models import Event, EventImage
             
             # Применяем хранилище к полю image модели Event
             Event._meta.get_field('image').storage = YandexImageProcessingStorage()
+            
+            # Применяем хранилище к полю document модели EventImage
+            Event._meta.get_field('program_file').storage = YandexDocumentProcessingStorage()
             
             # Применяем хранилище к полю video_url модели Event
             Event._meta.get_field('video_url').storage = YandexVideoProcessingStorage()

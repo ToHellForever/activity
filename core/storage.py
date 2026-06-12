@@ -9,6 +9,7 @@ try:
     from .storage_backends import YandexCloudWithProcessingStorage
     from .image_storage import YandexImageProcessingStorage
     from .video_storage import YandexVideoProcessingStorage
+    from .document_storage import YandexDocumentProcessingStorage
 except ImportError:
     YandexCloudWithProcessingStorage = None
     YandexImageProcessingStorage = None
@@ -26,4 +27,10 @@ def get_video_storage():
     """Возвращает хранилище для видео."""
     if settings.USE_YANDEX_CLOUD and YandexVideoProcessingStorage:
         return YandexVideoProcessingStorage()
+    return None
+
+def get_document_storage():
+    """Возвращает хранилище для документов."""
+    if settings.USE_YANDEX_CLOUD and YandexDocumentProcessingStorage:
+        return YandexDocumentProcessingStorage()
     return None
