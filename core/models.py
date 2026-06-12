@@ -551,28 +551,51 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         Args:
             old_file: старый файл (FileField/ImageField) или путь к нему.
         """
+        import logging
+        from django.conf import settings
+        logger = logging.getLogger(__name__)
+        
         if not old_file:
             return
 
+        logger.info(f"delete_old_file: удаляем старый файл {old_file}")
+        
+        # Сначала пробуем удалить из S3 если включено облако
+        if getattr(settings, 'USE_YANDEX_CLOUD', False):
+            try:
+                from storages.backends.s3boto3 import S3Boto3Storage
+                
+                file_name = str(old_file)
+                logger.info(f"delete_old_file: удаляем из облака {file_name}")
+                
+                # Создаём экземпляр хранилища S3
+                s3_storage = S3Boto3Storage(
+                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    access_key=settings.AWS_ACCESS_KEY_ID,
+                    secret_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                )
+                
+                if s3_storage.exists(file_name):
+                    logger.info(f"delete_old_file: файл {file_name} существует в облаке, удаляем")
+                    s3_storage.delete(file_name)
+                    logger.info(f"delete_old_file: файл {file_name} удалён из облака")
+                else:
+                    logger.warning(f"delete_old_file: файл {file_name} не найден в облаке")
+            except Exception as e:
+                logger.error(f"delete_old_file: ошибка удаления из облака: {e}", exc_info=True)
+        
+        # Затем пробуем удалить локальный файл
         try:
-            # Получаем путь к файлу (может вызвать NotImplementedError для remote storage)
             file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
-            
-            # Проверяем, существует ли файл
             if os.path.exists(file_path):
                 os.remove(file_path)
+                logger.info(f"delete_old_file: локальный файл {file_path} удалён")
         except NotImplementedError:
-            # Storage не поддерживает absolute paths (облачное хранилище)
-            # Пытаемся удалить через storage
-            try:
-                from django.core.files.storage import default_storage
-                file_name = str(old_file)
-                if default_storage.exists(file_name):
-                    default_storage.delete(file_name)
-            except Exception as e:
-                print(f"Ошибка удаления файла через storage: {e}")
+            logger.info(f"delete_old_file: storage не поддерживает path (облачное хранилище)")
         except Exception as e:
-            print(f"Ошибка удаления файла: {e}")
+            logger.error(f"delete_old_file: ошибка при работе с локальным файлом: {e}", exc_info=True)
 
     def delete_old_video_file(self, old_video, old_hash):
         """
