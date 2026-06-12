@@ -18,9 +18,9 @@
     <!-- Основные ссылки (скрыты на маленьких экранах) -->
     <div class="nav-links-container desktop-only">
         <div class="nav-links">
-            <a href="#" class="nav-link">Главная</a>
-            <a href="#" class="nav-link">Каталог мероприятий</a>
-            <a href="#" class="nav-link">Каталог залов</a>
+            <a href="{% url 'landing_page' %}" class="nav-link">Главная</a>
+            <a href="{% url 'event_list' %}" class="nav-link">Каталог мероприятий</a>
+            <a href="{% url 'venues:venue_list' %}" class="nav-link">Каталог залов</a>
             <a href="#" class="nav-link">Для организаторов</a>
             <a href="#" class="nav-link">О платформе</a>
             <a href="#" class="nav-link">FAQ</a>
@@ -81,8 +81,8 @@
                 </div>
             </div>
             <div class="burger-nav-links">
-                <a href="#" class="burger-nav-link">Главная</a>
-                <a href="#" class="burger-nav-link">Каталог мероприятий</a>
+                <a href="{% url 'landing_page' %}" class="burger-nav-link">Главная</a>
+                <a href="{% url 'event_list' %}" class="burger-nav-link">Каталог мероприятий</a>
                 <a href="#" class="burger-nav-link">Каталог залов</a>
                 <a href="#" class="burger-nav-link">Для организаторов</a>
                 <a href="#" class="burger-nav-link">О платформе</a>

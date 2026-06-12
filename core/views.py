@@ -431,13 +431,12 @@ def update_ticket_status(request, ticket_id):
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
 
 def event_list(request):
-    # Фильтруем мероприятия по статусу и дате
-    active_events = Event.objects.filter(status="active").order_by("date_time")
-
-    # Фильтруем мероприятия по дате (только те, которые ещё не прошли)
-    current_time = timezone.now()
-    active_events = active_events.exclude(date_time__lte=current_time)
-
+    active_events = (
+        Event.objects.filter(status="active")
+        .select_related("organizer", "category")
+        .prefetch_related("images")
+        .order_by("date_time")
+    )
     # Получаем все основные теги с их подтегами
     main_tags = MainTag.objects.prefetch_related('subtags').all()
 
@@ -452,7 +451,7 @@ def event_list(request):
         request,
         "events/event_list.html",
         {
-            "events": active_events,
+            "active_events": active_events,
             "main_tags": main_tags,
             "selected_tags": selected_tags,
         },

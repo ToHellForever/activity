@@ -1,0 +1,36 @@
+.dropdown-toggle {
+    color: #FFFFFF;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 1rem;
+    border-radius: 20px;
+    background: transparent;
+    border: none;
+    margin-top:10px;
+    padding: 10px;
+}
+.dropdown-toggle:hover {
+    border: 1px solid #FFFFFF;
+}
+.btn:hover,
+.btn:focus,
+.btn:active {
+    color: #FFFFFF;
+}
+.filter-item .btn .triangle-down {
+    display: none;
+}
+.dropdown-menu {
+    width: auto;
+    padding: 10px;
+    border-radius: 10px;
+}
+.filter-input::placeholder {
+    padding: 10px;
+    padding-left: 20px;
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #777a8d
+}
