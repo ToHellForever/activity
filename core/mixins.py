@@ -6,7 +6,7 @@ import hashlib
 import os
 from django.db import models
 from django.conf import settings
-
+import logging
 
 class VideoWatermarkMixin:
     """Миксин для обработки видео с водяными знаками."""
@@ -98,18 +98,70 @@ class VideoWatermarkMixin:
         Args:
             field_name: имя поля модели, содержащего файл (FileField или ImageField).
         """
-        file_field = getattr(self, field_name)
-        if file_field:
+        import logging
+        from django.conf import settings
+        logger = logging.getLogger(__name__)
+        
+        file_field = getattr(self, field_name, None)
+        if not file_field:
+            logger.warning(f"delete_file_field: поле {field_name} пустое")
+            return
+        
+        logger.info(f"delete_file_field: удаляем {field_name} = {file_field}")
+        logger.info(f"delete_file_field: USE_YANDEX_CLOUD = {getattr(settings, 'USE_YANDEX_CLOUD', False)}")
+        
+        # Сначала пробуем удалить из S3 используя правильное хранилище
+        if getattr(settings, 'USE_YANDEX_CLOUD', False):
             try:
-                if os.path.exists(file_field.path):
-                    try:
-                        os.remove(file_field.path)
-                    except Exception as e:
-                        print(f"Ошибка удаления файла {file_field.path}: {e}")
-            except NotImplementedError:
-                # Storage не поддерживает absolute paths (облачное хранилище)
-                # Используем метод .delete() у FileField для удаления
-                file_field.delete(save=False)
+                # Импортируем кастомное хранилище напрямую
+                from core.storage_backends import YandexCloudWithProcessingStorage
+                from storages.backends.s3boto3 import S3Boto3Storage
+                
+                file_name = str(file_field)
+                logger.info(f"delete_file_field: удаляем из облака {file_name}")
+                
+                # Создаём экземпляр хранилища S3
+                s3_storage = S3Boto3Storage(
+                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    access_key=settings.AWS_ACCESS_KEY_ID,
+                    secret_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                )
+                
+                logger.info(f"delete_file_field: s3_storage = {s3_storage}")
+                logger.info(f"delete_file_field: s3_storage.__class__ = {s3_storage.__class__}")
+                
+                exists_result = s3_storage.exists(file_name)
+                logger.info(f"delete_file_field: s3_storage.exists('{file_name}') = {exists_result}")
+                
+                if exists_result:
+                    logger.info(f"delete_file_field: файл {file_name} существует в облаке, удаляем")
+                    s3_storage.delete(file_name)
+                    logger.info(f"delete_file_field: файл {file_name} удалён из облака")
+                else:
+                    logger.warning(f"delete_file_field: файл {file_name} не найден в облаке")
+            except ImportError as e:
+                logger.error(f"delete_file_field: не удалось импортировать хранилище: {e}")
+            except Exception as e:
+                logger.error(f"delete_file_field: ошибка удаления из облака: {e}", exc_info=True)
+                # Не прерываемся, пробуем удалить локально
+        
+        # Затем пробуем удалить локальный файл если он существует
+        try:
+            file_path = file_field.path
+            logger.info(f"delete_file_field: путь к локальному файлу = {file_path}")
+            
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    logger.info(f"delete_file_field: локальный файл {file_path} удалён")
+                except Exception as e:
+                    logger.error(f"delete_file_field: ошибка удаления локального файла {e}")
+        except NotImplementedError:
+            logger.info(f"delete_file_field: storage не поддерживает path (облачное хранилище)")
+        except Exception as e:
+            logger.error(f"delete_file_field: ошибка при работе с локальным файлом: {e}", exc_info=True)
 
 
 class ImageWatermarkMixin:

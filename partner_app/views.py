@@ -1938,37 +1938,56 @@ def report_schedule(request):
         return redirect("partner:dashboard")
 
 @login_required
-def remove_media(request, media_type, event_id):
+def remove_media(request, media_type, media_id):
     """
     View для удаления медиафайлов через AJAX.
+    media_id - это ID мероприятия (event_id) для image, video_url, program_file
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     if request.method != "POST":
         return JsonResponse(
             {"status": "error", "message": "Method not allowed"}, status=405
         )
 
     try:
+        logger.info(f"remove_media: media_type={media_type}, media_id={media_id}, user={request.user}")
+        
         if media_type in ["image", "video_url", "program_file"]:
-            event = Event.objects.get(id=event_id, organizer=request.user)
+            event = Event.objects.get(id=media_id, organizer=request.user)
+            logger.info(f"remove_media: найдено мероприятие {event.id}")
+            
             if media_type == "image" and event.image:
-                event.image.delete(save=False)
+                logger.info(f"remove_media: удаляем image={event.image}")
+                event.delete_file_field("image")
                 event.image = None
                 event.save()
+                logger.info(f"remove_media: image успешно удалён")
                 return JsonResponse({"status": "success"})
             elif media_type == "video_url" and event.video_url:
-                event.video_url.delete(save=False)
+                logger.info(f"remove_media: удаляем video_url={event.video_url}")
+                event.delete_file_field("video_url")
                 event.video_url = None
                 event.save()
+                logger.info(f"remove_media: video_url успешно удалён")
                 return JsonResponse({"status": "success"})
             elif media_type == "program_file" and event.program_file:
-                event.program_file.delete(save=False)
+                logger.info(f"remove_media: удаляем program_file={event.program_file}")
+                event.delete_file_field("program_file")
                 event.program_file = None
                 event.save()
+                logger.info(f"remove_media: program_file успешно удалён")
                 return JsonResponse({"status": "success"})
+            else:
+                logger.warning(f"remove_media: файл {media_type} не найден у мероприятия {media_id}")
+                return JsonResponse(
+                    {"status": "error", "message": "Media not found"}, status=404
+                )
 
         elif media_type == "video_business_card":
             if request.user.video_business_card:
-                request.user.video_business_card.delete(save=False)
+                request.user.delete_file_field("video_business_card")
                 request.user.video_business_card = None
                 request.user.save()
                 return JsonResponse({"status": "success"})
@@ -1976,7 +1995,13 @@ def remove_media(request, media_type, event_id):
         return JsonResponse(
             {"status": "error", "message": "Media not found"}, status=404
         )
+    except Event.DoesNotExist:
+        logger.error(f"remove_media: мероприятие {media_id} не найдено")
+        return JsonResponse(
+            {"status": "error", "message": "Event not found"}, status=404
+        )
     except Exception as e:
+        logger.error(f"remove_media: ошибка: {e}", exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @login_required
@@ -2010,8 +2035,8 @@ def remove_event_image(request, image_id):
         from core.models import EventImage
 
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
-        image.image.delete(save=False)
-        image.delete()
+        image.delete_file_field("image")  # Корректное удаление из S3
+        image.delete()  # Удаляем запись из БД
         return JsonResponse({"status": "success"})
     except EventImage.DoesNotExist:
         return JsonResponse(

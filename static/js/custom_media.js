@@ -50,9 +50,11 @@ function initMediaHandlers() {
         if (e.target && e.target.classList.contains('remove-media-btn')) {
             const button = e.target;
             const mediaId = button.getAttribute('data-media-id');
-            const eventId = button.getAttribute('data-event-id');
+            const eventId = button.getAttribute('data-media-id');
             const mediaType = button.getAttribute('data-media-type');
             const mediaContainer = button.closest('.media-preview');
+
+            console.log('Удаление медиа:', { mediaId, eventId, mediaType });
 
             // Если это новый файл, который ещё не загружен на сервер, просто удаляем превью
             if (mediaId === 'new' || !eventId) {
@@ -96,13 +98,15 @@ function initMediaHandlers() {
                 })
             })
             .then(response => {
+                console.log('Ответ сервера:', response.status, response.statusText);
                 if (response.ok) {
                     return response.json();
                 } else {
-                    throw new Error('Ошибка при удалении файла');
+                    throw new Error('Ошибка при удалении файла: HTTP ' + response.status);
                 }
             })
             .then(data => {
+                console.log('Данные от сервера:', data);
                 if (data.status === 'success') {
                     // Удаляем контейнер с превью
                     mediaContainer.remove();
@@ -111,12 +115,13 @@ function initMediaHandlers() {
                     if (hiddenInput) {
                         hiddenInput.value = '';
                     }
+                    console.log('Медиа успешно удалено:', mediaType);
                 } else {
                     showToast('Ошибка при удалении файла: ' + data.message, true);
                 }
             })
             .catch(error => {
-                console.error('Ошибка:', error);
+                console.error('Ошибка при удалении медиа:', error);
                 showToast('Ошибка при удалении файла: ' + error.message, true);
             });
         }
