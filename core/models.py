@@ -489,25 +489,29 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
             old_video_hash = old.processed_video_url_hash
             old_program_file = old.program_file
 
+        # Проверяем, было ли заменено видео ДО сохранения
+        if self.pk and old_video_url != self.video_url and self.video_url:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Event {self.pk}: Video changed! old={old_video_url}, new={self.video_url}")
+            # Обнуляем хэш ДО сохранения, чтобы сигнал post_save увидел None и запустил задачу
+            self.processed_video_url_hash = None
+
         super().save(*args, **kwargs)
 
         # Удаляем старые файлы ПОСЛЕ сохранения (чтобы не удалить новые)
         if self.pk:
             # Удаляем старое видео, если оно заменено
-            if old_video_url != self.video_url and old_video_url:
-                # Проверяем, что старый файл не совпадает с новым
-                if not self.video_url or old_video_url != self.video_url:
-                    self.delete_old_video_file(old_video_url, old_video_hash)
+            if old_video_url and (not self.video_url or old_video_url != self.video_url):
+                self.delete_old_video_file(old_video_url, old_video_hash)
 
             # Удаляем старое изображение, если оно заменено
             if old_image != self.image and old_image:
-                # Проверяем, что старый файл не совпадает с новым
                 if not self.image or old_image != self.image:
                     self.delete_old_file(old_image)
 
             # Удаляем старую программу, если она заменена
             if old_program_file != self.program_file and old_program_file:
-                # Проверяем, что старый файл не совпадает с новым
                 if not self.program_file or old_program_file != self.program_file:
                     self.delete_old_file(old_program_file)
 

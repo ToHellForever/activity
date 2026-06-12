@@ -123,6 +123,14 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
 def process_video_task(
     self, model_name, instance_id, video_field_name, hash_field_name
 ):
+    """
+    Асинхронная обработка видео:
+    1. Сжимает видео
+    2. Добавляет водяной знак
+    3. Загружает в Яндекс Cloud (если включен)
+    4. Удаляет временный локальный файл
+    """
+    logger.info(f"CELERY TASK STARTED: process_video_task for {model_name} {instance_id}")
     try:
         # Разбираем model_name в формате "app_label.model_name"
         if isinstance(model_name, str) and "." in model_name:
@@ -130,94 +138,155 @@ def process_video_task(
             if len(parts) == 2:
                 app_label, model_name = parts
             else:
-                # Если формат неожиданный, используем venues по умолчанию для Venues
                 if "Venue" in model_name:
                     app_label = "venues"
                 else:
                     app_label = "core"
         else:
-            # Если нет точки, используем venues по умолчанию для Venues
             if "Venue" in str(model_name):
                 app_label = "venues"
             else:
                 app_label = "core"
 
         model = apps.get_model(app_label, model_name)
-        instance = model.objects.get(pk=instance_id)
+        try:
+            instance = model.objects.get(pk=instance_id)
+        except model.DoesNotExist:
+            logger.error(f"CELERY TASK: {model_name} {instance_id} does not exist")
+            return f"{model_name} {instance_id} does not exist"
 
         video_field = getattr(instance, video_field_name)
         hash_field = getattr(instance, hash_field_name)
 
-        # Двойная проверка на случай гонки сигналов/задач Celery
-        if not video_field or not instance._should_process_video(
-            video_field, hash_field
-        ):
-            return f"Видео не требует обработки: {model_name} {instance_id}"
+        if not video_field:
+            logger.info(f"CELERY TASK: No video for {model_name} {instance_id}")
+            return f"Видео не требуется: {model_name} {instance_id}"
 
+        # Получаем путь к временному файлу
         video_path = video_field.path
+        logger.info(f"CELERY TASK: Processing video for {model_name} {instance_id}, video_path={video_path}")
 
-        if not os.path.exists(video_path) and not wait_for_file(video_path):
+        if not os.path.exists(video_path):
             logger.error(f"Файл видео не найден: {video_path}")
             return f"Файл не найден: {video_path}"
 
-        # Пути для временных файлов (в той же директории для атомарности)
+        # Проверяем размер файла
+        file_size = os.path.getsize(video_path)
+        logger.info(f"CELERY TASK: Video file size: {file_size} bytes")
+        if file_size == 0:
+            logger.error(f"Файл видео пуст: {video_path}")
+            return f"Файл видео пуст: {video_path}"
+
+        # Пути для временных файлов
         base_dir = os.path.dirname(video_path)
         base_name = os.path.splitext(os.path.basename(video_path))[0]
-        temp_video_path = os.path.join(base_dir, f"{base_name}_temp.mp4")
+        compressed_video_path = os.path.join(base_dir, f"{base_name}_compressed.mp4")
         watermarked_video_path = os.path.join(base_dir, f"{base_name}_watermarked.mp4")
 
-        # Добавляем водяной знак на временный файл и сохраняем в отдельный файл
-        from .utils import add_watermark_to_video
+        # 1. Сжимаем видео
+        logger.info(f"CELERY TASK: Compressing video {video_path}")
+        from .utils import compress_video
+        if not compress_video(video_path, compressed_video_path):
+            logger.error(f"Ошибка при сжатии видео: {video_path}")
+            return f"Ошибка при сжатии видео: {video_path}"
+        logger.info(f"CELERY TASK: Video compressed to {compressed_video_path}")
 
-        watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+        # 2. Добавляем водяной знак
+        # Используем абсолютный путь к watermark
+        watermark_path = os.path.join(os.path.dirname(__file__), '..', 'media', 'watermark.png')
+        watermark_path = os.path.abspath(watermark_path)
+        logger.info(f"CELERY TASK: Looking for watermark at {watermark_path}")
         if not os.path.exists(watermark_path):
-            logger.error(f"Файл водяного знака не найден по пути: {watermark_path}")
-            return f"Файл водяного знака не найден по пути: {watermark_path}"
+            # Пробуем альтернативный путь
+            watermark_path = os.path.join(settings.BASE_DIR, 'media', 'watermark.png')
+            logger.info(f"CELERY TASK: Trying alternative path: {watermark_path}")
+        if not os.path.exists(watermark_path):
+            logger.error(f"Файл водяного знака не найден: {watermark_path}")
+            # Удаляем сжатое видео и возвращаем ошибку
+            if os.path.exists(compressed_video_path):
+                os.remove(compressed_video_path)
+            return f"Файл водяного знака не найден: {watermark_path}"
 
-        if not add_watermark_to_video(
-            temp_video_path,
-            watermark_path,
-            watermarked_video_path,
-        ):
-            return f"Ошибка: не удалось добавить водяной знак к видео: {video_path}"
+        logger.info(f"CELERY TASK: Adding watermark to {compressed_video_path}")
+        from .utils import add_watermark_to_video
+        if not add_watermark_to_video(compressed_video_path, watermark_path, watermarked_video_path):
+            logger.error(f"Ошибка при добавлении водяного знака: {compressed_video_path}")
+            # Удаляем сжатое видео и возвращаем ошибку
+            if os.path.exists(compressed_video_path):
+                os.remove(compressed_video_path)
+            return f"Ошибка при добавлении водяного знака: {compressed_video_path}"
+        logger.info(f"CELERY TASK: Watermark added to {watermarked_video_path}")
 
-        # Атомарная замена файла (для избежания частичной записи при ошибке)
-        try:
-            # Сохраняем исходный файл как резервную копию (опционально для безопасности)
-            backup_path = f"{video_path}.bak"
-            if os.path.exists(backup_path):
-                os.remove(backup_path)  # Удаляем старую бакап если есть (редко нужно)
+        # 3. Загружаем в Яндекс Cloud если включен
+        if getattr(settings, 'USE_YANDEX_CLOUD', False):
+            logger.info(f"CELERY TASK: Uploading to Yandex Cloud")
+            try:
+                import boto3
+                from botocore.client import Config
+                
+                # Создаем S3 клиент для Yandex Cloud
+                s3_client = boto3.client(
+                    's3',
+                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                    config=Config(signature_version='s3v4'),
+                )
 
-            os.replace(video_path, backup_path)  # Переименовываем исходный в бакап
+                # Загружаем файл напрямую через boto3
+                cloud_name = video_field.name
+                with open(watermarked_video_path, 'rb') as f:
+                    file_content = f.read()
+                    s3_client.put_object(
+                        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                        Key=cloud_name,
+                        Body=file_content,
+                        ContentType='video/mp4',
+                    )
+                logger.info(f"CELERY TASK: Uploaded to Yandex Cloud at {cloud_name}")
+                
+                # Обновляем путь в модели на Cloud путь
+                setattr(instance, video_field_name, cloud_name)
+            except Exception as e:
+                logger.error(f"Ошибка при загрузке в Yandex Cloud: {e}", exc_info=True)
+                # Удаляем временные файлы
+                for p in [compressed_video_path, watermarked_video_path]:
+                    if os.path.exists(p):
+                        os.remove(p)
+                return f"Ошибка при загрузке в Cloud: {e}"
+        else:
+            # Локальный режим - перемещаем обработанный файл
+            logger.info(f"CELERY TASK: Local mode, replacing video file")
+            try:
+                os.replace(watermarked_video_path, video_path)
+                # Удаляем исходный файл
+                if os.path.exists(video_path + '.bak'):
+                    os.remove(video_path + '.bak')
+            except Exception as e:
+                logger.error(f"Ошибка при замене файла: {e}")
+                return f"Ошибка при замене файла: {e}"
 
-            # Перемещаем обработанный файл на место исходного с правильным именем/расширением!
-            os.replace(watermarked_video_path, video_path)
-
-            # Удаляем временный файл сжатия и бакап (если всё ок)
-            for p in [temp_video_path]:
-                if os.path.exists(p):
-                    os.remove(p)
-
-            # Удаляем бакап только если новый файл успешно записан и имеет ненулевой размер!
-            if (
-                os.path.exists(video_path)
-                and os.path.getsize(video_path) > 0
-                and os.path.exists(backup_path)
-            ):
-                os.remove(backup_path)
-
-        except Exception as e:
-            logger.error(f"Ошибка при замене файлов: {str(e)}")
-            return f"Ошибка при замене файлов: {str(e)}"
-
-        # Обновляем хэш обработанного видео в БД (только если всё прошло успешно!)
-        new_hash = instance._get_video_hash(video_field)
+        # 4. Обновляем хэш в БД
+        new_hash = instance._get_video_hash(getattr(instance, video_field_name))
         setattr(instance, hash_field_name, new_hash)
         instance.save(update_fields=[hash_field_name])
+        logger.info(f"CELERY TASK: Updated hash to {new_hash}")
 
-        return f"Видео успешно обработано: {video_path}"
+        # 5. Удаляем временные локальные файлы
+        # Включая watermarked_video_path, так как он уже загружен в Cloud
+        for p in [video_path, compressed_video_path, watermarked_video_path]:
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                    logger.info(f"CELERY TASK: Deleted temp file {p}")
+                except Exception as e:
+                    logger.warning(f"Не удалось удалить {p}: {e}")
+
+        logger.info(f"CELERY TASK: Successfully processed video for {model_name} {instance_id}")
+        return f"Видео успешно обработано: {instance_id}"
     except Exception as e:
-        logger.error(f"Исключение при обработке видео: {str(e)}")
+        logger.error(f"Исключение при обработке видео: {str(e)}", exc_info=True)
         return f"Исключение при обработке видео: {str(e)}"
 
 @shared_task
