@@ -249,10 +249,10 @@ class Venue(VideoWatermarkMixin, models.Model):
         ],
     )
     processed_video_hash = models.CharField(
-        max_length=64,
+        max_length=32,
         blank=True,
-        editable=False,
-        verbose_name="Хэш обработанного видео",
+        null=True,
+        verbose_name="Хэш обработанного видео площадки",
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
@@ -286,7 +286,98 @@ class Venue(VideoWatermarkMixin, models.Model):
 
     def __str__(self):
         return self.title
+    def save(self, *args, **kwargs):
+        # Сохраняем старые значения для проверки замены файлов
+        old_video = None
+        old_video_hash = None
+        
+        if self.pk:
+            old = Venue.objects.get(pk=self.pk)
+            old_video = old.video
+            old_video_hash = old.processed_video_hash
 
+        # Проверяем, было ли заменено видео ДО сохранения
+        if self.pk and old_video != self.video and self.video:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Venue {self.pk}: Video changed! old={old_video}, new={self.video}")
+            # Обнуляем хэш ДО сохранения, чтобы сигнал post_save увидел None и запустил задачу
+            self.processed_video_hash = None
+
+        super().save(*args, **kwargs)
+
+        # Удаляем старые файлы ПОСЛЕ сохранения (чтобы не удалить новые)
+        if self.pk:
+            # Удаляем старое видео, если оно заменено
+            if old_video and (not self.video or old_video != self.video):
+                self.delete_old_video_file(old_video, old_video_hash)
+                
+                
+    def delete_old_file(self, old_file):
+        """
+        Удаляет старый файл по пути.
+        Args:
+            old_file: старый файл (FileField/ImageField) или путь к нему.
+        """
+        import logging
+        from django.conf import settings
+        logger = logging.getLogger(__name__)
+        
+        if not old_file:
+            return
+
+        logger.info(f"delete_old_file: удаляем старый файл {old_file}")
+        
+        # Сначала пробуем удалить из S3 если включено облако
+        if getattr(settings, 'USE_YANDEX_CLOUD', False):
+            try:
+                from storages.backends.s3boto3 import S3Boto3Storage
+                
+                file_name = str(old_file)
+                logger.info(f"delete_old_file: удаляем из облака {file_name}")
+                
+                # Создаём экземпляр хранилища S3
+                s3_storage = S3Boto3Storage(
+                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    access_key=settings.AWS_ACCESS_KEY_ID,
+                    secret_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                )
+                
+                if s3_storage.exists(file_name):
+                    logger.info(f"delete_old_file: файл {file_name} существует в облаке, удаляем")
+                    s3_storage.delete(file_name)
+                    logger.info(f"delete_old_file: файл {file_name} удалён из облака")
+                else:
+                    logger.warning(f"delete_old_file: файл {file_name} не найден в облаке")
+            except Exception as e:
+                logger.error(f"delete_old_file: ошибка удаления из облака: {e}", exc_info=True)
+        
+        # Затем пробуем удалить локальный файл
+        try:
+            file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"delete_old_file: локальный файл {file_path} удалён")
+        except NotImplementedError:
+            logger.info(f"delete_old_file: storage не поддерживает path (облачное хранилище)")
+        except Exception as e:
+            logger.error(f"delete_old_file: ошибка при работе с локальным файлом: {e}", exc_info=True)
+                
+    def delete_old_video_file(self, old_video, old_hash):
+        """
+        Удаляет старый видеофайл и обнуляет хэш.
+        Args:
+            old_video: старый видеофайл (FileField) или путь к нему.
+            old_hash: хэш старого видео.
+        """
+        self.delete_old_file(old_video)
+        # Обнуляем хэш, если это поле текущей модели
+        if hasattr(self, 'processed_video_hash'):
+            self.processed_video_hash = None
+            # Сохраняем только хэш, не затрагивая другие поля
+            Venue.objects.filter(pk=self.pk).update(processed_video_hash=None)
     class Meta:
         verbose_name = "Площадка"
         verbose_name_plural = "Площадки"
