@@ -133,6 +133,7 @@ class EventAdmin(admin.ModelAdmin):
         "status",
         "date_time",
         "category",
+        "format",
     )
 
     # Какие поля использовать для поиска
@@ -170,6 +171,7 @@ class EventAdmin(admin.ModelAdmin):
                     "fields": (
                         "status",
                         "category",
+                        "format",
                         "tags",
                         "get_tags_display",
                         "allow_booking_without_payment",

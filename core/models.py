@@ -143,6 +143,19 @@ class Category(models.Model):
         verbose_name_plural = "Категории"
         ordering = ["name"]
 
+class Format(models.Model):
+    """Модель для форматов мероприятий."""
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название формата")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Формат"
+        verbose_name_plural = "Форматы"
+        ordering = ["name"]
+        
 class EventPackage(models.Model):
     """Модель для пакетов мероприятий."""
 
@@ -396,6 +409,13 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         null=True,
         blank=True,
         verbose_name="Категория",
+    )
+    format = models.ForeignKey(
+        Format,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Формат",
     )
     tags = models.ManyToManyField(
         Tag,
