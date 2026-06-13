@@ -75,7 +75,7 @@
                     <ul class="dropdown-menu" aria-labelledby="mainTagDropdown-{{ forloop.counter }}">
                         {% for subtag in main_tag.subtags.all %}
                             <li>
-                                <div class="form-check ms-2">
+                                <div class="form-check ms-2" onclick="event.stopPropagation()">
                                     <input class="form-check-input" type="checkbox" name="tags"
                                            value="{{ subtag.name }}" id="subtag-{{ subtag.id }}"
                                            {% if subtag.name in selected_tags %}checked{% endif %}>

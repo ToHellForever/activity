@@ -11,25 +11,31 @@
     padding: 10px;
     outline: none;
 }
+
 .dropdown-toggle:hover {
     outline: 1px solid #FFFFFF;
 }
+
 .form-check-label {
     white-space: nowrap;
 }
+
 .btn:hover,
 .btn:focus,
 .btn:active {
     color: #FFFFFF;
 }
+
 .filter-item .btn .triangle-down {
     display: none;
 }
+
 .dropdown-menu {
     width: auto;
     padding: 20px;
     border-radius: 10px;
 }
+
 .filter-input::placeholder {
     padding: 10px;
     padding-left: 20px;
