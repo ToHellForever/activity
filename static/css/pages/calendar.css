@@ -149,14 +149,16 @@
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 5px;
+    margin-top: 0;
     background: #ffffff;
-    border-radius: 15px;
+    border-radius: 0 0 15px 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     z-index: 9999 !important;
     max-height: 300px;
     overflow-y: auto;
     min-width: 100%;
+    border: 1px solid #e0e0e0;
+    border-top: none;
 }
 
 .dropdown-menu-custom.active {
@@ -183,10 +185,6 @@
     color: #ff8348;
 }
 
-.dropdown-option.active {
-    background: #00056e;
-    color: white;
-}
 
 /* Кнопка сброса фильтров */
 .filter-reset-btn {
@@ -218,6 +216,16 @@
 .filter-input-dropdown:focus {
     cursor: pointer;
     pointer-events: none;
+}
+
+/* При открытом dropdown убираем нижние border-radius у инпута */
+.dropdown-container.open .filter-input-dropdown {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* Убираем тень у инпута при открытом списке для плавного перехода */
+.dropdown-container.open .filter-input {
+    box-shadow: none;
 }
 
 .dropdown-menu-custom {

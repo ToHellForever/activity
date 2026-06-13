@@ -233,18 +233,32 @@ class CustomDropdown {
         // Закрытие при клике вне dropdown
         document.addEventListener('click', (e) => {
             if (!this.dropdown.contains(e.target) && !e.target.closest('.dropdown-toggle-btn')) {
-                this.close();
+                this.dropdown.classList.remove('active');
+                const container = this.input.closest('.dropdown-container');
+                if (container) {
+                    container.classList.remove('open');
+                }
             }
         });
     }
 
     toggle() {
         this.dropdown.classList.toggle('active');
+        // Добавляем/убираем класс open у контейнера
+        const container = this.input.closest('.dropdown-container');
+        if (container) {
+            container.classList.toggle('open');
+        }
         console.log('Dropdown toggled, active:', this.dropdown.classList.contains('active'));
     }
 
     close() {
         this.dropdown.classList.remove('active');
+        // Убираем класс open у контейнера
+        const container = this.input.closest('.dropdown-container');
+        if (container) {
+            container.classList.remove('open');
+        }
     }
 
     selectOption(option) {
