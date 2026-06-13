@@ -148,6 +148,11 @@
   margin-top: 2px;
 }
 
+/* Стили для формы фильтров */
+.filters-form {
+  display: contents;
+}
+
 .events-carousel-wrapper {
   width: 100%;
   height: 100%;
@@ -670,5 +675,42 @@
     width: 100%;
     font-size: 0.9rem;
     padding: 12px 0;
+  }
+
+  /* Стили для календаря на мобильной */
+  .calendar-popup {
+    min-width: 260px;
+    max-width: 320px;
+    padding: 10px;
+  }
+
+  .calendar-day {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  .calendar-month-year {
+    font-size: 0.9rem;
+  }
+
+  .calendar-header button {
+    width: 25px;
+    height: 25px;
+    font-size: 1rem;
+  }
+
+  /* Стили для dropdown на мобильной */
+  .dropdown-menu-custom {
+    max-height: 200px;
+  }
+
+  .dropdown-option {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .filter-reset-btn {
+    font-size: 0.85rem;
+    padding: 6px 15px;
   }
 }

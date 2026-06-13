@@ -55,6 +55,32 @@ def landing_page(request):
         .order_by("date_time")
     )
 
+    # Получаем выбранные значения фильтров из GET-запроса
+    selected_category = request.GET.get("category", "")
+    selected_date_from = request.GET.get("date_from", "")
+    selected_date_to = request.GET.get("date_to", "")
+    search_title = request.GET.get("title", "").strip()
+
+    # Применяем фильтры
+    if selected_category:
+        active_events = active_events.filter(category__id=selected_category)
+    if selected_date_from:
+        try:
+            from datetime import datetime, timedelta
+            date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
+            active_events = active_events.filter(date_time__gte=date_from)
+        except ValueError:
+            pass
+    if selected_date_to:
+        try:
+            from datetime import datetime, timedelta
+            date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
+            active_events = active_events.filter(date_time__lte=date_to + timedelta(days=1))
+        except ValueError:
+            pass
+    if search_title:
+        active_events = active_events.filter(title__icontains=search_title)
+
     # Get published venues for the carousel
     active_venues = (
         Venue.objects.filter(status="published")
@@ -63,12 +89,21 @@ def landing_page(request):
         .order_by("-tariff", "title")[:10]
     )
 
+    # Получаем все категории для выпадающего списка
+    from core.models import Category
+    categories = Category.objects.all().order_by("name")
+
     return render(
         request,
         "landing.html",
         {
             "active_events": active_events,
             "active_venues": active_venues,
+            "categories": categories,
+            "selected_category": selected_category,
+            "selected_date_from": selected_date_from,
+            "selected_date_to": selected_date_to,
+            "search_title": search_title,
         },
     )
 
@@ -433,8 +468,8 @@ def update_ticket_status(request, ticket_id):
 def event_list(request):
     active_events = (
         Event.objects.filter(status="active")
-        .select_related("organizer", "category")
-        .prefetch_related("images")
+        .select_related("organizer", "category", "format")
+        .prefetch_related("images", "tags")
         .order_by("date_time")
     )
     # Получаем все основные теги с их подтегами
@@ -447,6 +482,41 @@ def event_list(request):
     if selected_tags:
         active_events = active_events.filter(tags__name__in=selected_tags).distinct()
 
+    # Получаем значения фильтров из GET-запроса
+    selected_category = request.GET.get("category", "")
+    selected_format = request.GET.get("format", "")
+    selected_date_from = request.GET.get("date_from", "")
+    selected_date_to = request.GET.get("date_to", "")
+    search_title = request.GET.get("title", "").strip()
+
+    # Применяем фильтры
+    if selected_category:
+        active_events = active_events.filter(category__id=selected_category)
+    if selected_format:
+        active_events = active_events.filter(format__id=selected_format)
+    if selected_date_from:
+        try:
+            from datetime import datetime
+            date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
+            active_events = active_events.filter(date_time__gte=date_from)
+        except ValueError:
+            pass
+    if selected_date_to:
+        try:
+            from datetime import datetime, timedelta
+            date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
+            # Добавляем один день, чтобы включить всю конечную дату
+            active_events = active_events.filter(date_time__lte=date_to + timedelta(days=1))
+        except ValueError:
+            pass
+    if search_title:
+        active_events = active_events.filter(title__icontains=search_title)
+
+    # Получаем все категории и форматы для выпадающих списков
+    from core.models import Category, Format
+    categories = Category.objects.all().order_by("name")
+    formats = Format.objects.all().order_by("name")
+
     return render(
         request,
         "events/event_list.html",
@@ -454,6 +524,13 @@ def event_list(request):
             "active_events": active_events,
             "main_tags": main_tags,
             "selected_tags": selected_tags,
+            "categories": categories,
+            "formats": formats,
+            "selected_category": selected_category,
+            "selected_format": selected_format,
+            "selected_date_from": selected_date_from,
+            "selected_date_to": selected_date_to,
+            "search_title": search_title,
         },
     )
 
