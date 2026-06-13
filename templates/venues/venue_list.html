@@ -11,14 +11,14 @@
             <h1 class='landing-title'>ПОИСК ЗАЛА</h1>
 
             <form method="get" action="{% url 'venues:venue_list' %}" class="filters-form">
-            <div class='row filers-row'>
+            <div class='row filers-row mt-3'>
                 <div class='col-3 filers-col'>
                     <div class="filter-item">
                         <div class="filter-label">ТИП ЗАЛА</div>
                         <div class="input-with-button dropdown-container">
                             <input type="text" class="form-control filter-input filter-input-dropdown" 
                                    placeholder="Все" 
-                                   value="{{ selected_category|default:'Все' }}"
+                                   value="{{ selected_category|default:'' }}"
                                    readonly 
                                    id="categoryInput"
                                    data-placeholder="Все">
@@ -63,7 +63,7 @@
                             <input type="text" class="form-control filter-input" 
                                    placeholder="Город, улица, дом" 
                                    name="address"
-                                   value="{{ search_address|default:'' }}">
+                                   value="{{ address|default:'' }}">
                             <button class="input-button" type="button" disabled>
                                 <span class="triangle-down"></span>
                             </button>
@@ -84,7 +84,6 @@
                             <div class="price-slider-header">
                                 <span class="price-slider-title">СТОИМОСТЬ:</span>
                                 <span class="price-slider-value" id="priceValueDisplay">{{ max_price|default:max_price_db|default:15000 }} ₽</span>
-                                <a href="{% url 'venues:venue_list' %}" class="price-reset-btn">сбросить</a>
                             </div>
                             <div class="price-slider-wrapper">
                                 <input type="range" class="price-slider" 

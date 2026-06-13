@@ -336,7 +336,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoryDropdown = document.getElementById('categoryDropdown');
         if (categoryDropdown) {
             console.log('Initializing category dropdown');
-            new CustomDropdown('categoryInput', 'categoryDropdown', 'category');
+            const dropdownInstance = new CustomDropdown('categoryInput', 'categoryDropdown', 'category');
+            
+            // Синхронизируем отображаемое значение с выбранным из GET параметров
+            const hiddenInput = categoryInput.parentElement.querySelector('input[name="category"]');
+            if (hiddenInput && hiddenInput.value) {
+                const selectedOption = categoryDropdown.querySelector(`[data-value="${hiddenInput.value}"]`);
+                if (selectedOption) {
+                    categoryInput.value = selectedOption.textContent.trim();
+                }
+            }
         } else {
             console.error('Category dropdown element not found');
         }
