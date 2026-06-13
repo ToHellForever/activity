@@ -1,56 +1,80 @@
 .dropdown-toggle {
-    color: #FFFFFF;
-    font-family: "Montserrat";
-    font-weight: 500;
-    font-size: 1rem;
-    border-radius: 20px;
-    background: transparent;
-    border: none;
-    margin-top: 10px;
-    padding: 8px;
-    outline: none;
+  color: #ffffff;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 1rem;
+  border-radius: 20px;
+  background: transparent;
+  border: none;
+  margin-top: 10px;
+  padding: 8px;
+  outline: none;
 }
 
 .dropdown-toggle::after {
-    display: none !important;
+  display: none !important;
 }
 
 .dropdown-toggle:hover {
-    outline: 1px solid #FFFFFF;
+  outline: 1px solid #ffffff;
 }
 
 .filter-item .d-flex.flex-wrap {
-    width: 90%;
-    justify-content: space-between;
-    gap: 15px;
+  width: 90%;
+  justify-content: space-between;
+  gap: 15px;
 }
 
 .form-check-label {
-    white-space: nowrap;
+  white-space: nowrap;
+}
+
+/* Стили для чекбоксов тегов - оранжевый цвет #ff8348 */
+.form-check-input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid #ff8348;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.form-check-input[type="checkbox"]:checked {
+  background-color: #ff8348;
+  border-color: #ff8348;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input[type="checkbox"]:hover {
+  border-color: #e6743c;
+}
+
+.form-check-input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 131, 72, 0.25);
 }
 
 .btn:hover,
 .btn:focus,
 .btn:active {
-    color: #FFFFFF;
+  color: #ffffff;
 }
 
 .filter-item .btn .triangle-down {
-    display: none;
+  display: none;
 }
 
 .dropdown-menu {
-    width: auto;
-    padding: 20px;
-    border-radius: 10px;
+  width: auto;
+  padding: 20px;
+  border-radius: 10px;
 }
 
 .filter-input::placeholder {
-    padding: 10px;
-    padding-left: 20px;
-    font-family: "Verdana";
-    font-weight: 400;
-    font-size: 0.9rem;
-    font-style: italic;
-    color: #777a8d
+  padding: 10px;
+  padding-left: 20px;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #777a8d;
 }
