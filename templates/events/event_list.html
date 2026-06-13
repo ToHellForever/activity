@@ -4,7 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/event_list.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/calendar.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <script src="{% static 'js/pages/calendar.js' %}" defer></script>
         <div class='filters-landing'>
             <h1 class='landing-title'>ПОИСК МЕРОПРИЯТИЯ</h1>
@@ -159,7 +159,6 @@
 </div>
 
 <div class='landing-block mt-3'>
-    <h2 class='landing-h mb-3'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
 <div class="row">
     {% for ev in active_events %}
     <div class="col-md-3 mb-4">
