@@ -89,19 +89,38 @@ class VenueImage(VideoWatermarkMixin, models.Model):
         return f"Фото для {self.venue.title}"
 
     def save(self, *args, **kwargs):
+        # Сохраняем изображение сначала
         super().save(*args, **kwargs)
 
         # Обработка водяного знака для изображения
         if self.image:
+            import os
             from django.conf import settings
             from core.utils import add_watermark_to_image
 
-            # Путь к логотипу для водяного знака
-            watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
+            # Пробуем найти файл водяного знака в нескольких местах
+            possible_paths = [
+                os.path.join(settings.MEDIA_ROOT, "watermark.png") if settings.MEDIA_ROOT else None,
+                os.path.join(settings.BASE_DIR, "media", "watermark.png"),
+                os.path.join(os.getcwd(), "media", "watermark.png"),
+                "media/watermark.png",
+                "D:\\python\\activity\\media\\watermark.png",
+            ]
 
-            if os.path.exists(watermark_path):
+            watermark_path = None
+            for path in possible_paths:
+                if path and os.path.exists(path):
+                    watermark_path = path
+                    break
+
+            if watermark_path:
                 image_path = self.image.path
-                add_watermark_to_image(image_path, watermark_path, image_path)
+                print(f"Adding watermark to: {image_path}")
+                print(f"Using watermark from: {watermark_path}")
+                result = add_watermark_to_image(image_path, watermark_path, image_path)
+                print(f"Watermark result: {result}")
+            else:
+                print(f"Watermark file not found in any location")
 
     class Meta:
         verbose_name = "Фото площадки"
