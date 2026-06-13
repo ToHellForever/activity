@@ -9,6 +9,7 @@ import time
 from django.utils import timezone
 from django.conf import settings
 from core.models import Event, Ticket
+from venues.models import Venue
 from django.core.management import call_command
 logger = logging.getLogger(__name__)
 
