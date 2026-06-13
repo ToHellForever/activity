@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem
 from .forms import BookingRequestForm
 import json
+from django.db import models
 
 
 # ФУНКЦИИ ДЛЯ АДМИНКИ
@@ -144,11 +145,57 @@ class VenueListView(ListView):
     context_object_name = "venues"
     paginate_by = 12  # Выводим 12 карточек за раз
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Получаем минимальную и максимальную стоимость из БД
+        price_stats = Venue.objects.filter(status="published").aggregate(
+            min_price=models.Min('price'),
+            max_price=models.Max('price')
+        )
+        min_price_value = float(price_stats['min_price'] or 0)
+        max_price_value = float(price_stats['max_price'] or 15000)
+        
+        # Получаем значение фильтра из GET-параметра
+        max_price_filter = self.request.GET.get('max_price')
+        if max_price_filter:
+            try:
+                max_price_filter = int(max_price_filter)
+            except (ValueError, TypeError):
+                max_price_filter = int(max_price_value)
+        else:
+            max_price_filter = int(max_price_value)
+        
+        context['min_price_db'] = int(min_price_value)
+        context['max_price_db'] = int(max_price_value)
+        context['max_price_range'] = int(max_price_value)
+        context['max_price'] = max_price_filter
+        
+        return context
+
     def get_queryset(self):
+        from django.db import models
 
         qs = super().get_queryset().filter(status="published")
 
         # Фильтрация по GET-параметрам
+        category = self.request.GET.get("category")
+        if category:
+            qs = qs.filter(category_id=category)
+
+        min_capacity = self.request.GET.get("min_capacity")
+        if min_capacity and min_capacity.isdigit():
+            qs = qs.filter(max_capacity__gte=int(min_capacity))
+
+        address = self.request.GET.get("address")
+        if address:
+            qs = qs.filter(address__icontains=address)
+
+        # Фильтрация по стоимости (максимальная цена)
+        max_price = self.request.GET.get("max_price")
+        if max_price and max_price.isdigit():
+            qs = qs.filter(price__lte=int(max_price))
+
         city = self.request.GET.get("city")
         if city:
             qs = qs.filter(city__iexact=city)
@@ -173,9 +220,9 @@ class VenueListView(ListView):
         if venue_type:
             qs = qs.filter(venue_type=venue_type)
 
-        max_capacity = self.request.GET.get("max_capacity")
-        if max_capacity and max_capacity.isdigit():
-            qs = qs.filter(max_capacity__gte=max_capacity)
+        max_capacity_field = self.request.GET.get("max_capacity")
+        if max_capacity_field and max_capacity_field.isdigit():
+            qs = qs.filter(max_capacity__gte=max_capacity_field)
 
         price = self.request.GET.get("price")
         if price and price.isdigit():

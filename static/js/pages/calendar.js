@@ -281,9 +281,41 @@ class CustomDropdown {
             hiddenInput.value = value;
         }
 
-        // НЕ отправляем форму автоматически - ждем нажатия кнопки "НАЙТИ"
-
         this.close();
+    }
+}
+
+/**
+ * Ползунок стоимости (один ползунок с отображением цены сверху)
+ */
+class PriceSlider {
+    constructor(sliderId, valueDisplayId) {
+        this.slider = document.getElementById(sliderId);
+        this.valueDisplay = document.getElementById(valueDisplayId);
+        
+        if (!this.slider || !this.valueDisplay) {
+            console.error('PriceSlider elements not found');
+            return;
+        }
+
+        this.init();
+    }
+
+    init() {
+        // Устанавливаем начальное значение
+        this.updateValue();
+        
+        // Обновляем значение при движении ползунка
+        this.slider.addEventListener('input', () => {
+            this.updateValue();
+        });
+    }
+
+    updateValue() {
+        const value = parseInt(this.slider.value);
+        // Форматируем число с разделителями тысяч
+        const formattedValue = value.toLocaleString('ru-RU');
+        this.valueDisplay.textContent = `${formattedValue} ₽`;
     }
 }
 
@@ -323,4 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Инициализация ползунка стоимости (если есть)
+    const priceSlider = document.getElementById('priceSlider');
+    if (priceSlider) {
+        new PriceSlider('priceSlider', 'priceValueDisplay');
+    }
 });

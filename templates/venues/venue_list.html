@@ -1,395 +1,137 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+
 {% block content %}
-<div class="container">
-  <h1>Каталог площадок</h1>
-  
-  <div class="row mb-4">
-      <div class="col-md-12">
-          <div class="d-flex justify-content-between align-items-center">
-              <h2>Сортировка:</h2>
-              <div class="btn-group" role="group">
-                  <a href="?sort=relevance" class="btn {% if request.GET.sort == 'relevance' or not request.GET.sort %}btn-primary{% else %}btn-outline-primary{% endif %}">Релевантности</a>
-                  <a href="?sort=price_asc" class="btn {% if request.GET.sort == 'price_asc' %}btn-primary{% else %}btn-outline-primary{% endif %}">Цене ↑</a>
-                  <a href="?sort=price_desc" class="btn {% if request.GET.sort == 'price_desc' %}btn-primary{% else %}btn-outline-primary{% endif %}">Цене ↓</a>
-                  <a href="?sort=area" class="btn {% if request.GET.sort == 'area' %}btn-primary{% else %}btn-outline-primary{% endif %}">Площади</a>
-                  <a href="?sort=capacity" class="btn {% if request.GET.sort == 'capacity' %}btn-primary{% else %}btn-outline-primary{% endif %}">Вместимости</a>
-                  <a href="?sort=venue_type" class="btn {% if request.GET.sort == 'venue_type' %}btn-primary{% else %}btn-outline-primary{% endif %}">Типу помещения</a>
-                  <a href="?sort=priority" class="btn {% if request.GET.sort == 'priority' %}btn-primary{% else %}btn-outline-primary{% endif %}">Приоритету размещения</a>
-              </div>
-          </div>
-      </div>
-  </div>
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/event_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/venue_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<script src="{% static 'js/pages/calendar.js' %}" defer></script>
+        <div class='filters-landing'>
+            <h1 class='landing-title'>ПОИСК ЗАЛА</h1>
 
-<!-- Фильтры -->
-  <form id="filter-form" method="get">
-      <!-- Сохраняем параметры сортировки при фильтрации -->
-      {% if request.GET.sort %}
-      <input type="hidden" name="sort" value="{{ request.GET.sort }}">
-      {% endif %}
-
-      <!-- Сохраняем параметры оборудования при фильтрации -->
-      {% for equipment_id in request.GET.getlist %}
-          {% if equipment_id != 'equipment' %}
-              {% for id in request.GET.getlist %}
-                  {% if id != 'equipment' and id != 'sort' and id != 'city' and id != 'district' and id != 'metro' and id != 'venue_type' and id != 'max_capacity' and id != 'price' and id != 'price_unit' and id != 'venue_format' %}
-                      <input type="hidden" name="equipment" value="{{ id }}">
-                  {% endif %}
-              {% endfor %}
-          {% endif %}
-      {% endfor %}
-
-      <div class="row">
-          <div class="col-md-3">
-              <input type="text" name="city" class="form-control" placeholder="Город" value="{% if request.GET.city %}{{ request.GET.city }}{% else %}Новосибирск{% endif %}">
-          </div>
-          <div class="col-md-3">
-              <input type="text" name="district" class="form-control" placeholder="Район" value="{{ request.GET.district }}">
-          </div>
-          <div class="col-md-3">
-              <input type="text" name="metro" class="form-control" placeholder="Метро" value="{{ request.GET.metro }}">
-          </div>
-          <div class="col-md-3">
-              <select name="venue_type" class="form-select">
-                  <option value="">Тип площадки</option>
-                  <option value="1" {% if request.GET.venue_type == '1' %}selected{% endif %}>Конференц-зал</option>
-                  <option value="2" {% if request.GET.venue_type == '2' %}selected{% endif %}>Коворкинг</option>
-                  <option value="3" {% if request.GET.venue_type == '3' %}selected{% endif %}>Лекционный зал</option>
-              </select>
-          </div>
-      </div>
-      <div class="row mt-3">
-          <div class="col-md-3">
-              <input type="number" name="max_capacity" class="form-control" placeholder="Вместимость max" value="{{ request.GET.max_capacity }}">
-          </div>
-          <div class="col-md-3">
-              <input type="number" name="price" class="form-control" placeholder="Цена" value="{{ request.GET.price }}">
-          </div>
-          <div class="col-md-3">
-              <select name="price_unit" class="form-select">
-                  <option value="">Формат аренды</option>
-                  <option value="hour" {% if request.GET.price_unit == 'hour' %}selected{% endif %}>Почасовая</option>
-                  <option value="day" {% if request.GET.price_unit == 'day' %}selected{% endif %}>Посуточная</option>
-                  <option value="request" {% if request.GET.price_unit == 'request' %}selected{% endif %}>По запросу</option>
-              </select>
-          </div>
-      </div>
-      <div class="row mt-3">
-           <div class="col-md-3">
-               <div class="form-group">
-                   <label>Подходит для формата:</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="тренинг" id="format-training" {% if 'тренинг' in request.GET.getlist.0 %}checked{% endif %}>
-                        <label class="form-check-label" for="format-training">Тренинг</label>
+            <form method="get" action="{% url 'venues:venue_list' %}" class="filters-form">
+            <div class='row filers-row'>
+                <div class='col-3 filers-col'>
+                    <div class="filter-item">
+                        <div class="filter-label">ТИП ЗАЛА</div>
+                        <div class="input-with-button dropdown-container">
+                            <input type="text" class="form-control filter-input filter-input-dropdown" 
+                                   placeholder="Все" 
+                                   value="{{ selected_category|default:'Все' }}"
+                                   readonly 
+                                   id="categoryInput"
+                                   data-placeholder="Все">
+                            <button class="input-button dropdown-toggle-btn" type="button" data-target="categoryDropdown">
+                                <span class="triangle-down"></span>
+                            </button>
+                            <div class="dropdown-menu-custom" id="categoryDropdown">
+                                <div class="dropdown-option {% if not selected_category %}active{% endif %}" data-value="">
+                                    Все
+                                </div>
+                                {% for cat in categories %}
+                                    <div class="dropdown-option {% if selected_category == cat.id|stringformat:'s' %}active{% endif %}" 
+                                         data-value="{{ cat.id }}">
+                                        {{ cat.name }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="category" value="{{ selected_category }}">
+                        </div>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="мастер-класс" id="format-masterclass" {% if 'мастер-класс' in request.GET.getlist.0 %}checked{% endif %}>
-                        <label class="form-check-label" for="format-masterclass">Мастер-класс</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="деловая встреча" id="format-meeting" {% if 'деловая встреча' in request.GET.getlist.0 %}checked{% endif %}>
-                        <label class="form-check-label" for="format-meeting">Деловая встреча</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="venue_format" value="конференция" id="format-conference" {% if 'конференция' in request.GET.getlist.0 %}checked{% endif %}>
-                        <label class="form-check-label" for="format-conference">Конференция</label>
-                    </div>
-               </div>
-           </div>
-          <button id="equipment-filter-btn" class="btn btn-outline-secondary mb-4" type="button">
-  <i class="bi bi-gear"></i> Оборудование и удобства
-</button>
+                </div>
 
-<!-- Блок с оборудованием (изначально скрыт) -->
-<div id="equipment-filter-block" class="card p-3 mb-4 d-none">
-  <h5>Фильтр по оборудованию</h5>
-  <div id="equipment-loading" class="text-muted mb-2">Загрузка списка...</div>
-  <div id="equipment-items">
-    <!-- Здесь будут динамически созданные чекбоксы -->
-  </div>
-  
-  <div class="d-flex justify-content-end gap-2 mt-3">
-    <button id="clear-equipment-filters" class="btn btn-sm btn-outline-danger">Сбросить</button>
-  </div>
-</div>
-          <div class="col-md-3 mt-4">
-              <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
-          </div>
-      </div>
-  </form>
-   
-  <div id="venues-grid" class="row row-cols-1 row-cols-md-3 g-4 mt-4">
-      {% for venue in venues %}
-      <div class="col">
-          <div class="card h-100">
-              <div class="card-body">
-                  <h5 class="card-title">{{ venue.title }}</h5>
-                  <p class="card-text text-muted">{{ venue.address }}</p>
-                  <p>Вместимость: {{ venue.max_capacity }} чел.</p>
-                  <p>Цена: {{ venue.price }} ₽/{{ venue.get_price_unit_display }}</p>
-                    {% if venue.slug %}
-                        <a href="{% url 'venues:venue_detail' venue.slug %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
-                    {% else %}
-                        <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm disabled">Подробнее</a>
-                    {% endif %}
+                <div class='col-3 filers-col'>
+                    <div class="filter-item">
+                        <div class="filter-label">КОЛИЧЕСТВО ГОСТЕЙ</div>
+                        <div class="input-with-button">
+                            <input type="number" class="form-control filter-input" 
+                                   placeholder="От 0" 
+                                   name="min_capacity"
+                                   value="{{ min_capacity|default:'' }}">
+                            <button class="input-button" type="button" disabled>
+                                <span class="triangle-down"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal-{{ venue.id }}">
-  Оставить заявку
-</button>
-              </div>
-          </div>
-      </div>
-      {% endfor %}
-  </div>
-  
-  <!-- Кнопка "Показать ещё" -->
-  {% if is_paginated and page_obj.has_next %}
-  <div class="text-center mt-4">
-      <button id="load-more-btn" data-page="{{ page_obj.next_page_number }}" 
-              class="btn btn-outline-secondary">
-          Показать ещё {{ venues|length }} площадок →
-      </button>
-  </div>
-  {% endif %}
+                <div class='col-4 filers-col'>
+                    <div class="filter-item">
+                        <div class="filter-label">АДРЕС</div>
+                        <div class="input-with-button">
+                            <input type="text" class="form-control filter-input" 
+                                   placeholder="Город, улица, дом" 
+                                   name="address"
+                                   value="{{ search_address|default:'' }}">
+                            <button class="input-button" type="button" disabled>
+                                <span class="triangle-down"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class='col-2 filers-col'>
+                    <div class="filter-button-container">
+                        <button type="submit" class="filter-button">НАЙТИ</button>
+                    </div>
+                </div>
+            </div>
+            <div class='row filers-row mt-2'>
+                <div class="col-12 filers-col">
+                    <div class="filter-item">
+                        <div class="price-slider-container">
+                            <div class="price-slider-header">
+                                <span class="price-slider-title">СТОИМОСТЬ:</span>
+                                <span class="price-slider-value" id="priceValueDisplay">{{ max_price|default:max_price_db|default:15000 }} ₽</span>
+                                <a href="{% url 'venues:venue_list' %}" class="price-reset-btn">сбросить</a>
+                            </div>
+                            <div class="price-slider-wrapper">
+                                <input type="range" class="price-slider" 
+                                       name="max_price" 
+                                       min="{{ min_price_db|default:0 }}" 
+                                       max="{{ max_price_range|default:100000 }}" 
+                                       value="{{ max_price|default:max_price_db|default:15000 }}"
+                                       id="priceSlider">
+                                <div class="price-slider-minmax">
+                                    <span>{{ min_price_db|default:0 }} ₽</span>
+                                    <span>{{ max_price_range|default:100000 }} ₽</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class='row filers-row mt-2'>
+                <div class='col-12 text-end'>
+                    <a href="{% url 'venues:venue_list' %}" class="filter-reset-btn">Сбросить фильтры</a>
+                </div>
+            </div>
+            </form>
 </div>
 
-<!-- Модальные окна для заявок -->
-{% for venue in venues %}
-<div class="modal fade" id="requestModal-{{ venue.id }}" tabindex="-1" aria-labelledby="requestModalLabel-{{ venue.id }}" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="requestModalLabel-{{ venue.id }}">Заявка на площадку: {{ venue.title }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-      </div>
-      <form id="booking-request-form-{{ venue.id }}" novalidate>
-        {% csrf_token %}
-        <div class="modal-body">
-          <input type="hidden" name="venue_id" value="{{ venue.id }}">
-          <div class="mb-3">
-            <label for="name-{{ venue.id }}" class="form-label">Ваше имя</label>
-            <input type="text" class="form-control" id="name-{{ venue.id }}" name="name" required>
-          </div>
-          <div class="mb-3">
-            <label for="phone-{{ venue.id }}" class="form-label">Телефон</label>
-            <input type="tel" class="form-control" id="phone-{{ venue.id }}" name="phone" required
-                   oninput="validatePhone(this)" onblur="validatePhone(this)">
-            <div class="invalid-feedback">
-              Номер должен быть в формате +7XXXXXXXXXX, 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)
+<div class='landing-block mt-3'>
+<div class="row">
+    {% for venue in venues %}
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            {% if venue.images.all %}
+            <img src="{{ venue.images.first.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ venue.title }}</h5>
+    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ venue.address }}</span></p>
+    <p class="card-label" style='margin-top: -10px !important;'>Тип: <span class="badge">{{ venue.venue_type.name|default:'Не указан' }}</span></p>
+    <p class="card-label">Вместимость: <span class="badge">{{ venue.max_capacity }} чел.</span></p>
+    <p class="card-label">Цена: <span class="badge">{{ venue.price }} ₽</span></p>
+<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ПОДРОБНЕЕ</a>
             </div>
-          </div>
-          <div class="mb-3">
-            <label for="email-{{ venue.id }}" class="form-label">Email (необязательно)</label>
-            <input type="email" class="form-control" id="email-{{ venue.id }}" name="email">
-          </div>
-          <div class="mb-3">
-            <label for="event_date-{{ venue.id }}" class="form-label">Дата и время мероприятия</label>
-<input type="datetime-local" class="form-control" id="event_date-{{ venue.id }}" name="event_date" required
-       onchange="validateDate(this)" oninput="validateDate(this)">
-            <div class="invalid-feedback">
-              Дата мероприятия должна быть будущей (завтра или позже)
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="participants_count-{{ venue.id }}" class="form-label">Количество участников</label>
-            <input type="number" class="form-control" id="participants_count-{{ venue.id }}" name="participants_count" min="1" required>
-          </div>
-          <div class="mb-3">
-            <label for="event_format-{{ venue.id }}" class="form-label">Формат мероприятия</label>
-            <input type="text" class="form-control" id="event_format-{{ venue.id }}" name="event_format" required>
-          </div>
-          <div class="mb-3">
-            <label for="comment-{{ venue.id }}" class="form-label">Комментарий (необязательно)</label>
-            <textarea class="form-control" id="comment-{{ venue.id }}" name="comment" rows="3"></textarea>
-          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-          <button type="button" class="btn btn-primary" onclick="submitBookingRequest({{ venue.id }})">Отправить заявку</button>
-        </div>
-      </form>
     </div>
-  </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <p class="text-muted">Залы не найдены</p>
+    </div>
+    {% endfor %}
 </div>
-{% endfor %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Функция для получения значений параметров из URL
-    function getParameterValuesByName(name) {
-        const url = window.location.href;
-        const regex = new RegExp('[\?&]' + name + '=([^&#]*)', 'g');
-        const values = [];
-        let match;
-        while ((match = regex.exec(url)) !== null) {
-            values.push(decodeURIComponent(match[1].replace(/\+/g, ' ')));
-        }
-        return values;
-    }
-
-    // Восстанавливаем состояние чекбоксов при загрузке страницы
-    const selectedFormats = getParameterValuesByName('venue_format');
-    selectedFormats.forEach(format => {
-        const checkbox = document.querySelector(`input[name="venue_format"][value="${format}"]`);
-        if (checkbox) {
-            checkbox.checked = true;
-        }
-    });
-
-    // Сохранение состояния чекбоксов при отправке формы
-    const filterForm = document.getElementById('filter-form');
-    filterForm.addEventListener('submit', function() {
-        // Удаляем старые скрытые поля, если они есть
-        document.querySelectorAll('input[name="venue_format"][type="hidden"]').forEach(el => el.remove());
-    });
-    const filterBtn = document.getElementById('equipment-filter-btn');
-    const filterBlock = document.getElementById('equipment-filter-block');
-    const itemsContainer = document.getElementById('equipment-items');
-    const loadingText = document.getElementById('equipment-loading');
-    const clearFiltersBtn = document.getElementById('clear-equipment-filters');
-
-    // --- 1. Загрузка данных об оборудовании ---
-    filterBtn.addEventListener('click', function() {
-        if (filterBlock.classList.contains('d-none')) {
-            loadingText.style.display = 'block';
-            itemsContainer.innerHTML = ''; // Очищаем контейнер при каждом открытии
-            fetch("/venues/public/get_equipment_items/")
-                .then(response => {
-                    if (!response.ok) {
-                        // Покажем текст ошибки от сервера в блоке
-                        return response.text().then(text => { throw new Error(text); });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    data.equipment.forEach(cat => {
-                        const catDiv = document.createElement('div');
-                        catDiv.className = 'mb-3';
-                        catDiv.innerHTML = `<strong>${cat.category_name}</strong>`;
-
-                        cat.items.forEach(item => {
-                            const checkboxId = `equip-${item.id}`;
-                            const checkboxDiv = document.createElement('div');
-                            checkboxDiv.className = 'form-check';
-                            checkboxDiv.innerHTML =
-                                '<input ' +
-                                    'class="form-check-input equip-checkbox"' +
-                                    'type="checkbox"' +
-                                    'name="equipment"' +
-                                    'value="' + item.id + '"' +
-                                    'id="' + checkboxId + '"' +
-                                    (getParameterValuesByName('equipment').includes(item.id.toString()) ? ' checked' : '') +
-                                    '>' +
-                                '<label class="form-check-label" for="' + checkboxId + '">' +
-                                    item.name +
-                                '</label>';
-                            catDiv.appendChild(checkboxDiv);
-                        });
-                        itemsContainer.appendChild(catDiv);
-                    });
-                    loadingText.style.display = 'none';
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки оборудования:', error);
-                    loadingText.style.display = 'none';
-                    itemsContainer.innerHTML = '<div class="text-danger">Ошибка: ' + error.message + '</div>';
-                });
-        }
-        filterBlock.classList.toggle('d-none');
-    });
-
-    // --- 2. Очистка фильтров оборудования ---
-    clearFiltersBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.equip-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
-        });
-    });
-
-    // --- 3. Вспомогательная функция для получения всех параметров из URL ---
-    function getParameterValuesByName(name) {
-        const url = window.location.href;
-        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)', 'g');
-        const values = [];
-        let match;
-        while ((match = regex.exec(url)) !== null) {
-            values.push(decodeURIComponent(match[1].replace(/\+/g, ' ')));
-        }
-        return values;
-    }
-});
-
-// Клиентская валидация телефона (российский формат)
-function validatePhone(input) {
-    const phone = input.value;
-    let isValid = false;
-    
-    // Проверяем формат +7XXXXXXXXXX (12 символов с +)
-    if (phone.startsWith('+') && phone.length === 12) {
-        const digits = phone.substring(1);
-        isValid = /^\d{11}$/.test(digits) && phone[1] === '7';
-    }
-    // Проверяем формат 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)
-    else if (phone.length === 11) {
-        isValid = /^[78]\d{10}$/.test(phone);
-    }
-    
-    if (phone && !isValid) {
-        input.setCustomValidity('Номер должен быть в формате +7XXXXXXXXXX, 7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)');
-    } else {
-        input.setCustomValidity('');
-    }
-}
-
-// Клиентская валидация даты
-function validateDate(input) {
-    const selectedDate = new Date(input.value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только дат
-    
-    if (selectedDate && selectedDate <= today) {
-        input.setCustomValidity('Дата мероприятия должна быть будущей (завтра или позже)');
-    } else {
-        input.setCustomValidity('');
-    }
-}
-
-// Функция для отправки заявки через AJAX
-function submitBookingRequest(venueId) {
-    const form = document.getElementById(`booking-request-form-${venueId}`);
-    const formData = new FormData(form);
-    const modal = bootstrap.Modal.getInstance(document.getElementById(`requestModal-${venueId}`));
-
-    // Проверяем валидность формы
-    if (!form.checkValidity()) {
-        // Если форма невалидна, показываем стандартные сообщения браузера
-        form.reportValidity();
-        return;
-    }
-
-    // Показываем сообщение об успехе и закрываем модальное окно
-    alert('Заявка успешно отправлена!');
-    modal.hide();
-
-    // Отправляем данные в фоновом режиме
-    fetch("{% url 'venues:process_booking_request' %}", {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-        },
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Ошибка при обработке заявки');
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка при фоновой отправке:', error);
-    });
-}
-</script>
 {% endblock %}
