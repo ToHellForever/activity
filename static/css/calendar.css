@@ -152,7 +152,6 @@
     margin-top: 0;
     background: #ffffff;
     border-radius: 0 0 15px 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     z-index: 9999 !important;
     max-height: 300px;
     overflow-y: auto;
@@ -220,12 +219,43 @@
 
 /* При открытом dropdown убираем нижние border-radius у инпута */
 .dropdown-container.open .filter-input-dropdown {
-    border-radius: 15px 15px 0 0 !important;
+    border-radius: 20px 20px 0 0 !important;
 }
 
 /* Убираем тень у инпута при открытом списке для плавного перехода */
 .dropdown-container.open .filter-input {
     box-shadow: none;
+}
+
+/* Стили кнопки dropdown при открытом меню */
+.dropdown-container.open .dropdown-toggle-btn {
+    background: transparent;
+}
+
+.dropdown-container.open .dropdown-toggle-btn .triangle-down {
+    border-top: 12px solid #ff8348;
+    transform: rotate(180deg);
+}
+
+/* Стили кнопки календаря при открытом меню */
+.date-container.open .calendar-toggle-btn {
+    background: transparent;
+}
+
+.date-container.open .calendar-toggle-btn .triangle-down {
+    border-top: 12px solid #ff8348;
+    transform: rotate(180deg);
+}
+
+/* Плавная анимация для кнопок */
+.dropdown-toggle-btn,
+.calendar-toggle-btn {
+    transition: background 0.3s ease;
+}
+
+.dropdown-toggle-btn .triangle-down,
+.calendar-toggle-btn .triangle-down {
+    transition: transform 0.3s ease, border-top-color 0.3s ease;
 }
 
 .dropdown-menu-custom {

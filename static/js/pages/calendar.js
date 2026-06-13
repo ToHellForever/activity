@@ -81,6 +81,13 @@ class CustomCalendar {
     toggle() {
         this.calendar.classList.toggle('active');
         console.log('Calendar toggled, active:', this.calendar.classList.contains('active'));
+        
+        // Добавляем/убираем класс open у контейнера
+        const container = this.input.closest('.date-container');
+        if (container) {
+            container.classList.toggle('open');
+        }
+        
         if (this.calendar.classList.contains('active')) {
             this.render();
         }
@@ -88,6 +95,12 @@ class CustomCalendar {
 
     close() {
         this.calendar.classList.remove('active');
+        
+        // Убираем класс open у контейнера
+        const container = this.input.closest('.date-container');
+        if (container) {
+            container.classList.remove('open');
+        }
     }
 
     clear() {
@@ -241,7 +254,7 @@ class CustomDropdown {
             }
         });
     }
-
+    
     toggle() {
         this.dropdown.classList.toggle('active');
         // Добавляем/убираем класс open у контейнера
