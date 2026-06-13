@@ -115,21 +115,24 @@
     <div class="col-md-3 mb-4">
         <div class="card">
             {% if venue.images.all %}
-            <img src="{{ venue.images.first.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
             {% endif %}
 <div class="card-body">
     <h5 class="card-title">{{ venue.title }}</h5>
-    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ venue.address }}</span></p>
-    <p class="card-label" style='margin-top: -10px !important;'>Тип: <span class="badge">{{ venue.venue_type.name|default:'Не указан' }}</span></p>
-    <p class="card-label">Вместимость: <span class="badge">{{ venue.max_capacity }} чел.</span></p>
-    <p class="card-label">Цена: <span class="badge">{{ venue.price }} ₽</span></p>
-<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ПОДРОБНЕЕ</a>
+    <p class="card-label-venue"><img src="/media/icon/geo-gray.png" alt="" class="icon-calendar"><span class="venue-adress">{{ venue.address }}</span></p>
+    <p class="card-label-venue" style='margin-top: -10px !important;'><img src="/media/icon/S.png" alt="" class="icon-calendar"><span>{{ venue.area|floatformat }} м²</span></p>
+    <p class="card-label-venue">до {{ venue.max_capacity }} человек</p>
+    <p class="card-price-venue">
+        {% if venue.price_unit == 'hour' %}
+        {{ venue.price|floatformat }}. - час
+        {% elif venue.price_unit == 'day' %}
+        {{ venue.price|floatformat }}. - день
+        {% else %}
+        {{ venue.price }} руб (по запросу)
+        {% endif %}</p>
+<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
             </div>
         </div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">Залы не найдены</p>
     </div>
     {% endfor %}
 </div>
