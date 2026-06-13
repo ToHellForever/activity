@@ -6,12 +6,12 @@ from django.utils.text import slugify
 from taggit.managers import TaggableManager
 from django.urls import reverse
 from core.validators import validate_video_duration
-from core.mixins import VideoWatermarkMixin
+from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
 from unidecode import unidecode
 import os
 
 User = get_user_model()
-
+# мне нужна помощь в коде, у меня не добавляется водяной знак для фото площадок и также фото площадок не сохраняются в яндекс хранилище и говори на русском
 
 class EquipmentCategory(models.Model):
     """Справочник категорий оборудования."""
@@ -74,8 +74,10 @@ class VenueFormat(models.Model):
         verbose_name_plural = "Форматы площадок"
 
 
-class VenueImage(VideoWatermarkMixin, models.Model):
-    """Модель для хранения фотографий площадки."""
+class VenueImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
+    """
+    Модель для хранения фотографий мероприятий.
+    """
 
     venue = models.ForeignKey(
         "Venue",
@@ -83,51 +85,32 @@ class VenueImage(VideoWatermarkMixin, models.Model):
         related_name="images",
         verbose_name="Площадка",
     )
-    image = models.ImageField(upload_to="venue_images/", verbose_name="Фото")
+
+    image = models.ImageField(
+        upload_to="venue_images/", 
+        verbose_name="Фото площадки"
+    )
 
     def __str__(self):
-        return f"Фото для {self.venue.title}"
+        return f"Фото для площадки: {self.venue.title}"
 
     def save(self, *args, **kwargs):
-        # Сохраняем изображение сначала
-        super().save(*args, **kwargs)
+            # Обработка водяного знака теперь выполняется на уровне хранилища
+            # (YandexImageProcessingStorage или локальная обработка)
+            # Не нужно добавлять водяной знак здесь
+            super().save(*args, **kwargs)
 
-        # Обработка водяного знака для изображения
-        if self.image:
-            import os
-            from django.conf import settings
-            from core.utils import add_watermark_to_image
-
-            # Пробуем найти файл водяного знака в нескольких местах
-            possible_paths = [
-                os.path.join(settings.MEDIA_ROOT, "watermark.png") if settings.MEDIA_ROOT else None,
-                os.path.join(settings.BASE_DIR, "media", "watermark.png"),
-                os.path.join(os.getcwd(), "media", "watermark.png"),
-                "media/watermark.png",
-                "D:\\python\\activity\\media\\watermark.png",
-            ]
-
-            watermark_path = None
-            for path in possible_paths:
-                if path and os.path.exists(path):
-                    watermark_path = path
-                    break
-
-            if watermark_path:
-                image_path = self.image.path
-                print(f"Adding watermark to: {image_path}")
-                print(f"Using watermark from: {watermark_path}")
-                result = add_watermark_to_image(image_path, watermark_path, image_path)
-                print(f"Watermark result: {result}")
-            else:
-                print(f"Watermark file not found in any location")
+    def delete(self, *args, **kwargs):
+        """Удаляет файл изображения при удалении записи."""
+        self.delete_file_field("image")
+        super().delete(*args, **kwargs)
 
     class Meta:
         verbose_name = "Фото площадки"
         verbose_name_plural = "Фото площадок"
 
 
-class Venue(VideoWatermarkMixin, models.Model):
+class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     """Модель площадки для проведения мероприятий."""
 
     STATUS_CHOICES = [
