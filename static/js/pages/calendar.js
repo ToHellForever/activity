@@ -99,7 +99,11 @@ class CustomCalendar {
 
     selectDate(date) {
         this.selectedDate = date;
-        const formattedDate = date.toISOString().split('T')[0];
+        // Формируем дату без учёта timezone (используем локальные компоненты)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
         this.input.value = this.formatDate(date);
         this.updateHiddenInput(formattedDate);
         this.render();
@@ -293,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.log('No category input found on this page');
     }
-
+    
     // Инициализация dropdown для формата (если есть)
     const formatInput = document.getElementById('formatInput');
     if (formatInput) {

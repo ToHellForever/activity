@@ -496,16 +496,23 @@ def event_list(request):
         active_events = active_events.filter(format__id=selected_format)
     if selected_date_from:
         try:
-            from datetime import datetime
+            from datetime import datetime, timedelta
             date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
-            active_events = active_events.filter(date_time__gte=date_from)
+            # Если выбрана только дата "с", фильтруем >= этой даты
+            if not selected_date_to or selected_date_from == selected_date_to:
+                # Одна дата — показываем только мероприятия этого дня
+                date_to = date_from + timedelta(days=1)
+                active_events = active_events.filter(date_time__gte=date_from, date_time__lt=date_to)
+            else:
+                # Диапазон дат — фильтруем >= date_from
+                active_events = active_events.filter(date_time__gte=date_from)
         except ValueError:
             pass
-    if selected_date_to:
+    if selected_date_to and selected_date_from != selected_date_to:
         try:
             from datetime import datetime, timedelta
             date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
-            # Добавляем один день, чтобы включить всю конечную дату
+            # Добавляем один день, чтобы включить всю конечную дату в диапазоне
             active_events = active_events.filter(date_time__lte=date_to + timedelta(days=1))
         except ValueError:
             pass
