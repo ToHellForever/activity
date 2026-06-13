@@ -1,133 +1,23 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block extra_css %}
-<style>
-    #map {
-        width: 100%;
-        height: 400px;
-        margin: 20px 0;
-    }
-    .event-map-container {
-        margin: 20px 0;
-    }
-    .place-info {
-        margin-bottom: 15px;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<h1>{{ event.title }}</h1>
-<p>Дата и время: {{ event.date_time|date:"d.m.Y H:i" }}</p>
-{% if event.duration %}
-    <p>Длительность: {{ event.duration }}</p>
-{% else %}
-    <p>Длительность: -</p>
-{% endif %}
-<p>Описание: {{ event.description_short }}</p>
-
-{% if event.image %}
-    <img src="{{ event.image.url }}" alt="Изображение мероприятия" style="max-width: 50%;">
-{% endif %}
-
-{% if event.video_url %}
-    <video width="560" height="315" controls>
-        <source src="{{ event.video_url.url }}" type="video/mp4">
-        Ваш браузер не поддерживает видео.
-    </video>
-{% endif %}
-
-{% if event.tags.exists %}
-    <p>Теги: {{ event.tags.names|join:", " }}</p>
-{% endif %}
-
-{% if event.place_data %}
-    <div class="event-map-container">
-        <h3>Место проведения:</h3>
-        {% with place=event.place_data %}
-            {% if place.address %}
-                <div class="place-info">
-                    <h5>{{ place.address }}</h5>
-                    {% if place.additional_info %}
-                        <p><strong>Дополнительная информация:</strong> {{ place.additional_info }}</p>
-                    {% endif %}
+<link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
+<div class="event-detail-container">
+    <div class='row'>
+        <div class='col-6'>
+            <img src='{{ event.image.url }}' alt=''>
+        </div>
+        <div class='col-6'>
+            <div class='event-info'>
+                <div class='event-title'>
+                    {{ event.title }}
                 </div>
-            {% endif %}
-        {% endwith %}
-        <div id="map" class="map-loading">
-            <div class="spinner-border text-primary" role="status"></div>
+                {% if ev.organizer.is_verified %}
+                <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                {% endif %}
+            </div>
         </div>
     </div>
-{% endif %}
-
-{% if tickets %}
-    <h3>Доступные билеты:</h3>
-    <ul>
-        {% for ticket in tickets %}
-            <li>
-                {{ ticket.name }} - {{ ticket.price }} руб.
-                <a href="{% url 'visitor:buy_ticket' ticket.id %}" class="btn btn-primary">Купить</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Билеты отсутствуют.</p>
-{% endif %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        {% if event.place_data %}
-            {% with place=event.place_data %}
-                {% if place.coordinates %}
-                    // Загрузка API Яндекс Карт
-                    const script = document.createElement('script');
-                    script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
-                    script.onload = function() {
-                        // Ждем полной загрузки API
-                        ymaps.ready(function() {
-                            initMap({{ place.coordinates|safe }}, "{{ place.address|escapejs }}", "{{ place.additional_info|escapejs }}");
-                        });
-                    };
-                    script.onerror = function() {
-                        console.error('Не удалось загрузить Yandex Maps API');
-                        document.getElementById('map').innerHTML =
-                            '<p class="text-danger">Не удалось загрузить карту. Проверьте подключение к интернету.</p>';
-                    };
-                    document.head.appendChild(script);
-                {% endif %}
-            {% endwith %}
-        {% endif %}
-    });
-
-    function initMap(coordinates, address, additionalInfo) {
-        // Убираем индикатор загрузки
-        const mapContainer = document.getElementById('map');
-        mapContainer.classList.remove('map-loading');
-        mapContainer.innerHTML = '';
-
-        const map = new ymaps.Map("map", {
-            center: coordinates,
-            zoom: 15,
-            controls: [] // Убираем все элементы управления
-        });
-
-        // Добавляем метку
-        map.geoObjects.add(new ymaps.Placemark(coordinates, {
-            balloonContent: address + (additionalInfo ? '<br><strong>Дополнительно:</strong> ' + additionalInfo : ''),
-            iconCaption: address
-        }, {
-            preset: 'islands#dotIconWithCaption',
-            iconColor: '#3b5998'
-        }));
-
-        // Отключаем все взаимодействия с картой
-        map.behaviors.disable(['scrollZoom', 'drag', 'dblClickZoom', 'multiTouch']);
-    }
-</script>
+</div>
 {% endblock %}

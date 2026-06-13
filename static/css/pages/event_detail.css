@@ -1,0 +1,9 @@
+.event-image {
+    width: 100%;
+}
+.event-title {
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: 1.8rem;
+    color: #000000;
+}
