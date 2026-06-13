@@ -7,10 +7,13 @@
     background: transparent;
     border: none;
     margin-top:10px;
+    margin-right:110px;
+    margin-bottom: 110px;
     padding: 10px;
+    outline: none;
 }
 .dropdown-toggle:hover {
-    border: 1px solid #FFFFFF;
+    outline: 1px solid #FFFFFF;
 }
 .btn:hover,
 .btn:focus,
