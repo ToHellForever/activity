@@ -11,7 +11,7 @@ from .models import (
     VenueFormat,
 )
 from .forms import VenueForm, VenueImageForm
-
+import os
 
 class EquipmentItemInline(admin.TabularInline):
     model = EquipmentItem
@@ -64,10 +64,11 @@ class VenueImageInline(admin.TabularInline):
         class CustomFormSet(formset):
             def delete_existing(self, obj, commit=True):
                 if commit and obj.image:
-                    import os
-
-                    if os.path.isfile(obj.image.path):
-                        os.remove(obj.image.path)
+                    try:
+                        if os.path.isfile(obj.image.path):
+                            os.remove(obj.image.path)
+                    except NotImplementedError:
+                        obj.image.delete(save=False)
                 super().delete_existing(obj, commit)
 
         return CustomFormSet
@@ -116,40 +117,40 @@ class VenueAdmin(admin.ModelAdmin):
     )
 
     def delete_model(self, request, obj):
-        # Удаляем все связанные медиафайлы
         for image in obj.images.all():
             if image.image:
-                import os
-
-                if os.path.isfile(image.image.path):
-                    os.remove(image.image.path)
+                try:
+                    if os.path.isfile(image.image.path):
+                        os.remove(image.image.path)
+                except NotImplementedError:
+                    image.image.delete(save=False)
 
         if obj.video:
-            import os
+            try:
+                if os.path.isfile(obj.video.path):
+                    os.remove(obj.video.path)
+            except NotImplementedError:
+                obj.video.delete(save=False)
 
-            if os.path.isfile(obj.video.path):
-                os.remove(obj.video.path)
-
-        # Удаляем запись из базы данных
         obj.delete()
 
     def delete_queryset(self, request, queryset):
         for obj in queryset:
-            # Удаляем все связанные медиафайлы
             for image in obj.images.all():
                 if image.image:
-                    import os
-
-                    if os.path.isfile(image.image.path):
-                        os.remove(image.image.path)
+                    try:
+                        if os.path.isfile(image.image.path):
+                            os.remove(image.image.path)
+                    except NotImplementedError:
+                        image.image.delete(save=False)
 
             if obj.video:
-                import os
+                try:
+                    if os.path.isfile(obj.video.path):
+                        os.remove(obj.video.path)
+                except NotImplementedError:
+                    obj.video.delete(save=False)
 
-                if os.path.isfile(obj.video.path):
-                    os.remove(obj.video.path)
-
-        # Удаляем записи из базы данных
         queryset.delete()
 
     def get_form(self, request, obj=None, **kwargs):
@@ -172,14 +173,19 @@ class VenueAdmin(admin.ModelAdmin):
             )
         return form
 
-    def delete_queryset(self, request, queryset):
-        for obj in queryset:
-            if obj.video:
-                import os
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
 
-                if os.path.isfile(obj.video.path):
-                    os.remove(obj.video.path)
-        queryset.delete()
+        if "video-clear" in request.POST:
+            venue = form.instance
+            if venue.video:
+                try:
+                    if os.path.isfile(venue.video.path):
+                        os.remove(venue.video.path)
+                except NotImplementedError:
+                    venue.video.delete(save=False)
+                venue.video = None
+                venue.save()
 
     def save_form(self, request, form, change):
         obj = super().save_form(request, form, change)
@@ -214,20 +220,6 @@ class VenueAdmin(admin.ModelAdmin):
 
         return obj
 
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-
-        # Обработка очистки видео
-        if "video-clear" in request.POST:
-            venue = form.instance
-            if venue.video:
-                import os
-
-                if os.path.isfile(venue.video.path):
-                    os.remove(venue.video.path)
-                venue.video = None
-                venue.save()
-
     def save_formset(self, request, form, formset, change):
         super().save_formset(request, form, formset, change)
 
@@ -260,10 +252,11 @@ class VenueImageAdmin(admin.ModelAdmin):
     def delete_queryset(self, request, queryset):
         for obj in queryset:
             if obj.image:
-                import os
-
-                if os.path.isfile(obj.image.path):
-                    os.remove(obj.image.path)
+                try:
+                    if os.path.isfile(obj.image.path):
+                        os.remove(obj.image.path)
+                except NotImplementedError:
+                    obj.image.delete(save=False)
         queryset.delete()
 
 

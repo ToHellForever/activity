@@ -149,17 +149,18 @@ class VideoWatermarkMixin:
         
         # Затем пробуем удалить локальный файл если он существует
         try:
-            file_path = file_field.path
-            logger.info(f"delete_file_field: путь к локальному файлу = {file_path}")
-            
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                    logger.info(f"delete_file_field: локальный файл {file_path} удалён")
-                except Exception as e:
-                    logger.error(f"delete_file_field: ошибка удаления локального файла {e}")
-        except NotImplementedError:
-            logger.info(f"delete_file_field: storage не поддерживает path (облачное хранилище)")
+            try:
+                file_path = file_field.path
+                logger.info(f"delete_file_field: путь к локальному файлу = {file_path}")
+                
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                        logger.info(f"delete_file_field: локальный файл {file_path} удалён")
+                    except Exception as e:
+                        logger.error(f"delete_file_field: ошибка удаления локального файла {e}")
+            except NotImplementedError:
+                logger.info(f"delete_file_field: storage не поддерживает path (облачное хранилище)")
         except Exception as e:
             logger.error(f"delete_file_field: ошибка при работе с локальным файлом: {e}", exc_info=True)
 
@@ -174,16 +175,24 @@ class ImageWatermarkMixin:
             image_field_name: имя поля модели с изображением (ImageField).
             watermark_path: путь к файлу водяного знака. Если None, используется стандартный путь.
         """
+        import logging
+        
         if not watermark_path:
             watermark_path = os.path.join(settings.MEDIA_ROOT, "watermark.png")
 
         image_field = getattr(self, image_field_name)
+        logger = logging.getLogger(__name__)
+        
         if image_field and os.path.exists(watermark_path):
             try:
-                if os.path.exists(image_field.path):
-                    from core.utils import add_watermark_to_image
-                    add_watermark_to_image(image_field.path, watermark_path, image_field.path)
-            except NotImplementedError:
-                # Storage не поддерживает absolute paths (облачное хранилище)
-                # Не добавляем водяной знак локально
-                pass
+                try:
+                    image_path = image_field.path
+                    if os.path.exists(image_path):
+                        from core.utils import add_watermark_to_image
+                        add_watermark_to_image(image_path, watermark_path, image_path)
+                except NotImplementedError:
+                    # Storage не поддерживает absolute paths (облачное хранилище)
+                    # Не добавляем водяной знак локально
+                    pass
+            except Exception as e:
+                logger.error(f"Ошибка при добавлении водяного знака: {e}", exc_info=True)
