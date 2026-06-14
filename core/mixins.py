@@ -30,6 +30,12 @@ class VideoWatermarkMixin:
             logger.debug(f"_get_video_hash: trying to get path for {video_field}")
             video_path = video_field.path
             logger.debug(f"_get_video_hash: path={video_path}, exists={os.path.exists(video_path)}")
+            
+            # Если файл не существует локально (загружен в облако), возвращаем None
+            if not os.path.exists(video_path):
+                logger.info(f"_get_video_hash: файл не существует локально (возможно, загружен в облако): {video_path}")
+                return None
+                
             with open(video_path, "rb") as f:
                 return hashlib.md5(f.read()).hexdigest()
         except NotImplementedError:

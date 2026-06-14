@@ -30,6 +30,7 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
         Returns:
             tuple: (путь к обработанному файлу, список дополнительных файлов для удаления)
         """
+        logger.info(f"YandexImageProcessingStorage._process_file() called: temp_path={temp_path}, name={name}")
         try:
             # Открываем изображение
             image = Image.open(temp_path)
@@ -60,7 +61,7 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             if ext in ['.jpg', '.jpeg']:
                 processed_path = temp_path
             else:
-                processed_path = f"{base_name}_processed.jpg"
+                processed_path = os.path.normpath(f"{base_name}_processed.jpg")
             
             # Сохраняем с сжатием
             image.save(processed_path, 'JPEG', quality=85, optimize=True)
@@ -71,25 +72,43 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             
             if os.path.exists(watermark_path):
                 try:
-                    watermark_output = processed_path.replace('.jpg', '_watermarked.jpg')
+                    # Используем os.path.join для правильного формирования пути
+                    base_processed = os.path.splitext(processed_path)[0]
+                    watermark_output = os.path.normpath(f"{base_processed}_watermarked{os.path.splitext(processed_path)[1]}")
                     
                     if self._add_watermark(processed_path, watermark_path, watermark_output):
-                        # Возвращаем путь к файлу с водяным знаком и список файлов для удаления
-                        # processed_path нужно удалить, так как watermark_output - это финальный файл
-                        return watermark_output, [processed_path]
+                        # Возвращаем путь к файлу с водяным знаком и список дополнительных файлов для удаления
+                        # Родительский класс сам добавит watermark_output в список на удаление
+                        files_to_delete = []
+                        if processed_path != watermark_output:
+                            files_to_delete.append(os.path.normpath(processed_path))
+                        if processed_path != temp_path:
+                            files_to_delete.append(os.path.normpath(temp_path))
+                        return watermark_output, files_to_delete
                     else:
                         logger.warning(f"Не удалось добавить водяной знак к изображению: {name}")
-                        return processed_path, []
+                        files_to_delete = []
+                        if processed_path != temp_path:
+                            files_to_delete.append(os.path.normpath(temp_path))
+                        return processed_path, files_to_delete
 
                 except Exception as e:
-                    logger.error(f"Ошибка при добавлении водяного знака: {e}")
-                    return processed_path, []
+                    logger.error(f"Ошибка при добавлении водяного знака: {e}", exc_info=True)
+                    files_to_delete = []
+                    if processed_path != temp_path:
+                        files_to_delete.append(os.path.normpath(temp_path))
+                    return processed_path, files_to_delete
 
-            return processed_path, []
+            # Финальный файл = processed_path, дополнительные файлы для удаления = только temp_path если отличается
+            files_to_delete = []
+            if processed_path != temp_path:
+                files_to_delete.append(os.path.normpath(temp_path))
+            logger.info(f"_process_file returning: processed_path={processed_path}, files_to_delete={files_to_delete}")
+            return processed_path, files_to_delete
 
         except Exception as e:
             # При ошибке возвращаем исходный файл
-            logger.error(f"Ошибка при обработке изображения {name}: {e}")
+            logger.error(f"Ошибка при обработке изображения {name}: {e}", exc_info=True)
             return temp_path, []
     
     def _add_watermark(self, input_path, watermark_path, output_path):

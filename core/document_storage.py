@@ -35,9 +35,10 @@ class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
                 processed_path = self._process_pdf(temp_path, base_name)
             elif ext == '.xlsx':
                 processed_path = self._process_xlsx(temp_path, base_name)
-                additional_files.append(processed_path) # Добавляем .csv к удалению
+                # additional_files пустой, так как родительский класс сам добавит processed_path
 
-            return processed_path, additional_files
+            # additional_files пустой - родительский класс сам добавит processed_path и temp_path
+            return processed_path, []
 
         except Exception as e:
             logger.error(f"Ошибка при обработке документа {name}: {e}")
@@ -52,7 +53,7 @@ class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
         for page in reader.pages[:3]:
             writer.add_page(page)
 
-        output_path = f"{base_name}_preview.pdf"
+        output_path = os.path.normpath(f"{base_name}_preview.pdf")
         with open(output_path, "wb") as out_file:
             writer.write(out_file)
         return output_path
@@ -72,7 +73,7 @@ class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
         wb = openpyxl.load_workbook(temp_path, read_only=True)
         ws = wb.active
 
-        output_path = f"{base_name}.csv"
+        output_path = os.path.normpath(f"{base_name}.csv")
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             for row in ws.iter_rows(values_only=True):

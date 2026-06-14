@@ -249,12 +249,22 @@ def process_video_task(
                 
                 # Обновляем путь в модели на Cloud путь
                 setattr(instance, video_field_name, cloud_name)
+                instance.save(update_fields=[video_field_name])
+                
+                # Удаляем локальный файл из media_temp после успешной загрузки
+                if os.path.exists(video_path):
+                    os.remove(video_path)
+                    logger.info(f"CELERY TASK: Deleted local video file {video_path}")
+                    
             except Exception as e:
                 logger.error(f"Ошибка при загрузке в Yandex Cloud: {e}", exc_info=True)
                 # Удаляем временные файлы
-                for p in [compressed_video_path, watermarked_video_path]:
+                for p in [compressed_video_path, watermarked_video_path, video_path]:
                     if os.path.exists(p):
-                        os.remove(p)
+                        try:
+                            os.remove(p)
+                        except Exception:
+                            pass
                 return f"Ошибка при загрузке в Cloud: {e}"
         else:
             # Локальный режим - перемещаем обработанный файл
@@ -274,9 +284,9 @@ def process_video_task(
         instance.save(update_fields=[hash_field_name])
         logger.info(f"CELERY TASK: Updated hash to {new_hash}")
 
-        # 5. Удаляем временные локальные файлы
-        # Включая watermarked_video_path, так как он уже загружен в Cloud
-        for p in [video_path, compressed_video_path, watermarked_video_path]:
+        # 5. Удаляем временные локальные файлы (сжатое и с водяным знаком)
+        # video_path уже удалён после загрузки в Cloud
+        for p in [compressed_video_path, watermarked_video_path]:
             if os.path.exists(p):
                 try:
                     os.remove(p)

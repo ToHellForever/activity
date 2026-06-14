@@ -37,51 +37,79 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
         3. Загружает обработанный файл в Yandex Cloud
         4. Удаляет временные файлы
         """
+        logger.info(f"YandexCloudWithProcessingStorage._save() called: name={name}")
+        
         # Создаем полный путь к временному файлу
         temp_path = os.path.join(self._temp_dir, name)
         temp_dir = os.path.dirname(temp_path)
         os.makedirs(temp_dir, exist_ok=True)
         
         processed_path = None
-        files_to_delete = []  # Список файлов для удаления
+        files_to_delete = set()  # Используем set для избежания дубликатов
         
         try:
+            logger.info(f"Saving file to temp path: {temp_path}")
             # Сохраняем исходный файл во временное хранилище
             with open(temp_path, 'wb+') as temp_file:
                 for chunk in content.chunks():
                     temp_file.write(chunk)
             
+            logger.info(f"Calling _process_file for: {name}")
             # Вызываем обработку файла (переопределяется в подклассах)
             processed_path, additional_files = self._process_file(temp_path, name)
+            logger.info(f"_process_file returned: processed_path={processed_path}, additional_files={additional_files}")
 
-            # Добавляем файлы в список на удаление:
-            # - temp_path: исходный временный файл
-            # - additional_files: промежуточные файлы обработки (например, сжатое видео до водяного знака)
-            # - upload_path: временная копия для загрузки (создаётся ниже)
-            files_to_delete = [temp_path] + additional_files
+            # Добавляем файлы в список на удаление
+            # processed_path всегда нужно удалить после загрузки
+            files_to_delete.add(os.path.normpath(processed_path))
+            for f in additional_files:
+                if f:
+                    files_to_delete.add(os.path.normpath(f))
 
             # Создаем копию для загрузки (чтобы избежать блокировки файла)
             import shutil
-            upload_path = processed_path + '.upload'
+            upload_path = os.path.normpath(f"{processed_path}.upload")
+            logger.info(f"Creating upload copy: {upload_path}")
             shutil.copy2(processed_path, upload_path)
-            files_to_delete.append(upload_path)
+            files_to_delete.add(upload_path)
 
+            logger.info(f"Uploading to Yandex Cloud: {name}")
             # Загружаем обработанный файл в Yandex Cloud
             with open(upload_path, 'rb') as processed_file:
                 # Используем стандартный метод загрузки YandexObjectStorage
-                return super()._save(name, processed_file)
+                result = super()._save(name, processed_file)
+                logger.info(f"Upload successful, result={result}")
+                return result
             
         except Exception as e:
-            logger.error(f"Ошибка при сохранении файла {name}: {e}")
+            logger.error(f"Ошибка при сохранении файла {name}: {e}", exc_info=True)
             raise
         finally:
+            logger.info(f"Finally block: deleting {len(files_to_delete)} files")
             # Удаляем все временные файлы
             for file_path in files_to_delete:
-                if file_path and os.path.exists(file_path):
-                    try:
-                        os.remove(file_path)
-                    except OSError as e:
-                        logger.warning(f"Не удалось удалить временный файл {file_path}: {e}")
+                if file_path:
+                    # Нормализуем путь для Windows
+                    normalized_path = os.path.normpath(file_path)
+                    logger.debug(f"Checking file for deletion: {normalized_path}, exists={os.path.exists(normalized_path)}")
+                    if os.path.exists(normalized_path):
+                        try:
+                            # На Windows могут быть проблемы с блокировкой файлов
+                            # Пробуем убедиться, что файл не используется
+                            os.remove(normalized_path)
+                            # Проверяем, действительно ли файл удалён
+                            if os.path.exists(normalized_path):
+                                logger.error(f"Файл не был удалён, несмотря на отсутствие ошибок: {normalized_path}")
+                            else:
+                                logger.info(f"Удалён временный файл: {normalized_path}")
+                        except PermissionError as e:
+                            logger.error(f"PermissionError при удалении {normalized_path}: {e}", exc_info=True)
+                        except OSError as e:
+                            logger.error(f"OSError при удалении {normalized_path}: {e}", exc_info=True)
+                        except Exception as e:
+                            logger.error(f"Неожиданная ошибка при удалении {normalized_path}: {e}", exc_info=True)
+                    else:
+                        logger.warning(f"Файл не найден для удаления: {normalized_path}")
 
             # Очищаем пустые директории
             self._cleanup_empty_dirs(temp_dir)
