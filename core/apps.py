@@ -59,3 +59,4 @@ class CoreConfig(AppConfig):
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Ошибка при применении хранилищ: {e}")
+

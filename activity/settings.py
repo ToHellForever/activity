@@ -134,7 +134,8 @@ if USE_YANDEX_CLOUD:
     EVENT_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
     EVENT_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
     EVENT_DOCUMENT_STORAGE = 'core.document_storage.YandexDocumentProcessingStorage'
-    
+    VENUE_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
+    VENUE_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
     # Настройки Yandex Object Storage (S3-совместимый)
     AWS_ACCESS_KEY_ID = os.getenv('YANDEX_CLOUD_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.getenv('YANDEX_CLOUD_SECRET_ACCESS_KEY')
@@ -181,6 +182,10 @@ LOGGING = {
     },
     "loggers": {
         "core": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+        },
+        "venues": { 
             "handlers": ["file"],
             "level": "DEBUG",
         },
