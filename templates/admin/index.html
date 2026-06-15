@@ -71,13 +71,22 @@
         color: #666;
     }
 
-    /* Стили для блоков группировки */
-    .admin-blocks-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 25px;
-        margin-top: 30px;
-    }
+        /* Сброс стилей контейнера для полной ширины */
+        #container, #content, #content-main, #content-related {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 10 !important;
+            padding: 0 !important;
+        }
+        
+        /* Обновление контейнера блоков админа */
+        .admin-blocks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+            width: 100%;
+        }
 
     .admin-block {
         background: white;

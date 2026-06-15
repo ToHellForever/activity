@@ -244,7 +244,6 @@ class UserPackageSubscription(models.Model):
         max_length=20,
         choices=[
             ('monthly', 'Ежемесячная подписка'),
-            ('one_time', 'Разовый пакет'),
         ],
         default='monthly',
         verbose_name="Тип подписки"
