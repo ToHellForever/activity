@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load format_filters %}
 
 {% block content %}
 {% if ticket %}
@@ -12,7 +13,7 @@
             <p class="card-text">{{ ticket.event.description_short }}</p>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>Тип билета:</strong> {{ ticket.name }}</li>
-                <li class="list-group-item"><strong>Цена:</strong> {{ ticket.price }} ₽</li>
+                <li class="list-group-item"><strong>Цена:</strong> {{ ticket.price|format_price }} ₽</li>
                 <li class="list-group-item"><strong>Доступно:</strong> {{ ticket.get_available_count|default:0 }}</li>
                 <li class="list-group-item"><strong>Дата мероприятия:</strong> {{ ticket.event.date_time|date:"d.m.Y H:i" }}</li>
             </ul>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load format_filters %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/venue_detail.css' %}">
@@ -43,7 +44,7 @@
             {% endif %}
         
             <div class="venue-price">
-                <strong>Стоимость аренды:</strong> {{ venue.price|floatformat }} руб. / {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
+                <strong>Стоимость аренды:</strong> {{ venue.price|format_price }} руб. / {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
             </div>
             
 
@@ -72,7 +73,7 @@
                         <span>до {{ other_venue.max_capacity }} человек</span>
                     </div>
                     <div class="venue-card-price">
-                        {{ other_venue.price|floatformat }}.- {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
+                        {{ other_venue.price|format_price }}.- {% if other_venue.price_unit == 'hour' %}час{% elif other_venue.price_unit == 'day' %}день{% else %}{{ other_venue.get_price_unit_display }}{% endif %}
                     </div>
                     <a href="{% url 'venues:venue_detail' other_venue.slug %}" class="book-button">ЗАБРОНИРОВАТЬ</a>
                 </div>

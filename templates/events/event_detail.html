@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load format_filters %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
@@ -50,7 +51,7 @@
                             <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
                             {{ ticket.name }}
                         </td>
-                        <td>{{ ticket.price }} руб</td>
+                        <td>{{ ticket.price|format_price }} руб</td>
                         <td>{{ ticket.available_quantity }} мест</td>
                     </tr>
                     {% endfor %}
