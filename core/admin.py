@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
-from .proxy_models import EventRequestProxy
+from .proxy_models import EventRequestProxy, VisitorUser
 from .forms import EventAdminForm
 from django import forms
 from django.contrib import messages
@@ -15,6 +15,31 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import render
 
 CustomUser = get_user_model()
+
+@admin.register(VisitorUser)
+class VisitorUserAdmin(admin.ModelAdmin):
+    """
+    Админ-панель для управления обычными пользователями (не партнёрами).
+    """
+    
+    list_display = ('username', 'email', 'first_name', 'last_name', 'date_joined', 'is_active')
+    search_fields = ('username', 'email')
+    list_filter = ('is_active', 'date_joined')
+
+    def get_queryset(self, request):
+        """
+        Возвращает только тех пользователей, которые НЕ являются партнёрами.
+        """
+        # Получаем базовый QuerySet
+        qs = super().get_queryset(request)
+
+        return qs.exclude(user_type='partner') 
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(PayoutDetails)
 class PayoutDetailsAdmin(admin.ModelAdmin):
