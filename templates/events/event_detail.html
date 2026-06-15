@@ -5,19 +5,91 @@
 <link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
 <div class="event-detail-container">
     <div class='row'>
-        <div class='col-6'>
-            <img src='{{ event.image.url }}' alt=''>
+        <div class='col-6 event-detail-image'>
+            {% if event.image %}
+            <img src='{{ event.image.url }}' alt='{{ event.title }}'>
+            {% endif %}
         </div>
         <div class='col-6'>
             <div class='event-info'>
                 <div class='event-title'>
                     {{ event.title }}
                 </div>
-                {% if ev.organizer.is_verified %}
+                {% if event.organizer.is_verified %}
                 <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
                 {% endif %}
+                <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+                <p class="card-label">Категория: <span class="badge">{{ event.category.name }}</span></p>
+                {% if event.format %}
+                <p class="card-label">Формат: <span class="badge">{{ event.format.name }}</span></p>
+                {% endif %}
+                <div class="event-description">
+                    {{ event.description_full|linebreaks }}
+                </div>
             </div>
         </div>
     </div>
+    
+    <!-- Билеты -->
+    {% if tickets %}
+    <div class="tickets-section mt-5">
+        <h2 class='landing-h mb-3'>СТОИМОСТЬ БИЛЕТОВ</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Тип билета</th>
+                        <th>Цена</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>
+                            <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
+                            {{ ticket.name }}
+                        </td>
+                        <td>{{ ticket.price }} руб</td>
+                        <td>{{ ticket.available_quantity }} мест</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-4">
+            <a href="#buy-ticket" class="buy-button">КУПИТЬ БИЛЕТ</a>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Похожие мероприятия -->
+{% if similar_events %}
+<div class="similar-events-section mt-5">
+    <h2 class='landing-h mb-3'>ПОХОЖИЕ МЕРОПРИЯТИЯ <span class="arrow-right"></span></h2>
+    <div class="row">
+        {% for ev in similar_events %}
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all %}
+                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ ev.title }}</h5>
+                    {% if ev.organizer.is_verified %}
+                    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                    {% endif %}
+                    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                    <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

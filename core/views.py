@@ -544,7 +544,32 @@ def event_list(request):
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     tickets = event.tickets.all()
-    return render(request, "events/event_detail.html", {"event": event, "tickets": tickets})
+    
+    # Получаем похожие мероприятия (та же категория или теги, другое мероприятие, активные)
+    similar_events = Event.objects.filter(
+        status='active',
+    ).exclude(
+        id=event.id
+    )
+
+    # Если есть категория, фильтруем по ней
+    if event.category:
+        similar_events = similar_events.filter(category=event.category)
+    
+    # Если нет мероприятий по категории, ищем по тегам
+    if not similar_events.exists() and event.tags.exists():
+        similar_events = similar_events.filter(
+            tags__in=event.tags.all()
+        )
+    
+    # Ограничиваем до 4 мероприятий
+    similar_events = similar_events[:4]
+    
+    return render(request, "events/event_detail.html", {
+        "event": event, 
+        "tickets": tickets,
+        "similar_events": similar_events
+    })
 
 @require_http_methods(["GET", "POST"])
 def handle_platform_request(request, event, user, ticket, quantity):
