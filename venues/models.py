@@ -259,18 +259,11 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     meta_description = models.TextField(blank=True)
 
     def save(self, *args, **kwargs):
+        # Создаём slug если его нет
         if not self.slug:
             self.slug = slugify(unidecode(self.title))
 
-        super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return reverse("venue_detail", kwargs={"slug": self.slug})
-
-    def __str__(self):
-        return self.title
-    def save(self, *args, **kwargs):
-        # Сохраняем старые значения для проверки замены файлов
+        # Сохраняем старые значения для проверки замены видео
         old_video = None
         old_video_hash = None
         
@@ -295,7 +288,12 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
             if old_video and (not self.video or old_video != self.video):
                 self.delete_old_video_file(old_video, old_video_hash)
                 
+    def get_absolute_url(self):
+        return reverse("venue_detail", kwargs={"slug": self.slug})
                 
+    def __str__(self):
+        return self.title
+
     def delete_old_file(self, old_file):
         """
         Удаляет старый файл по пути.

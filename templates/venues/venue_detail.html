@@ -2,199 +2,77 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <h1>{{ venue.title }}</h1>
-    {% if venue.meta_title %}
-    <meta property="og:title" content="{{ venue.meta_title }}">
-    {% endif %}
-    {% if venue.meta_description %}
-    <meta property="og:description" content="{{ venue.meta_description }}">
-    {% endif %}
-    
-    <div class="row">
-        <!-- Блок с фото и краткой информацией -->
-        <div class="col-md-8">
-            <!-- Галерея фотографий -->
+<link rel="stylesheet" href="{% static 'css/pages/venue_detail.css' %}">
+
+<div class="venue-detail-container">
+    <div class="venue-detail-content">
+        <!-- Фото площадки -->
+        <div class="venue-image-wrapper">
             {% if venue.images.all %}
-                <div id="carouselExampleIndicators" class="carousel slide mb-4" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        {% for image in venue.images.all %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text|default:venue.title }}">
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Предыдущий</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Следующий</span>
-                    </button>
-                </div>
+                <img src="{{ venue.images.all.0.image.url }}" alt="{{ venue.title }}">
             {% endif %}
+        </div>
+
+        <!-- Информация о площадке -->
+        <div class="venue-info">
+            <h1 class="venue-title">{{ venue.title }}</h1>
             
-            <div class="mt-4">
-                <h3>Описание</h3>
-                
-                {% if venue.tariff == 1 %}
-                    <!-- Для тарифа Free только краткое описание -->
-                    <p>{{ venue.short_description|linebreaksbr }}</p>
-                {% else %}
-                    <!-- Для тарифов Standard и Premium: краткое и полное описание -->
-                    <p><strong>Краткое описание:</strong></p>
-                    <p>{{ venue.short_description|linebreaksbr }}</p>
-                    
-                    <p class="mt-3"><strong>Подробное описание:</strong></p>
-                    <p>{{ venue.full_description|linebreaksbr }}</p>
-                {% endif %}
-                
-                {% if venue.video %}
-                <div class="mt-4">
-                    <h4>Видео</h4>
-                    <video controls class="w-100" style="max-height: 400px;">
-                        <source src="{{ venue.video.url }}" type="video/mp4">
-                        Ваш браузер не поддерживает видео.
-                    </video>
+            <div class="venue-meta">
+                <img src="/media/icon/geo-gray.png" alt="" class="icon-geo">
+                <span>{{ venue.address }}</span>
+            </div>
+            
+            <div class="venue-stats">
+                <div class="venue-stat">
+                    <img src="/media/icon/S.png" alt="" class="icon-stat">
+                    <span style='color: #070707'>{{ venue.area }} м²</span>
                 </div>
-                {% endif %}
+                <div class="venue-stat">
+                    <span>до {{ venue.max_capacity }} человек</span>
+                </div>
             </div>
             
-            <h4>Характеристики</h4>
-            <ul class="list-group">
-                <li class="list-group-item"><strong>Вместимость:</strong> {{ venue.max_capacity }} человек</li>
-                <li class="list-group-item"><strong>Площадь:</strong> {{ venue.area }} кв.м.</li>
-                <li class="list-group-item"><strong>Тип площадки:</strong> {{ venue.venue_type }}</li>
-                <li class="list-group-item"><strong>Цена:</strong> {{ venue.price|floatformat }} ₽/{{ venue.get_price_unit_display }}</li>
-                <li class="list-group-item"><strong>Подходит для форматов:</strong>
-                    {% for format in venue.formats.all %}
-                        <span class="badge bg-info mx-1">{{ format.name }}</span>
-                    {% empty %}
-                        Форматы не указаны
-                    {% endfor %}
-                </li>
-            </ul>
+            <div class="venue-">
+                {{ venue.short_description|linebreaks }}
+            </div>
             
+            <div class="venue-description">
+                {{ venue.description|linebreaks }}
+            </div>
+            <div class="venue-price">
+                <strong>Стоимость аренды:</strong> {{ venue.price|floatformat }} руб. / {{ venue.get_price_unit_display|lower }}
+            </div>
+            
+            <a href="#booking" class="book-button">ЗАБРОНИРОВАТЬ</a>
         </div>
-
-        <!-- Блок с картой, адресом и заявкой -->
-        <div class="col-md-4">
-            <div class="sticky-top" style="top: 2rem;">
-                
-                <h3>Контакты и карта</h3>
-                
-                <!-- Адрес -->
-                <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
-
-                <!-- Карта (интеграция с Яндекс.Картами) -->
-                {% if venue.latitude and venue.longitude %}
-                <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
-                <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        // Получаем точные координаты с 6 знаками после запятой
-                        // Используем фильтр stringformat для гарантированного сохранения точности
-                        var latStr = '{{ venue.latitude|stringformat:"f" }}';
-                        var lonStr = '{{ venue.longitude|stringformat:"f" }}';
-                        
-                        // Преобразуем в числа с полной точностью
-                        // Заменяем запятую на точку на случай, если используется европейский формат
-                        var lat = parseFloat(latStr.replace(',', '.'));
-                        var lon = parseFloat(lonStr.replace(',', '.'));
-                        
-                        if (typeof ymaps !== 'undefined') {
-                            ymaps.ready(function() {
-                                var map = new ymaps.Map("map-canvas", {
-                                    center: [lat, lon],
-                                    zoom: 15
-                                });
-
-                                var placemark = new ymaps.Placemark([lat, lon], {
-                                    balloonContent: '{{ venue.title }}',
-                                    hintContent: '{{ venue.address }}'
-                                });
-
-                                map.geoObjects.add(placemark);
-                                
-                                // Устанавливаем центр карты точно на метку
-                                map.setCenter([lat, lon]);
-                            });
-                        }
-                    });
-                </script>
-                {% else %}
-                <div class="alert alert-info">Координаты для карты не указаны.</div>
+    </div>
+    
+    <!-- Другие залы -->
+    <div class="other-venues-section">
+        <h2 class="section-title">ДРУГИЕ ЗАЛЫ</h2>
+        <div class="other-venues-grid">
+            {% for other_venue in other_venues %}
+            <div class="venue-card">
+                {% if other_venue.images.all %}
+                <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                 {% endif %}
-                
-                <!-- Контакты и кнопка для заявки -->
-                {% if limits.contacts_opened or limits.contacts_level == "direct" %}
-                    {% if venue.contact_info %}
-                        <p><strong>Контакты:</strong></p>
-                        <p>{{ venue.contact_info|linebreaksbr }}</p>
-                    {% endif %}
-                {% elif limits.contacts_level == "request_or_show" %}
-                    <button type='button' class='btn btn-outline-primary w-100 mt-3' data-bs-toggle="modal" data-bs-target="#contactsModal">
-                        Показать контакты
-                    </button>
-                {% else %}
-                    <button type='button' class='btn btn-primary w-100 mt-3' data-bs-toggle="modal" data-bs-target="#bookingModal">
-                        Оставить заявку на просмотр площадки
-                    </button>
-                {% endif %}
-
-                <!-- Бейдж тарифа -->
-                {% if limits.show_badge %}
-                    <div class="mt-3">
-                        <span class="badge bg-warning text-dark" style="font-size: 1em; padding: 6px 12px;">
-                            {{ limits.badge_text }}
-                        </span>
+                <div class="venue-card-body">
+                    <h5 class="venue-card-title">{{ other_venue.title }}</h5>
+                    <div class="venue-card-meta">
+                        <img src="/media/icon/geo-gray.png" alt="" class="icon-geo">
+                        <span>{{ other_venue.address }}</span>
                     </div>
-                {% endif %}
-                
+                    <div class="venue-card-stats">
+                        <span>{{ other_venue.area }} м²</span>
+                        <span>до {{ other_venue.max_capacity }} человек</span>
+                    </div>
+                    <div class="venue-card-price">
+                        {{ other_venue.price|floatformat }}.- {{ venue.get_price_unit_display }}
+                    </div>
+                    <a href="{% url 'venues:venue_detail' other_venue.slug %}" class="book-button">ЗАБРОНИРОВАТЬ</a>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для контактов -->
-<div class="modal fade" id="contactsModal" tabindex="-1" aria-labelledby="contactsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="contactsModalLabel">Контакты</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                {% if venue.contact_info %}
-                    <p>{{ venue.contact_info|linebreaksbr }}</p>
-                {% else %}
-                    <p>Контактная информация отсутствует.</p>
-                {% endif %}
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для заявки на просмотр площадки -->
-<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookingModalLabel">Заявка на просмотр площадки</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <p>Заполните форму, чтобы оставить заявку на просмотр площадки.</p>
-                <!-- Здесь может быть форма для заявки -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                <button type="button" class="btn btn-primary">Отправить заявку</button>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>

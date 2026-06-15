@@ -210,8 +210,9 @@ class VenueListView(ListView):
         city = self.request.GET.get("city")
         if city:
             qs = qs.filter(city__iexact=city)
-        else:
-            qs = qs.filter(city__iexact="Новосибирск")
+        # Убираем фильтр по городу по умолчанию, чтобы площадки без city тоже показывались
+        # else:
+        #     qs = qs.filter(city__iexact="Новосибирск")
 
         # Фильтрация по оборудованию
         equipment_ids = self.request.GET.getlist("equipment")
@@ -427,4 +428,12 @@ class VenueDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         venue = self.object
         context["limits"] = venue.TARIFF_LIMITS.get(venue.tariff, {})
+        
+        # Получаем другие площадки (те же типы или форматы, кроме текущей)
+        context["other_venues"] = Venue.objects.filter(
+            status='published'
+        ).exclude(
+            id=venue.id
+        )[:4]
+        
         return context
