@@ -14,7 +14,7 @@
             <h1 class='landing-title'>ПЛАТФОРМА ДЕЛОВОЙ ЖИЗНИ ГОРОДА</h1>
             <p class='landing-text'>где собраны проверенные события, обучение, организаторы и площадки в одном месте.</p>
 
-            <form method="get" action="{% url 'landing_page' %}" class="filters-form">
+            <form method="get" action="{% url 'event_list' %}" class="filters-form">
             <div class='row filers-row'>
                 <div class='col-3 filers-col'>
                     <div class="filter-item">
@@ -267,11 +267,12 @@
 <h2 class='landing-h'>ПРИСОЕДИНЯЙТЕСЬ К ДЕЛОВОЙ ЖИЗНИ ГОРОДА</h2>
 <div class="two-button">
         <a href="{% url 'event_list' %}">
-            <button class="find-button">НАЙТИ МЕРОПРИЯТИЕ</button>
+            <button class="find-button">ВСЕ МЕРОПРИЯТИЯ</button>
         </a>
         <a href="#">
             <button class="find-button">РАЗМЕСТИТЬ СОБЫТИЕ</button>
         </a>
+</div>
 </div>
 </div>
 {% endblock %}
