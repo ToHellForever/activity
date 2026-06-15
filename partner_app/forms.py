@@ -195,6 +195,17 @@ class DocumentUploadForm(forms.ModelForm):
     Форма для загрузки документов партнёром.
     """
 
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS = ['pdf', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']
+    ALLOWED_MIME_TYPES = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/png',
+    ]
+
     class Meta:
         model = PartnerDocument
         fields = ["document"]
@@ -202,7 +213,7 @@ class DocumentUploadForm(forms.ModelForm):
             "document": "Загрузите документы для верификации",
         }
         help_texts = {
-            "document": "Загрузите сканы или фотографии документов, подтверждающих вашу квалификацию.",
+            "document": "Загрузите сканы или фотографии документов (PDF, DOCX, XLSX, JPG, PNG). Максимальный размер: 10MB.",
         }
         widgets = {
             "document": forms.ClearableFileInput(attrs={"multiple": False}),
@@ -211,6 +222,28 @@ class DocumentUploadForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+    def clean_document(self):
+        file = self.cleaned_data.get('document')
+        if not file:
+            return file
+        
+        import os
+        
+        # Проверка расширения файла
+        ext = os.path.splitext(file.name)[1].lower()[1:]
+        if ext not in self.ALLOWED_EXTENSIONS:
+            raise forms.ValidationError(
+                f'Недопустимый формат файла. Разрешены: {", ".join(self.ALLOWED_EXTENSIONS)}'
+            )
+
+        # Проверка размера файла
+        if file.size > self.MAX_FILE_SIZE:
+            raise forms.ValidationError(
+                f'Размер файла не должен превышать 10MB. Размер вашего файла: {file.size / 1024 / 1024:.2f}MB'
+            )
+
+        return file
 
     def save(self, commit=True):
         instance = super().save(commit=False)

@@ -1756,6 +1756,8 @@ def profile_edit(request):
     View для редактирования профиля партнера.
     Включает обработку видео-визитки.
     """
+    from core.models import PartnerDocument
+    
     if request.method == "POST":
         # Инициализируем форму с данными и файлами
         user_form = PartnerProfileForm(
@@ -1789,14 +1791,31 @@ def profile_edit(request):
 
         # Обработка формы загрузки документов
         if "upload_documents" in request.POST:
-            if request.user.verification_status == "not_submitted":
-                document_form = DocumentUploadForm(
-                    request.POST, request.FILES, user=request.user
-                )
-                if document_form.is_valid():
-                    document_form.save()
-                    request.user.verification_status = "pending"
-                    request.user.save()
+            document_form = DocumentUploadForm(
+                request.POST, request.FILES, user=request.user
+            )
+            if document_form.is_valid():
+                # Если был статус rejected, удаляем старый документ
+                if request.user.verification_status == "rejected":
+                    old_doc = PartnerDocument.objects.filter(
+                        user=request.user, 
+                        is_approved=False
+                    ).first()
+                    if old_doc and old_doc.document:
+                        # Удаляем физический файл
+                        try:
+                            old_doc.document.delete(save=False)
+                        except Exception as e:
+                            logger.error(f"Ошибка при удалении старого документа: {e}")
+                        # Удаляем запись из БД
+                        old_doc.delete()
+
+                document = document_form.save()
+                request.user.verification_status = "pending"
+                request.user.save()
+                messages.success(request, "Ваши документы загружены и находятся на рассмотрении.")
+            else:
+                messages.error(request, "Ошибка при загрузке документов. Пожалуйста, исправьте ошибки ниже.")
 
         messages.success(request, "Ваши изменения успешно сохранены!")
         return redirect("partner:dashboard")
@@ -1806,11 +1825,23 @@ def profile_edit(request):
         password_form = PasswordChangeForm(user=request.user)
         document_form = DocumentUploadForm(user=request.user)
 
+    # Если форма документов была отправлена с ошибками, передаём её в контекст
+    if request.method == "POST" and "upload_documents" in request.POST:
+        document_form = DocumentUploadForm(request.POST, request.FILES, user=request.user)
+
+    # Получаем последний отклонённый документ для отображения причины
+    last_rejected_doc = PartnerDocument.objects.filter(
+        user=request.user, 
+        is_approved=False,
+        rejection_reason__isnull=False
+    ).first()
+
     context = {
         "user_form": user_form,
         "password_form": password_form,
         "document_form": document_form,
         "rejection_messages": get_rejection_messages(request),
+        "last_rejected_document": last_rejected_doc,
     }
     return render(request, "partner/profile_edit.html", context)
 

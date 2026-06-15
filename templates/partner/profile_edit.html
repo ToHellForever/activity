@@ -66,7 +66,11 @@
 </div>
 {% elif request.user.verification_status == 'rejected' %}
 <div class="alert alert-danger">
-    Ваши документы были отклонены. Вы можете загрузить их ещё раз.
+    <strong>Ваши документы были отклонены.</strong><br>
+    {% if last_rejected_document and last_rejected_document.rejection_reason %}
+        <p class="mb-2"><strong>Причина:</strong> {{ last_rejected_document.rejection_reason }}</p>
+    {% endif %}
+    Вы можете загрузить документы ещё раз.
 </div>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}

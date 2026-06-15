@@ -129,13 +129,18 @@ class PartnerDocument(models.Model):
         related_name="reviewed_documents",
         verbose_name="Модератор",
     )
+    rejection_reason = models.TextField(
+        blank=True, null=True, verbose_name="Причина отклонения"
+    )
 
     def __str__(self):
-        return f"Документ {self.user.get_full_name()} - {'подтверждён' if self.is_approved else 'на проверке'}"
+        status = "подтверждён" if self.is_approved else ("отклонён" if self.rejection_reason else "на проверке")
+        return f"Документ {self.user.get_full_name()} - {status}"
 
     class Meta:
         verbose_name = "Документ партнёра"
         verbose_name_plural = "Документы партнёров"
+        ordering = ["-uploaded_at"]
 
 class Category(models.Model):
     """Модель для категорий мероприятий."""

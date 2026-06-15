@@ -21,33 +21,101 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
     Админка для управления документами партнёров.
     """
 
-    list_display = ("user", "document", "uploaded_at", "is_approved", "reviewer")
+    list_display = ("user", "document", "uploaded_at", "is_approved", "reviewer", "get_status")
     list_filter = ("is_approved", "uploaded_at")
-    search_fields = ("user__username", "user__company_name")
+    search_fields = ("user__username", "user__company_name", "user__email")
     readonly_fields = ("uploaded_at",)
 
-    fieldsets = (
-        (None, {"fields": ("user", "document", "uploaded_at")}),
-        ("Модерация", {"fields": ("is_approved", "reviewer", "reviewed_at")}),
-    )
+    def get_fieldsets(self, request, obj=None):
+        if obj and not obj.is_approved and obj.rejection_reason:
+            return (
+                (None, {"fields": ("user", "document", "uploaded_at")}),
+                ("Модерация", {"fields": ("is_approved", "reviewer", "reviewed_at")}),
+                ("Причина отклонения", {"fields": ("rejection_reason",)}),
+            )
+        return (
+            (None, {"fields": ("user", "document", "uploaded_at")}),
+            ("Модерация", {"fields": ("is_approved", "reviewer", "reviewed_at", "rejection_reason")}),
+        )
+
+    def get_status(self, obj):
+        if obj.is_approved:
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Подтверждён</span>')
+        elif obj.rejection_reason:
+            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонён</span>')
+        return mark_safe('<span style="color: orange;">На проверке</span>')
+    get_status.short_description = "Статус"
 
     def save_model(self, request, obj, form, change):
-        if change:
-            # Если статус изменился на "подтверждено", обновляем статус пользователя
-            if obj.is_approved and not obj.reviewed_at:
-                obj.reviewed_at = timezone.now()
-                obj.reviewer = request.user
-                obj.user.is_verified = True
-                obj.user.verification_status = "approved"
-                obj.user.save()
-            elif not obj.is_approved and obj.reviewed_at:
-                obj.user.verification_status = "rejected"
-                obj.user.save()
-            else:
-                # Если документы только что загружены, устанавливаем статус "на рассмотрении"
-                obj.user.verification_status = "pending"
-                obj.user.save()
-            super().save_model(request, obj, form, change)
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        is_new_approval = change and obj.is_approved and not obj.reviewed_at
+        is_rejection = change and not obj.is_approved and obj.reviewed_at
+        
+        # Сохраняем объект
+        super().save_model(request, obj, form, change)
+ 
+        # Обновляем статус пользователя и отправляем уведомления
+        if is_new_approval:
+            # Документ только что одобрен
+            obj.reviewed_at = timezone.now()
+            obj.reviewer = request.user
+            obj.save(update_fields=['reviewed_at', 'reviewer'])
+            
+            obj.user.is_verified = True
+            obj.user.verification_status = "approved"
+            obj.user.save(update_fields=['is_verified', 'verification_status'])
+            
+            # Отправляем уведомление партнёру
+            try:
+                send_mail(
+                    subject='Ваши документы подтверждены',
+                    message=f'''Здравствуйте, {obj.user.get_full_name()}!
+
+Ваши документы успешно проверены. Ваш статус: Подтверждённый организатор ✓
+
+Теперь вы можете использовать все возможности платформы.
+
+С уважением,
+Администрация платформы''',
+                    from_email=settings.DEFAULT_FROM_EMAIL or 'dim.anosoff2018@yandex.ru',
+                    recipient_list=[obj.user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Не удалось отправить email об одобрении: {e}")
+                
+        elif is_rejection:
+            # Документ отклонён
+            obj.user.verification_status = "rejected"
+            obj.user.save(update_fields=['verification_status'])
+            
+            # Отправляем уведомление с причиной
+            reason_text = obj.rejection_reason or "Причина не указана"
+            try:
+                send_mail(
+                    subject='Ваши документы отклонены',
+                    message=f'''Здравствуйте, {obj.user.get_full_name()}!
+
+Ваши документы были отклонены модератором.
+
+Причина отклонения: {reason_text}
+
+Пожалуйста, исправьте указанные недочёты и загрузите документы повторно.
+
+С уважением,
+Администрация платформы''',
+                    from_email=settings.DEFAULT_FROM_EMAIL or 'dim.anosoff2018@yandex.ru',
+                    recipient_list=[obj.user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Не удалось отправить email об отклонении: {e}")
 
 @admin.register(MainTag)
 class MainTagAdmin(admin.ModelAdmin):

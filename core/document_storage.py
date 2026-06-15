@@ -34,7 +34,9 @@ class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
                 processed_path = self._process_pdf(temp_path, base_name)
             elif ext == '.xlsx':
                 processed_path = self._process_xlsx(temp_path, base_name)
-            # Для .csv, .txt, .docx и других форматов обработка не требуется
+            elif ext == '.docx':
+                processed_path = self._process_docx(temp_path, base_name)
+            # Для .csv, .txt, .jpg, .png и других форматов обработка не требуется
             # Файл будет загружен как есть
 
             return processed_path, []
