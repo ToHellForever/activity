@@ -50,14 +50,13 @@ function initMediaHandlers() {
         if (e.target && e.target.classList.contains('remove-media-btn')) {
             const button = e.target;
             const mediaId = button.getAttribute('data-media-id');
-            const eventId = button.getAttribute('data-media-id');
             const mediaType = button.getAttribute('data-media-type');
             const mediaContainer = button.closest('.media-preview');
 
-            console.log('Удаление медиа:', { mediaId, eventId, mediaType });
+            console.log('Удаление медиа:', { mediaId, mediaType });
 
             // Если это новый файл, который ещё не загружен на сервер, просто удаляем превью
-            if (mediaId === 'new' || !eventId) {
+            if (mediaId === 'new') {
                 mediaContainer.remove();
                 const hiddenInput = document.querySelector(`#id_${mediaType}`);
                 if (hiddenInput) {
@@ -69,16 +68,19 @@ function initMediaHandlers() {
             // Удаление через AJAX
             let url = '';
             if (mediaType === 'program_file') {
-                url = `/partner/remove_media/program_file/${eventId}/`;
+                url = `/partner/remove_media/program_file/${mediaId}/`;
             } else if (mediaType === 'video_url') {
-                url = `/partner/remove_media/video_url/${eventId}/`;
+                url = `/partner/remove_media/video_url/${mediaId}/`;
+            } else if (mediaType === 'video_business_card') {
+                // Для видео-визитки mediaId - это ID пользователя
+                url = `/partner/remove_media/video_business_card/${mediaId}/`;
             } else if (mediaType === 'image') {
                 // Для дополнительных изображений используем другой URL
                 const imageId = button.getAttribute('data-image-id');
                 if (imageId) {
                     url = `/partner/remove_event_image/${imageId}/`;
                 } else {
-                    url = `/partner/remove_media/image/${eventId}/`;
+                    url = `/partner/remove_media/image/${mediaId}/`;
                 }
             }
 
@@ -316,12 +318,12 @@ function initMediaHandlers() {
 }
 
 // Функция для проверки валидности файлов перед отправкой формы
-function validateMediaFilesBeforeSubmit() {
+async function validateMediaFilesBeforeSubmit() {
     // Проверяем все поля с медиафайлами
     const mediaInputs = document.querySelectorAll('.custom-media-input');
-    let hasInvalidFiles = false;
 
-    mediaInputs.forEach(input => {
+    // Используем for...of вместо forEach для поддержки async/await
+    for (const input of mediaInputs) {
         if (input.files && input.files.length > 0) {
             const mediaType = input.getAttribute('data-media-type');
             const files = mediaType === 'images' ? input.files : [input.files[0]];
@@ -332,7 +334,7 @@ function validateMediaFilesBeforeSubmit() {
                 let errorMessage = '';
 
                 // Валидация в зависимости от типа медиа
-                if (mediaType === 'video_url') {
+                if (mediaType === 'video_url' || mediaType === 'video_business_card') {
                     // Видео: разрешены только MP4, MOV, AVI
                     const validVideoTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
                     const validVideoExtensions = ['.mp4', '.mov', '.avi'];
@@ -344,6 +346,12 @@ function validateMediaFilesBeforeSubmit() {
                     if (!isValidType && !isValidExtension) {
                         isValid = false;
                         errorMessage = 'Неверный формат видео. Разрешены только файлы MP4, MOV, AVI';
+                    } else {
+                        // Добавляем проверку длительности видео
+                        isValid = await checkVideoDuration(file);
+                        if (!isValid) {
+                            errorMessage = 'Длительность видео превышает 5 минут. Пожалуйста, загрузите видео не длиннее 5 минут.';
+                        }
                     }
                 }
                 else if (mediaType === 'program_file') {
@@ -370,7 +378,6 @@ function validateMediaFilesBeforeSubmit() {
                 }
 
                 if (!isValid) {
-                    hasInvalidFiles = true;
                     showToast(errorMessage, true);
 
                     // Показываем ошибку под полем
@@ -382,12 +389,13 @@ function validateMediaFilesBeforeSubmit() {
                             </div>
                         `;
                     }
+                    return false; // Возвращаем false сразу при ошибке
                 }
             }
         }
-    });
+    }
 
-    return !hasInvalidFiles;
+    return true; // Все файлы валидны
 }
 
 // Функция для отображения toast-уведомлений
@@ -444,8 +452,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Добавляем валидацию перед отправкой формы
     const form = document.querySelector('form');
     if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateMediaFilesBeforeSubmit()) {
+        form.addEventListener('submit', async function(e) {
+            if (!await validateMediaFilesBeforeSubmit()) {
                 e.preventDefault(); // Блокируем отправку формы
                 return false;
             }

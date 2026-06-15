@@ -37,7 +37,7 @@ class CoreConfig(AppConfig):
             from .image_storage import YandexImageProcessingStorage
             from .video_storage import YandexVideoProcessingStorage
             from .document_storage import YandexDocumentProcessingStorage
-            from .models import Event, EventImage
+            from .models import Event, EventImage, PartnerDocument, CustomUser
             
             # Применяем хранилище к полю image модели Event
             Event._meta.get_field('image').storage = YandexImageProcessingStorage()
@@ -51,6 +51,12 @@ class CoreConfig(AppConfig):
             # Применяем хранилище к полю image модели EventImage
             EventImage._meta.get_field('image').storage = YandexImageProcessingStorage()
             
+            # Применяем хранилище к полю document модели PartnerDocument
+            PartnerDocument._meta.get_field('document').storage = YandexDocumentProcessingStorage()
+            
+            # Применяем хранилище к полю logo модели CustomUser
+            CustomUser._meta.get_field('logo').storage = YandexImageProcessingStorage()
+            
         except ImportError as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -59,4 +65,19 @@ class CoreConfig(AppConfig):
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Ошибка при применении хранилищ: {e}")
+
+        # Применяем хранилище к модели SalesReport из partner_app
+        try:
+            from .document_storage import YandexDocumentProcessingStorage
+            from partner_app.models import SalesReport
+
+            SalesReport._meta.get_field('file_path').storage = YandexDocumentProcessingStorage()
+        except ImportError as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Не удалось загрузить хранилище для SalesReport: {e}")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Ошибка при применении хранилища для SalesReport: {e}")
 

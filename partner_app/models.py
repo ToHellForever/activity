@@ -30,6 +30,7 @@ class SalesReport(models.Model):
     file_path = models.FileField(
         upload_to="reports/",
         verbose_name="Файл отчёта",
+        storage=None,  # Будет установлено в apps.py
     )
     status = models.CharField(
         max_length=20,

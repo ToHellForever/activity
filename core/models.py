@@ -39,7 +39,12 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
     company_name = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=30, blank=True, null=True)
     contact_person = models.CharField(max_length=255, blank=True, null=True, verbose_name="Контактное лицо (ФИО)")
-    logo = models.ImageField(upload_to="user_logos/", blank=True, null=True)
+    logo = models.ImageField(
+        upload_to="user_logos/", 
+        blank=True,
+        null=True,
+        storage=None,  # Будет установлено в apps.py
+    )
     social_links = models.TextField(blank=True, null=True)
     video_business_card = models.FileField(
         upload_to="partner_video/",
@@ -104,7 +109,11 @@ class PartnerDocument(models.Model):
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Партнёр")
-    document = models.FileField(upload_to="partner_documents/", verbose_name="Документ")
+    document = models.FileField(
+        upload_to="partner_documents/", 
+        verbose_name="Документ",
+        storage=None,  # Будет установлено в apps.py
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
     is_approved = models.BooleanField(
         default=False, verbose_name="Подтверждено модератором"
