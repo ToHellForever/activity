@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category
+from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
 from .proxy_models import EventRequestProxy
 from .forms import EventAdminForm
 from django import forms
@@ -930,3 +930,14 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     ordering = ('name',)
+
+
+@admin.register(Format)
+class FormatAdmin(admin.ModelAdmin):
+    """
+    Админка для управления форматами мероприятий.
+    """
+    list_display = ('name',)
+    search_fields = ('name',)
+    ordering = ('name',)
+
