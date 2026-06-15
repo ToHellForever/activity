@@ -16,6 +16,14 @@ from django.shortcuts import render
 
 CustomUser = get_user_model()
 
+@admin.register(PayoutDetails)
+class PayoutDetailsAdmin(admin.ModelAdmin):
+    """
+    Админка для управления реквизитами для выплат.
+    """
+
+    list_display = ("partner",)
+    
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
     """
@@ -856,6 +864,7 @@ except:
 
 # Регистрируем админку для партнёров
 admin.site.register(CustomUser, PartnerAdmin)
+
 
 # Регистрируем подписки на пакеты
 @admin.register(UserPackageSubscription)
