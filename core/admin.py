@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.html import mark_safe
 from django.db.models import F, Count
 from django.contrib.auth import get_user_model
+from django.shortcuts import render
 
 CustomUser = get_user_model()
 
@@ -847,53 +848,6 @@ class PartnerAdmin(admin.ModelAdmin):
             return super().get_inline_instances(request, obj)
         return []
 
-# Создаем прокси-модель для не-партнёров
-class NonPartnerUser(CustomUser):
-    class Meta:
-        proxy = True
-        verbose_name = "Не-партнёр"
-        verbose_name_plural = "Не-партнёры"
-
-# Кастомная админка для не-партнёров (гости и посетители)
-@admin.register(NonPartnerUser)
-class NonPartnerAdmin(admin.ModelAdmin):
-    """
-    Кастомная админка для пользователей, которые не являются партнёрами.
-    """
-
-    list_display = (
-        'username', 'email', 'first_name', 'last_name',
-        'user_type', 'is_verified', 'verification_status'
-    )
-
-    list_filter = (
-        'user_type',
-        'is_verified',
-        'verification_status',
-    )
-
-    search_fields = (
-        'username', 'email', 'first_name', 'last_name'
-    )
-
-    fieldsets = (
-        (None, {
-            'fields': ('username', 'email', 'first_name', 'last_name')
-        }),
-        ('Статус', {
-            'fields': ('user_type', 'is_verified', 'verification_status')
-        }),
-    )
-
-    def get_queryset(self, request):
-        """Фильтруем только не-партнёров"""
-        qs = super().get_queryset(request)
-        return qs.exclude(user_type='partner')
-
-    def get_inline_instances(self, request, obj=None):
-        """Не показываем инлайны для не-партнёров"""
-        return []
-
 # Регистрируем модели, которые ещё не зарегистрированы
 try:
     admin.site.unregister(CustomUser)
@@ -940,4 +894,5 @@ class FormatAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     ordering = ('name',)
+
 
