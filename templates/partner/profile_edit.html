@@ -9,7 +9,7 @@
     
     <h2>Личные данные</h2>
     {% for field in user_form %}
-        {% if field.name != 'video_business_card' %}
+        {% if field.name != 'video_business_card' and field.name != 'logo' %}
         <div class="form-group">
             {{ field.label_tag }}
             {{ field }}
@@ -22,6 +22,28 @@
         </div>
         {% endif %}
     {% endfor %}
+
+    <!-- Кастомное поле для логотипа -->
+    <div class="form-group">
+        <label>Логотип компании</label>
+        <div id="logo-preview-container" class="media-preview-container mb-2">
+            {% if request.user.logo %}
+            <div class="media-preview">
+                <img src="{{ request.user.logo.url }}" alt="Логотип" style="max-width: 200px; max-height: 200px; border-radius: 4px;" class="mr-2">
+                <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                        data-media-type="logo" data-media-id="{{ request.user.id }}">
+                    ×
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <input type="file" name="logo" id="id_logo" class="custom-media-input"
+               data-media-type="logo" style="display: none;" accept="image/jpeg,image/png,image/gif,image/webp">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="logo">
+            {% if request.user.logo %}Изменить{% else %}Добавить{% endif %} логотип
+        </button>
+        <small class="form-text text-muted">Разрешены форматы: JPG, PNG, GIF, WEBP. Максимальный размер: 10MB.</small>
+    </div>
 
     <!-- Кастомное поле для видео-визитки -->
     <div class="form-group">

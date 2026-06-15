@@ -74,6 +74,9 @@ function initMediaHandlers() {
             } else if (mediaType === 'video_business_card') {
                 // Для видео-визитки mediaId - это ID пользователя
                 url = `/partner/remove_media/video_business_card/${mediaId}/`;
+            } else if (mediaType === 'logo') {
+                // Для логотипа mediaId - это ID пользователя
+                url = `/partner/remove_media/logo/${mediaId}/`;
             } else if (mediaType === 'image') {
                 // Для дополнительных изображений используем другой URL
                 const imageId = button.getAttribute('data-image-id');
@@ -189,7 +192,7 @@ function initMediaHandlers() {
                         errorMessage = 'Неверный формат файла. Разрешены только PDF файлы';
                     }
                 }
-                else if (mediaType === 'image' || mediaType === 'images') {
+                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'logo') {
                     // Изображения: разрешены только изображения
                     const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                     const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -222,8 +225,8 @@ function initMediaHandlers() {
 
                 // Если валидация пройдена, показываем превью
                 if (previewContainer) {
-                    if (mediaType === 'image') {
-                        // Для основного изображения показываем превью картинки
+                    if (mediaType === 'image' || mediaType === 'logo') {
+                        // Для основного изображения и логотипа показываем превью картинки
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             previewContainer.innerHTML = `
@@ -362,7 +365,7 @@ async function validateMediaFilesBeforeSubmit() {
                         errorMessage = 'Неверный формат файла. Разрешены только PDF файлы';
                     }
                 }
-                else if (mediaType === 'image' || mediaType === 'images') {
+                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'logo') {
                     // Изображения: разрешены только изображения
                     const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                     const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];

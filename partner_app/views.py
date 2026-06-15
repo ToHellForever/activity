@@ -1777,6 +1777,14 @@ def profile_edit(request):
             # Метод .delete() у FileField удаляет файл с диска.
             # Параметр save=False важен: мы не хотим сохранять модель сейчас.
             request.user.video_business_card.delete(save=False)
+        
+        # Проверяем, был ли загружен НОВЫЙ файл для поля 'logo'
+        new_logo_file = request.FILES.get("logo")
+        
+        # Если новый файл есть, и у пользователя уже было старое лого...
+        if new_logo_file and request.user.logo:
+            # ...то удаляем старый файл с диска/облака.
+            request.user.logo.delete(save=False)
         # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
 
         # Обработка основной формы профиля (включая видео-визитку)
@@ -2020,6 +2028,13 @@ def remove_media(request, media_type, media_id):
             if request.user.video_business_card:
                 request.user.delete_file_field("video_business_card")
                 request.user.video_business_card = None
+                request.user.save()
+                return JsonResponse({"status": "success"})
+
+        elif media_type == "logo":
+            if request.user.logo:
+                request.user.delete_file_field("logo")
+                request.user.logo = None
                 request.user.save()
                 return JsonResponse({"status": "success"})
 
