@@ -91,10 +91,23 @@
     font-family: 'Verdana', sans-serif;
     font-size: 1rem;
     color: #070707;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
 }
 
 .venue-price strong {
+    font-weight: 600;
+}
+
+.venue-equipment {
+    font-family: 'Verdana', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #000000;
+    margin-bottom: 25px;
+    text-align: justify;
+}
+
+.venue-equipment strong {
     font-weight: 600;
 }
 
@@ -191,7 +204,7 @@
 .venue-card-price {
     font-size: 15px;
     font-weight: 600;
-    color: #333;
+    color: black;
     margin-bottom: 15px;
 }
 

@@ -25,7 +25,7 @@
             <div class="venue-stats">
                 <div class="venue-stat">
                     <img src="/media/icon/S.png" alt="" class="icon-stat">
-                    <span style='color: #070707'>{{ venue.area }} м²</span>
+                    <span style='color: #070707'>{{ venue.area|floatformat }} м²</span>
                 </div>
                 <div class="venue-stat">
                     <span>до {{ venue.max_capacity }} человек</span>
@@ -35,13 +35,18 @@
             <div class="venue-">
                 {{ venue.short_description|linebreaks }}
             </div>
-            
-            <div class="venue-description">
-                {{ venue.description|linebreaks }}
+            {% if venue.equipment_items.all %}
+            <div class="venue-equipment">
+                <strong>Зал оборудован всем необходимым:</strong> 
+                {% for item in venue.equipment_items.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
             </div>
+            {% endif %}
+        
             <div class="venue-price">
-                <strong>Стоимость аренды:</strong> {{ venue.price|floatformat }} руб. / {{ venue.get_price_unit_display|lower }}
+                <strong>Стоимость аренды:</strong> {{ venue.price|floatformat }} руб. / {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
             </div>
+            
+
             
             <a href="#booking" class="book-button">ЗАБРОНИРОВАТЬ</a>
         </div>
@@ -67,7 +72,7 @@
                         <span>до {{ other_venue.max_capacity }} человек</span>
                     </div>
                     <div class="venue-card-price">
-                        {{ other_venue.price|floatformat }}.- {{ venue.get_price_unit_display }}
+                        {{ other_venue.price|floatformat }}.- {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
                     </div>
                     <a href="{% url 'venues:venue_detail' other_venue.slug %}" class="book-button">ЗАБРОНИРОВАТЬ</a>
                 </div>
