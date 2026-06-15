@@ -647,9 +647,17 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 
     def delete(self, *args, **kwargs):
         """Удаляет все связанные файлы при удалении мероприятия."""
+        # Удаляем файлы основного изображения, видео и программы
         self.delete_file_field("image")
         self.delete_file_field("video_url")
         self.delete_file_field("program_file")
+        
+        # Удаляем файлы дополнительных фотографий
+        # Нужно сделать это ДО удаления мероприятия, так как CASCADE удалит записи из БД
+        from .models import EventImage
+        for event_image in EventImage.objects.filter(event=self):
+            event_image.delete_file_field("image")
+        
         super().delete(*args, **kwargs)
 
     class Meta:
