@@ -52,7 +52,7 @@ def landing_page(request):
         Event.objects.filter(status="active")
         .select_related("organizer", "category")
         .prefetch_related("images")
-        .order_by("date_time")
+        .order_by("date_time")[:4]
     )
 
     # Получаем выбранные значения фильтров из GET-запроса
@@ -86,7 +86,7 @@ def landing_page(request):
         Venue.objects.filter(status="published")
         .select_related("venue_type")
         .prefetch_related("images")
-        .order_by("-tariff", "title")[:10]
+        .order_by("-tariff", "title")[:4]
     )
 
     # Получаем все категории для выпадающего списка
