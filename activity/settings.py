@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['appreciate-celebration-pen-studios.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['badge-most-raymond-visiting.trycloudflare.com', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -112,6 +112,10 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
+
+CRONJOBS = [
+    ('*/5 * * * *', 'django.core.management.call_command', ['clean_expired_reservations']),
+]
 
 STATIC_URL = "static/"
 
