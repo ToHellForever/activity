@@ -178,7 +178,7 @@ def forgot_password(request):
             send_mail(
                 subject,
                 message,
-                "dim.anosoff2018@yandex.ru",
+                settings.DEFAULT_FROM_EMAIL,
                 [user.email],
                 fail_silently=False,
             )

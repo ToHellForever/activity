@@ -228,7 +228,15 @@ CELERY_TIMEZONE = "Europe/Moscow"
 CELERY_BEAT_SCHEDULE = {
     "check-race-conditions-hourly": {
         "task": "core.tasks.check_race_conditions_task",
-        "schedule": 3600.0,  # Каждый час
+        "schedule": 3600.0,
+    },
+    "check-unpaid-tickets-every-10-minutes": {
+        "task": "core.tasks.check_unpaid_tickets",
+        "schedule": 1000.0,
+    },
+    "check-reserved-tickets-every-10-minutes": {
+        "task": "core.tasks.check_reserved_tickets",
+        "schedule": 600.0,
     },
 }
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")

@@ -540,7 +540,7 @@ def create_event(request):
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
-    send_mail(subject, message, "dim.anosoff2018@yandex.ru", [event.organizer.email])
+    send_mail(subject, message, "settings.DEFAULT_FROM_EMAIL", [event.organizer.email])
 
 @login_required
 def edit_event(request, event_id):
@@ -2130,7 +2130,7 @@ def send_partner_all_tickets_sold_notification(event):
     send_mail(
         subject,
         "",
-        "dim.anosoff2018@yandex.ru",
+        settings.DEFAULT_FROM_EMAIL,
         [organizer_email],
         html_message=message,
     )

@@ -11,7 +11,8 @@ from django.db import transaction
 import json
 import uuid
 from yookassa import Configuration, Payment
-
+# timedelta
+from datetime import timedelta
 # Настройка ЮКассы
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -442,7 +443,8 @@ def bulk_buy_tickets(request, event_id):
                     total_price=ticket.price * quantity,
                     quantity=quantity,
                     payment_status='pending',
-                    purchase_type='paid_ticket'
+                    purchase_type='paid_ticket',
+                    payment_deadline=timezone.now() + timedelta(minutes=10),
                 )
 
                 orders.append(order)
@@ -703,6 +705,9 @@ def create_payment(request, ticket_id):
             total_price=total_price,
             quantity=quantity,
             payment_status="reserved" if reserve_without_payment else "pending",
+            payment_deadline=timezone.now() + timedelta(
+                hours=24 if reserve_without_payment else 10
+            ),
         )
 
         if reserve_without_payment:

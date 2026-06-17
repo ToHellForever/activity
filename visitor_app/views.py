@@ -55,6 +55,7 @@ def visitor_dashboard(request):
     # Получаем заказы текущего пользователя по email
     user_orders = (
         Order.objects.filter(participant_data__email=request.user.email)
+        .exclude(payment_status="canceled")
         .only("id", "participant_data", "created_at", "total_price", "quantity", "attended", "is_paid", "payment_deadline", "payment_status", "purchase_type", "ticket")
         .select_related("ticket")
         .prefetch_related("ticket__event")

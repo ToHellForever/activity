@@ -113,7 +113,7 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                    from_email=settings.DEFAULT_FROM_EMAIL or 'dim.anosoff2018@yandex.ru',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
@@ -142,7 +142,7 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                    from_email=settings.DEFAULT_FROM_EMAIL or 'dim.anosoff2018@yandex.ru',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
@@ -431,7 +431,7 @@ class EventAdmin(admin.ModelAdmin):
         send_mail(
             subject,
             message,
-            "dim.anosoff2018@yandex.ru",
+            settings.DEFAULT_FROM_EMAIL,
             [event.organizer.email],
             fail_silently=False,
         )

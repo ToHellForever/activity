@@ -11,6 +11,8 @@ from django.conf import settings
 from core.models import Event, Ticket
 from venues.models import Venue
 from django.core.management import call_command
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 @shared_task
@@ -335,23 +337,44 @@ def check_unpaid_tickets():
     """
     from django.utils import timezone
     from core.models import Order, Ticket
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
 
     now = timezone.now()
     unpaid_orders = Order.objects.filter(
         payment_status__in=["pending"],
         is_paid=False,
         created_at__lte=now - timezone.timedelta(minutes=10)
-    )
+    ).select_related("ticket__event")
 
     for order in unpaid_orders:
-        # Возвращаем билеты в продажу
         ticket = order.ticket
         ticket.available_quantity += order.quantity
         ticket.save()
 
-        # Обновляем статус заказа
         order.payment_status = "canceled"
         order.save()
+
+        # Уведомляем пользователя
+        email = order.participant_data.get("email")
+        if email:
+            try:
+                subject = f"Срок оплаты заказа #{order.id} истёк"
+                context = {
+                    "order": order,
+                    "event": order.ticket.event,
+                }
+                html = render_to_string("emails/order_canceled.html", context)
+                send_mail(
+                    subject,
+                    strip_tags(html),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    html_message=html,
+                )
+            except Exception as e:
+                logger.error(f"Ошибка отправки уведомления для заказа {order.id}: {e}")
 
         logger.info(f"Заказ {order.id} отменен из-за неоплаты. Билеты возвращены в продажу.")
 
@@ -435,7 +458,7 @@ def send_reservation_reminder(order, hours_until_event):
     send_mail(
         subject,
         plain_message,
-        "noreply@eventplatform.com",
+        settings.DEFAULT_FROM_EMAIL,
         [user_email],
         html_message=html_message,
     )
@@ -461,7 +484,7 @@ def send_reservation_cancelation(order):
     send_mail(
         subject,
         plain_message,
-        "noreply@eventplatform.com",
+        settings.DEFAULT_FROM_EMAIL,
         [user_email],
         html_message=html_message,
     )
