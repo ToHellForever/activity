@@ -44,8 +44,8 @@ def monitor_ticket_consistency():
     try:
         # Проверяем все билеты
         for ticket in Ticket.objects.all():
-            # Прямой расчет проданных билетов
-            db_sold = sum(order.quantity for order in ticket.orders.all())
+            # Прямой расчет проданных билетов (исключая отменённые и возвраты)
+            db_sold = sum(order.quantity for order in ticket.orders.exclude(payment_status__in=["refunded", "canceled"]))
             calc_available = ticket.available_quantity - db_sold
 
             # Расчет через метод модели

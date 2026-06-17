@@ -99,7 +99,7 @@
                         </div>
                     </td>
                     <td class="text-center" style="width: 100px;">
-                        {% for qr_code in order.qr_codes %}
+                        {% for i in ""|center:order.quantity %}
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
                                 alt="QR-код" class="img-fluid mb-4" style="width: 70px; height: 70px; opacity: 1;">
                         {% endfor %}
@@ -115,7 +115,7 @@
                             </div>
                             <div class="modal-body text-center">
                                 <div class="row">
-                                    {% for qr_code in order.qr_codes %}
+                                    {% for i in ""|center:order.quantity %}
                                         <div class="col-md-4 mb-3">
                                             <p>Билет #{{ forloop.counter }}</p>
                                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"

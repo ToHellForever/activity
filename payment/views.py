@@ -24,7 +24,8 @@ logger = logging.getLogger('ticket_purchase')
 
 def send_order_confirmation_email(order, request=None):
     """
-    Отправка уведомления на почту с информацией о заказе и QR-кодами.
+    Отправка уведомления на почту с информацией о заказе.
+    QR-коды генерируются на лету и вставляются как base64 в письмо.
     """
     participant_email = order.participant_data.get("email")
     if not participant_email:
@@ -32,38 +33,27 @@ def send_order_confirmation_email(order, request=None):
 
     from django.core.mail import EmailMultiAlternatives
     from django.conf import settings
-    import os
 
-    # Формирование контекста для шаблона письма
+    # Генерируем QR-коды "на лету"
+    qr_codes = order.generate_qr_data()
+
     context = {
         "order": order,
         "ticket": order.ticket,
         "participant_data": order.participant_data,
-        "qr_codes": order.qr_codes,
+        "qr_codes": qr_codes,
     }
 
-    # Рендеринг HTML-шаблона письма
     email_html = render_to_string("emails/ticket_confirmation.html", context)
 
-    # Создание объекта EmailMultiAlternatives для поддержки вложений
     email_message = EmailMultiAlternatives(
         subject=f"Подтверждение заказа #{order.id}",
-        body=f"Ваш заказ #{order.id} успешно оплачен. QR-коды прикреплены к письму.",
+        body=f"Ваш заказ #{order.id} успешно оплачен.",
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[participant_email],
     )
     email_message.attach_alternative(email_html, "text/html")
 
-    # Вложение QR-кодов в письмо
-    for qr_code in order.qr_codes:
-        qr_code_path = os.path.join(settings.MEDIA_ROOT, qr_code["qr_code_path"])
-        if os.path.exists(qr_code_path):
-            with open(qr_code_path, "rb") as qr_file:
-                email_message.attach(
-                    f"qr_code_{qr_code['unique_id']}.png", qr_file.read(), "image/png"
-                )
-
-    # Отправка письма
     email_message.send(fail_silently=False)
 
 
@@ -468,7 +458,6 @@ def bulk_buy_tickets(request, event_id):
             for order in orders:
                 order.payment_status = 'succeeded'
                 order.is_paid = True
-                order._generate_qr_codes()
                 order.save()
                 logger.info('[bulk_buy] Бесплатный заказ оплачен', extra={'order_id': order.id})
 
@@ -685,9 +674,6 @@ def create_payment(request, ticket_id):
                 purchase_type="free_registration",
             )
 
-            # Генерация QR-кодов
-            order._generate_qr_codes()
-
             # Отправка билетов на почту
             send_order_confirmation_email(order, request)
 
@@ -846,11 +832,6 @@ def yookassa_webhook(request):
                             order.is_paid = True
                             order.yookassa_payment_data = payment
                             
-                            # Генерируем QR-коды только если они еще не сгенерированы
-                            if not order.qr_codes_generated:
-                                order._generate_qr_codes()
-                                order.qr_codes_generated = True
-                            
                             order.save()
                             
                             logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
@@ -971,9 +952,6 @@ def payment_success(request, order_id):
                     if o.payment_status != "succeeded":
                         o.payment_status = "succeeded"
                         o.is_paid = True
-                        if not o.qr_codes_generated:
-                            o._generate_qr_codes()
-                            o.qr_codes_generated = True
                         o.save()
                         logger.info('[success] Заказ обновлён', extra={
                             'order_id': o.id,

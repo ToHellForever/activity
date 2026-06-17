@@ -46,7 +46,7 @@ class Command(BaseCommand):
         # 2. Проверка билетов, где продано больше, чем доступно
         oversold_tickets = []
         for ticket in Ticket.objects.all():
-            sold = sum(order.quantity for order in ticket.orders.all())
+            sold = sum(order.quantity for order in ticket.orders.exclude(payment_status__in=["refunded", "canceled"]))
             if sold > ticket.available_quantity:
                 oversold_tickets.append((ticket, sold))
 
@@ -80,7 +80,7 @@ class Command(BaseCommand):
         # 4. Проверка согласованности количества
         inconsistent_tickets = []
         for ticket in Ticket.objects.all():
-            db_sold = sum(order.quantity for order in ticket.orders.all())
+            db_sold = sum(order.quantity for order in ticket.orders.exclude(payment_status__in=["refunded", "canceled"]))
             calc_available = ticket.available_quantity - db_sold
 
             # Проверяем через метод модели

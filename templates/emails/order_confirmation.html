@@ -63,8 +63,8 @@
             {% for qr in qr_codes %}
             <div class="qr-code">
                 <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
-                <img src="{{ request.scheme }}://{{ request.get_host }}{{ qr.qr_code_path }}" alt="QR-код">
-                <p>{{ qr.data.text_data }}</p>
+                <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код">
+                <p>{{ qr.qr_text }}</p>
             </div>
             {% endfor %}
         {% else %}

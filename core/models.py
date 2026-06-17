@@ -798,12 +798,6 @@ class Order(models.Model):
         verbose_name="Комиссия платформы",
         help_text="Сумма комиссии платформы, удержанная с этого заказа",
     )
-    qr_codes = models.JSONField(
-        default=list,
-        blank=True,
-        verbose_name="QR-коды",
-        help_text="Список QR-кодов для каждого купленного билета",
-    )
     # Статус платежа
     PAYMENT_STATUS_CHOICES = [
         ("pending", "Ожидает оплаты"),
@@ -831,12 +825,16 @@ class Order(models.Model):
         default="paid_ticket",
         verbose_name="Тип покупки",
     )
-    qr_codes_generated = models.BooleanField(default=False, verbose_name="QR-коды сгенерированы")
-    
+    purchase_type = models.CharField(
+        max_length=20,
+        choices=PURCHASE_TYPE_CHOICES,
+        default="paid_ticket",
+        verbose_name="Тип покупки",
+    )
 
     def save(self, *args, **kwargs):
         # Логирование изменения статуса платежа
-        if self.pk:  # Если объект уже существует в базе
+        if self.pk:
             original = Order.objects.get(pk=self.pk)
             if original.payment_status != self.payment_status:
                 from django.contrib.auth import get_user_model
@@ -845,53 +843,21 @@ class Order(models.Model):
                 for admin in admin_users:
                     print(f"Уведомление для {admin.email}: Статус заказа #{self.id} изменён с {original.payment_status} на {self.payment_status}")
 
-        # Генерация QR-кодов только если заказ сохранен в БД и QR-коды еще не генерировались
-        if self.pk and not self.qr_codes_generated:
-            self._generate_qr_codes()
-            self.qr_codes_generated = True
-            # Сохраняем флаг в БД АТОМАРНО, ДО того как вызовем super().save()
-            # Это гарантирует, что другие процессы (например, вебхук) увидят обновлённое значение
-            Order.objects.filter(pk=self.pk).update(qr_codes_generated=True)
-
-        # ВАЖНО: super().save() вызываем ПОСЛЕ обновления БД
         super().save(*args, **kwargs)
 
-    def _generate_qr_codes(self):
+    def generate_qr_data(self):
+        """
+        Генерирует данные QR-кода "на лету" без сохранения в БД.
+        Возвращает список словарей с base64-encoded изображениями QR-кодов.
+        """
+        import base64
+        import io
         import qrcode
-        import uuid
-        import os
-        import logging
-        from django.conf import settings
 
-        logger = logging.getLogger(__name__)
-        logger.info(f"Generating QR codes for order {self.id}")
-
-        # Проверяем, что у заказа есть ID
-        if not self.id:
-            logger.error("Cannot generate QR codes: Order ID is None")
-            return
-
-        # Очищаем старые QR-коды, если они есть
-        self.qr_codes = []
-
-        # Генерация QR-кодов для каждого билета
+        qr_items = []
         for i in range(self.quantity):
-            # Уникальный идентификатор для каждого QR-кода
-            qr_uuid = str(uuid.uuid4())
-
-            # Формируем данные для QR-кода в читаемом формате, как в письме
             qr_text_data = f"Order ID: {self.id}, Ticket: {i + 1}"
 
-            # Данные для QR-кода (можно расширить по необходимости)
-            qr_data = {
-                "order_id": self.id,
-                "ticket_id": self.ticket.id,
-                "participant_data": self.participant_data,
-                "unique_id": qr_uuid,
-                "text_data": qr_text_data,  # Читаемая строка для совместимости
-            }
-
-            # Создаем QR-код
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -901,26 +867,20 @@ class Order(models.Model):
             qr.add_data(qr_text_data)
             qr.make(fit=True)
 
-            # Сохраняем QR-код в виде изображения
             img = qr.make_image(fill_color="black", back_color="white")
 
-            # Путь для сохранения QR-кода
-            qr_dir = os.path.join(settings.MEDIA_ROOT, "qr_codes")
-            os.makedirs(qr_dir, exist_ok=True)
-            qr_filename = f"qr_code_{qr_uuid}.png"
-            qr_path = os.path.join(qr_dir, qr_filename)
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+            qr_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
-            img.save(qr_path)
-            logger.info(f"Saved QR code to {qr_path}")
+            qr_items.append({
+                "ticket_number": i + 1,
+                "qr_text": qr_text_data,
+                "qr_base64": qr_base64,
+            })
 
-            # Сохраняем путь к QR-коду в JSON-поле
-            self.qr_codes.append(
-                {
-                    "unique_id": qr_uuid,
-                    "qr_code_path": os.path.join("qr_codes", qr_filename),
-                    "data": qr_data,
-                }
-            )
+        return qr_items
 
     # Поля для хранения UTM-меток
     utm_source = models.CharField(

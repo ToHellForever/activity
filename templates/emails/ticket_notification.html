@@ -97,12 +97,12 @@
         <p>Если вы не оплатите билет вовремя, ваша бронь будет автоматически отменена.</p>
     {% endif %}
 
-    {% if order.qr_codes and order.qr_codes|length > 0 %}
+    {% if qr_codes and qr_codes|length > 0 %}
         <div class="qr-code">
             <p><strong>Ваши QR-коды для входа:</strong></p>
-            {% for qr_code in order.qr_codes %}
-                <img src="{{ qr_code.image.url }}" alt="QR код" width="200" height="200">
-                <p>Код: {{ qr_code.code }}</p>
+            {% for qr in qr_codes %}
+                <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR код" width="200" height="200">
+                <p>Код: {{ qr.qr_text }}</p>
             {% endfor %}
         </div>
     {% endif %}
