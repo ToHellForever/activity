@@ -187,17 +187,14 @@ class TicketInline(admin.TabularInline):
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""
         if obj.pk:
-            return sum(order.quantity for order in obj.orders.exclude(payment_status="refunded"))
+            return sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
         return 0
 
     def get_available_count(self, obj):
         """Возвращает количество доступных билетов."""
-        if obj.pk:
-            sold = sum(order.quantity for order in obj.orders.exclude(payment_status="refunded"))
-            return obj.available_quantity - sold
-        return 0
+        sold = sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
+        return obj.available_quantity - sold
 
-    get_sold_count.short_description = "Продано"
     get_available_count.short_description = "Доступно"
 
 @admin.register(Event)
@@ -564,7 +561,8 @@ class TicketAdmin(admin.ModelAdmin):
 
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""
-        return sum(order.quantity for order in obj.orders.all())
+        return sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
+
 
     get_sold_count.short_description = "Продано"
 

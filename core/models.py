@@ -720,7 +720,10 @@ class Ticket(models.Model):
                 return False
 
         sold = sum(
-            order.quantity for order in self.orders.exclude(payment_status="refunded")
+            order.quantity
+            for order in self.orders.exclude(
+                payment_status__in=["refunded", "canceled"]
+            )
         )
         print(
             f"Ticket {self.id}: available_quantity={self.available_quantity}, sold={sold}, quantity={quantity}"
@@ -734,21 +737,23 @@ class Ticket(models.Model):
         from django.db import transaction
 
         try:
-            # Используем распределенную блокировку, если доступно
             if REDIS_AVAILABLE:
                 with get_lock(self.pk, use_redis=True):
                     sold = sum(
                         order.quantity
-                        for order in self.orders.exclude(payment_status="refunded")
+                        for order in self.orders.exclude(
+                            payment_status__in=["refunded", "canceled"]
+                        )
                     )
                     return self.available_quantity - sold
             else:
-                # Локальная блокировка через транзакции
                 with transaction.atomic():
                     ticket = Ticket.objects.select_for_update().get(pk=self.pk)
                     sold = sum(
                         order.quantity
-                        for order in ticket.orders.exclude(payment_status="refunded")
+                        for order in ticket.orders.exclude(
+                            payment_status__in=["refunded", "canceled"]
+                        )
                     )
                     return ticket.available_quantity - sold
         except Ticket.DoesNotExist:
