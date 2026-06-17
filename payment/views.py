@@ -29,6 +29,7 @@ def send_order_confirmation_email(order, request=None):
     """
     participant_email = order.participant_data.get("email")
     if not participant_email:
+        logger.warning('[email] Email участника пуст для заказа %s', order.id)
         return
 
     from django.core.mail import EmailMultiAlternatives
@@ -36,6 +37,7 @@ def send_order_confirmation_email(order, request=None):
 
     # Генерируем QR-коды "на лету"
     qr_codes = order.generate_qr_data()
+    logger.info('[email] QR-коды сгенерированы для заказа %s, count=%d', order.id, len(qr_codes))
 
     context = {
         "order": order,
@@ -55,6 +57,7 @@ def send_order_confirmation_email(order, request=None):
     email_message.attach_alternative(email_html, "text/html")
 
     email_message.send(fail_silently=False)
+    logger.info('[email] Письмо отправлено для заказа %s на %s', order.id, participant_email)
 
 
 def send_reservation_email(order, request):
@@ -451,37 +454,49 @@ def bulk_buy_tickets(request, event_id):
             })
         
         # Определяем логику оплаты
-        if total_price == 0:
-            # Бесплатные билеты - сразу успех
-            logger.info('[bulk_buy] Обработка бесплатных билетов', extra={'orders_count': len(orders)})
+        # Сначала обрабатываем бесплатные билеты отдельно
+        free_orders = [o for o in orders if o.total_price == 0]
+        paid_orders = [o for o in orders if o.total_price > 0]
+        
+        if free_orders:
+            logger.info('[bulk_buy] Обработка бесплатных билетов', extra={'orders_count': len(free_orders)})
             
-            for order in orders:
+            for order in free_orders:
                 order.payment_status = 'succeeded'
                 order.is_paid = True
+                order.purchase_type = 'free_registration'
                 order.save()
                 logger.info('[bulk_buy] Бесплатный заказ оплачен', extra={'order_id': order.id})
 
-            # Отправка писем
-            for order in orders:
-                send_order_confirmation_email(order, request)
-                logger.info('[bulk_buy] Письмо отправлено', extra={'order_id': order.id, 'email': email})
+            # Отправка писем для бесплатных билетов
+            for order in free_orders:
+                try:
+                    send_order_confirmation_email(order, request)
+                    logger.info('[bulk_buy] Письмо отправлено', extra={'order_id': order.id, 'email': email})
+                except Exception as e:
+                    logger.error('[bulk_buy] Ошибка отправки письма', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
 
             logger.info('[bulk_buy] Бесплатные билеты успешно оформлены', extra={
-                'orders_count': len(orders)
+                'orders_count': len(free_orders)
             })
             
+        # Убираем бесплатные заказы из списка для платной обработки
+        orders = paid_orders
+        
+        if not orders:
+            # Все билеты бесплатные
             return JsonResponse({
                 'success': True,
                 'message': 'Билеты успешно оформлены! Проверьте вашу почту.',
-                'orders': [o.id for o in orders]
+                'orders': [o.id for o in free_orders]
             })
         
         # Платные билеты - создаём платёж
-        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'total_price': total_price})
+        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'orders_count': len(orders)})
         
         # Объединяем все заказы в один платёж
         from django.db.models import Sum
-        combined_total = sum(order.total_price for order in orders)
+        combined_total = sum(o.total_price for o in orders)
         
         payment = Payment.create(
             {
@@ -496,7 +511,8 @@ def bulk_buy_tickets(request, event_id):
                 "description": f"Оплата заказа для мероприятия {event.title}",
                 "metadata": {
                     "order_ids": json.dumps([o.id for o in orders]),
-                    "event_id": event_id
+                    "event_id": event_id,
+                    "free_order_ids": json.dumps([o.id for o in free_orders]) if free_orders else None
                 },
             },
             uuid.uuid4(),
@@ -504,6 +520,7 @@ def bulk_buy_tickets(request, event_id):
 
         # Сохраняем ID платежей для каждого заказа
         for order in orders:
+            order.payment_status = 'pending'
             order.yookassa_payment_id = payment.id
             order.save()
             logger.info('[bulk_buy] Сохранён ID платежа для заказа', extra={

@@ -43,6 +43,24 @@ def format_price(value):
         return value
 
 
+@register.filter(name='any_available')
+def any_available(tickets):
+    """
+    Проверяет, есть ли хотя бы один билет с реальным остатком > 0.
+    Использует get_available_count(), который учитывает все незакрытые заказы.
+    
+    Пример:
+        {% with has=tickets|any_available %}
+    """
+    if not tickets:
+        return False
+    for ticket in tickets:
+        available = getattr(ticket, 'get_available_count', lambda: 0)()
+        if available and int(available) > 0:
+            return True
+    return False
+
+
 @register.filter(name='format_number')
 def format_number(value):
     """

@@ -33,6 +33,7 @@
     
     <!-- Билеты -->
     {% if tickets %}
+    {% with has_available_tickets=tickets|any_available %}
     <div class="tickets-section mt-5">
         <h2 class='landing-h mb-3'>СТОИМОСТЬ БИЛЕТОВ</h2>
         <div class="table-responsive">
@@ -52,16 +53,17 @@
                             {{ ticket.name }}
                         </td>
                         <td>{{ ticket.price|format_price }} руб</td>
-                        <td>{{ ticket.available_quantity }} мест</td>
+                        <td>{{ ticket.get_available_count|default:ticket.available_quantity }} мест</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         <div class="text-center mt-4">
-            <button type="button" class="buy-button" id="openBuyModal">КУПИТЬ БИЛЕТ</button>
+            <button type="button" class="buy-button{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
         </div>
     </div>
+    {% endwith %}
     {% endif %}
 </div>
 
@@ -112,7 +114,7 @@
                 <div id="ticketSelection">
                     <h6 class="fw-bold mb-3">Выберите билеты:</h6>
                     {% for ticket in tickets %}
-                    <div class="card mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}">
+                    <div class="card mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-md-5">
@@ -264,19 +266,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusModal = new bootstrap.Modal(statusModalEl);
     
     // === ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-    document.getElementById('openBuyModal').addEventListener('click', function() {
-        addLog('Модальное окно открыто', 'info');
-        updateCartDisplay();
-        buyModal.show();
-    });
+    const openBuyBtn = document.getElementById('openBuyModal');
+    if (openBuyBtn && !openBuyBtn.disabled) {
+        openBuyBtn.addEventListener('click', function() {
+            addLog('Модальное окно открыто', 'info');
+            updateCartDisplay();
+            buyModal.show();
+        });
+    } else if (openBuyBtn && openBuyBtn.disabled) {
+        addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
+    }
     
     // === УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ===
     function updateQuantity(ticketId, delta) {
         addLog('Изменение количества билета ' + ticketId + ' на ' + delta, 'info');
         const input = document.getElementById('qty_' + ticketId);
         const card = input.closest('.ticket-card');
-        const maxQty = parseInt(card.dataset.maxQty) || parseInt(input.max) || 99;
-        let newQty = parseInt(input.value) || 0 + delta;
+        const maxQty = parseInt(card.dataset.maxQty) || 99;
+        let newQty = (parseInt(input.value) || 0) + delta;
         newQty = Math.max(0, Math.min(newQty, maxQty));
         input.value = newQty;
         
@@ -300,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function() {
             const ticketId = this.dataset.ticketId;
             const card = this.closest('.ticket-card');
-            const maxQty = parseInt(card.dataset.maxQty) || parseInt(this.max) || 99;
+            const maxQty = parseInt(card.dataset.maxQty) || 99;
             let val = parseInt(this.value) || 0;
             val = Math.max(0, Math.min(val, maxQty));
             this.value = val;

@@ -62,6 +62,8 @@ def visitor_dashboard(request):
         .order_by("-created_at")
     )
 
+    logger.info('[dashboard] Заказы для пользователя %s: %d', request.user.email, user_orders.count())
+
     # Логика для посетителя
     context = {"user": request.user, "user_orders": user_orders, "now": timezone.now()}
     return render(request, "visitor/dashboard.html", context)

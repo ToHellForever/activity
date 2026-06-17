@@ -733,30 +733,16 @@ class Ticket(models.Model):
         return available
 
     def get_available_count(self):
-        """Возвращает количество доступных билетов данного типа."""
-        from django.db import transaction
-
+        """Возвращает количество доступных билетов данного типа (без блокировки)."""
         try:
-            if REDIS_AVAILABLE:
-                with get_lock(self.pk, use_redis=True):
-                    sold = sum(
-                        order.quantity
-                        for order in self.orders.exclude(
-                            payment_status__in=["refunded", "canceled"]
-                        )
-                    )
-                    return self.available_quantity - sold
-            else:
-                with transaction.atomic():
-                    ticket = Ticket.objects.select_for_update().get(pk=self.pk)
-                    sold = sum(
-                        order.quantity
-                        for order in ticket.orders.exclude(
-                            payment_status__in=["refunded", "canceled"]
-                        )
-                    )
-                    return ticket.available_quantity - sold
-        except Ticket.DoesNotExist:
+            sold = sum(
+                order.quantity
+                for order in self.orders.exclude(
+                    payment_status__in=["refunded", "canceled"]
+                )
+            )
+            return max(0, self.available_quantity - sold)
+        except Exception:
             return 0
 
     class Meta:
