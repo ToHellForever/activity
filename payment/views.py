@@ -979,7 +979,9 @@ def yookassa_webhook(request):
 
 def refund_ticket(request, order_id):
     """
-    Возврат билета через ЮКассу.
+    Возврат билета.
+    Для бесплатных билетов — просто обновляем статус в БД.
+    Для платных — создаём возврат через ЮКассу.
     """
     import traceback
 
@@ -993,6 +995,8 @@ def refund_ticket(request, order_id):
             order.payment_status,
             "YooKassa Payment ID:",
             order.yookassa_payment_id,
+            "Price:",
+            order.total_price,
         )
 
         if order.payment_status != "succeeded" or not order.is_paid:
@@ -1002,16 +1006,27 @@ def refund_ticket(request, order_id):
                 {"error": "Заказ не оплачен или билет не был оплачен"},
             )
 
-        # Проверка срока возврата
-        if order.ticket.event.get_refund_deadline() < timezone.now():
+        # === ДЛЯ БЕСПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ БЕЗ ЮКАССЫ ===
+        if float(order.total_price) == 0:
+            print(f"[REFUND] Бесплатный билет: возврат в БД для order_id={order.id}")
+            order.payment_status = "refunded"
+            order.save()
+            print(f"[REFUND] Бесплатный билет #{order.id} помечен как возвращённый.")
+
+            # 🔁 Рендерим специальный шаблон для бесплатных билетов
+            return render(request, "refund_success_free.html")
+
+        # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ ЧЕРЕЗ ЮКАССУ ===
+        if not order.yookassa_payment_id:
             return render(
-                request, "refund_error.html", {"error": "Срок возврата истек"}
+                request,
+                "refund_error.html",
+                {"error": "Отсутствует ID платежа в ЮКассе (невозможно выполнить возврат)"},
             )
 
         print("Attempting to refund payment with ID:", order.yookassa_payment_id)
         from yookassa import Refund
 
-        # Создание возврата в ЮКассе
         refund = Refund.create(
             {
                 "payment_id": order.yookassa_payment_id,
@@ -1021,11 +1036,11 @@ def refund_ticket(request, order_id):
         )
         print("Refund created successfully:", refund.id)
 
-        # Обновление статуса заказа
         order.payment_status = "refunded"
         order.save()
         print("Order status updated to 'refunded'")
 
+        # Для платных — стандартный шаблон
         return render(request, "refund_success.html")
 
     except Exception as e:

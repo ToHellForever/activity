@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-success">
+        <h4 class="alert-heading">Возврат успешно выполнен!</h4>
+        <p>Бесплатный билет был успешно возвращён в систему.</p>
+        <hr>
+        <p class="mb-0">Теперь этот билет снова доступен для регистрации других пользователей.</p>
+    </div>
+    <a href="{% url 'visitor:dashboard' %}" class="btn btn-primary">Вернуться в личный кабинет</a>
+</div>
+{% endblock %}
