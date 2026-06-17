@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("create-payment/<int:ticket_id>/", views.create_payment, name="create_payment"),
+    path("bulk-buy/<int:event_id>/", views.bulk_buy_tickets, name="bulk_buy_tickets"),
     path("create_package_payment/<int:package_id>/", views.create_package_payment, name="create_package_payment"),
     path("handle_package_change_choice/", views.handle_package_change_choice, name="handle_package_change_choice"),
     path("create_invoice/<int:package_id>/", views.create_invoice, name="create_invoice"),

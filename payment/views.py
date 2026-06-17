@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser
+from django.db import transaction
 import json
 import uuid
 from yookassa import Configuration, Payment
@@ -14,6 +15,10 @@ from yookassa import Configuration, Payment
 # Настройка ЮКассы
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+
+# Логгер для покупки билетов
+import logging
+logger = logging.getLogger('ticket_purchase')
 
 
 def send_order_confirmation_email(order, request=None):
@@ -346,6 +351,200 @@ def create_invoice(request, package_id):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+def bulk_buy_tickets(request, event_id):
+    """
+    API для покупки нескольких типов билетов за один раз.
+    """
+    import traceback
+
+    if request.method != 'POST':
+        logger.error('[bulk_buy] Метод не POST', extra={'event_id': event_id})
+        return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
+    
+    try:
+        # Парсим JSON тело запроса
+        data = json.loads(request.body)
+        logger.info('[bulk_buy] Получен запрос на покупку', extra={
+            'event_id': event_id,
+            'tickets': data.get('tickets'),
+            'email': data.get('email')
+        })
+        
+        event = get_object_or_404(Event, id=event_id)
+        logger.info('[bulk_buy] Мероприятие найдено', extra={'event_title': event.title})
+        
+        # Получаем данные
+        tickets_data = data.get('tickets', [])
+        total_price = float(data.get('total_price', 0))
+        buyer_name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        phone = data.get('phone', '').strip()
+        
+        logger.info('[bulk_buy] Данные получены', extra={
+            'tickets_count': len(tickets_data),
+            'total_price': total_price,
+            'buyer_name': buyer_name,
+            'email': email
+        })
+        
+        # Валидация
+        if not tickets_data:
+            logger.error('[bulk_buy] Корзина пуста', extra={'event_id': event_id})
+            return JsonResponse({'error': 'Выберите хотя бы один билет'}, status=400)
+        
+        if not email:
+            logger.error('[bulk_buy] Email не указан', extra={'event_id': event_id})
+            return JsonResponse({'error': 'Укажите email'}, status=400)
+        
+        # Создаём participant_data
+        participant_data = {
+            'name': buyer_name,
+            'email': email,
+            'phone': phone
+        }
+
+        # Создаём заказы для каждого типа билета
+        orders = []
+        with transaction.atomic():
+            logger.info('[bulk_buy] Начало транзакции создания заказов', extra={'event_id': event_id})
+            
+            for ticket_item in tickets_data:
+                ticket_id = ticket_item.get('id')
+                quantity = int(ticket_item.get('quantity', 0))
+                
+                if quantity <= 0:
+                    logger.warning('[bulk_buy] Пропуск билета с quantity=0', extra={'ticket_id': ticket_id})
+                    continue
+                
+                ticket = get_object_or_404(Ticket, id=ticket_id, event=event)
+                logger.info('[bulk_buy] Проверка доступности билета', extra={
+                    'ticket_id': ticket_id,
+                    'ticket_name': ticket.name,
+                    'quantity': quantity
+                })
+                
+                # Проверяем доступность
+                if not ticket.is_available(quantity):
+                    available = ticket.get_available_count()
+                    logger.error('[bulk_buy] Билет недоступен', extra={
+                        'ticket_id': ticket_id,
+                        'requested': quantity,
+                        'available': available
+                    })
+                    return JsonResponse({
+                        'error': f'Билет "{ticket.name}" недоступен в количестве {quantity}. Доступно: {available}'
+                    }, status=400)
+                
+                # Создаём заказ
+                order = Order.objects.create(
+                    ticket=ticket,
+                    participant_data=participant_data,
+                    total_price=ticket.price * quantity,
+                    quantity=quantity,
+                    payment_status='pending',
+                    purchase_type='paid_ticket'
+                )
+
+                orders.append(order)
+                logger.info('[bulk_buy] Заказ создан', extra={
+                    'order_id': order.id,
+                    'ticket_name': ticket.name,
+                    'quantity': quantity,
+                    'total_price': str(order.total_price)
+                })
+            
+            logger.info('[bulk_buy] Все заказы созданы', extra={
+                'orders_count': len(orders),
+                'event_id': event_id
+            })
+        
+        # Определяем логику оплаты
+        if total_price == 0:
+            # Бесплатные билеты - сразу успех
+            logger.info('[bulk_buy] Обработка бесплатных билетов', extra={'orders_count': len(orders)})
+            
+            for order in orders:
+                order.payment_status = 'succeeded'
+                order.is_paid = True
+                order._generate_qr_codes()
+                order.save()
+                logger.info('[bulk_buy] Бесплатный заказ оплачен', extra={'order_id': order.id})
+
+            # Отправка писем
+            for order in orders:
+                send_order_confirmation_email(order, request)
+                logger.info('[bulk_buy] Письмо отправлено', extra={'order_id': order.id, 'email': email})
+
+            logger.info('[bulk_buy] Бесплатные билеты успешно оформлены', extra={
+                'orders_count': len(orders)
+            })
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Билеты успешно оформлены! Проверьте вашу почту.',
+                'orders': [o.id for o in orders]
+            })
+        
+        # Платные билеты - создаём платёж
+        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'total_price': total_price})
+        
+        # Объединяем все заказы в один платёж
+        from django.db.models import Sum
+        combined_total = sum(order.total_price for order in orders)
+        
+        payment = Payment.create(
+            {
+                "amount": {"value": str(combined_total), "currency": "RUB"},
+                "confirmation": {
+                    "type": "redirect",
+                    "return_url": request.build_absolute_uri(
+                        f"/payment/success/{orders[0].id}/"
+                    ),
+                },
+                "capture": True,
+                "description": f"Оплата заказа для мероприятия {event.title}",
+                "metadata": {
+                    "order_ids": json.dumps([o.id for o in orders]),
+                    "event_id": event_id
+                },
+            },
+            uuid.uuid4(),
+        )
+
+        # Сохраняем ID платежей для каждого заказа
+        for order in orders:
+            order.yookassa_payment_id = payment.id
+            order.save()
+            logger.info('[bulk_buy] Сохранён ID платежа для заказа', extra={
+                'order_id': order.id,
+                'yookassa_id': payment.id
+            })
+        
+        logger.info('[bulk_buy] Платёж создан успешно', extra={
+            'payment_id': payment.id,
+            'orders_count': len(orders)
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'payment_url': payment.confirmation.confirmation_url,
+            'order_ids': [o.id for o in orders],
+            'order_id': orders[0].id if orders else None
+        })
+        
+    except json.JSONDecodeError:
+        logger.error('[bulk_buy] Неверный JSON в запросе', extra={'event_id': event_id})
+        return JsonResponse({'error': 'Неверный формат данных'}, status=400)
+    
+    except Exception as e:
+        traceback.print_exc()
+        logger.error('[bulk_buy] Критическая ошибка', extra={
+            'event_id': event_id,
+            'error': str(e)
+        }, exc_info=True)
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 def create_payment(request, ticket_id):
     """
     Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
@@ -598,25 +797,69 @@ def yookassa_webhook(request):
 
             else:
                 # Обработка платежа за билет
+                logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment["id"]})
+                orders = []
                 try:
                     order = Order.objects.get(yookassa_payment_id=payment["id"])
+                    orders = [order]
+                    logger.info('[webhook] Найден одиночный заказ', extra={'order_id': order.id})
                 except Order.DoesNotExist:
-                    raise Http404(
-                        "Order with the specified Yookassa payment ID does not exist"
-                    )
-                order.payment_status = "succeeded"
-                order.is_paid = True
-                order.yookassa_payment_data = payment
+                    logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment["id"]})
+                    metadata = payment.get("metadata", {})
+                    order_ids_raw = metadata.get("order_ids", [])
+                    order_ids = []
+                    if isinstance(order_ids_raw, str):
+                        try:
+                            order_ids = json.loads(order_ids_raw)
+                        except json.JSONDecodeError:
+                            order_ids = []
+                    elif isinstance(order_ids_raw, list):
+                        order_ids = order_ids_raw
 
-                # Генерация QR-кодов при успешной оплате, если они ещё не сгенерированы
-                if not hasattr(order, "_qr_codes_generated"):
-                    order._generate_qr_codes()
-                    order._qr_codes_generated = True
+                    if order_ids:
+                        # Сначала пытаемся найти по payment_id
+                        orders = Order.objects.filter(yookassa_payment_id=payment["id"], id__in=order_ids)
+                        if not orders.exists():
+                            logger.warning('[webhook] Не найдено по payment_id, ищу только по ID', extra={'order_ids': order_ids})
+                            orders = Order.objects.filter(id__in=order_ids)
+                        
+                        if orders.exists():
+                            for o in orders:
+                                o.yookassa_payment_id = payment["id"]
+                                o.save()
+                        else:
+                            logger.error('[webhook] Заказы не найдены в БД', extra={'order_ids': order_ids})
+                            raise Http404("Order with the specified Yookassa payment ID does not exist")
+                    else:
+                        logger.error('[webhook] order_ids пуст или отсутствует в метаданных')
+                        raise Http404("Order with the specified Yookassa payment ID does not exist")
 
-                order.save()
-
-                # Отправка уведомления на почту
-                send_order_confirmation_email(order, request)
+                if orders:
+                    for order in orders:
+                        try:
+                            order.payment_status = "succeeded"
+                            order.is_paid = True
+                            order.yookassa_payment_data = payment
+                            
+                            # Генерируем QR-коды только если они еще не сгенерированы
+                            if not order.qr_codes_generated:
+                                order._generate_qr_codes()
+                                order.qr_codes_generated = True
+                            
+                            order.save()
+                            
+                            logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
+                            
+                            
+                            try:
+                                send_order_confirmation_email(order, request)
+                                logger.info('[webhook] Письмо отправлено', extra={'order_id': order.id, 'email': order.participant_data.get('email')})
+                            except Exception as e:
+                                logger.error('[webhook] Ошибка отправки письма', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
+                        except Exception as e:
+                            logger.error('[webhook] Ошибка обновления заказа', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
+                else:
+                    logger.error('[webhook] orders не определен после поиска')
 
         elif event_json["event"] == "payment.canceled":
             payment = event_json["object"]
@@ -702,10 +945,53 @@ def refund_ticket(request, order_id):
 def payment_success(request, order_id):
     """
     Страница успешной оплаты.
+    Обновляет ВСЕ заказы, привязанные к тому же платежу ЮКассы.
     """
-    order = get_object_or_404(Order, id=order_id)
-    return render(request, "payment_success.html", {"order": order})
+    from yookassa import Payment
 
+    order = get_object_or_404(Order, id=order_id)
+
+    # Если есть yookassa_payment_id — ищем все заказы с этим ID
+    if order.yookassa_payment_id:
+        try:
+            yookassa_payment = Payment.find_one(order.yookassa_payment_id)
+            if yookassa_payment and yookassa_payment.status == "succeeded":
+                # Обновляем ВСЕ заказы с этим платежным ID
+                orders_to_update = Order.objects.filter(
+                    yookassa_payment_id=order.yookassa_payment_id
+                )
+                sent_emails = set()
+
+                for o in orders_to_update:
+                    if o.payment_status != "succeeded":
+                        o.payment_status = "succeeded"
+                        o.is_paid = True
+                        if not o.qr_codes_generated:
+                            o._generate_qr_codes()
+                            o.qr_codes_generated = True
+                        o.save()
+                        logger.info('[success] Заказ обновлён', extra={
+                            'order_id': o.id,
+                            'payment_id': order.yookassa_payment_id
+                        })
+
+                    # Отправляем письмо только один раз
+                    if o.id not in sent_emails:
+                        try:
+                            send_order_confirmation_email(o, request)
+                            sent_emails.add(o.id)
+                        except Exception as e:
+                            logger.error('[success] Ошибка отправки письма', extra={
+                                'order_id': o.id,
+                                'error': str(e)
+                            }, exc_info=True)
+        except Exception as e:
+            logger.error('[success] Ошибка проверки статуса ЮКассы', extra={
+                'order_id': order.id,
+                'error': str(e)
+            }, exc_info=True)
+
+    return render(request, "payment_success.html", {"order": order})
 
 def pay_reserved_order(request, order_id):
     """

@@ -59,7 +59,7 @@
             </table>
         </div>
         <div class="text-center mt-4">
-            <a href="#buy-ticket" class="buy-button">КУПИТЬ БИЛЕТ</a>
+            <button type="button" class="buy-button" id="openBuyModal">КУПИТЬ БИЛЕТ</button>
         </div>
     </div>
     {% endif %}
@@ -93,4 +93,392 @@
     </div>
 </div>
 {% endif %}
+<!-- Модальное окно покупки билетов -->
+<div class="modal fade" id="buyTicketModal" tabindex="-1" aria-labelledby="buyTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyTicketModalLabel">Покупка билетов</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Информация о мероприятии -->
+                <div class="event-summary mb-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold">{{ event.title }}</h6>
+                    <p class="mb-0 text-muted">{{ event.date_time|date:"d F Y, H:i" }}</p>
+                </div>
+
+                <!-- Выбор билетов -->
+                <div id="ticketSelection">
+                    <h6 class="fw-bold mb-3">Выберите билеты:</h6>
+                    {% for ticket in tickets %}
+                    <div class="card mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
+                                    <strong>{{ ticket.name }}</strong>
+                                    {% if ticket.price == 0 %}
+                                        <span class="badge bg-success ms-2">Бесплатно</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="ticket-price">{{ ticket.price|format_price }} ₽</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group quantity-input">
+                                        <button class="btn btn-outline-secondary qty-decrease" type="button" data-ticket-id="{{ ticket.id }}">−</button>
+                                        <input type="number" class="form-control text-center qty-input-field" 
+                                               value="0" min="0" max="{{ ticket.get_available_count|default:99 }}" 
+                                               data-ticket-id="{{ ticket.id }}" id="qty_{{ ticket.id }}">
+                                        <button class="btn btn-outline-secondary qty-increase" type="button" data-ticket-id="{{ ticket.id }}">+</button>
+                                    </div>
+                                    <small class="text-muted available-count">Доступно: {{ ticket.get_available_count|default:0 }} шт.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Корзина выбранных билетов -->
+                <div id="cartSection" class="mt-4" style="display: none;">
+                    <h6 class="fw-bold mb-3">Ваша корзина:</h6>
+                    <div id="cartItems"></div>
+                    <div class="cart-total mt-3 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Итого:</strong>
+                            <span class="total-price fs-4 fw-bold">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Данные покупателя -->
+                <div id="buyerInfo" class="mt-4">
+                    <h6 class="fw-bold mb-3">Данные покупателя:</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="buyerName" class="form-label">Имя *</label>
+                            <input type="text" class="form-control" id="buyerName" required 
+                                   value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="buyerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="buyerEmail" required
+                                   value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="buyerPhone" class="form-label">Телефон *</label>
+                            <input type="tel" class="form-control" id="buyerPhone" required
+                                   value="{% if user.is_authenticated %}{{ user.phone_number|default:'' }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPurchaseBtn" disabled>
+                    Оформить заказ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно статуса покупки -->
+<div class="modal fade" id="purchaseStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-3" id="purchaseSpinner" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <h5 id="purchaseStatusText">Обработка заказа...</h5>
+                <p class="text-muted" id="purchaseStatusDetail"></p>
+                <div id="purchaseLog" class="text-start mt-3" style="max-height: 200px; overflow-y: auto; display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+    
+    // === ЛОГГЕР ===
+    const logPrefix = '[Event:' + '{{ event.id }}' + ']';
+    const purchaseLog = [];
+    
+    function addLog(message, type) {
+        type = type || 'info';
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = timestamp + ' ' + message;
+        purchaseLog.push(logEntry);
+        
+        console.log(logPrefix, '[' + type.toUpperCase() + ']', message);
+        
+        const logEl = document.getElementById('purchaseLog');
+        if (logEl) {
+            logEl.style.display = 'block';
+            const entry = document.createElement('div');
+            entry.className = 'log-entry log-' + type;
+            entry.style.cssText = 'padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 12px; font-family: monospace;';
+            switch(type) {
+                case 'success': entry.style.background = '#d4edda'; entry.style.color = '#155724'; break;
+                case 'error': entry.style.background = '#f8d7da'; entry.style.color = '#721c24'; break;
+                case 'warning': entry.style.background = '#fff3cd'; entry.style.color = '#856404'; break;
+                default: entry.style.background = '#e7f3ff'; entry.style.color = '#004085'; break;
+            }
+            entry.textContent = logEntry;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+    }
+    
+    // === ПОЛУЧЕНИЕ CSRF-ТОКЕНА ===
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrfToken = getCookie('csrftoken') || '{{ csrf_token }}';
+    addLog('CSRF-токен получен', 'info');
+    
+    // === ИНИЦИАЛИЗАЦИЯ ===
+    addLog('Инициализация модального окна покупки билетов', 'info');
+    
+    const modalEl = document.getElementById('buyTicketModal');
+    const statusModalEl = document.getElementById('purchaseStatusModal');
+    const buyModal = new bootstrap.Modal(modalEl);
+    const statusModal = new bootstrap.Modal(statusModalEl);
+    
+    // === ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
+    document.getElementById('openBuyModal').addEventListener('click', function() {
+        addLog('Модальное окно открыто', 'info');
+        updateCartDisplay();
+        buyModal.show();
+    });
+    
+    // === УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ===
+    function updateQuantity(ticketId, delta) {
+        addLog('Изменение количества билета ' + ticketId + ' на ' + delta, 'info');
+        const input = document.getElementById('qty_' + ticketId);
+        const card = input.closest('.ticket-card');
+        const maxQty = parseInt(card.dataset.maxQty) || parseInt(input.max) || 99;
+        let newQty = parseInt(input.value) || 0 + delta;
+        newQty = Math.max(0, Math.min(newQty, maxQty));
+        input.value = newQty;
+        
+        addLog('Новое количество для билета ' + ticketId + ': ' + newQty, 'info');
+        updateCartDisplay();
+    }
+    
+    document.querySelectorAll('.qty-increase').forEach(btn => {
+        btn.addEventListener('click', function() {
+            updateQuantity(this.dataset.ticketId, 1);
+        });
+    });
+    
+    document.querySelectorAll('.qty-decrease').forEach(btn => {
+        btn.addEventListener('click', function() {
+            updateQuantity(this.dataset.ticketId, -1);
+        });
+    });
+    
+    document.querySelectorAll('.qty-input-field').forEach(input => {
+        input.addEventListener('change', function() {
+            const ticketId = this.dataset.ticketId;
+            const card = this.closest('.ticket-card');
+            const maxQty = parseInt(card.dataset.maxQty) || parseInt(this.max) || 99;
+            let val = parseInt(this.value) || 0;
+            val = Math.max(0, Math.min(val, maxQty));
+            this.value = val;
+            addLog('Ручной ввод количества для билета ' + ticketId + ': ' + val, 'info');
+            updateCartDisplay();
+        });
+    });
+    
+    // === ОБНОВЛЕНИЕ КОРЗИНЫ ===
+    function updateCartDisplay() {
+        addLog('Обновление корзины', 'info');
+        const cartItems = document.getElementById('cartItems');
+        const cartSection = document.getElementById('cartSection');
+        const confirmBtn = document.getElementById('confirmPurchaseBtn');
+        let totalItems = 0;
+        let totalPrice = 0;
+        let itemsHtml = '';
+        const selectedTickets = [];
+        
+        document.querySelectorAll('.ticket-card').forEach(card => {
+            const ticketId = card.dataset.ticketId;
+            const ticketName = card.dataset.ticketName;
+            const ticketPrice = parseFloat(card.dataset.ticketPrice) || 0;
+            const qty = parseInt(document.getElementById('qty_' + ticketId).value) || 0;
+            
+            if (qty > 0) {
+                totalItems += qty;
+                totalPrice += ticketPrice * qty;
+                selectedTickets.push({
+                    id: ticketId,
+                    name: ticketName,
+                    price: ticketPrice,
+                    quantity: qty,
+                    subtotal: ticketPrice * qty
+                });
+                
+                itemsHtml += '<div class="cart-item d-flex justify-content-between align-items-center p-2 border-bottom">' +
+                    '<div>' +
+                        '<strong>' + ticketName + '</strong><br>' +
+                        '<small class="text-muted">' + qty + ' × ' + ticketPrice.toLocaleString('ru-RU') + ' ₽</small>' +
+                    '</div>' +
+                    '<div class="text-end">' +
+                        '<strong>' + (ticketPrice * qty).toLocaleString('ru-RU') + ' ₽</strong>' +
+                    '</div>' +
+                '</div>';
+                
+                addLog('Добавлено в корзину: ' + ticketName + ' x ' + qty + ' = ' + (ticketPrice * qty).toLocaleString('ru-RU') + ' ₽', 'success');
+            }
+        });
+        
+        if (totalItems > 0) {
+            cartSection.style.display = 'block';
+            cartItems.innerHTML = itemsHtml;
+            document.querySelector('.total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
+            addLog('Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽', 'success');
+        } else {
+            cartSection.style.display = 'none';
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Оформить заказ';
+            addLog('Корзина пуста', 'warning');
+        }
+        
+        // Сохраняем для отправки
+        window.selectedTickets = selectedTickets;
+        window.cartTotal = totalPrice;
+    }
+    
+    // === ПОКУПКА ===
+    document.getElementById('confirmPurchaseBtn').addEventListener('click', function() {
+        addLog('Начало процесса покупки', 'info');
+        
+        // Закрываем модалку выбора
+        buyModal.hide();
+        
+        // Проверяем корзину
+        if (!window.selectedTickets || window.selectedTickets.length === 0) {
+            addLog('Ошибка: корзина пуста', 'error');
+            alert('Пожалуйста, выберите хотя бы один билет');
+            return;
+        }
+        
+        // Собираем данные
+        const name = document.getElementById('buyerName').value.trim();
+        const email = document.getElementById('buyerEmail').value.trim();
+        const phone = document.getElementById('buyerPhone').value.trim();
+        
+        if (!name || !email || !phone) {
+            addLog('Ошибка: заполните все поля данных покупателя', 'error');
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        addLog('Данные покупателя: ' + name + ', ' + email + ', ' + phone, 'info');
+        
+        // Показываем модалку статуса
+        statusModal.show();
+        document.getElementById('purchaseSpinner').style.display = 'block';
+        document.getElementById('purchaseStatusText').textContent = 'Формирование заказа...';
+        document.getElementById('purchaseStatusDetail').textContent = 'Пожалуйста, подождите';
+        document.getElementById('purchaseLog').innerHTML = '';
+        
+        // Отправляем запрос
+        const payload = {
+            tickets: window.selectedTickets,
+            total_price: window.cartTotal,
+            name: name,
+            email: email,
+            phone: phone
+        };
+        
+        addLog('Отправка запроса на сервер...', 'info');
+        document.getElementById('purchaseStatusText').textContent = 'Отправка запроса...';
+        
+        fetch('{% url "bulk_buy_tickets" event.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function(response) {
+            addLog('Получен ответ от сервера: ' + response.status, 'info');
+            document.getElementById('purchaseStatusText').textContent = 'Получение ответа...';
+            
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            addLog('Ответ получен: ' + JSON.stringify(data), 'success');
+            
+            if (data.success) {
+                document.getElementById('purchaseSpinner').style.display = 'none';
+                document.getElementById('purchaseStatusText').textContent = 'Заказ оформлен!';
+                
+                if (data.payment_url) {
+                    document.getElementById('purchaseStatusDetail').textContent = 'Перенаправление на оплату...';
+                    addLog('Перенаправление на оплату: ' + data.payment_url, 'success');
+                    
+                    // Показываем финальное сообщение перед редиректом
+                    setTimeout(function() {
+                        document.getElementById('purchaseLog').innerHTML += 
+                            '<div style="padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-top: 10px;">' +
+                            'Заказ #' + data.order_id + ' создан. Перенаправляем на оплату...' +
+                            '</div>';
+                    }, 500);
+                    
+                    window.location.href = data.payment_url;
+                } else if (data.message) {
+                    document.getElementById('purchaseStatusDetail').textContent = data.message;
+                    addLog(data.message, 'success');
+                }
+            } else {
+                throw new Error(data.error || 'Неизвестная ошибка');
+            }
+        })
+        .catch(function(error) {
+            addLog('Ошибка: ' + error.message, 'error');
+            document.getElementById('purchaseSpinner').style.display = 'none';
+            document.getElementById('purchaseStatusText').textContent = 'Ошибка оформления';
+            document.getElementById('purchaseStatusDetail').textContent = error.message;
+            
+            // Показываем лог для отладки
+            document.getElementById('purchaseLog').innerHTML += 
+                '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; margin-top: 10px;">' +
+                '<strong>Детали ошибки:</strong><br>' + error.message +
+                '</div>';
+        });
+    });
+    
+    addLog('Инициализация завершена', 'success');
+    
+    // Доступ к CSRF-токену из глобальной области (для отладки)
+    window.csrfToken = csrfToken;
+});
+</script>
 {% endblock %}

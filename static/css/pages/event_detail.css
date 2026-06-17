@@ -10,3 +10,103 @@
 .event-detail-image {
     width: auto;
 }
+
+/* === Модальное окно покупки билетов === */
+.ticket-card {
+    transition: box-shadow 0.2s ease;
+}
+
+.ticket-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ticket-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.free-ticket {
+    background-color: #28a745;
+}
+
+.paid-ticket {
+    background-color: #007bff;
+}
+
+.quantity-input .btn-outline-secondary {
+    padding: 0.25rem 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.quantity-input .qty-input-field {
+    width: 60px;
+    font-weight: 600;
+}
+
+.cart-item {
+    transition: background-color 0.2s ease;
+}
+
+.cart-item:hover {
+    background-color: #f8f9fa;
+}
+
+.total-price {
+    color: #28a745;
+}
+
+/* Лог покупки */
+.log-entry {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для модального окна Bootstrap */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.event-summary {
+    border-left: 4px solid #667eea;
+}
+
+.available-count {
+    font-size: 0.75rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .quantity-input .qty-input-field {
+        width: 50px;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}

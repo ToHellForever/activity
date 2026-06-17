@@ -826,6 +826,8 @@ class Order(models.Model):
         default="paid_ticket",
         verbose_name="Тип покупки",
     )
+    qr_codes_generated = models.BooleanField(default=False, verbose_name="QR-коды сгенерированы")
+    
 
     def save(self, *args, **kwargs):
         # Логирование изменения статуса платежа
@@ -833,28 +835,23 @@ class Order(models.Model):
             original = Order.objects.get(pk=self.pk)
             if original.payment_status != self.payment_status:
                 from django.contrib.auth import get_user_model
-
                 User = get_user_model()
                 admin_users = User.objects.filter(is_superuser=True)
-
-                # Отправляем уведомление администраторам (можно заменить на logging, если нужно)
                 for admin in admin_users:
-                    print(
-                        f"Уведомление для {admin.email}: Статус заказа #{self.id} изменён с {original.payment_status} на {self.payment_status}"
-                    )
+                    print(f"Уведомление для {admin.email}: Статус заказа #{self.id} изменён с {original.payment_status} на {self.payment_status}")
 
-        # Генерация QR-кодов, если заказ новый или количество билетов изменилось
-        if not self.pk or (self.pk and self.quantity != original.quantity):
+        # Генерация QR-кодов только если заказ сохранен в БД и QR-коды еще не генерировались
+        if self.pk and not self.qr_codes_generated:
             self._generate_qr_codes()
+            self.qr_codes_generated = True
+            # Сохраняем флаг в БД АТОМАРНО, ДО того как вызовем super().save()
+            # Это гарантирует, что другие процессы (например, вебхук) увидят обновлённое значение
+            Order.objects.filter(pk=self.pk).update(qr_codes_generated=True)
 
-        # Удаляем флаг, чтобы избежать двойного вызова
-        if hasattr(self, '_qr_codes_generated'):
-            delattr(self, '_qr_codes_generated')
-
+        # ВАЖНО: super().save() вызываем ПОСЛЕ обновления БД
         super().save(*args, **kwargs)
 
     def _generate_qr_codes(self):
-        """Генерация QR-кодов для каждого купленного билета."""
         import qrcode
         import uuid
         import os

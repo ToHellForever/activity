@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['badge-most-raymond-visiting.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['pointing-instance-exposed-cos.trycloudflare.com', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -195,6 +195,14 @@ LOGGING = {
             "level": "DEBUG",
         },
         "visitor_app": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+        },
+        "ticket_purchase": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+        },
+        "payment": {
             "handlers": ["file"],
             "level": "DEBUG",
         },
