@@ -209,8 +209,77 @@ document.addEventListener('DOMContentLoaded', function() {
     'use strict';
     
     // === ЛОГГЕР ===
-    const logPrefix = '[Event:' + '{{ event.id }}' + ']';
+    const eventId = '{{ event.id }}';
+    const logPrefix = '[Event:' + eventId + ']';
     const purchaseLog = [];
+    const MAX_FREE_TICKETS = 2;
+    
+    // Определяем какие билеты бесплатные
+    const freeTicketIds = [];
+    document.querySelectorAll('.ticket-card').forEach(card => {
+        if (parseFloat(card.dataset.ticketPrice) === 0) {
+            freeTicketIds.push(card.dataset.ticketId);
+        }
+    });
+    
+    // Подсчёт уже полученных бесплатных билетов на ЭТОМ мероприятии (из localStorage)
+    function getAlreadyFreeTicketsForEvent() {
+        try {
+            // Сначала ищем под ключом мероприятия
+            const stored = localStorage.getItem('free_tickets_event_' + '{{ event.id }}');
+            if (stored !== null) {
+                const val = parseInt(stored);
+                return isNaN(val) ? 0 : val;
+            }
+            // Фолбэк на старый глобальный ключ (на случай миграции)
+            const oldStored = localStorage.getItem('free_tickets_purchased');
+            if (oldStored !== null) {
+                const val = parseInt(oldStored);
+                return isNaN(val) ? 0 : val;
+            }
+            return 0;
+        } catch(e) {
+            return 0;
+        }
+    }
+    
+    function updateFreeTicketLimits() {
+        const alreadyFree = getAlreadyFreeTicketsForEvent();
+        const remaining = MAX_FREE_TICKETS - alreadyFree;
+        
+        document.querySelectorAll('.ticket-card').forEach(card => {
+            const ticketId = card.dataset.ticketId;
+            const input = document.getElementById('qty_' + ticketId);
+            const availableSmall = card.querySelector('.available-count');
+            
+            if (freeTicketIds.indexOf(ticketId) !== -1 && remaining <= 0) {
+                // Бесплатный билет, лимит исчерпан
+                input.max = 0;
+                input.value = 0;
+                input.disabled = true;
+                input.style.opacity = '0.5';
+                if (availableSmall) {
+                    availableSmall.textContent = 'Лимит бесплатных билетов исчерпан';
+                    availableSmall.style.color = '#dc3545';
+                }
+            } else if (freeTicketIds.indexOf(ticketId) !== -1 && remaining > 0) {
+                // Бесплатный билет, лимит есть — ограничиваем остатком
+                const currentMax = parseInt(input.max) || 99;
+                input.max = Math.min(currentMax, remaining);
+                if (availableSmall) {
+                    availableSmall.textContent = 'Доступно: ' + (input.max > 0 ? input.max : 0) + ' из ' + MAX_FREE_TICKETS + ' (остаток)';
+                    availableSmall.style.color = '#dc3545';
+                }
+            } else {
+                // Платный билет — без ограничений
+                input.disabled = false;
+                input.style.opacity = '1';
+            }
+        });
+        
+        // Обновляем корзину
+        updateCartDisplay();
+    }
     
     function addLog(message, type) {
         type = type || 'info';
@@ -268,10 +337,61 @@ document.addEventListener('DOMContentLoaded', function() {
     // === ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
     const openBuyBtn = document.getElementById('openBuyModal');
     if (openBuyBtn && !openBuyBtn.disabled) {
-        openBuyBtn.addEventListener('click', function() {
-            addLog('Модальное окно открыто', 'info');
-            updateCartDisplay();
-            buyModal.show();
+        openBuyBtn.addEventListener('click', function(e) {
+            // Проверяем лимит бесплатных билетов через сервер
+            const emailInput = document.getElementById('buyerEmail');
+            const email = emailInput ? emailInput.value.trim() : '';
+            
+            if (!email) {
+                alert('Пожалуйста, сначала укажите email для покупки.');
+                emailInput.focus();
+                e.preventDefault();
+                return false;
+            }
+            
+            addLog('Проверка лимита бесплатных билетов на сервере...', 'info');
+            
+            fetch('{% url "bulk_buy_tickets" event.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    check_free_limit: true,
+                    email: email
+                })
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { response: response, data: data };
+                });
+            })
+            .then(function(result) {
+                var response = result.response;
+                var data = result.data;
+                
+                if (!response.ok) {
+                    // 400 от проверки лимита — лимит исчерпан
+                    e.preventDefault();
+                    alert(data.error || 'Превышен лимит бесплатных билетов.');
+                    return;
+                }
+                
+                // Лимит в порядке — открываем модалку
+                addLog('Модальное окно открыто', 'info');
+                updateFreeTicketLimits();
+                updateCartDisplay();
+                buyModal.show();
+            })
+            .catch(function(error) {
+                addLog('Ошибка проверки лимита: ' + error.message, 'error');
+                // При ошибке сети всё равно открываем — сервер проверит повторно при покупке
+                addLog('Модальное окно открыто', 'info');
+                updateFreeTicketLimits();
+                updateCartDisplay();
+                buyModal.show();
+            });
         });
     } else if (openBuyBtn && openBuyBtn.disabled) {
         addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
@@ -446,6 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 document.getElementById('purchaseSpinner').style.display = 'none';
                 document.getElementById('purchaseStatusText').textContent = 'Заказ оформлен!';
+                
+                // Сохраняем информацию о бесплатных билетах (для этого мероприятия)
+                if (data.free_tickets_count !== undefined) {
+                    try {
+                        localStorage.setItem('free_tickets_event_' + '{{ event.id }}', String(data.free_tickets_count));
+                    } catch(e) {}
+                }
                 
                 if (data.payment_url) {
                     document.getElementById('purchaseStatusDetail').textContent = 'Перенаправление на оплату...';

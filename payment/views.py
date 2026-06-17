@@ -7,7 +7,8 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser
-from django.db import transaction
+from django.db import transaction, models
+from django.db.models import Sum, F
 import json
 import uuid
 from yookassa import Configuration, Payment
@@ -381,6 +382,32 @@ def bulk_buy_tickets(request, event_id):
             'email': email
         })
         
+        # === ПРОВЕРКА ЛИМИТА БЕЗ СОЗДАНИЯ ЗАКАЗА ===
+        if data.get('check_free_limit'):
+            email = data.get('email', '').strip()
+            if not email:
+                return JsonResponse({'error': 'Укажите email'}, status=400)
+            
+            event = get_object_or_404(Event, id=event_id)
+            already_free = Order.objects.filter(
+                participant_data__email=email,
+                ticket__event=event,
+                ticket__price=0,
+                payment_status='succeeded'
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+            already_free = int(already_free)
+            
+            if already_free >= 2:
+                return JsonResponse({
+                    'error': 'Вы уже получили максимальное количество бесплатных билетов (2) на это мероприятие.'
+                }, status=400)
+            
+            return JsonResponse({
+                'success': True,
+                'already_free': already_free,
+                'remaining': 2 - already_free
+            })
+        
         # Валидация
         if not tickets_data:
             logger.error('[bulk_buy] Корзина пуста', extra={'event_id': event_id})
@@ -389,6 +416,59 @@ def bulk_buy_tickets(request, event_id):
         if not email:
             logger.error('[bulk_buy] Email не указан', extra={'event_id': event_id})
             return JsonResponse({'error': 'Укажите email'}, status=400)
+        
+        # Подсчитываем запрашиваемое количество бесплатных билетов
+        requested_free_quantity = 0
+        for ticket_item in tickets_data:
+            ticket_id = ticket_item.get('id')
+            quantity = int(ticket_item.get('quantity', 0))
+            if quantity > 0:
+                ticket = Ticket.objects.filter(id=ticket_id).first()
+                if ticket and float(ticket.price) == 0:
+                    requested_free_quantity += quantity
+        
+        # Проверяем лимит: не более 2 бесплатных билетов на мероприятие для пользователя
+        if requested_free_quantity > 0:
+            # Считаем сколько бесплатных билетов пользователь уже получил НА ЭТОМ мероприятии
+            event_free_count = Order.objects.filter(
+                participant_data__email=email,
+                ticket__event=event,
+                ticket__price=0,
+                payment_status='succeeded'
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+            event_free_count = int(event_free_count)
+            
+            logger.info('[bulk_buy] Проверка лимита бесплатных билетов', extra={
+                'email': email,
+                'event_id': event_id,
+                'already_free_this_event': event_free_count,
+                'requested': requested_free_quantity,
+                'total': event_free_count + requested_free_quantity
+            })
+            
+            if event_free_count + requested_free_quantity > 2:
+                remaining = 2 - event_free_count
+                if remaining > 0:
+                    logger.warning('[bulk_buy] Лимит бесплатных билетов (остаток)', extra={
+                        'email': email,
+                        'event_id': event_id,
+                        'already_free': event_free_count,
+                        'requested': requested_free_quantity,
+                        'remaining': remaining
+                    })
+                    return JsonResponse({
+                        'error': f'На это мероприятие можно получить не более 2 бесплатных билетов. У вас уже есть {event_free_count}, можно ещё {remaining}.'
+                    }, status=400)
+                else:
+                    logger.warning('[bulk_buy] Лимит бесплатных билетов (исчерпан)', extra={
+                        'email': email,
+                        'event_id': event_id,
+                        'already_free': event_free_count,
+                        'requested': requested_free_quantity
+                    })
+                    return JsonResponse({
+                        'error': 'Вы уже получили максимальное количество бесплатных билетов на это мероприятие (2).'
+                    }, status=400)
         
         # Создаём participant_data
         participant_data = {
@@ -480,6 +560,13 @@ def bulk_buy_tickets(request, event_id):
                 'orders_count': len(free_orders)
             })
             
+            # Считаем общее количество бесплатных билетов пользователя
+            total_free = Order.objects.filter(
+                participant_data__email=email,
+                ticket__price=0,
+                payment_status='succeeded'
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+            
         # Убираем бесплатные заказы из списка для платной обработки
         orders = paid_orders
         
@@ -488,14 +575,14 @@ def bulk_buy_tickets(request, event_id):
             return JsonResponse({
                 'success': True,
                 'message': 'Билеты успешно оформлены! Проверьте вашу почту.',
-                'orders': [o.id for o in free_orders]
+                'orders': [o.id for o in free_orders],
+                'free_tickets_count': total_free
             })
         
         # Платные билеты - создаём платёж
         logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'orders_count': len(orders)})
         
         # Объединяем все заказы в один платёж
-        from django.db.models import Sum
         combined_total = sum(o.total_price for o in orders)
         
         payment = Payment.create(
@@ -537,7 +624,8 @@ def bulk_buy_tickets(request, event_id):
             'success': True,
             'payment_url': payment.confirmation.confirmation_url,
             'order_ids': [o.id for o in orders],
-            'order_id': orders[0].id if orders else None
+            'order_id': orders[0].id if orders else None,
+            'free_tickets_count': total_free if free_orders else 0
         })
         
     except json.JSONDecodeError:
