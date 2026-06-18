@@ -113,54 +113,29 @@
                     </div>
                 </div>
                 <div class="row">
-                    <p>Опции</p>
-                    {% if equipment_list|length > 3 %}
+                    <p class="p-options-venues">ОПЦИИ</p>
                     <div class="col-12">
-                        <div class="row">
+                        <div class="equipment-grid">
                             {% for eq in equipment_list %}
-                            <div class="col-md-3">
-                                <div class="equipment-category">
-                                    <strong>{{ eq.name }}</strong>
-                                    {% if eq.sub_equipment %}
-                                    <div class="sub-equipment">
-                                        {% for sub in eq.sub_equipment %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
-                                            <label class="form-check-label" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
-                                                {{ sub }}
-                                            </label>
-                                        </div>
-                                        {% endfor %}
+                            <div class="equipment-card">
+                                <p class="equipment-name">{{ eq.name }}</p>
+                                {% if eq.sub_equipment %}
+                                <div class="sub-equipment">
+                                    {% for sub in eq.sub_equipment %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
+                                        <label class="form-check-label-sub" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
+                                            {{ sub }}
+                                        </label>
                                     </div>
-                                    {% endif %}
+                                    {% endfor %}
                                 </div>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
                     </div>
-                    {% else %}
-                    <div class="col-12">
-                        {% for eq in equipment_list %}
-                        <div class="equipment-category">
-                            <strong>{{ eq.name }}</strong>
-                            {% if eq.sub_equipment %}
-                            <div class="sub-equipment">
-                                {% for sub in eq.sub_equipment %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
-                                    <label class="form-check-label" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
-                                        {{ sub }}
-                                    </label>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
                 </div>
-            </div>
             <div class='row filers-row mt-2'>
                 <div class='col-12 text-end'>
                     <a href="{% url 'venues:venue_list' %}" class="filter-reset-btn">Сбросить фильтры</a>
@@ -168,8 +143,9 @@
             </div>
             </form>
 </div>
+</div>
 
-<div class='landing-block mt-3'>
+<div class='landing-block mt-5'>
 <div class="row">
     {% for venue in venues %}
     <div class="col-md-3 mb-4">

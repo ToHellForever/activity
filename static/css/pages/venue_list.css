@@ -167,20 +167,25 @@ input[type="number"] {
 .sub-equipment .form-check {
     margin-bottom: 4px;
     margin-left: 0;
+    display: flex;
+    align-items: center;
 }
 
 .sub-equipment .form-check-input {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
     margin-top: 0;
-    border: 1px solid #fd7e14;
-    background: transparent;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    background: #fff;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .sub-equipment .form-check-input:checked {
-    background-color: #fd7e14;
-    border-color: #fd7e14;
+    background-color: #FF8348;
+    border-color: #FF8348;
 }
 
 .sub-equipment .form-check-label {
@@ -188,4 +193,54 @@ input[type="number"] {
     color: #fff;
     cursor: pointer;
     font-family: 'Montserrat', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.equipment-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.equipment-card {
+    flex: 1 1 200px;
+    min-width: 200px;
+}
+
+.equipment-card strong {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.sub-equipment {
+    display: block;
+}
+
+.sub-equipment .form-check {
+    margin-bottom: 4px;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.p-options-venues {
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-weight: 500;
+    font-size: 1rem;
+}
+.equipment-name {
+    font-family: 'Montserrat', sans-serif;
+    color: #9A9A9A;
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.form-check-label-sub {
+    font-family: 'Montserrat', sans-serif;
+    color: #9A9A9A;
+    font-weight: 500;
+    font-size: 0.8rem;
 }
