@@ -201,6 +201,16 @@ class VenueListView(ListView):
         context['metro_list'] = metro_list
         context['selected_metro'] = selected_metro
         
+        # Оборудование для фильтра
+        categories = EquipmentCategory.objects.prefetch_related('items').all()
+        equipment_list = []
+        for category in categories:
+            equipment_list.append({
+                'name': category.name,
+                'sub_equipment': list(category.items.values_list('name', flat=True))
+            })
+        context['equipment_list'] = equipment_list
+        
         return context
 
     def get_queryset(self):

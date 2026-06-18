@@ -10,11 +10,35 @@ class CustomCalendar {
         this.currentMonth = new Date();
         
         if (!this.input || !this.calendar) {
-            console.error('Calendar elements not found:', { input: this.input, calendar: this.calendar });
+            console.warn('Calendar elements not found on first try, waiting for DOM...');
+            this.retryInit(inputId, calendarId, hiddenInputName);
             return;
         }
 
         this.init();
+    }
+
+    retryInit(inputId, calendarId, hiddenInputName) {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 секунд максимум
+        
+        const tryFind = () => {
+            attempts++;
+            this.input = this.input || document.getElementById(inputId);
+            this.calendar = this.calendar || document.getElementById(calendarId);
+            
+            if (this.input && this.calendar) {
+                console.log(`Calendar elements found after ${attempts} attempts`);
+                this.hiddenInputName = hiddenInputName;
+                this.init();
+            } else if (attempts < maxAttempts) {
+                setTimeout(tryFind, 100);
+            } else {
+                console.error('Calendar elements still not found after retries:', { input: this.input, calendar: this.calendar });
+            }
+        };
+        
+        tryFind();
     }
 
     init() {

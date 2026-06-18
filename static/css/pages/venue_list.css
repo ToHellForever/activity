@@ -149,3 +149,43 @@ input[type="number"] {
 .price-slider-minmax span {
     font-weight: 500;
 }
+
+/* Стили для оборудования */
+.equipment-category {
+    margin-bottom: 15px;
+}
+
+.equipment-category strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.sub-equipment .form-check {
+    margin-bottom: 4px;
+    margin-left: 0;
+}
+
+.sub-equipment .form-check-input {
+    width: 14px;
+    height: 14px;
+    margin-top: 0;
+    border: 1px solid #fd7e14;
+    background: transparent;
+    cursor: pointer;
+}
+
+.sub-equipment .form-check-input:checked {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+}
+
+.sub-equipment .form-check-label {
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}

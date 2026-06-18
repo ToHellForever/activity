@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/event_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/venue_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
-<script src="{% static 'js/pages/calendar.js' %}" defer></script>
+<script src="{% static 'js/pages/calendar.js' %}"></script>
         <div class='filters-landing'>
             <h1 class='landing-title'>ПОИСК ЗАЛА</h1>
 
@@ -111,6 +111,54 @@
                     <div class="filter-button-container">
                         <button type="submit" class="filter-button">НАЙТИ</button>
                     </div>
+                </div>
+                <div class="row">
+                    <p>Опции</p>
+                    {% if equipment_list|length > 3 %}
+                    <div class="col-12">
+                        <div class="row">
+                            {% for eq in equipment_list %}
+                            <div class="col-md-3">
+                                <div class="equipment-category">
+                                    <strong>{{ eq.name }}</strong>
+                                    {% if eq.sub_equipment %}
+                                    <div class="sub-equipment">
+                                        {% for sub in eq.sub_equipment %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
+                                            <label class="form-check-label" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
+                                                {{ sub }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12">
+                        {% for eq in equipment_list %}
+                        <div class="equipment-category">
+                            <strong>{{ eq.name }}</strong>
+                            {% if eq.sub_equipment %}
+                            <div class="sub-equipment">
+                                {% for sub in eq.sub_equipment %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
+                                    <label class="form-check-label" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
+                                        {{ sub }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <div class='row filers-row mt-2'>
