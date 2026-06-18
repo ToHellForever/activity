@@ -172,6 +172,23 @@ class VenueListView(ListView):
         selected_category = self.request.GET.get('category', '')
         min_capacity_value = self.request.GET.get('min_capacity', '')
         address_value = self.request.GET.get('address', '')
+        selected_metro = self.request.GET.get('metro', '')
+        
+        # Получаем список уникальных станций метро (без слова "метро" в начале)
+        metro_list = []
+        raw_metros = Venue.objects.filter(
+            status="published", metro__isnull=False, metro__gt=""
+        ).values_list('metro', flat=True).distinct()
+        for m in raw_metros:
+            cleaned = m
+            # Убираем "метро " в начале строки (регистронезависимо)
+            if cleaned.lower().startswith("метро "):
+                cleaned = cleaned[6:].strip()
+            elif cleaned.lower().startswith("метро"):
+                cleaned = cleaned[5:].strip()
+            if cleaned:
+                metro_list.append(cleaned)
+        metro_list = sorted(set(metro_list))
         
         context['min_price_db'] = int(min_price_value)
         context['max_price_db'] = int(max_price_value)
@@ -181,6 +198,8 @@ class VenueListView(ListView):
         context['min_capacity'] = min_capacity_value
         context['address'] = address_value
         context['categories'] = VenueType.objects.all()
+        context['metro_list'] = metro_list
+        context['selected_metro'] = selected_metro
         
         return context
 
@@ -226,7 +245,9 @@ class VenueListView(ListView):
 
         metro = self.request.GET.get("metro")
         if metro:
-            qs = qs.filter(metro__iexact=metro)
+            # Добавляем "метро " для поиска в БД, где значения хранятся как "метро <название>"
+            metro_filter = f"метро {metro}"
+            qs = qs.filter(metro__iexact=metro_filter)
 
         venue_type = self.request.GET.get("venue_type")
         if venue_type:

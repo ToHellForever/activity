@@ -377,6 +377,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Инициализация dropdown для метро (если есть)
+    const metroInput = document.getElementById('metroInput');
+    if (metroInput) {
+        const metroDropdown = document.getElementById('metroDropdown');
+        if (metroDropdown) {
+            console.log('Initializing metro dropdown');
+            const metroDropdownInstance = new CustomDropdown('metroInput', 'metroDropdown', 'metro');
+            
+            // Синхронизируем отображаемое значение с выбранным из GET параметров
+            const hiddenInput = metroInput.parentElement.querySelector('input[name="metro"]');
+            if (hiddenInput && hiddenInput.value) {
+                const selectedOption = metroDropdown.querySelector(`[data-value="${hiddenInput.value}"]`);
+                if (selectedOption) {
+                    metroInput.value = selectedOption.textContent.trim();
+                }
+            }
+        }
+    }
+    
     // Инициализация ползунка стоимости (если есть)
     const priceSlider = document.getElementById('priceSlider');
     if (priceSlider) {

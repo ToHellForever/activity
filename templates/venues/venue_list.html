@@ -60,14 +60,28 @@
                 <div class='col-2 filers-col'>
                     <div class="filter-item">
                         <div class="filter-label">БЛИЖАЙШАЯ СТАНЦИЯ МЕТРО</div>
-                        <div class="input-with-button">
-                            <input type="text" class="form-control filter-input" 
-                                   placeholder="Город, улица, дом" 
-                                   name="address"
-                                   value="{{ address|default:'' }}">
-                            <button class="input-button" type="button" disabled>
+                        <div class="input-with-button dropdown-container">
+                            <input type="text" class="form-control filter-input filter-input-dropdown" 
+                                   placeholder="Все" 
+                                   value="{{ selected_metro|default:'' }}"
+                                   readonly 
+                                   id="metroInput"
+                                   data-placeholder="Все">
+                            <button class="input-button dropdown-toggle-btn" type="button" data-target="metroDropdown">
                                 <span class="triangle-down"></span>
                             </button>
+                            <div class="dropdown-menu-custom" id="metroDropdown">
+                                <div class="dropdown-option {% if not selected_metro %}active{% endif %}" data-value="">
+                                    Все
+                                </div>
+                                {% for m in metro_list %}
+                                    <div class="dropdown-option {% if selected_metro == m %}active{% endif %}" 
+                                         data-value="{{ m }}">
+                                        {{ m }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="metro" value="{{ selected_metro }}">
                         </div>
                     </div>
                 </div>
