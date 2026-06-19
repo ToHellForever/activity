@@ -97,27 +97,36 @@
             <div class="col-md-4">
             <div class="sticky-top" style="top: 2rem;">
                 
-                <h3>Контакты и карта</h3>
+                <h3>Адрес</h3>
                 
                 <!-- Адрес -->
-                <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
+                <p><i class="bi bi-geo-alt-fill"></i> {{ event.address }}</p>
 
                 <!-- Карта (интеграция с Яндекс.Картами) -->
-                {% if venue.latitude and venue.longitude %}
+                {% if event.latitude and event.longitude %}
                 <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
                 <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        // Получаем точные координаты с 6 знаками после запятой
-                        // Используем фильтр stringformat для гарантированного сохранения точности
-                        var latStr = '{{ venue.latitude|stringformat:"f" }}';
-                        var lonStr = '{{ venue.longitude|stringformat:"f" }}';
-                        
-                        // Преобразуем в числа с полной точностью
-                        // Заменяем запятую на точку на случай, если используется европейский формат
-                        var lat = parseFloat(latStr.replace(',', '.'));
-                        var lon = parseFloat(lonStr.replace(',', '.'));
-                        
+                        // Отладочный вывод координат в консоль
+                        // Используем строку для корректного парсинга Decimal из Django
+                        var lat = parseFloat('{{ event.latitude|floatformat:"6" }}'.replace(',', '.'));
+                        var lon = parseFloat('{{ event.longitude|floatformat:"6" }}'.replace(',', '.'));
+                        console.log('=== Координаты мероприятия ===');
+                        console.log('ID мероприятия:', {{ event.id }});
+                        console.log('Название:', '{{ event.title }}');
+                        console.log('Адрес:', '{{ event.address }}');
+                        console.log('Широта (latitude):', lat);
+                        console.log('Долгота (longitude):', lon);
+                        console.log('event.latitude (raw):', '{{ event.latitude }}');
+                        console.log('event.longitude (raw):', '{{ event.longitude }}');
+                        console.log('==============================');
+
+                        if (isNaN(lat) || isNaN(lon)) {
+                            console.error('Некорректные координаты:', lat, lon);
+                            return;
+                        }
+
                         if (typeof ymaps !== 'undefined') {
                             ymaps.ready(function() {
                                 var map = new ymaps.Map("map-canvas", {
@@ -126,8 +135,8 @@
                                 });
 
                                 var placemark = new ymaps.Placemark([lat, lon], {
-                                    balloonContent: '{{ venue.title }}',
-                                    hintContent: '{{ venue.address }}'
+                                    balloonContent: '{{ event.title }}',
+                                    hintContent: '{{ event.address }}'
                                 });
 
                                 map.geoObjects.add(placemark);
@@ -141,6 +150,16 @@
                 {% else %}
                 <div class="alert alert-info">Координаты для карты не указаны.</div>
                 {% endif %}
+</div>
+{% comment %} видео {% endcomment %}
+<div class='video-container'>
+    {% if event.video_url %}
+    <video class="video-player" controls>
+        <source src="{{ event.video_url }}" type="video/mp4">
+        Ваш браузер не поддерживает HTML5 видео.
+    </video>
+    {% endif %}
+</div>
 </div>
 <!-- Похожие мероприятия -->
 {% if similar_events %}
