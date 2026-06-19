@@ -12,19 +12,65 @@
 <script src="{% static 'js/pages/event_detail.js' %}"></script>
 <div class="event-detail-container">
     <div class='row'>
-        <div class='col-6 event-detail-image'>
-            {% if event.image %}
-            <img src='{{ event.image.url }}' alt='{{ event.title }}'>
-            {% endif %}
+<div class='col-6 event-detail-image'>
+    {% if event.images.exists %}
+        {% if event.images.count > 1 %}
+            <!-- Карусель для нескольких фото -->
+            <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
+                {% if event.organizer.is_verified %}
+                <div class="verified-badge">
+                    <img src="/media/icon/ok.png" alt="" class='arrow-card'>
+                    <span class="card-verified">Проверенный организатор</span>
+                </div>
+                {% endif %}
+                <div class="carousel-indicators">
+                    {% for img in event.images.all %}
+                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                        class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}" 
+                        aria-label="Slide {{ forloop.counter }}">
+                    </button>
+                    {% endfor %}
+                </div>
+                <div class="carousel-inner">
+                    {% for img in event.images.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущая</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующая</span>
+                </button>
+            </div>
+        {% else %}
+            <!-- Одиночное фото -->
+            <div class="image-wrapper">
+                <img src="{{ event.images.first.image.url }}" alt="{{ event.title }}">
+                {% if event.organizer.is_verified %}
+                <div class="verified-badge">
+                    <img src="/media/icon/ok.png" alt="" class='arrow-card'>
+                    <span class="card-verified">Проверенный организатор</span>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Если фото вообще нет -->
+        <div class="image-wrapper no-image">
+            <span>Нет изображения</span>
         </div>
+    {% endif %}
+</div>
         <div class='col-6'>
             <div class='event-info'>
                 <div class='event-title'>
                     {{ event.title }}
                 </div>
-                {% if event.organizer.is_verified %}
-                <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
-                {% endif %}
                 <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
                 <p class="card-label">Категория: <span class="badge">{{ event.category.name }}</span></p>
                 {% if event.format %}
@@ -76,18 +122,19 @@
         </div>
         <div class='col-6'>
             {% comment %} программа {% endcomment %}
-            {% if event.program %}
+            {% if event.program_file %}
             <div class="program-section">
                 <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
                 <div class="program-content">
-                    {{ event.program|linebreaks }}
+                    <div class="d-none">{{ event.program_file.url }}</div>
+                    <a href="{{ event.program_file.url }}" class="btn btn-primary" download>Скачать</a>
                 </div>
             </div>
             {% else %}
             <div class="program-section">
                 <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
                 <div class="program-content">
-                    Программа не указана
+                    <p>Программа ещё не опубликована</p>
                 </div>
             </div>
         </div>
