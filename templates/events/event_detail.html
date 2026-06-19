@@ -4,6 +4,9 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
+<script>
+    window.BULK_BUY_URL = "{% url 'bulk_buy_tickets' event.id %}";
+</script>
 <script src="{% static 'js/pages/event_detail.js' %}"></script>
 <div class="event-detail-container">
     <div class='row'>

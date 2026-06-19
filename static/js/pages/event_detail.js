@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             addLog('Проверка лимита бесплатных билетов на сервере...', 'info');
             
-            fetch('{% url "bulk_buy_tickets" event.id %}', {
+            fetch(window.BULK_BUY_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addLog('Отправка запроса на сервер...', 'info');
         document.getElementById('purchaseStatusText').textContent = 'Отправка запроса...';
         
-        fetch('{% url "bulk_buy_tickets" event.id %}', {
+        fetch(window.BULK_BUY_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
