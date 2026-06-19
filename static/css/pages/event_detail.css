@@ -55,6 +55,30 @@
 }
 
 
+/* Секция видео на всю ширину */
+.video-section.full-width-video {
+    width: 100%;
+    margin: 0; /* Убираем внешние отступы */
+    padding: 0; /* Убираем внутренние отступы */
+    background-color: #000; /* Черный фон для контраста */
+}
+
+
+.no-video-placeholder {
+    width: 100%;
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    color: #6c757d;
+    font-size: 1.2rem;
+}
+.video-player {
+    width: 100%;       /* Растягиваем на всю ширину контейнера */
+    height: auto;      /* Высота подстраивается пропорционально */
+    display: block;
+    background-color: #000;
+}
+
 /* === Модальное окно покупки билетов === */
 .ticket-card {
     transition: box-shadow 0.2s ease;

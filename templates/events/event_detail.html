@@ -110,8 +110,8 @@
     </div>
     {% endwith %}
     {% endif %}
-            </div>
-        </div>
+</div>
+</div>
     </div>
     <div class='row'>
         <div class='col-6'>
@@ -143,38 +143,43 @@
 </div>
 
 <div class="map-section mt-5">
-            <div class="col-md-4">
-            <div class="sticky-top" style="top: 2rem;">
-                
-                <h3>Адрес</h3>
-                
-                <!-- Адрес -->
-                <p><i class="bi bi-geo-alt-fill"></i> {{ event.address }}</p>
-
-                <!-- Карта (интеграция с Яндекс.Картами) -->
-                {% if event.latitude and event.longitude %}
-                <div id="map-canvas" 
-                     style="height: 250px; border-radius: 8px; margin: 15px 0;"
-                     data-lat="{{ event.latitude|floatformat:"6" }}"
-                     data-lon="{{ event.longitude|floatformat:"6" }}"
-                     data-event-title="{{ event.title|escapejs }}"
-                     data-event-address="{{ event.address|escapejs }}">
-                </div>
-                {% else %}
-                <div class="alert alert-info">Координаты для карты не указаны.</div>
-                {% endif %}
-</div>
+    <div class="sticky-top" style="top: 2rem;">
+    <div class='row'>
+    <div class='col-6'>
+            <!-- Карта (интеграция с Яндекс.Картами) -->
+            {% if event.latitude and event.longitude %}
+            <div id="map-canvas" 
+                    style="height: 250px; border-radius: 8px; margin: 15px 0;"
+                    data-lat="{{ event.latitude|floatformat:"6" }}"
+                    data-lon="{{ event.longitude|floatformat:"6" }}"
+                    data-event-title="{{ event.title|escapejs }}"
+                    data-event-address="{{ event.address|escapejs }}">
             </div>
-{% comment %} видео {% endcomment %}
-<div class='video-container'>
-    {% if event.video_url %}
-    <!-- DEBUG: {{ event.video_url.url }} -->
-    <video class="video-player" controls>
-        <source src="{{ event.video_url.url }}" type="video/mp4">
-        Ваш браузер не поддерживает HTML5 видео.
-    </video>
-    {% endif %}
+            {% else %}
+            <div class="alert alert-info">Координаты для карты не указаны.</div>
+            {% endif %}
+    </div>
+        <div class='col-6'>
+            <h3>Адрес</h3>
+            <p><i class="bi bi-geo-alt-fill"></i> {{ event.address }}</p>
+            <p><i class="bi bi-geo-alt-fill"></i> {{ event.additional_info }}</p>
+        </div>
+    </div>
 </div>
+</div>
+{% comment %} видео {% endcomment %}
+<h2 class='landing-h mb-3 mt-5'>ВИДЕООБЗОР</h2>
+<div class="video-section full-width-video">
+    {% if event.video_url %}
+    <div class="video-wrapper">
+        <video class="video-player" controls>
+            <source src="{{ event.video_url.url }}" type="video/mp4">
+            Ваш браузер не поддерживает HTML5 видео.
+        </video>
+    </div>
+    {% else %}
+    <div class="no-video-placeholder">Видео отсутствует</div>
+    {% endif %}
 </div>
 <!-- Похожие мероприятия -->
 {% if similar_events %}
