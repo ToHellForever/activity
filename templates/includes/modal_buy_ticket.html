@@ -1,0 +1,109 @@
+{% load format_filters %}
+<!-- Модальное окно покупки билетов -->
+<div class="modal fade" id="buyTicketModal" tabindex="-1" aria-labelledby="buyTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyTicketModalLabel">Покупка билетов</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Информация о мероприятии -->
+                <div class="event-summary mb-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold">{{ event.title }}</h6>
+                    <p class="mb-0 text-muted">{{ event.date_time|date:"d F Y, H:i" }}</p>
+                </div>
+
+                <!-- Выбор билетов -->
+                <div id="ticketSelection">
+                    <h6 class="fw-bold mb-3">Выберите билеты:</h6>
+                    {% for ticket in tickets %}
+                    <div class="card mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
+                                    <strong>{{ ticket.name }}</strong>
+                                    {% if ticket.price == 0 %}
+                                        <span class="badge bg-success ms-2">Бесплатно</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <span class="ticket-price">{{ ticket.price|format_price }} ₽</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group quantity-input">
+                                        <button class="btn btn-outline-secondary qty-decrease" type="button" data-ticket-id="{{ ticket.id }}">−</button>
+                                        <input type="number" class="form-control text-center qty-input-field" 
+                                               value="0" min="0" max="{{ ticket.get_available_count|default:99 }}" 
+                                               data-ticket-id="{{ ticket.id }}" id="qty_{{ ticket.id }}">
+                                        <button class="btn btn-outline-secondary qty-increase" type="button" data-ticket-id="{{ ticket.id }}">+</button>
+                                    </div>
+                                    <small class="text-muted available-count">Доступно: {{ ticket.get_available_count|default:0 }} шт.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Корзина выбранных билетов -->
+                <div id="cartSection" class="mt-4" style="display: none;">
+                    <h6 class="fw-bold mb-3">Ваша корзина:</h6>
+                    <div id="cartItems"></div>
+                    <div class="cart-total mt-3 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Итого:</strong>
+                            <span class="total-price fs-4 fw-bold">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Данные покупателя -->
+                <div id="buyerInfo" class="mt-4">
+                    <h6 class="fw-bold mb-3">Данные покупателя:</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="buyerName" class="form-label">Имя *</label>
+                            <input type="text" class="form-control" id="buyerName" required 
+                                   value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="buyerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="buyerEmail" required
+                                   value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="buyerPhone" class="form-label">Телефон *</label>
+                            <input type="tel" class="form-control" id="buyerPhone" required
+                                   value="{% if user.is_authenticated %}{{ user.phone_number|default:'' }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPurchaseBtn" disabled>
+                    Оформить заказ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно статуса покупки -->
+<div class="modal fade" id="purchaseStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-3" id="purchaseSpinner" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <h5 id="purchaseStatusText">Обработка заказа...</h5>
+                <p class="text-muted" id="purchaseStatusDetail"></p>
+                <div id="purchaseLog" class="text-start mt-3" style="max-height: 200px; overflow-y: auto; display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

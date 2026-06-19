@@ -406,4 +406,55 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Доступ к CSRF-токену из глобальной области (для отладки)
     window.csrfToken = csrfToken;
+    
+    // === КАРТА ===
+    function initMap() {
+        var mapEl = document.getElementById('map-canvas');
+        if (!mapEl) return;
+        
+        var lat = parseFloat(mapEl.dataset.lat.replace(',', '.'));
+        var lon = parseFloat(mapEl.dataset.lon.replace(',', '.'));
+        var title = mapEl.dataset.eventTitle || '';
+        var address = mapEl.dataset.eventAddress || '';
+        
+        console.log('=== Координаты мероприятия ===');
+        console.log('ID мероприятия:', eventId);
+        console.log('Название:', title);
+        console.log('Адрес:', address);
+        console.log('Широта (latitude):', lat);
+        console.log('Долгота (longitude):', lon);
+        console.log('==============================');
+        
+        if (isNaN(lat) || isNaN(lon)) {
+            console.error('Некорректные координаты:', lat, lon);
+            return;
+        }
+        
+        if (typeof ymaps === 'undefined') {
+            console.error('YMaps API не загружен');
+            return;
+        }
+        
+        ymaps.ready(function() {
+            var map = new ymaps.Map('map-canvas', {
+                center: [lat, lon],
+                zoom: 15
+            });
+            
+            var placemark = new ymaps.Placemark([lat, lon], {
+                balloonContent: title,
+                hintContent: address
+            }, {
+                preset: 'islands#blueMapIcon'
+            });
+            
+            map.geoObjects.add(placemark);
+            map.setCenter([lat, lon]);
+        });
+    }
+    
+    // Инициализируем карту если есть контейнер
+    if (document.getElementById('map-canvas')) {
+        initMap();
+    }
 });
