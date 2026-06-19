@@ -378,12 +378,6 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         verbose_name="Дата и время",
         help_text="Мероприятие должно быть не ранее чем через 24 часа от текущего момента",
     )
-    place_data = models.JSONField(
-        verbose_name="Данные о местоположении",
-        blank=True,
-        null=True,
-        help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
-    )
     VIDEO_PROCESSING_STATUS_CHOICES = (
         ("pending", "Ожидает обработки"),
         ("processing", "Обрабатывается"),
@@ -504,7 +498,23 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         verbose_name="Причина отклонения",
         help_text="Причина, по которой мероприятие было отклонено модератором",
     )
+    place_data = models.JSONField(
+        verbose_name="Данные о местоположении",
+        blank=True,
+        null=True,
+        help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
+    )
+    address = models.CharField(max_length=255, verbose_name="Адрес", blank=True, null=True, default='',)
+    city = models.CharField(max_length=100, default="", verbose_name="Город")
+    district = models.CharField(max_length=100, blank=True, verbose_name="Район")
+    metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
 
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True, default=None,verbose_name="Широта",
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True, default=None,verbose_name="Широта",
+    )
     def __str__(self):
         return self.title
 

@@ -13,6 +13,49 @@ class EventAdminForm(ModelForm):
 
     class Media:
         js = ('js/event_admin.js',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if self.instance and self.instance.place_data:
+            place_data = self.instance.place_data
+            if isinstance(place_data, dict):
+                self.initial['latitude'] = place_data.get('latitude')
+                self.initial['longitude'] = place_data.get('longitude')
+                self.initial['address'] = place_data.get('address')
+                self.initial['city'] = place_data.get('city')
+                self.initial['district'] = place_data.get('district')
+                self.initial['metro'] = place_data.get('metro')
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        place_data = instance.place_data or {}
+        if isinstance(place_data, str):
+            import json
+            try:
+                place_data = json.loads(place_data)
+            except json.JSONDecodeError:
+                place_data = {}
+        
+        if self.cleaned_data.get('latitude'):
+            place_data['latitude'] = float(self.cleaned_data['latitude'])
+        if self.cleaned_data.get('longitude'):
+            place_data['longitude'] = float(self.cleaned_data['longitude'])
+        if self.cleaned_data.get('address'):
+            place_data['address'] = self.cleaned_data['address']
+        if self.cleaned_data.get('city'):
+            place_data['city'] = self.cleaned_data['city']
+        if self.cleaned_data.get('district'):
+            place_data['district'] = self.cleaned_data['district']
+        if self.cleaned_data.get('metro'):
+            place_data['metro'] = self.cleaned_data['metro']
+        
+        instance.place_data = place_data
+        
+        if commit:
+            instance.save()
+        return instance
 # --- ФОРМА ВХОДА ---
 class CustomAuthenticationForm(forms.Form):
     """Форма для входа с автоматической проверкой роли."""

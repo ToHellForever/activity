@@ -259,7 +259,12 @@ class EventAdmin(admin.ModelAdmin):
                         "description_full",
                         "date_time",
                         "duration",
-                        "place_data",
+                        "address",
+                        "city",
+                        "district",
+                        "metro",
+                        "latitude",
+                        "longitude",
                     )
                 },
             ),
@@ -542,7 +547,12 @@ class EventAdmin(admin.ModelAdmin):
             raise forms.ValidationError(
                 f"Превышен лимит активных мероприятий ({package.max_active_events}) для пакета '{package.name}'."
             )
-
+    class Media:
+        js = (
+            "/static/js/map_admin.js",
+            "/static/js/event_admin.js",
+        )
+        
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     """

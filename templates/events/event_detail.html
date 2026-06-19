@@ -28,14 +28,7 @@
                 {% if event.format %}
                 <p class="card-label">Формат: <span class="badge">{{ event.format.name }}</span></p>
                 {% endif %}
-                <div class="event-description">
-                    {{ event.description_full|linebreaks }}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Билеты -->
+                <!-- Билеты -->
     {% if tickets %}
     {% with has_available_tickets=tickets|any_available %}
     <div class="tickets-section mt-5">
@@ -69,8 +62,86 @@
     </div>
     {% endwith %}
     {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-6'>
+            <h2 class='landing-h mb-3'>О МЕРОПРИЯТИИ</h2>
+            <div class="event-description">
+                {{ event.description_full|linebreaks }}
+            </div>
+        </div>
+        <div class='col-6'>
+            {% comment %} программа {% endcomment %}
+            {% if event.program %}
+            <div class="program-section">
+                <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
+                <div class="program-content">
+                    {{ event.program|linebreaks }}
+                </div>
+            </div>
+            {% else %}
+            <div class="program-section">
+                <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
+                <div class="program-content">
+                    Программа не указана
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+<div class="map-section mt-5">
+            <div class="col-md-4">
+            <div class="sticky-top" style="top: 2rem;">
+                
+                <h3>Контакты и карта</h3>
+                
+                <!-- Адрес -->
+                <p><i class="bi bi-geo-alt-fill"></i> {{ venue.address }}</p>
+
+                <!-- Карта (интеграция с Яндекс.Картами) -->
+                {% if venue.latitude and venue.longitude %}
+                <div id="map-canvas" style="height: 250px; border-radius: 8px; margin: 15px 0;"></div>
+                <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Получаем точные координаты с 6 знаками после запятой
+                        // Используем фильтр stringformat для гарантированного сохранения точности
+                        var latStr = '{{ venue.latitude|stringformat:"f" }}';
+                        var lonStr = '{{ venue.longitude|stringformat:"f" }}';
+                        
+                        // Преобразуем в числа с полной точностью
+                        // Заменяем запятую на точку на случай, если используется европейский формат
+                        var lat = parseFloat(latStr.replace(',', '.'));
+                        var lon = parseFloat(lonStr.replace(',', '.'));
+                        
+                        if (typeof ymaps !== 'undefined') {
+                            ymaps.ready(function() {
+                                var map = new ymaps.Map("map-canvas", {
+                                    center: [lat, lon],
+                                    zoom: 15
+                                });
+
+                                var placemark = new ymaps.Placemark([lat, lon], {
+                                    balloonContent: '{{ venue.title }}',
+                                    hintContent: '{{ venue.address }}'
+                                });
+
+                                map.geoObjects.add(placemark);
+                                
+                                // Устанавливаем центр карты точно на метку
+                                map.setCenter([lat, lon]);
+                            });
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="alert alert-info">Координаты для карты не указаны.</div>
+                {% endif %}
+</div>
 <!-- Похожие мероприятия -->
 {% if similar_events %}
 <div class="similar-events-section mt-5">

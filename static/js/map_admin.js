@@ -1,7 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Ищем форму площадки по ID
+    console.log('map_admin.js loaded');
+    
+    // Ищем форму площадки или мероприятия по ID
     const venueForm = document.getElementById('venue_form');
-    if (!venueForm) return;
+    const eventForm = document.getElementById('event_form');
+    console.log('Found venue_form:', venueForm);
+    console.log('Found event_form:', eventForm);
+    
+    if (!eventForm && !venueForm) {
+        console.log('No venue or event form found, exiting');
+        return;
+    }
 
     // Добавляем стили для поисковой строки Яндекс.Карт
     const style = document.createElement('style');
@@ -31,11 +40,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const script = document.createElement('script');
     script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=ru_RU`;
     script.async = true;
-    script.onload = () => ymaps.ready(initMap);
+    script.onload = () => {
+        console.log('YMaps API loaded');
+        ymaps.ready(initMap);
+    };
+    script.onerror = () => {
+        console.error('Failed to load YMaps API');
+    };
     document.head.appendChild(script);
 });
 
 function initMap() {
+    console.log('initMap called');
     // --- 1. Ищем все поля формы ---
     const $fields = {
         address: document.querySelector('#id_address'),
@@ -45,69 +61,46 @@ function initMap() {
         latitude: document.querySelector('#id_latitude'),
         longitude: document.querySelector('#id_longitude')
     };
-
+    console.log('Found fields:', $fields);
     // Проверяем наличие обязательных полей
     if (!$fields.address || !$fields.latitude || !$fields.longitude) {
         console.error('Не найдены обязательные поля формы');
         return;
     }
 
-    // --- 2. Добавляем глобальные стили для Яндекс.Карт ---
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Стили для поисковой строки */
-        .ymaps-2-1-79-searchbox-input__input {
-            color: black !important;
-            background-color: white !important;
-            border: 1px solid #ccc !important;
-            opacity: 1 !important;
-            font-size: 14px !important;
-        }
-        .ymaps-2-1-79-searchbox-view {
-            background-color: white !important;
-            border-radius: 4px !important;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2) !important;
-        }
-        /* Стили для выпадающего списка */
-        .ymaps-2-1-79-searchbox-popup {
-            background-color: white !important;
-            color: black !important;
-            border: 1px solid #ccc !important;
-        }
-        .ymaps-2-1-79-searchbox-popup-item {
-            color: black !important;
-            padding: 5px 10px !important;
-        }
-        .ymaps-2-1-79-searchbox-popup-item-title {
-            color: black !important;
-        }
-        .ymaps-2-1-79-searchbox-popup-item-text {
-            color: black !important;
-        }
-        .ymaps-2-1-79-searchbox-popup-item:hover {
-            background-color: #f5f5f5 !important;
-        }
-    `;
-    document.head.appendChild(style);
-
+    // --- 2. Скрываем скрытые поля в UI (если они не HiddenInput) ---
+    if ($fields.latitude && $fields.latitude.style.display !== 'none') {
+        $fields.latitude.style.display = 'none';
+    }
+    if ($fields.longitude && $fields.longitude.style.display !== 'none') {
+        $fields.longitude.style.display = 'none';
+    }
+    console.log('Creating map container...');
     // --- 3. Создаем контейнер для карты ---
     const mapContainer = document.createElement('div');
     mapContainer.id = 'map-container';
     mapContainer.style.width = '100%';
     mapContainer.style.height = '400px';
     mapContainer.style.marginBottom = '20px';
-    
+    mapContainer.style.border = '1px solid #ddd';
+    mapContainer.style.borderRadius = '4px';
+    console.log('Inserting map container before address field...');
     // Вставляем карту перед полем адреса
     $fields.address.parentNode.insertBefore(mapContainer, $fields.address);
+    console.log('Map container inserted. ID:', mapContainer.id);
+    console.log('Getting coordinates...');
 
-    // --- 3. Получаем начальные координаты ---
+    // --- ✅ ИСПРАВЛЕНО: переместили объявление перед использованием ---
     const defaultLat = 55.030204; 
     const defaultLon = 82.920430;
-    
     let currentLat = $fields.latitude.value ? parseFloat($fields.latitude.value) : defaultLat;
     let currentLon = $fields.longitude.value ? parseFloat($fields.longitude.value) : defaultLon;
 
-    // --- 4. Инициализируем карту и метку ---
+    console.log('Coordinates:', currentLat, currentLon); // Теперь всё ок
+    console.log('Initializing ymaps.Map...');
+    console.log('ymaps object:', ymaps);
+    console.log('ymaps.Map:', ymaps.Map);
+    // --- 5. Инициализируем карту и метку ---
     const map = new ymaps.Map('map-container', {
         center: [currentLat, currentLon],
         zoom: 14,
@@ -121,7 +114,7 @@ function initMap() {
     
     map.geoObjects.add(placemark);
 
-    // --- 5. Функция обновления полей из геокодера ---
+    // --- 6. Функция обновления полей из геокодера ---
     function updateFieldsFromGeocoder(lat, lon) {
         ymaps.geocode([lat, lon], { results: 1 }).then(res => {
             if (res.geoObjects.getLength()) {
@@ -178,7 +171,7 @@ function initMap() {
         }).catch(err => console.error('Геокодер:', err));
     }
 
-    // --- 6. Обработчики событий ---
+    // --- 7. Обработчики событий ---
     
     // Клик по карте
     map.events.add('click', e => {
