@@ -267,7 +267,7 @@
             <p class="text-muted mb-2">Выберите место на карте, кликнув по нужному месту или используя поиск по карте</p>
             <input type="text" id="id_place_address" class="form-control mb-2" readonly placeholder="Адрес будет отображаться здесь">
             <div class="place-additional-info mt-2">
-                <input type="text" id="place-additional-info" class="form-control" placeholder="Дополнительная информация (например: вход со двора, 3 этаж и т.д.)">
+                <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}" placeholder="Дополнительная информация о местоположении">
             </div>
         </div>
         <div class="map-container">

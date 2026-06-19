@@ -168,6 +168,7 @@ class EventForm(forms.ModelForm):
             "duration",
             "allow_platform_requests",
             "package",
+            "additional_adress",
         ]
         widgets = {
             "tags": forms.CheckboxSelectMultiple,

@@ -265,6 +265,7 @@ class EventAdmin(admin.ModelAdmin):
                         "metro",
                         "latitude",
                         "longitude",
+                        "additional_adress",
                     )
                 },
             ),

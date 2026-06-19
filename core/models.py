@@ -504,6 +504,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         null=True,
         help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
     )
+    additional_adress = models.CharField(max_length=255, verbose_name="Дополнение к адресу", blank=True, null=True, default='',)
     address = models.CharField(max_length=255, verbose_name="Адрес", blank=True, null=True, default='',)
     city = models.CharField(max_length=100, default="", verbose_name="Город")
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
