@@ -78,3 +78,56 @@ def format_number(value):
         return "{:,}".format(num).replace(',', ' ')
     except (ValueError, TypeError):
         return value
+
+
+@register.filter(name='format_duration')
+def format_duration(value):
+    """
+    Форматирует длительность мероприятия из формата 'ЧЧ:ММ' в читаемый вид.
+    
+    Примеры:
+        '01:30' → '1 час 30 мин'
+        '02:00' → '2 часа'
+        '00:45' → '45 мин'
+        '01:00' → '1 час'
+        '23:59' → '23 часа 59 мин'
+    """
+    if not value:
+        return ''
+    
+    try:
+        # Парсим строку формата ЧЧ:ММ
+        parts = str(value).split(':')
+        if len(parts) != 2:
+            return value
+        
+        hours = int(parts[0])
+        minutes = int(parts[1])
+        
+        if hours == 0 and minutes == 0:
+            return ''
+        
+        result = []
+        
+        # Формируем часы
+        if hours > 0:
+            if hours % 10 == 1 and hours % 100 != 11:
+                result.append(f'{hours} час')
+            elif 2 <= hours % 10 <= 4 and not (12 <= hours % 100 <= 14):
+                result.append(f'{hours} часа')
+            else:
+                result.append(f'{hours} часов')
+        
+        # Формируем минуты
+        if minutes > 0:
+            if minutes % 10 == 1 and minutes % 100 != 11:
+                result.append(f'{minutes} мин')
+            elif 2 <= minutes % 10 <= 4 and not (12 <= minutes % 100 <= 14):
+                result.append(f'{minutes} минуты')
+            else:
+                result.append(f'{minutes} мин')
+        
+        return ' '.join(result)
+        
+    except (ValueError, AttributeError):
+        return value

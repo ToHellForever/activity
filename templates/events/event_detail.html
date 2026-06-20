@@ -132,9 +132,19 @@
                 <p class="card-label">Ст. метро: <span class="event-detail-badge">{{ event.metro }}</span></p>
                 {% endif %}
                 {% comment %} организатор {% endcomment %}
-                <p class="card-label">Организатор: <span class="event-detail-badge">{{ event.organizer.name }}</span></p>
+                <p class="card-label">Организатор: <span class="event-detail-badge">
+                    {% if event.organizer.company_name %}
+                        {{ event.organizer.company_name }}
+                    {% elif event.organizer.contact_person %}
+                        {{ event.organizer.contact_person }}
+                    {% else %}
+                        {{ event.organizer.get_full_name|default:event.organizer.username }}
+                    {% endif %}
+                </span></p>
                 {% comment %} длительность {% endcomment %}
-                <p class="card-label">Длительность: <span class="event-detail-badge">{{ event.duration }}</span></p>
+                {% if event.duration %}
+                <p class="card-label">Длительность: <span class="event-detail-badge">{{ event.duration|format_duration }}</span></p>
+                {% endif %}
                 </div>
                 <!-- Билеты -->
     {% if tickets %}
