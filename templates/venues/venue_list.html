@@ -123,8 +123,8 @@
                                 <div class="sub-equipment">
                                     {% for sub in eq.sub_equipment %}
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}" name="equipment">
-                                        <label class="form-check-label-sub" for="flexCheck_{{ forloop.parent.counter }}_{{ forloop.counter }}">
+                                        <input class="form-check-input" type="checkbox" value="{{ sub }}" id="flexCheck_{{ forloop.parentloop.counter }}_{{ forloop.counter }}" name="equipment">
+                                        <label class="form-check-label-sub" for="flexCheck_{{ forloop.parentloop.counter }}_{{ forloop.counter }}">
                                             {{ sub }}
                                         </label>
                                     </div>
