@@ -71,16 +71,28 @@
                 <div class='event-title'>
                     {{ event.title }}
                 </div>
+                <div class='event-detail-additional mt-2'>
                 <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
-                <p class="card-label">Категория: <span class="badge">{{ event.category.name }}</span></p>
+                {% comment %} адрес {% endcomment %}
+                <p class="card-label">Адрес: <span class="event-detail-badge">{{ event.address }}</span></p>
                 {% if event.format %}
-                <p class="card-label">Формат: <span class="badge">{{ event.format.name }}</span></p>
+                <p class="card-label">Формат: <span class="event-detail-badge">{{ event.format.name }}</span></p>
                 {% endif %}
+                <p class="card-label">Категория: <span class="event-detail-badge">{{ event.category.name }}</span></p>
+                {% comment %} станция метро {% endcomment %}
+                {% if event.metro %}
+                <p class="card-label">Ст. метро: <span class="event-detail-badge">{{ event.metro.name }}</span></p>
+                {% endif %}
+                {% comment %} организатор {% endcomment %}
+                <p class="card-label">Организатор: <span class="event-detail-badge">{{ event.organizer.name }}</span></p>
+                {% comment %} длительность {% endcomment %}
+                <p class="card-label">Длительность: <span class="event-detail-badge">{{ event.duration }}</span></p>
+                </div>
                 <!-- Билеты -->
     {% if tickets %}
     {% with has_available_tickets=tickets|any_available %}
     <div class="tickets-section mt-5">
-        <h2 class='landing-h mb-3'>СТОИМОСТЬ БИЛЕТОВ</h2>
+        <h2 class='price-detail-h mb-3'>Тип билета</h2>
         <div class="table-responsive">
             <table class="table table-bordered">
                 <thead>
@@ -105,7 +117,9 @@
             </table>
         </div>
         <div class="text-center mt-4">
-            <button type="button" class="buy-button{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
+            <a class='question-organizator'>Задать вопрос организатору</a>
+            <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
+            <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon"></a>
         </div>
     </div>
     {% endwith %}
@@ -113,9 +127,9 @@
 </div>
 </div>
     </div>
-    <div class='row'>
+    <div class='row mt-5'>
         <div class='col-6'>
-            <h2 class='landing-h mb-3'>О МЕРОПРИЯТИИ</h2>
+            <h2 class='event_detail-h mb-3'>О МЕРОПРИЯТИИ</h2>
             <div class="event-description">
                 {{ event.description_full|linebreaks }}
             </div>
@@ -124,15 +138,16 @@
             {% comment %} программа {% endcomment %}
             {% if event.program_file %}
             <div class="program-section">
-                <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
+                <h2 class='event_detail-h mb-3'>ПРОГРАММА</h2>
                 <div class="program-content">
                     <div class="d-none">{{ event.program_file.url }}</div>
-                    <a href="{{ event.program_file.url }}" class="btn btn-primary" download>Скачать</a>
+                    <a href="{{ event.program_file.url }}" class="btn-document" download><img src="/media/icon/document.png" alt=""></a>
+                    <a href="{{ event.program_file.url }}" download><p class='p-document'>Скачать</p></a>
                 </div>
             </div>
             {% else %}
             <div class="program-section">
-                <h2 class='landing-h mb-3'>ПРОГРАММА</h2>
+                <h2 class='event_detail-h mb-3'>ПРОГРАММА</h2>
                 <div class="program-content">
                     <p>Программа ещё не опубликована</p>
                 </div>
@@ -160,7 +175,7 @@
             {% endif %}
     </div>
         <div class='col-6'>
-            <h3>Адрес</h3>
+            <h2 class='event_detail-h'>Адрес</h2>
             <p><i class="bi bi-geo-alt-fill"></i> {{ event.address }}</p>
             <p> {{ event.additional_adress }}</p>
         </div>
@@ -168,7 +183,7 @@
 </div>
 </div>
 {% comment %} видео {% endcomment %}
-<h2 class='landing-h mb-3 mt-5'>ВИДЕООБЗОР</h2>
+<h2 class='event_detail-h mb-3 mt-5'>ВИДЕООБЗОР</h2>
 <div class="video-section full-width-video">
     {% if event.video_url %}
     <div class="video-wrapper">

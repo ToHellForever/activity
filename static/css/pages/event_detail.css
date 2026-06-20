@@ -73,11 +73,64 @@
     font-size: 1.2rem;
 }
 .video-player {
-    width: 100%;       /* Растягиваем на всю ширину контейнера */
-    height: auto;      /* Высота подстраивается пропорционально */
+    width: 100%;      
+    height: auto;      
     display: block;
     background-color: #000;
 }
+
+
+.btn-document img {
+    margin-left: 25px;
+    width: 5rem;
+    height: auto;
+}
+a {
+    text-decoration: none;
+}
+.p-document {
+    margin-left: 35px;
+    font-family: 'Verdana', sans-serif;
+    font-size: 0.9rem;
+    color: #777A8D;
+    font-weight: 400;
+}
+
+.event_detail-h {
+    font-family: "Verdana";
+    font-size: 1.2rem;
+    color: #000000;
+    font-weight: 700;
+}
+
+.question-organizator {
+    color: #00056E;
+    font-family: "Verdana";
+    font-weight: 700;
+    font-size: 1rem;
+}
+.buy-button-detail {
+    background: #FF8348;
+    padding: 8px 80px 8px 80px;
+    border: none;
+    border-radius: 19.28px;
+    color: white;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.favourites-icon {
+    width: 40px;
+    height: auto;
+    margin-bottom: 3px;
+}
+
+
+
+
+
+
 
 /* === Модальное окно покупки билетов === */
 .ticket-card {
