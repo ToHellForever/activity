@@ -545,24 +545,46 @@ def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     tickets = event.tickets.all()
     
-    # Получаем похожие мероприятия (та же категория или теги, другое мероприятие, активные)
-    similar_events = Event.objects.filter(
-        status='active',
-    ).exclude(
-        id=event.id
-    )
+    # Получаем похожие мероприятия (максимально похожие, fallback на случайные)
+    base_events = Event.objects.filter(status='active').exclude(id=event.id)
+    similar_events = []  # Используем список для гибкого объединения результатов
 
-    # Если есть категория, фильтруем по ней
-    if event.category:
-        similar_events = similar_events.filter(category=event.category)
-    
-    # Если нет мероприятий по категории, ищем по тегам
-    if not similar_events.exists() and event.tags.exists():
-        similar_events = similar_events.filter(
-            tags__in=event.tags.all()
-        )
-    
-    # Ограничиваем до 4 мероприятий
+    # 1. Строгий поиск (совпадение по ВСЕМ доступным параметрам)
+    if event.category or event.format or event.tags.exists():
+        match_q = Q()
+        if event.category:
+            match_q &= Q(category=event.category)
+        if event.format:
+            match_q &= Q(format=event.format)
+        if event.tags.exists():
+            match_q &= Q(tags__in=event.tags.all())
+        
+        if match_q:
+            strict_matches = list(base_events.filter(match_q).distinct())
+            similar_events.extend(strict_matches)
+
+    # 2. Частичный поиск (совпадение по ЛЮБОМУ параметру), если нужно дополнить
+    if len(similar_events) < 4:
+        partial_q = Q()
+        if event.category:
+            partial_q |= Q(category=event.category)
+        if event.format:
+            partial_q |= Q(format=event.format)
+        if event.tags.exists():
+            partial_q |= Q(tags__in=event.tags.all())
+        
+        if partial_q:
+            existing_ids = [e.id for e in similar_events]
+            partial_matches = list(base_events.filter(partial_q).exclude(id__in=existing_ids).distinct())
+            similar_events.extend(partial_matches)
+
+    # 3. Случайные мероприятия, если всё ещё меньше 4
+    if len(similar_events) < 4:
+        existing_ids = [e.id for e in similar_events]
+        random_matches = list(base_events.exclude(id__in=existing_ids).order_by('?'))
+        similar_events.extend(random_matches)
+
+    # 4. Ограничиваем ровно до 4
     similar_events = similar_events[:4]
     
     return render(request, "events/event_detail.html", {

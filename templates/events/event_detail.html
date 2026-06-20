@@ -13,9 +13,47 @@
 <div class="event-detail-container">
     <div class='row'>
 <div class='col-6 event-detail-image'>
-    {% if event.images.exists %}
-        {% if event.images.count > 1 %}
-            <!-- Карусель для нескольких фото -->
+    {% if event.image or event.images.exists %}
+        {% if event.image and event.images.count > 1 %}
+            <!-- Карусель: основное фото + дополнительные -->
+            <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
+                {% if event.organizer.is_verified %}
+                <div class="verified-badge">
+                    <img src="/media/icon/ok.png" alt="" class='arrow-card'>
+                    <span class="card-verified">Проверенный организатор</span>
+                </div>
+                {% endif %}
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="0" 
+                        class="active" aria-current="true" aria-label="Slide 1">
+                    </button>
+                    {% for img in event.images.all %}
+                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter }}" 
+                        aria-label="Slide {{ forloop.counter|add:1 }}">
+                    </button>
+                    {% endfor %}
+                </div>
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="{{ event.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                    </div>
+                    {% for img in event.images.all %}
+                    <div class="carousel-item">
+                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущая</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующая</span>
+                </button>
+            </div>
+        {% elif event.images.count > 1 %}
+            <!-- Карусель только из дополнительных фото (без основного) -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
@@ -47,8 +85,19 @@
                     <span class="visually-hidden">Следующая</span>
                 </button>
             </div>
+        {% elif event.image %}
+            <!-- Одиночное основное фото -->
+            <div class="image-wrapper">
+                <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                {% if event.organizer.is_verified %}
+                <div class="verified-badge">
+                    <img src="/media/icon/ok.png" alt="" class='arrow-card'>
+                    <span class="card-verified">Проверенный организатор</span>
+                </div>
+                {% endif %}
+            </div>
         {% else %}
-            <!-- Одиночное фото -->
+            <!-- Одиночное дополнительное фото -->
             <div class="image-wrapper">
                 <img src="{{ event.images.first.image.url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified %}
@@ -60,7 +109,6 @@
             </div>
         {% endif %}
     {% else %}
-        <!-- Если фото вообще нет -->
         <div class="image-wrapper no-image">
             <span>Нет изображения</span>
         </div>
