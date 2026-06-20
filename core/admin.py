@@ -255,8 +255,7 @@ class EventAdmin(admin.ModelAdmin):
                     "fields": (
                         "title",
                         "organizer",
-                        "description_short",
-                        "description_full",
+                        "description",
                         "date_time",
                         "duration",
                         "address",
@@ -468,8 +467,7 @@ class EventAdmin(admin.ModelAdmin):
         """Оптимизируем загрузку связанных данных для формы редактирования."""
         form = super().get_form(request, obj, **kwargs)
 
-        # Убедимся, что поле description_full не обязательное
-        form.base_fields['description_full'].required = False
+        form.base_fields['description'].required = False
 
         # Если редактируется существующее мероприятие, оптимизируем загрузку связанных данных
         if obj:

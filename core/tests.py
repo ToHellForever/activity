@@ -86,8 +86,7 @@ class WatermarkTestCase(TestCase):
 
         event = Event(
             title="Test Event",
-            description_short="Short description",
-            description_full="Full description",
+            description="description",
             date_time="2026-12-31T23:59:59Z",
             place="Test Place",
             organizer=self.user,

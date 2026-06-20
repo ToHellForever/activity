@@ -17,7 +17,7 @@ class EventForm(forms.ModelForm):
 
         # Делаем поля обязательными
         self.fields["title"].required = True
-        self.fields["description_short"].required = True
+        self.fields["description"].required = True
         self.fields["date_time"].required = True
         self.fields["place_data"].required = False
         self.fields["refund_deadline_hours"].required = True
@@ -42,12 +42,6 @@ class EventForm(forms.ModelForm):
     def _setup_package_restrictions(self):
         """Настраивает ограничения формы в зависимости от текущего пакета пользователя."""
         package = self.current_package
-
-        # Ограничение на тип описания
-        if package.description_type == 'short':
-            self.fields['description_full'].widget = forms.HiddenInput()
-            self.fields['description_full'].required = False
-            self.fields['description_full'].help_text = "Ваш пакет не поддерживает подробное описание"
 
         # Ограничение на видео
         if not package.has_video:
@@ -98,7 +92,6 @@ class EventForm(forms.ModelForm):
         package = cleaned_data.get("package") or self.current_package
         video_url = cleaned_data.get("video_url")
         program_file = cleaned_data.get("program_file")
-        description_full = cleaned_data.get("description_full")
 
         # Проверяем, что у пользователя есть активный пакет
         if not self.current_package and not package:
@@ -112,12 +105,6 @@ class EventForm(forms.ModelForm):
             package = self.current_package
 
         if package:
-            # Проверка на тип описания
-            if package.description_type == 'short' and description_full:
-                self.add_error(
-                    'description_full',
-                    "Ваш пакет поддерживает только краткое описание. Полное описание не должно быть заполнено."
-                )
 
             # Проверка на наличие видео
             if not package.has_video and video_url:
@@ -153,8 +140,7 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = [
             "title",
-            "description_short",
-            "description_full",
+            "description",
             "date_time",
             "place_data",
             "video_url",
@@ -173,8 +159,7 @@ class EventForm(forms.ModelForm):
         widgets = {
             "tags": forms.CheckboxSelectMultiple,
             "date_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "description_short": forms.Textarea(attrs={"rows": 3}),
-            "description_full": forms.Textarea(attrs={"rows": 5}),
+            "description": forms.Textarea(attrs={"rows": 5}),
             "video_url": forms.FileInput(
                 attrs={"class": "custom-media-input", "style": "display: none;"}
             ),

@@ -364,15 +364,10 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     title = models.CharField(
         max_length=100, verbose_name="Название", help_text="Максимум 100 символов"
     )
-    description_short = models.TextField(
+    description = models.TextField(
         verbose_name="Краткое описание",
-        help_text="Максимум 300 символов",
-        max_length=500,
-    )
-    description_full = models.TextField(
-        verbose_name="Полное описание",
-        help_text="Максимум 3000 символов",
-        max_length=5000,
+        help_text="Максимум 1500 символов",
+        max_length=1500,
     )
     date_time = models.DateTimeField(
         verbose_name="Дата и время",

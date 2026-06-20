@@ -81,7 +81,7 @@
                 <p class="card-label">Категория: <span class="event-detail-badge">{{ event.category.name }}</span></p>
                 {% comment %} станция метро {% endcomment %}
                 {% if event.metro %}
-                <p class="card-label">Ст. метро: <span class="event-detail-badge">{{ event.metro.name }}</span></p>
+                <p class="card-label">Ст. метро: <span class="event-detail-badge">{{ event.metro }}</span></p>
                 {% endif %}
                 {% comment %} организатор {% endcomment %}
                 <p class="card-label">Организатор: <span class="event-detail-badge">{{ event.organizer.name }}</span></p>
@@ -131,7 +131,7 @@
         <div class='col-6'>
             <h2 class='event_detail-h mb-3'>О МЕРОПРИЯТИИ</h2>
             <div class="event-description">
-                {{ event.description_full|linebreaks }}
+                {{ event.description|linebreaks }}
             </div>
         </div>
         <div class='col-6'>

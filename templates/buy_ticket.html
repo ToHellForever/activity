@@ -10,7 +10,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <h5 class="card-title">{{ ticket.event.title }}</h5>
-            <p class="card-text">{{ ticket.event.description_short }}</p>
+            <p class="card-text">{{ ticket.event.description }}</p>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>Тип билета:</strong> {{ ticket.name }}</li>
                 <li class="list-group-item"><strong>Цена:</strong> {{ ticket.price|format_price }} ₽</li>

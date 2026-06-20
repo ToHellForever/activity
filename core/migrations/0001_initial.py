@@ -152,8 +152,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(help_text='Максимум 100 символов', max_length=100, verbose_name='Название')),
-                ('description_short', models.TextField(help_text='Максимум 300 символов', max_length=500, verbose_name='Краткое описание')),
-                ('description_full', models.TextField(help_text='Максимум 3000 символов', max_length=5000, verbose_name='Полное описание')),
+                ('description', models.TextField(help_text='Максимум 300 символов', max_length=1500, verbose_name='Описание')),
                 ('date_time', models.DateTimeField(help_text='Мероприятие должно быть не ранее чем через 24 часа от текущего момента', verbose_name='Дата и время')),
                 ('place_data', models.JSONField(blank=True, help_text='Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)', null=True, verbose_name='Данные о местоположении')),
                 ('video_processing_status', models.CharField(choices=[('pending', 'Ожидает обработки'), ('processing', 'Обрабатывается'), ('completed', 'Обработка завершена'), ('failed', 'Ошибка обработки')], default='pending', max_length=20, verbose_name='Статус обработки видео')),
