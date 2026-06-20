@@ -120,9 +120,10 @@
                     {{ event.title }}
                 </div>
                 <div class='event-detail-additional mt-2'>
-                <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
-                {% comment %} адрес {% endcomment %}
-                <p class="card-label">Адрес: <span class="event-detail-badge">{{ event.address }}</span></p>
+                <div class="date-address-row">
+                    <p class="date-cell"><img src="/media/icon/calendar.svg" alt="" class="icon-calendar-geo"><span class="card-date-geo-detail">{{ event.date_time|date:"d F Y" }}</span></p>
+                    <p class="address-cell card-label"><img src="/media/icon/geo-detail.svg" alt="" class="icon-calendar-geo"><span class="card-date-geo-detail">{{ event.address }}</span></p>
+                </div>
                 {% if event.format %}
                 <p class="card-label">Формат: <span class="event-detail-badge">{{ event.format.name }}</span></p>
                 {% endif %}
@@ -234,7 +235,7 @@
     </div>
         <div class='col-6'>
             <h2 class='event_detail-h'>Адрес</h2>
-            <p><i class="bi bi-geo-alt-fill"></i> {{ event.address }}</p>
+            <p> {{ event.address }}</p>
             <p> {{ event.additional_adress }}</p>
         </div>
     </div>
