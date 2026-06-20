@@ -62,6 +62,62 @@
     margin-top: 20px;
 }
 
+.date-address-row .date-cell,
+.date-address-row .address-cell {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.date-address-row .date-cell p,
+.date-address-row .address-cell p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+}
+
+.info-tags-row {
+    width: 90%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.info-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.info-tag .tag-label {
+    font-family: "Verdana";
+    font-size: 0.8rem;
+    color: #777A8D;
+    font-weight: 400;
+}
+
+.info-tag .tag-value {
+    font-family: "Verdana";
+    font-size: 0.8rem;
+    color: #000000;
+    font-weight: 400;
+}
+.tag-value {
+    margin-right: 15px;
+}
+.price-detail-h {
+    font-family: "Verdana";
+    font-weight: 700;
+    font-size: 1rem;
+    color: #807B7B;
+}
 
 .date-address-row .date-cell,
 .date-address-row .address-cell {

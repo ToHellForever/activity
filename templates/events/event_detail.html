@@ -124,33 +124,46 @@
                     <p class="date-cell"><img src="/media/icon/calendar.svg" alt="" class="icon-calendar-geo"><span class="card-date-geo-detail">{{ event.date_time|date:"d F Y" }}</span></p>
                     <p class="address-cell card-label"><img src="/media/icon/geo-detail.svg" alt="" class="icon-calendar-geo"><span class="card-date-geo-detail">{{ event.address }}</span></p>
                 </div>
-                {% if event.format %}
-                <p class="card-label">Формат: <span class="event-detail-badge">{{ event.format.name }}</span></p>
-                {% endif %}
-                <p class="card-label">Категория: <span class="event-detail-badge">{{ event.category.name }}</span></p>
-                {% comment %} станция метро {% endcomment %}
-                {% if event.metro %}
-                <p class="card-label">Ст. метро: <span class="event-detail-badge">{{ event.metro }}</span></p>
-                {% endif %}
-                {% comment %} организатор {% endcomment %}
-                <p class="card-label">Организатор: <span class="event-detail-badge">
-                    {% if event.organizer.company_name %}
-                        {{ event.organizer.company_name }}
-                    {% elif event.organizer.contact_person %}
-                        {{ event.organizer.contact_person }}
-                    {% else %}
-                        {{ event.organizer.get_full_name|default:event.organizer.username }}
+                <div class="info-tags-row">
+                    {% if event.format %}
+                    <span class="info-tag">
+                        <span class="tag-label">Формат:</span>
+                        <span class="tag-value">{{ event.format.name }}</span>
+                    </span>
                     {% endif %}
-                </span></p>
-                {% comment %} длительность {% endcomment %}
-                {% if event.duration %}
-                <p class="card-label">Длительность: <span class="event-detail-badge">{{ event.duration|format_duration }}</span></p>
-                {% endif %}
+                    <span class="info-tag">
+                        <span class="tag-label">Категория:</span>
+                        <span class="tag-value">{{ event.category.name }}</span>
+                    </span>
+                    {% if event.metro %}
+                    <span class="info-tag">
+                        <span class="tag-label">Ст. метро:</span>
+                        <span class="tag-value">{{ event.metro }}</span>
+                    </span>
+                    {% endif %}
+                    <span class="info-tag">
+                        <span class="tag-label">Организатор:</span>
+                        <span class="tag-value">
+                            {% if event.organizer.company_name %}
+                                {{ event.organizer.company_name }}
+                            {% elif event.organizer.contact_person %}
+                                {{ event.organizer.contact_person }}
+                            {% else %}
+                                {{ event.organizer.get_full_name|default:event.organizer.username }}
+                            {% endif %}
+                        </span>
+                    </span>
+                    {% if event.duration %}
+                    <span class="info-tag">
+                        <span class="tag-label">Длительность:</span>
+                        <span class="tag-value">{{ event.duration|format_duration }}</span>
+                    </span>
+                    {% endif %}
                 </div>
                 <!-- Билеты -->
     {% if tickets %}
     {% with has_available_tickets=tickets|any_available %}
-    <div class="tickets-section mt-5">
+    <div class="tickets-section mt-4">
         <h2 class='price-detail-h mb-3'>Тип билета</h2>
         <div class="table-responsive">
             <table class="table table-bordered">
