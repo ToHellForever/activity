@@ -689,7 +689,7 @@ class Ticket(models.Model):
     name = models.CharField(max_length=50, verbose_name="Название билета")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     available_quantity = models.PositiveIntegerField(verbose_name="Количество мест")
-
+    ticket_description = models.TextField(blank=True, verbose_name="Описание билета", default="", help_text="Описание билета", max_length=100,)
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 

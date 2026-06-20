@@ -7,6 +7,7 @@ function addTicketRow() {
         <td><input type="text" name="ticket_name[]" class="form-control" required></td>
         <td><input type="text" name="ticket_price[]" class="form-control" required></td>
         <td><input type="text" name="ticket_quantity[]" class="form-control" required></td>
+        <td><input type="text" name="ticket_description[]" class="form-control"></td>
         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
     `;
     

@@ -290,12 +290,13 @@ def create_event(request):
                             "form": form,
                             "is_edit": False,
                             "ticket_data": [
-                                {"name": name, "price": price, "quantity": quantity}
-                                for name, price, quantity in zip(
-                                    request.POST.getlist("ticket_name[]"),
-                                    request.POST.getlist("ticket_price[]"),
-                                    request.POST.getlist("ticket_quantity[]"),
-                                )
+                            {"name": name, "price": price, "quantity": quantity, "description": description}
+                            for name, price, quantity, description in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                                request.POST.getlist("ticket_description[]"),
+                            )
                                 if name and price and quantity
                             ],
                             "rejection_messages": get_rejection_messages(request),
@@ -434,6 +435,7 @@ def create_event(request):
         ticket_names = request.POST.getlist("ticket_name[]")
         ticket_prices = request.POST.getlist("ticket_price[]")
         ticket_quantities = request.POST.getlist("ticket_quantity[]")
+        ticket_descriptions = request.POST.getlist("ticket_description[]")
 
         # Проверяем, есть ли одновременно бесплатные и платные билеты
         has_free_tickets = False
@@ -476,8 +478,8 @@ def create_event(request):
                 },
             )
 
-        for name, price, quantity in zip(
-            ticket_names, ticket_prices, ticket_quantities
+        for name, price, quantity, description in zip(
+            ticket_names, ticket_prices, ticket_quantities, ticket_descriptions
         ):
             if name and price and quantity:
                 try:
@@ -489,6 +491,7 @@ def create_event(request):
                             else float(price)
                         ),
                         available_quantity=int(quantity),
+                        ticket_description=description,
                     )
                 except (ValueError, TypeError):
                     continue
@@ -613,12 +616,13 @@ def edit_event(request, event_id):
                             "form": form,
                             "is_edit": True,
                             "ticket_data": [
-                                {"name": name, "price": price, "quantity": quantity}
-                                for name, price, quantity in zip(
-                                    request.POST.getlist("ticket_name[]"),
-                                    request.POST.getlist("ticket_price[]"),
-                                    request.POST.getlist("ticket_quantity[]"),
-                                )
+                            {"name": name, "price": price, "quantity": quantity, "description": description}
+                            for name, price, quantity, description in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                                request.POST.getlist("ticket_description[]"),
+                            )
                                 if name and price and quantity
                             ],
                             "rejection_messages": get_rejection_messages(request),
@@ -696,12 +700,13 @@ def edit_event(request, event_id):
                             "form": form,
                             "is_edit": True,
                             "ticket_data": [
-                                {"name": name, "price": price, "quantity": quantity}
-                                for name, price, quantity in zip(
-                                    request.POST.getlist("ticket_name[]"),
-                                    request.POST.getlist("ticket_price[]"),
-                                    request.POST.getlist("ticket_quantity[]"),
-                                )
+                            {"name": name, "price": price, "quantity": quantity, "description": description}
+                            for name, price, quantity, description in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                                request.POST.getlist("ticket_description[]"),
+                            )
                                 if name and price and quantity
                             ],
                             "rejection_messages": get_rejection_messages(request),
@@ -726,12 +731,13 @@ def edit_event(request, event_id):
                             "form": form,
                             "is_edit": True,
                             "ticket_data": [
-                                {"name": name, "price": price, "quantity": quantity}
-                                for name, price, quantity in zip(
-                                    request.POST.getlist("ticket_name[]"),
-                                    request.POST.getlist("ticket_price[]"),
-                                    request.POST.getlist("ticket_quantity[]"),
-                                )
+                            {"name": name, "price": price, "quantity": quantity, "description": description}
+                            for name, price, quantity, description in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                                request.POST.getlist("ticket_description[]"),
+                            )
                                 if name and price and quantity
                             ],
                             "rejection_messages": get_rejection_messages(request),
@@ -760,12 +766,13 @@ def edit_event(request, event_id):
                             "form": form,
                             "is_edit": True,
                             "ticket_data": [
-                                {"name": name, "price": price, "quantity": quantity}
-                                for name, price, quantity in zip(
-                                    request.POST.getlist("ticket_name[]"),
-                                    request.POST.getlist("ticket_price[]"),
-                                    request.POST.getlist("ticket_quantity[]"),
-                                )
+                            {"name": name, "price": price, "quantity": quantity, "description": description}
+                            for name, price, quantity, description in zip(
+                                request.POST.getlist("ticket_name[]"),
+                                request.POST.getlist("ticket_price[]"),
+                                request.POST.getlist("ticket_quantity[]"),
+                                request.POST.getlist("ticket_description[]"),
+                            )
                                 if name and price and quantity
                             ],
                             "rejection_messages": get_rejection_messages(request),
@@ -898,6 +905,7 @@ def edit_event(request, event_id):
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
+            ticket_descriptions = request.POST.getlist("ticket_description[]")
 
             has_free_tickets = False
             has_paid_tickets = False
@@ -942,8 +950,8 @@ def edit_event(request, event_id):
                     },
                 )
 
-            for name, price, quantity in zip(
-                ticket_names, ticket_prices, ticket_quantities
+            for name, price, quantity, description in zip(
+                ticket_names, ticket_prices, ticket_quantities, ticket_descriptions
             ):
                 if name and price and quantity:
                     try:
@@ -955,6 +963,7 @@ def edit_event(request, event_id):
                                 else float(price)
                             ),
                             available_quantity=int(quantity),
+                            ticket_description=description,
                         )
                     except (ValueError, TypeError):
                         continue

@@ -286,6 +286,7 @@
                     <th>Название</th>
                     <th>Цена</th>
                     <th>Количество</th>
+                    <th>Описание</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -296,6 +297,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="0" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control"></td>
                         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
                     </tr>
                     {% endfor %}
@@ -305,6 +307,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="0" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control"></td>
                         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
                     </tr>
                     {% endfor %}

@@ -225,21 +225,105 @@ a {
 
 
 /* === Модальное окно покупки билетов === */
-.ticket-card {
-    transition: box-shadow 0.2s ease;
+.tickets-section {
+    margin-top: 2rem;
 }
 
-.ticket-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.tickets-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 15px;
+    padding: 20px 0;
 }
 
+.tickets-header {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+}
+
+.tickets-header .ticket-col {
+    font-family: "Verdana";
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #777A8D;
+}
+
+.tickets-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    margin-left:2px;
+}
+
+.tickets-row:last-child {
+    border-bottom: none;
+}
+
+
+.ticket-col-type {
+    font-family: 'Verdana', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: black;
+}
+
+.ticket-col-price {
+    font-family: 'Verdana', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: black;
+}
+
+.ticket-col-desc {
+    font-family: 'Verdana', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: black;
+    margin-left: 40px;
+}
+
+/* Рандомные цвета точек */
 .ticket-dot {
     display: inline-block;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    margin-right: 8px;
+    margin-right: 20px;
     vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.dot-1 {
+    background-color: #28a745; /* зеленый */
+}
+
+.dot-2 {
+    background-color: #007bff; /* синий */
+}
+
+.dot-3 {
+    background-color: #dc3545; /* красный */
+}
+
+.dot-4 {
+    background-color: #ff8348; /* оранжевый */
+}
+
+.dot-5 {
+    background-color: #6f42c1; /* фиолетовый */
+}
+
+.dot-6 {
+    background-color: #fd7e14; /* янтарный */
+}
+
+.dot-7 {
+    background-color: #20c997; /* бирюзовый */
+}
+
+.dot-8 {
+    background-color: #e83e8c; /* розовый */
 }
 
 .free-ticket {

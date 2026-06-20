@@ -22,7 +22,6 @@ class EventForm(forms.ModelForm):
         self.fields["place_data"].required = False
         self.fields["refund_deadline_hours"].required = True
         self.fields["duration"].required = False
-
         # Настройка поля auto_close_sales_hours
         self.fields["auto_close_sales_hours"].required = True
         self.fields["auto_close_sales_hours"].widget.attrs["min"] = 24

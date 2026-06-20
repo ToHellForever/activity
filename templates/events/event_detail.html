@@ -163,30 +163,27 @@
                 <!-- Билеты -->
     {% if tickets %}
     {% with has_available_tickets=tickets|any_available %}
-    <div class="tickets-section mt-4">
-        <h2 class='price-detail-h mb-3'>Тип билета</h2>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Тип билета</th>
-                        <th>Цена</th>
-                        <th>Описание</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ticket in tickets %}
-                    <tr>
-                        <td>
-                            <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
-                            {{ ticket.name }}
-                        </td>
-                        <td>{{ ticket.price|format_price }} руб</td>
-                        <td>{{ ticket.get_available_count|default:ticket.available_quantity }} мест</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="tickets-section mt-2">
+        <div class="tickets-grid">
+            <div class="tickets-header">
+                <div class="ticket-col ticket-col-type">Тип билета</div>
+                <div class="ticket-col ticket-col-price">Цена</div>
+                <div class="ticket-col ticket-col-desc">Описание</div>
+            </div>
+            {% for ticket in tickets %}
+            <div class="tickets-row">
+                <div class="ticket-col ticket-col-type">
+                    <span class="ticket-dot dot-{{ forloop.counter }}"></span>
+                    {{ ticket.name }}
+                </div>
+                <div class="ticket-col ticket-col-price">{{ ticket.price|format_price }} руб</div>
+                <div class="ticket-col ticket-col-desc">
+                        {% if ticket.ticket_description %}
+                            {{ ticket.ticket_description }}
+                        {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
         <div class="text-center mt-4">
             <a class='question-organizator'>Задать вопрос организатору</a>
