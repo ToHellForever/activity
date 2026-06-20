@@ -4,6 +4,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% include "includes/modal_buy_ticket.html" %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
 <script>
@@ -185,10 +186,12 @@
             </div>
             {% endfor %}
         </div>
-        <div class="text-center mt-4">
+        <div class="mt-4 d-flex flex-column">
             <a class='question-organizator'>Задать вопрос организатору</a>
-            <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
-            <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon"></a>
+            <div class="d-flex align-items-center">
+                <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
+                <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
+            </div>
         </div>
     </div>
     {% endwith %}
@@ -244,9 +247,9 @@
             {% endif %}
     </div>
         <div class='col-6'>
-            <h2 class='event_detail-h'>Адрес</h2>
-            <p> {{ event.address }}</p>
-            <p> {{ event.additional_adress }}</p>
+            <h2 class='event_detail-h mt-2'>Адрес</h2>
+            <p class='adress-detail-p mt-4'> {{ event.address }}</p>
+            <p class='adress-detail-p'> {{ event.additional_adress }}</p>
         </div>
     </div>
 </div>
@@ -283,7 +286,7 @@
                     {% if ev.organizer.is_verified %}
                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
                     {% endif %}
-                    <p><img src="/media/icon/calendar.png" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
                     <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
                     <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
                 </div>

@@ -190,7 +190,7 @@ a {
 
 .event_detail-h {
     font-family: "Verdana";
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #000000;
     font-weight: 700;
 }
@@ -200,6 +200,8 @@ a {
     font-family: "Verdana";
     font-weight: 700;
     font-size: 1rem;
+    margin-left: 15px;
+    margin-bottom: 5px;
 }
 .buy-button-detail {
     background: #FF8348;
@@ -216,6 +218,7 @@ a {
     width: 40px;
     height: auto;
     margin-bottom: 3px;
+    margin-left: 15px;
 }
 
 
@@ -244,9 +247,9 @@ a {
 
 .tickets-header .ticket-col {
     font-family: "Verdana";
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: #777A8D;
+    color: #807B7B;
 }
 
 .tickets-row {
@@ -329,6 +332,24 @@ a {
 .free-ticket {
     background-color: #28a745;
 }
+
+.adress-detail-p {
+    font-family: 'Verdana', sans-serif;
+    font-weight: 400;
+    color: #070707;
+    font-size: 0.9rem;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 .paid-ticket {
     background-color: #007bff;
