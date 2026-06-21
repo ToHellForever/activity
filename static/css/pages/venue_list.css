@@ -244,3 +244,43 @@ input[type="number"] {
     font-weight: 500;
     font-size: 0.8rem;
 }
+
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Процентная ширина колонок */
+.filter-col-category {
+  width: 15%;
+  min-width: 180px;
+}
+
+.filter-col-capacity {
+  width: 15%;
+  min-width: 150px;
+}
+
+.filter-col-metro {
+  width: 20%;
+  min-width: 200px;
+}
+
+.filter-col-price {
+  width: 25%;
+  min-width: 250px;
+}
+
+.filter-col-button {
+  width: 10%;
+  margin-left: auto;
+  padding-bottom: 30px;
+}
