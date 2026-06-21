@@ -34,11 +34,6 @@
   flex-direction: column;
 }
 
-.card-title {
-  font-size: 1.25rem;
-  margin-bottom: 0;
-}
-
 .btn-primary {
   margin-top: auto;
 }
@@ -51,7 +46,7 @@
 
 .filters-landing {
   background: #00056e;
-  padding: 3vw;
+  padding: 3rem;
   border-radius: 31px;
   margin-right: -10px;
   position: relative;
@@ -62,7 +57,7 @@
   font-family: "Verdana";
   font-weight: 700;
   color: #ffffff;
-  font-size: 3.8vw;
+  font-size: 4.3rem;
 }
 
 .landing-text {
@@ -181,7 +176,7 @@
 .active-event-info {
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.9vw;
+  font-size: 0.9rem;
   background: #ff8348;
   border-radius: 19.28px;
   padding: 7px 10px 7px 10px;
@@ -242,8 +237,8 @@
 .card-title {
   color: #000000;
   font-family: "Verdana";
-  font-weight: 400;
-  font-size: 1vw;
+  font-weight: 500;
+  font-size: 1rem;
 }
 
 .icon-calendar {
@@ -253,7 +248,7 @@
 }
 .card-date {
   margin-left: 10px;
-  font-size: 0.7vw;
+  font-size: 0.7rem;
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -263,7 +258,7 @@
   color: #777a8d;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8vw;
+  font-size: 0.8rem;
   margin: 0;
   margin-top: 2px;
 }
@@ -284,7 +279,7 @@
   color: #777a8d;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8vw;
+  font-size: 0.8rem;
   margin-left: 10px;
 }
 
@@ -293,7 +288,7 @@
   border-radius: 20px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8vw;
+  font-size: 0.8rem;
   margin-left: -10px;
   padding: 3px 8px;
   display: inline-block;
@@ -305,7 +300,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.9vw;
+  font-size: 0.9rem;
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   margin-top: auto;
@@ -324,7 +319,7 @@
   border-radius: 25px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1vw;
+  font-size: 1rem;
   box-sizing: border-box;
 }
 
@@ -393,7 +388,7 @@
   color: rgba(119, 122, 141, 1);
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.8vw;
+  font-size: 0.8rem;
 }
 .card-price-venue {
   color: rgba(7, 7, 7, 1);
@@ -410,7 +405,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.9vw;
+  font-size: 0.9rem;
   padding: 10px 20px;
   text-decoration: none;
   margin-top: 15px;
