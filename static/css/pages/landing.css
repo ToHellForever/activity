@@ -45,7 +45,6 @@
   display: flex;
   flex-direction: column;
 }
-
 .btn-primary {
   margin-top: auto;
 }
@@ -516,6 +515,9 @@
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
+  .filters-landing {
+    border-radius: 15px;
+  }
   .landing-block > .row {
     flex-direction: column;
   }
@@ -525,19 +527,13 @@
     max-width: 100%;
     margin-bottom: 10px;
   }
-
+  .filter-label {
+    margin-top: 10px;
+    margin-left: 5px;
+  }
   /* Скрываем карусель на мобильной версии */
   .events-carousel-wrapper {
     display: none;
-  }
-  
-
-  .filters-landing {
-    background: #00056e;
-    border-radius: 20px;
-    padding: 20px 15px;
-    margin-right: 0;
-    margin-bottom: 20px;
   }
   
   .arrow-right {
@@ -603,7 +599,7 @@
     justify-content: center;
     width: 100%;
     height: auto;
-    margin-top: 5px;
+    margin-top: 20px;
   }
 
   .filter-button {
@@ -611,7 +607,7 @@
     background: #ff8348;
     border: none;
     height: 100%;
-    border-radius: 15px;
+    border-radius: 10px;
     color: #ffffff;
     font-family: "Montserrat";
     font-weight: 500;
@@ -736,11 +732,6 @@
   /* Стили для dropdown на мобильной */
   .dropdown-menu-custom {
     max-height: 200px;
-  }
-
-  .dropdown-option {
-    padding: 10px 12px;
-    font-size: 0.85rem;
   }
 
   .filter-reset-btn {

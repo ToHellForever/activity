@@ -166,10 +166,12 @@
 
 .dropdown-option {
     padding: 12px 15px;
-    font-family: "Montserrat";
-    font-weight: 500;
-    font-size: 0.9rem;
-    color: #333;
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: clamp(0.7rem, 1vw, 1rem) ;
+    color: #777A8D;
+    overflow: hidden;
+    text-overflow: ellipsis;
     cursor: pointer;
     transition: all 0.2s;
     border-bottom: 1px solid #f0f0f0;
