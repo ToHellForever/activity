@@ -134,8 +134,8 @@
 <div class='landing-block'>
     <h2 class='landing-h mb-3'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
 
-    <!-- Мобильные: 2 события (скрыто на планшетах и десктопе) -->
-    <div class="row d-md-none">
+    <!-- Мобильные: 2 события (скрыто на 900px и выше) -->
+    <div class="row d-900-none">
         {% for ev in active_events_mobile %}
         <div class="col-6 mb-4">
             <div class="card">
@@ -164,8 +164,8 @@
         {% endfor %}
     </div>
 
-    <!-- Планшет: 3 события (скрыто на мобильных и десктопе) -->
-    <div class="row d-none d-md-flex d-lg-none">
+    <!-- Планшет: 3 события (скрыто на мобильных и больших экранах) -->
+    <div class="row d-none d-900-flex d-1300-none">
         {% for ev in active_events_tablet %}
         <div class="col-4 mb-4">
             <div class="card">
@@ -195,7 +195,7 @@
     </div>
 
     <!-- Десктоп: 4 события (скрыто на мобильных и планшетах) -->
-    <div class="row d-none d-lg-flex">
+    <div class="row d-none d-1300-flex">
         {% for ev in active_events_desktop %}
         <div class="col-md-3 mb-4">
             <div class="card">
@@ -282,8 +282,8 @@
 <h2 class='landing-h mt-3'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
 <p class="area-text">Размещайте мероприятия и проводите мероприятия на наших площадках, подтверждайте статус и привлекайте аудиторию, которая уже ищет обучение.</p>
 
-<!-- Мобильные: 2 площадки (скрыто на планшетах и десктопе) -->
-<div class="row d-md-none">
+    <!-- Мобильные: 2 площадки (скрыто на 900px и выше) -->
+    <div class="row d-900-none">
     {% for venue in active_venues_mobile %}
     <div class="col-6 venue-col">
         <div class="card venue-card">
@@ -310,8 +310,8 @@
     {% endfor %}
 </div>
 
-<!-- Планшет: 3 площадки (скрыто на мобильных и десктопе) -->
-<div class="row d-none d-md-flex d-lg-none">
+    <!-- Планшет: 3 площадки (скрыто на мобильных и больших экранах) -->
+    <div class="row d-none d-900-flex d-1300-none">
     {% for venue in active_venues_tablet %}
     <div class="col-4 venue-col">
         <div class="card venue-card">
@@ -338,8 +338,8 @@
     {% endfor %}
 </div>
 
-<!-- Десктоп: 4 площадки (скрыто на мобильных и планшетах) -->
-<div class="row d-none d-lg-flex">
+    <!-- Десктоп: 4 площадки (скрыто на мобильных и планшетах) -->
+    <div class="row d-none d-1300-flex">
     {% for venue in active_venues_desktop %}
     <div class="col-md-3 venue-col">
         <div class="card venue-card">

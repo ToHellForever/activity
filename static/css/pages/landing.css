@@ -444,8 +444,8 @@
   color: white;
 }
 
-@media (max-width: 991px) {
-  .landing-block > .row.d-none.d-md-flex.d-lg-none .col-4 {
+@media (max-width: 1299px) {
+  .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4 {
     padding: 0 5px !important;
     box-sizing: border-box;
 }
@@ -453,8 +453,28 @@
     padding: 0 5px;
   }
 }
+
+/* Скрывать мобильные карточки на экранах >= 900px */
+@media (min-width: 900px) {
+  .d-900-none {
+    display: none !important;
+  }
+  .d-900-flex {
+    display: flex !important;
+  }
+}
+
+/* Скрывать планшетные карточки на экранах >= 1300px */
+@media (min-width: 1300px) {
+  .d-1300-none {
+    display: none !important;
+  }
+  .d-1300-flex {
+    display: flex !important;
+  }
+}
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .landing-block > .row {
     flex-direction: column;
   }
@@ -571,15 +591,15 @@
   }
 
    /* Карточки событий и площадок - 2 в ряд на мобильной */
-   .landing-block > .row.d-md-none,
-   .landing-block > .row.d-none.d-md-flex.d-lg-none,
-   .landing-block > .row.d-none.d-lg-flex {
+   .landing-block > .row.d-900-none,
+   .landing-block > .row.d-none.d-900-flex.d-1300-none,
+   .landing-block > .row.d-none.d-1300-flex {
      flex-direction: row !important;
    }
 
-   .landing-block > .row.d-md-none .col-6,
-   .landing-block > .row.d-none.d-md-flex.d-lg-none .col-4,
-   .landing-block > .row.d-none.d-lg-flex .col-md-3 {
+   .landing-block > .row.d-900-none .col-6,
+   .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4,
+   .landing-block > .row.d-none.d-1300-flex .col-md-3 {
      width: 50% !important;
      max-width: 50% !important;
      padding: 0 5px;
