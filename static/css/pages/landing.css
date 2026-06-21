@@ -467,12 +467,6 @@
     margin-bottom: 20px;
   }
   
-  .landing-title {
-    width: 100%;
-    font-size: 1.4rem;
-    margin-bottom: 10px;
-    line-height: 1.3;
-  }
   .arrow-right {
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
@@ -583,6 +577,7 @@
    .landing-block > .row {
      display: flex;
      flex-wrap: wrap;
+     
    }
    .landing-block > .row > [class*="col-"] {
      margin-bottom: 10px;
