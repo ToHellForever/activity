@@ -92,7 +92,7 @@
         <div class="events-carousel-wrapper">
             <div id="activeEventsCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                    {% for ev in active_events %}
+                    {% for ev in active_events_desktop %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
                             {% if ev.image %}
                                 <img src="{{ ev.image.url }}"  alt="{{ ev.title }}">
@@ -133,13 +133,15 @@
 
 <div class='landing-block'>
     <h2 class='landing-h mb-3'>БЛИЖАЙШИЕ СОБЫТИЯ <span class="arrow-right"></span></h2>
-<div class="row">
-    {% for ev in active_events %}
-    <div class="col-md-3 mb-4">
-        <div class="card">
-            {% if ev.image %}
-            <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
-            {% endif %}
+
+    <!-- Мобильные: 2 события (скрыто на планшетах и десктопе) -->
+    <div class="row d-md-none">
+        {% for ev in active_events_mobile %}
+        <div class="col-6 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
 <div class="card-body">
     <h5 class="card-title">{{ ev.title }}</h5>
     {% if ev.organizer.is_verified %}
@@ -159,8 +161,68 @@
             </div>
         </div>
     </div>
-    {% endfor %}
-</div>
+        {% endfor %}
+    </div>
+
+    <!-- Планшет: 3 события (скрыто на мобильных и десктопе) -->
+    <div class="row d-none d-md-flex d-lg-none">
+        {% for ev in active_events_tablet %}
+        <div class="col-4 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ ev.title }}</h5>
+    {% if ev.organizer.is_verified %}
+    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+    {% endif %}
+    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
+    {% if ev.tags.all %}
+    <p class="card-label">
+        Теги:
+        {% for tag in ev.tags.all %}
+            <span class="badge">{{ tag.name }}</span>
+        {% endfor %}
+    </p>
+    {% endif %}
+<a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
+            </div>
+        </div>
+    </div>
+        {% endfor %}
+    </div>
+
+    <!-- Десктоп: 4 события (скрыто на мобильных и планшетах) -->
+    <div class="row d-none d-lg-flex">
+        {% for ev in active_events_desktop %}
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ ev.title }}</h5>
+    {% if ev.organizer.is_verified %}
+    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+    {% endif %}
+    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
+    {% if ev.tags.all %}
+    <p class="card-label">
+        Теги:
+        {% for tag in ev.tags.all %}
+            <span class="badge">{{ tag.name }}</span>
+        {% endfor %}
+    </p>
+    {% endif %}
+<a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
+            </div>
+        </div>
+    </div>
+        {% endfor %}
+    </div>
 
 <div class="text-center mt-2">
     <a href="{% url 'event_list' %}" class="button-others">Смотреть остальные мероприятия</a>
@@ -219,8 +281,66 @@
 
 <h2 class='landing-h mt-3'>СТАНЬТЕ ЧАСТЬЮ ДЕЛОВОЙ ЖИЗНИ ГОРОДА <span class="arrow-right"></span></h2>
 <p class="area-text">Размещайте мероприятия и проводите мероприятия на наших площадках, подтверждайте статус и привлекайте аудиторию, которая уже ищет обучение.</p>
-<div class="row">
-    {% for venue in active_venues %}
+
+<!-- Мобильные: 2 площадки (скрыто на планшетах и десктопе) -->
+<div class="row d-md-none">
+    {% for venue in active_venues_mobile %}
+    <div class="col-6 mb-4">
+        <div class="card">
+            {% if venue.images.all %}
+            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ venue.title }}</h5>
+    <p class="card-label-venue"><img src="/media/icon/geo-gray.png" alt="" class="icon-calendar"><span class="venue-adress">{{ venue.address }}</span></p>
+    <p class="card-label-venue" style='margin-top: -10px !important;'><img src="/media/icon/S.png" alt="" class="icon-calendar"><span>{{ venue.area|floatformat }} м²</span></p>
+    <p class="card-label-venue">до {{ venue.max_capacity }} человек</p>
+    <p class="card-price-venue">
+        {% if venue.price_unit == 'hour' %}
+        {{ venue.price|format_price }}.- час
+        {% elif venue.price_unit == 'day' %}
+        {{ venue.price|format_price }}.- день
+        {% else %}
+        {{ venue.price|format_price }} руб (по запросу)
+        {% endif %}</p>
+<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Планшет: 3 площадки (скрыто на мобильных и десктопе) -->
+<div class="row d-none d-md-flex d-lg-none">
+    {% for venue in active_venues_tablet %}
+    <div class="col-4 mb-4">
+        <div class="card">
+            {% if venue.images.all %}
+            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            {% endif %}
+<div class="card-body">
+    <h5 class="card-title">{{ venue.title }}</h5>
+    <p class="card-label-venue"><img src="/media/icon/geo-gray.png" alt="" class="icon-calendar"><span class="venue-adress">{{ venue.address }}</span></p>
+    <p class="card-label-venue" style='margin-top: -10px !important;'><img src="/media/icon/S.png" alt="" class="icon-calendar"><span>{{ venue.area|floatformat }} м²</span></p>
+    <p class="card-label-venue">до {{ venue.max_capacity }} человек</p>
+    <p class="card-price-venue">
+        {% if venue.price_unit == 'hour' %}
+        {{ venue.price|format_price }}.- час
+        {% elif venue.price_unit == 'day' %}
+        {{ venue.price|format_price }}.- день
+        {% else %}
+        {{ venue.price|format_price }} руб (по запросу)
+        {% endif %}</p>
+<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Десктоп: 4 площадки (скрыто на мобильных и планшетах) -->
+<div class="row d-none d-lg-flex">
+    {% for venue in active_venues_desktop %}
     <div class="col-md-3 mb-4">
         <div class="card">
             {% if venue.images.all %}

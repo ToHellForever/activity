@@ -570,9 +570,18 @@
     padding: 12px 0;
   }
 
-   /* Карточки событий - 2 в ряд на мобильной */
-   .landing-block > .row .col-md-3 {
+   /* Карточки событий и площадок - 2 в ряд на мобильной */
+   .landing-block > .row.d-md-none,
+   .landing-block > .row.d-none.d-md-flex.d-lg-none,
+   .landing-block > .row.d-none.d-lg-flex {
+     flex-direction: row !important;
+   }
+
+   .landing-block > .row.d-md-none .col-6,
+   .landing-block > .row.d-none.d-md-flex.d-lg-none .col-4,
+   .landing-block > .row.d-none.d-lg-flex .col-md-3 {
      width: 50% !important;
+     max-width: 50% !important;
      padding: 0 5px;
      box-sizing: border-box;
    }

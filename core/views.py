@@ -48,11 +48,12 @@ logger = logging.getLogger(__name__)
 
 
 def landing_page(request):
-    active_events = (
+    # Получаем все активные мероприятия с фильтрами
+    base_events = (
         Event.objects.filter(status="active")
         .select_related("organizer", "category")
         .prefetch_related("images")
-        .order_by("date_time")[:4]
+        .order_by("date_time")
     )
 
     # Получаем выбранные значения фильтров из GET-запроса
@@ -61,33 +62,43 @@ def landing_page(request):
     selected_date_to = request.GET.get("date_to", "")
     search_title = request.GET.get("title", "").strip()
 
-    # Применяем фильтры
+    # Применяем фильтры к базовому запросу
     if selected_category:
-        active_events = active_events.filter(category__id=selected_category)
+        base_events = base_events.filter(category__id=selected_category)
     if selected_date_from:
         try:
             from datetime import datetime, timedelta
             date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
-            active_events = active_events.filter(date_time__gte=date_from)
+            base_events = base_events.filter(date_time__gte=date_from)
         except ValueError:
             pass
     if selected_date_to:
         try:
             from datetime import datetime, timedelta
             date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
-            active_events = active_events.filter(date_time__lte=date_to + timedelta(days=1))
+            base_events = base_events.filter(date_time__lte=date_to + timedelta(days=1))
         except ValueError:
             pass
     if search_title:
-        active_events = active_events.filter(title__icontains=search_title)
+        base_events = base_events.filter(title__icontains=search_title)
+
+    # Три переменные с разным лимитом для разных экранов
+    active_events_mobile = base_events[:2]   # Мобильные: 2 события
+    active_events_tablet = base_events[:3]   # Планшет: 3 события
+    active_events_desktop = base_events[:4]  # Десктоп: 4 события
 
     # Get published venues for the carousel
     active_venues = (
         Venue.objects.filter(status="published")
         .select_related("venue_type")
         .prefetch_related("images")
-        .order_by("-tariff", "title")[:4]
+        .order_by("-tariff", "title")
     )
+
+    # Три переменные с разным лимитом для разных экранов
+    active_venues_mobile = active_venues[:2]   # Мобильные: 2 площадки
+    active_venues_tablet = active_venues[:3]   # Планшет: 3 площадки
+    active_venues_desktop = active_venues[:4]  # Десктоп: 4 площадки
 
     # Получаем все категории для выпадающего списка
     from core.models import Category
@@ -97,8 +108,12 @@ def landing_page(request):
         request,
         "landing.html",
         {
-            "active_events": active_events,
-            "active_venues": active_venues,
+            "active_events_mobile": active_events_mobile,
+            "active_events_tablet": active_events_tablet,
+            "active_events_desktop": active_events_desktop,
+            "active_venues_mobile": active_venues_mobile,
+            "active_venues_tablet": active_venues_tablet,
+            "active_venues_desktop": active_venues_desktop,
             "categories": categories,
             "selected_category": selected_category,
             "selected_date_from": selected_date_from,
