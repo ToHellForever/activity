@@ -398,6 +398,10 @@
   margin-top: auto;
 }
 
+.venue-col {
+  margin-bottom: 0.5rem !important;
+}
+
 .book-button {
   background: #ff8348;
   text-align: center;
@@ -440,8 +444,15 @@
   color: white;
 }
 
-
-
+@media (max-width: 991px) {
+  .landing-block > .row.d-none.d-md-flex.d-lg-none .col-4 {
+    padding: 0 5px !important;
+    box-sizing: border-box;
+}
+  .venue-col {
+    padding: 0 5px;
+  }
+}
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 768px) {
   .landing-block > .row {
