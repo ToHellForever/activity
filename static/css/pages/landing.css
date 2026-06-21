@@ -81,7 +81,7 @@
   white-space: nowrap;
 }
 
-.filter-button-container {
+.filter-button-container-landing {
   width: 70%;
   display: flex;
   align-items: flex-end;
@@ -89,7 +89,7 @@
   height: 100%;
 }
 
-.filter-button-landing {
+.filter-button {
   background: #ff8348;
   border: none;
   height: 36px;
@@ -98,7 +98,7 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 1rem;
-  padding: 5px 20px 10px 20px;
+  padding: 5px 30px 10px 30px;
 }
 
 /* Input with button styles */
@@ -111,7 +111,6 @@
   width: 100%;
   border-radius: 20px;
   margin-top: 10px;
-  padding-right: 40px; /* Space for the button */
   border: none;
   outline: none;
   box-shadow: none;
@@ -126,7 +125,7 @@
 
 .input-button {
   position: absolute;
-  right: 0px;
+  right: -3px;
   top: 50%;
   transform: translateY(-50%);
   width: 49px;
@@ -547,7 +546,7 @@
   }
 
   /* Кнопка НАЙТИ */
-  .filter-button-container {
+  .filter-button-container-landing {
     display: flex;
     margin-left: 0;
     align-items: center;

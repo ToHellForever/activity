@@ -74,7 +74,51 @@
   padding-left: 20px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-style: italic;
   color: #777a8d;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Процентная ширина колонок */
+.filter-col-category {
+  width: 15%;
+}
+
+.filter-col-date {
+  width: 10%;
+}
+
+.filter-col-title {
+  width: 35%;
+}
+
+.filter-col-format {
+  width: 15%;
+}
+
+.filter-col-button {
+  width: 10%;
+  min-width: 100px;
+  align-self: flex-end; /* Кнопка "Найти" на уровне с фильтрами */
+}
+
+/* Кнопка сброса фильтров */
+.filter-reset-btn {
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #FFFFFF;
+    text-decoration: none;
 }

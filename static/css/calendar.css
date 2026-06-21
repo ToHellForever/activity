@@ -185,27 +185,6 @@
 }
 
 
-/* Кнопка сброса фильтров */
-.filter-reset-btn {
-    display: inline-block;
-    padding: 8px 20px;
-    background: transparent;
-    border: 2px solid #ff8348;
-    color: #ff8348;
-    border-radius: 15px;
-    font-family: "Montserrat";
-    font-weight: 500;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.filter-reset-btn:hover {
-    background: #ff8348;
-    color: white;
-    text-decoration: none;
-}
-
 /* Стили для input с выпадающим списком */
 .filter-input-dropdown {
     cursor: pointer;

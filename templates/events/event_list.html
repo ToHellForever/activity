@@ -10,8 +10,8 @@
             <h1 class='landing-title'>ПОИСК МЕРОПРИЯТИЯ</h1>
 
             <form method="get" action="{% url 'event_list' %}" class="filters-form">
-            <div class='row filers-row'>
-                <div class='col-3 filers-col'>
+            <div class='row filters-row'>
+                <div class='filter-col filter-col-category'>
                     <div class="filter-item">
                         <div class="filter-label">КАТЕГОРИЯ</div>
                         <div class="input-with-button dropdown-container">
@@ -40,18 +40,15 @@
                     </div>
                 </div>
 
-                <div class='col-2 filers-col'>
+                <div class='filter-col filter-col-date'>
                     <div class="filter-item">
                         <div class="filter-label">ДАТА</div>
                         <div class="input-with-button date-container">
                             <input type="text" class="form-control filter-input" 
-                                   placeholder=" __:__:__" 
+                                   placeholder=" __:__:___" 
                                    value="{{ selected_date_from|default:'' }}"
                                    id="dateFromInput"
                                    readonly>
-                            <button class="input-button calendar-toggle-btn" type="button" data-target="dateFromCalendar">
-                                <span class="triangle-down"></span>
-                            </button>
                             <input type="hidden" name="date_from" value="{{ selected_date_from }}">
                             
                             <div class="calendar-popup" id="dateFromCalendar">
@@ -70,7 +67,7 @@
                     </div>
                 </div>
 
-                <div class='col-4 filers-col'>
+                <div class='filter-col filter-col-title'>
                     <div class="filter-item">
                         <div class="filter-label">НАЗВАНИЕ</div>
                         <div class="input-with-button">
@@ -78,14 +75,11 @@
                                    placeholder="Например: Продвижение и реклама в социальных сетях" 
                                    name="title"
                                    value="{{ search_title|default:'' }}">
-                            <button class="input-button" type="button" disabled>
-                                <span class="triangle-down"></span>
-                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class='col-2 filers-col'>
+                <div class='filter-col filter-col-format'>
                     <div class="filter-item">
                         <div class="filter-label">ФОРМАТ</div>
                         <div class="input-with-button dropdown-container">
@@ -113,8 +107,9 @@
                         </div>
                     </div>
                 </div>
-                <div class='col-1 filers-col'>
-                    <div class="filter-button-container">
+
+                <div class='filter-col filter-col-button'>
+                    <div class="filter-button-container-events">
                         <button type="submit" class="filter-button">НАЙТИ</button>
                     </div>
                 </div>
