@@ -151,10 +151,8 @@
     <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
     {% if ev.tags.all %}
     <p class="card-label">
-        Теги:
-        {% for tag in ev.tags.all %}
-            <span class="badge">{{ tag.name }}</span>
-        {% endfor %}
+        Формат:
+            <span class="badge">{{ ev.format.name }}</span>
     </p>
     {% endif %}
 <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
@@ -181,10 +179,8 @@
     <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
     {% if ev.tags.all %}
     <p class="card-label">
-        Теги:
-        {% for tag in ev.tags.all %}
-            <span class="badge">{{ tag.name }}</span>
-        {% endfor %}
+        Формат:
+            <span class="badge">{{ ev.format.name }}</span>
     </p>
     {% endif %}
 <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
@@ -211,10 +207,8 @@
     <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
     {% if ev.tags.all %}
     <p class="card-label">
-        Теги:
-        {% for tag in ev.tags.all %}
-            <span class="badge">{{ tag.name }}</span>
-        {% endfor %}
+        Формат:
+            <span class="badge">{{ ev.format.name }}</span>
     </p>
     {% endif %}
 <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
