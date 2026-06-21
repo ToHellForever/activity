@@ -276,3 +276,15 @@ input[type="number"] {
   margin-left: auto;
   padding-bottom: 30px;
 }
+
+@media (max-width: 1400px) {
+    .filter-col-button {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 1060px) {
+    .filter-col-button {
+        margin: 0 !important;
+    }
+}

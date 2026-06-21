@@ -479,10 +479,13 @@
   .filter-col-title,
   .filter-col-format,
   .filter-col-metro,
-  .filter-col-capacity,
-  .filter-col-price {
+  .filter-col-capacity {
     padding-left: 5px;
     padding-right: 5px;
+  }
+  .filter-col-price {
+    padding-left: 15px;
+    padding-right: 10px;
   }
 }
 
