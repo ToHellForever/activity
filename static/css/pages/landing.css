@@ -4,6 +4,18 @@
   color: rgba(38, 37, 37, 1);
   font-size: clamp(1rem, 3vw, 2.5rem);
 }
+/* Фильтры */
+.filers-col,
+.filter-col-category,
+.filter-col-date,
+.filter-col-title,
+.filter-col-format,
+.filter-col-metro,
+.filter-col-capacity,
+.filter-col-price {
+  padding-left: 10px;
+  padding-right: 10px;
+}
 .landing-block > .row {
   display: flex;
   align-items: stretch;
@@ -73,7 +85,7 @@
   color: #9a9a9a;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2vw, 1rem);
   white-space: nowrap;
 }
 
@@ -94,7 +106,7 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 1rem;
-  padding: 5px 30px 10px 30px;
+  padding: 8px 30px 10px 30px;
 }
 
 /* Input with button styles */
@@ -461,6 +473,18 @@
   .venue-col {
     padding: 0 5px;
   }
+  /* Фильтры в столбик */
+  .filers-col,
+  .filter-col-category,
+  .filter-col-date,
+  .filter-col-title,
+  .filter-col-format,
+  .filter-col-metro,
+  .filter-col-capacity,
+  .filter-col-price {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
 }
 
 /* Скрывать мобильные карточки на экранах >= 900px */
@@ -529,12 +553,6 @@
     line-height: 1.4;
   }
 
-  /* Фильтры в столбик */
-  .filers-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
   .filers-col {
     width: 100% !important;
     margin-bottom: 0 !important;
@@ -542,14 +560,6 @@
 
   .filter-item {
     width: 100%;
-  }
-
-  .filter-label {
-    color: #9a9a9a;
-    font-family: "Montserrat";
-    font-weight: 500;
-    font-size: 0.75rem;
-    margin-bottom: 5px;
   }
 
   .filter-input {

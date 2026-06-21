@@ -79,10 +79,10 @@
   color: #777a8d;
 }
 
+
 .filters-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
   align-items: flex-start;
 }
 

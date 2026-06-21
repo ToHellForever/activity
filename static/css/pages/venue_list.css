@@ -245,14 +245,6 @@ input[type="number"] {
     font-size: 0.8rem;
 }
 
-
-.filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: flex-start;
-}
-
 .filter-col {
   display: flex;
   flex-direction: column;
