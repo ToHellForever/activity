@@ -54,6 +54,7 @@
   padding: 3vw;
   border-radius: 31px;
   margin-right: -10px;
+  position: relative;
 }
 
 .landing-title {
