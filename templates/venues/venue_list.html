@@ -144,9 +144,9 @@
 </div>
 
 <div class='landing-block mt-5'>
-<div class="row">
+<div class="row row-cards-list">
     {% for venue in venues %}
-    <div class="col-md-3 mb-4">
+    <div class="col-12 venue-list-col mb-4">
         <div class="card">
             {% if venue.images.all %}
             <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">

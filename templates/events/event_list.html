@@ -154,9 +154,9 @@
 </div>
 
 <div class='landing-block mt-3'>
-<div class="row">
+<div class="row row-cards-list">
     {% for ev in active_events %}
-    <div class="col-md-3 mb-4">
+    <div class="col-12 event-list-col mb-4">
         <div class="card">
             {% if ev.image %}
             <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">

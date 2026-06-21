@@ -132,3 +132,37 @@
     cursor: pointer;
     caret-color: transparent;
 }
+
+/* === Карточки в списках: 2/3/4 в строке === */
+/* <900px — 2 карточки в строке */
+@media (max-width: 899px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 50% !important;
+    max-width: 50% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}
+
+/* 900px – 1299px — 3 карточки в строке */
+@media (min-width: 900px) and (max-width: 1299px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 33.333% !important;
+    max-width: 33.333% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}
+
+/* >=1300px — 4 карточки в строке */
+@media (min-width: 1300px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 25% !important;
+    max-width: 25% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}

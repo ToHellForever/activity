@@ -614,6 +614,19 @@
      margin-bottom: 10px;
    }
 
+   /* Карточки в списках — 2 в строке на мобильной */
+   .landing-block > .row.row-cards-list {
+     flex-direction: row !important;
+   }
+
+   .landing-block > .row.row-cards-list > .event-list-col,
+   .landing-block > .row.row-cards-list > .venue-list-col {
+     width: 50% !important;
+     max-width: 50% !important;
+     padding: 0 5px;
+     box-sizing: border-box;
+   }
+
   .card {
     border-radius: 15px;
   }
