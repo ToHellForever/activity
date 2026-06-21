@@ -82,15 +82,14 @@
 }
 
 .filter-button-container {
-  width: 30%;
+  width: 70%;
   display: flex;
   align-items: flex-end;
   margin-left: auto;
-  height: 70%;
+  height: 100%;
 }
 
-.filter-button {
-  width: 100%;
+.filter-button-landing {
   background: #ff8348;
   border: none;
   height: 36px;
@@ -99,7 +98,7 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 1rem;
-  padding: 8px 0;
+  padding: 5px 20px 10px 20px;
 }
 
 /* Input with button styles */
