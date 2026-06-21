@@ -74,7 +74,7 @@
   padding-left: 20px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   font-style: italic;
   color: #777a8d;
 }
@@ -97,7 +97,7 @@
 }
 
 .filter-col-date {
-  width: 10%;
+  width: 25%;
 }
 
 .filter-col-title {

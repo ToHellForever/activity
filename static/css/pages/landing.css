@@ -4,18 +4,48 @@
   color: rgba(38, 37, 37, 1);
   font-size: clamp(1rem, 3vw, 2.5rem);
 }
-/* Фильтры */
-.filers-col,
-.filter-col-category,
-.filter-col-date,
-.filter-col-title,
-.filter-col-format,
-.filter-col-metro,
-.filter-col-capacity,
-.filter-col-price {
+/* Фильтры лендинга — изолированные стили */
+.landing-block .filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.landing-block .filter-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.landing-block .lndg-filter-col-category {
+  flex: 0 0 25%;
+  max-width: 25%;
+}
+
+.landing-block .lndg-filter-col-date {
+  flex: 0 0 20%;
+  max-width: 20%;
+}
+
+.landing-block .lndg-filter-col-title {
+  flex: 0 0 30%;
+  max-width: 30%;
+}
+
+.landing-block .lndg-filter-col-button {
+  flex: 0 0 15%;
+  max-width: 15%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
   padding-left: 10px;
   padding-right: 10px;
 }
+
 .landing-block > .row {
   display: flex;
   align-items: stretch;
@@ -26,6 +56,12 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
+}
+
+/* Фильтры-колонки */
+.filter-col {
+  display: flex;
+  flex-direction: column;
 }
 
 .card {
@@ -75,7 +111,7 @@
   font-family: "Verdana";
   font-weight: 400;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 2vw, 1rem);
   margin-top: 20px;
   margin-bottom: 2rem;
 }
@@ -84,8 +120,9 @@
   color: #9a9a9a;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(0.75rem, 1vw, 1rem);
   white-space: nowrap;
+  margin-bottom: 5px;
 }
 
 .filter-button-container-landing {
@@ -117,7 +154,6 @@
 .filter-input {
   width: 100%;
   border-radius: 20px;
-  margin-top: 10px;
   border: none;
   outline: none;
   box-shadow: none;
@@ -132,7 +168,7 @@
 
 .input-button {
   position: absolute;
-  right: -3px;
+  right: -1px;
   top: 50%;
   transform: translateY(-50%);
   width: 49px;
@@ -261,7 +297,7 @@
 }
 .card-date {
   margin-left: 10px;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -292,7 +328,7 @@
   color: #777a8d;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   margin-left: 10px;
 }
 
@@ -472,18 +508,12 @@
   .venue-col {
     padding: 0 5px;
   }
-  /* Фильтры в столбик */
-  .filers-col,
-  .filter-col-category,
-  .filter-col-date,
-  .filter-col-title,
-  .filter-col-format,
-  .filter-col-metro,
-  .filter-col-capacity {
+  /* Планшетные фильтры — отступы */
+  .landing-block .filter-col {
     padding-left: 5px;
     padding-right: 5px;
   }
-  .filter-col-price {
+  .landing-block .lndg-filter-col-price {
     padding-left: 15px;
     padding-right: 10px;
   }
@@ -512,12 +542,23 @@
     .landing-title {
     width: 100%;
   }
+    .filter-label,
+    .filter-col-price {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    margin-left: 5px !important;
+  }
     .filter-button-container-landing {
       margin-left: 0px;
     }
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
+  .landing-text {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    line-height: 1.2;
+  }
   .filters-landing {
     border-radius: 15px;
   }
@@ -530,34 +571,24 @@
     max-width: 100%;
     margin-bottom: 10px;
   }
-  .filter-label {
-    margin-top: 10px;
-    margin-left: 5px;
-  }
   /* Скрываем карусель на мобильной версии */
   .events-carousel-wrapper {
     display: none;
   }
-  
+
   .arrow-right {
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
     border-left: 13px solid rgba(38, 37, 37, 1);
     margin-left: 5px;
   }
-  .landing-text {
-    margin-top: 10px;
-    font-size: 0.85rem;
-    margin-bottom: 15px;
-    line-height: 1.4;
-  }
 
-  .filers-col {
+  .landing-block .lndg-filter-col-button {
     width: 100% !important;
     margin-bottom: 0 !important;
   }
 
-  .filter-item {
+  .landing-block .filter-item {
     width: 100%;
   }
 
@@ -575,7 +606,7 @@
   .input-button {
     position: absolute;
     right: 0px;
-    top: 50%;
+    top: 55%;
     transform: translateY(-50%);
     width: 44px;
     height: 42px;
