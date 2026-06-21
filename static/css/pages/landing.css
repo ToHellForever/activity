@@ -46,7 +46,7 @@
 
 .filters-landing {
   background: #00056e;
-  padding: 3rem;
+  padding: clamp(1rem, 3vw, 3rem);
   border-radius: 31px;
   margin-right: -10px;
   position: relative;
@@ -57,14 +57,14 @@
   font-family: "Verdana";
   font-weight: 700;
   color: #ffffff;
-  font-size: 4.3rem;
+  font-size: clamp(1.3rem, 3.5vw, 4.5rem);
 }
 
 .landing-text {
   font-family: "Verdana";
   font-weight: 400;
   color: #ffffff;
-  font-size: 1.rem;
+  font-size: 1rem;
   margin-top: 20px;
   margin-bottom: 2rem;
 }
@@ -176,7 +176,7 @@
 .active-event-info {
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   background: #ff8348;
   border-radius: 19.28px;
   padding: 7px 10px 7px 10px;
@@ -184,10 +184,12 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   word-break: break-word;
-  max-width: 100%;
+  width: 100%;
   display: block;
 }
-
+.carousel-caption {
+  padding-bottom: 0;
+}
 .active-event-info a {
   color: #ffffff !important;
 }
@@ -444,6 +446,11 @@
   color: white;
 }
 
+@media (max-width: 1399px) {
+    .active-event-info {
+    display: none;
+  }
+}
 @media (max-width: 1299px) {
   .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4 {
     padding: 0 5px !important;
@@ -473,6 +480,14 @@
     display: flex !important;
   }
 }
+@media (max-width: 1300px) {
+    .landing-title {
+    width: 100%;
+  }
+    .filter-button-container-landing {
+      margin-left: 0px;
+    }
+}
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
   .landing-block > .row {
@@ -489,6 +504,7 @@
   .events-carousel-wrapper {
     display: none;
   }
+  
 
   .filters-landing {
     background: #00056e;
@@ -550,7 +566,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 44px;
-    height: 43px;
+    height: 42px;
     background: #ff8348;
     border: none;
     border-radius: 15px;
