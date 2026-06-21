@@ -48,10 +48,24 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             elif image.mode != 'RGB':
                 image = image.convert('RGB')
             
-            # Изменяем размер до 800x600
-            max_size = (800, 600)
-            if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
-                image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            # Центрированная обрезка до пропорций 4:3 (800x600)
+            target_ratio = 4 / 3
+            width, height = image.size
+            current_ratio = width / height
+            
+            if current_ratio > target_ratio:
+                # Фото шире, чем 4:3 -> обрезаем по ширине
+                new_width = int(height * target_ratio)
+                left = (width - new_width) // 2
+                image = image.crop((left, 0, left + new_width, height))
+            else:
+                # Фото выше, чем 4:3 -> обрезаем по высоте
+                new_height = int(width / target_ratio)
+                top = (height - new_height) // 2
+                image = image.crop((0, top, width, top + new_height))
+            
+            # Ресайз до фиксированного размера 800x600
+            image = image.resize((800, 600), Image.Resampling.LANCZOS)
             
             # Путь для обработанного файла
             base_name = os.path.splitext(temp_path)[0]
