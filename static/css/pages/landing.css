@@ -554,10 +554,32 @@
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
-  .landing-text {
+    .landing-text {
     margin-top: 0px;
     margin-bottom: 0px;
     line-height: 1.2;
+  }
+  .filters-landing {
+    border-radius: 15px;
+  }
+  .landing-block > .row {
+    flex-direction: column;
+  }
+
+  .landing-block > .row > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100%;
+    margin-bottom: 10px;
+  }
+
+  /* Фильтры — 100% на мобильной */
+  .landing-block .lndg-filter-col-category,
+  .landing-block .lndg-filter-col-date,
+  .landing-block .lndg-filter-col-title,
+  .landing-block .lndg-filter-col-button {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
   .filters-landing {
     border-radius: 15px;
