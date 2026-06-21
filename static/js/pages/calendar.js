@@ -53,9 +53,14 @@ class CustomCalendar {
                 console.log('Calendar toggle clicked');
                 this.toggle();
             });
-        } else {
-            console.error('Calendar toggle button not found');
         }
+
+        // Открытие календаря по клику на инпут
+        this.input.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle();
+        });
 
         // Кнопки навигации
         const prevBtn = this.calendar.querySelector('.calendar-prev-month');

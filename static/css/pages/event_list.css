@@ -116,13 +116,15 @@
 
 /* Кнопка сброса фильтров */
 .filter-reset-btn {
-  font-family: "Montserrat";
-  font-weight: 500;
-  font-size: 0.9rem;
-  color: #FFFFFF;
-  text-decoration: none;
-  position: absolute; 
-  right: 3rem;         
-  bottom: 0;    
-  margin-bottom: 1rem; 
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+/* Инпут даты — скрываем курсор */
+#dateFromInput {
+    cursor: pointer;
+    caret-color: transparent;
 }
