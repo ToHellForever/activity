@@ -260,9 +260,14 @@ class CustomDropdown {
                 console.log('Dropdown toggle clicked');
                 this.toggle();
             });
-        } else {
-            console.error('Dropdown toggle button not found');
         }
+
+        // Открытие dropdown по клику на инпут
+        this.input.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle();
+        });
 
         // Обработка выбора опции
         this.dropdown.querySelectorAll('.dropdown-option').forEach(option => {

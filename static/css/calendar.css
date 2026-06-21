@@ -188,12 +188,12 @@
 /* Стили для input с выпадающим списком */
 .filter-input-dropdown {
     cursor: pointer;
-    pointer-events: none; /* Пропускаем клики к кнопке */
+    pointer-events: auto;
 }
 
 .filter-input-dropdown:focus {
     cursor: pointer;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* При открытом dropdown убираем нижние border-radius у инпута */
