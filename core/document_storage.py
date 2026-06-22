@@ -39,7 +39,11 @@ class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
             # Для .csv, .txt, .jpg, .png и других форматов обработка не требуется
             # Файл будет загружен как есть
 
-            return processed_path, []
+            # Возвращаем processed_path и список файлов для удаления (temp_path)
+            files_to_delete = []
+            if processed_path != temp_path:
+                files_to_delete.append(os.path.normpath(temp_path))
+            return processed_path, files_to_delete
 
         except Exception as e:
             logger.error(f"Ошибка при обработке документа {name}: {e}")
