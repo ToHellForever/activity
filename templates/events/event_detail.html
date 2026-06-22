@@ -241,7 +241,10 @@
         <div class='col-6'>
             <h2 class='event_detail-h mt-2'>Адрес</h2>
             <p class='adress-detail-p mt-4'> {{ event.address }}</p>
+            {% if  event.additional_adress %}
             <p class='adress-detail-p'> {{ event.additional_adress }}</p>
+            {% endif %}
+            <p></p>
         </div>
     </div>
 </div>
