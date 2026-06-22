@@ -828,12 +828,6 @@ class Order(models.Model):
         default="paid_ticket",
         verbose_name="Тип покупки",
     )
-    purchase_type = models.CharField(
-        max_length=20,
-        choices=PURCHASE_TYPE_CHOICES,
-        default="paid_ticket",
-        verbose_name="Тип покупки",
-    )
 
     def save(self, *args, **kwargs):
         # Логирование изменения статуса платежа
