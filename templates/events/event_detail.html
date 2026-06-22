@@ -174,20 +174,26 @@
                 <div class="ticket-col ticket-col-price">Цена</div>
                 <div class="ticket-col ticket-col-desc">Описание</div>
             </div>
-            {% for ticket in tickets %}
-            <div class="tickets-row">
+                {% for ticket in tickets %}
+                <div class="tickets-row">
                 <div class="ticket-col ticket-col-type">
-                    <span class="ticket-dot dot-{{ forloop.counter }}"></span>
-                    {{ ticket.name }}
+                <span class="ticket-dot dot-{{ forloop.counter }}"></span>
+                {{ ticket.name }}
                 </div>
-                <div class="ticket-col ticket-col-price">{{ ticket.price|format_price }} руб</div>
+                <div class="ticket-col ticket-col-price">
+                {% if ticket.price == 0 %}
+                Бесплатно
+                {% else %}
+                {{ ticket.price|format_price }} руб
+                {% endif %}
+                </div>
                 <div class="ticket-col ticket-col-desc">
-                        {% if ticket.ticket_description %}
-                            {{ ticket.ticket_description }}
-                        {% endif %}
+                {% if ticket.ticket_description %}
+                {{ ticket.ticket_description }}
+                {% endif %}
                 </div>
-            </div>
-            {% endfor %}
+                </div>
+                {% endfor %}
         </div>
         <div class="mt-4 d-flex flex-column">
             <a class='question-organizator'>Задать вопрос организатору</a>
