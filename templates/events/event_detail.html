@@ -183,6 +183,8 @@
                 <div class="ticket-col ticket-col-price">
                 {% if ticket.price == 0 %}
                 Бесплатно
+                {% elif ticket.is_per_person %}
+                {{ ticket.price|format_price }} руб/чел
                 {% else %}
                 {{ ticket.price|format_price }} руб
                 {% endif %}

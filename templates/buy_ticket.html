@@ -13,7 +13,15 @@
             <p class="card-text">{{ ticket.event.description }}</p>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>Тип билета:</strong> {{ ticket.name }}</li>
-                <li class="list-group-item"><strong>Цена:</strong> {{ ticket.price|format_price }} ₽</li>
+                <li class="list-group-item"><strong>Цена:</strong> 
+                    {% if ticket.price == 0 %}
+                        Бесплатно
+                    {% elif ticket.is_per_person %}
+                        {{ ticket.price|format_price }} руб/чел
+                    {% else %}
+                        {{ ticket.price|format_price }} ₽
+                    {% endif %}
+                </li>
                 <li class="list-group-item"><strong>Доступно:</strong> {{ ticket.get_available_count|default:0 }}</li>
                 <li class="list-group-item"><strong>Дата мероприятия:</strong> {{ ticket.event.date_time|date:"d.m.Y H:i" }}</li>
             </ul>

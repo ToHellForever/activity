@@ -696,6 +696,11 @@ class Ticket(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     available_quantity = models.PositiveIntegerField(verbose_name="Количество мест")
     ticket_description = models.TextField(blank=True, verbose_name="Описание билета", default="", help_text="Описание билета", max_length=100,)
+    is_per_person = models.BooleanField(
+        default=False,
+        verbose_name="Цена за человека",
+        help_text="Отметьте для групповых билетов (от 5 чел.) — цена будет отображаться как 'руб/чел'",
+    )
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 

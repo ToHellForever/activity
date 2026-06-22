@@ -436,6 +436,7 @@ def create_event(request):
         ticket_prices = request.POST.getlist("ticket_price[]")
         ticket_quantities = request.POST.getlist("ticket_quantity[]")
         ticket_descriptions = request.POST.getlist("ticket_description[]")
+        ticket_is_per_person = request.POST.getlist("ticket_is_per_person[]")
 
         # Проверяем, есть ли одновременно бесплатные и платные билеты
         has_free_tickets = False
@@ -478,8 +479,8 @@ def create_event(request):
                 },
             )
 
-        for name, price, quantity, description in zip(
-            ticket_names, ticket_prices, ticket_quantities, ticket_descriptions
+        for i, (name, price, quantity, description) in enumerate(
+            zip(ticket_names, ticket_prices, ticket_quantities, ticket_descriptions)
         ):
             if name and price and quantity:
                 try:
@@ -492,6 +493,9 @@ def create_event(request):
                         ),
                         available_quantity=int(quantity),
                         ticket_description=description,
+                        is_per_person=(
+                            i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
+                        ),
                     )
                 except (ValueError, TypeError):
                     continue
@@ -906,6 +910,7 @@ def edit_event(request, event_id):
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
             ticket_descriptions = request.POST.getlist("ticket_description[]")
+            ticket_is_per_person = request.POST.getlist("ticket_is_per_person[]")
 
             has_free_tickets = False
             has_paid_tickets = False
@@ -950,8 +955,8 @@ def edit_event(request, event_id):
                     },
                 )
 
-            for name, price, quantity, description in zip(
-                ticket_names, ticket_prices, ticket_quantities, ticket_descriptions
+            for i, (name, price, quantity, description) in enumerate(
+                zip(ticket_names, ticket_prices, ticket_quantities, ticket_descriptions)
             ):
                 if name and price and quantity:
                     try:
@@ -964,6 +969,9 @@ def edit_event(request, event_id):
                             ),
                             available_quantity=int(quantity),
                             ticket_description=description,
+                            is_per_person=(
+                                i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
+                            ),
                         )
                     except (ValueError, TypeError):
                         continue
