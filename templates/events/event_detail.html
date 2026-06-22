@@ -210,7 +210,6 @@
             </div>
         </div>
         <div class='col-6'>
-            {% comment %} программа {% endcomment %}
             {% if event.program_file %}
             <div class="program-section">
                 <h2 class='event_detail-h mb-3'>ПРОГРАММА</h2>
@@ -220,24 +219,17 @@
                     <a href="{{ event.program_file.url }}" download><p class='p-document'>Скачать</p></a>
                 </div>
             </div>
-            {% else %}
-            <div class="program-section">
-                <h2 class='event_detail-h mb-3'>ПРОГРАММА</h2>
-                <div class="program-content">
-                    <p>Программа ещё не опубликована</p>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
 </div>
 
+{% if event.latitude and event.longitude %}
 <div class="map-section mt-5">
     <div class="sticky-top" style="top: 2rem;">
     <div class='row'>
     <div class='col-6'>
             <!-- Карта (интеграция с Яндекс.Картами) -->
-            {% if event.latitude and event.longitude %}
             <div id="map-canvas" 
                     style="height: 250px; border-radius: 8px; margin: 15px 0;"
                     data-lat="{{ event.latitude|floatformat:"6" }}"
@@ -245,9 +237,6 @@
                     data-event-title="{{ event.title|escapejs }}"
                     data-event-address="{{ event.address|escapejs }}">
             </div>
-            {% else %}
-            <div class="alert alert-info">Координаты для карты не указаны.</div>
-            {% endif %}
     </div>
         <div class='col-6'>
             <h2 class='event_detail-h mt-2'>Адрес</h2>
@@ -257,20 +246,19 @@
     </div>
 </div>
 </div>
-{% comment %} видео {% endcomment %}
+{% endif %}
+<!-- Видео -->
+{% if event.video_url %}
 <h2 class='event_detail-h mb-3 mt-5'>ВИДЕООБЗОР</h2>
 <div class="video-section full-width-video">
-    {% if event.video_url %}
     <div class="video-wrapper">
         <video class="video-player" controls>
             <source src="{{ event.video_url.url }}" type="video/mp4">
             Ваш браузер не поддерживает HTML5 видео.
         </video>
     </div>
-    {% else %}
-    <div class="no-video-placeholder">Видео отсутствует</div>
-    {% endif %}
 </div>
+{% endif %}
 <!-- Похожие мероприятия -->
 {% if similar_events %}
 <div class="similar-events-section mt-5">
