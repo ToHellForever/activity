@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['topic-toilet-another-restrictions.trycloudflare.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['social-cigarettes-johns-mustang.trycloudflare.com', 'localhost', '127.0.0.1']
 
 # Application definition
 

@@ -7,6 +7,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const purchaseLog = [];
     const MAX_FREE_TICKETS = 2;
     
+    // === Toast-уведомления ===
+    function showToast(message, isError = true) {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+        
+        const toastElement = document.createElement('div');
+        toastElement.className = `toast align-items-center text-white ${isError ? 'bg-danger' : 'bg-success'}`;
+        toastElement.setAttribute('role', 'alert');
+        toastElement.setAttribute('aria-live', 'assertive');
+        toastElement.setAttribute('aria-atomic', 'true');
+        
+        const toastBody = document.createElement('div');
+        toastBody.className = 'd-flex';
+        
+        const toastMessage = document.createElement('div');
+        toastMessage.className = 'toast-body';
+        toastMessage.textContent = message;
+        
+        const toastClose = document.createElement('button');
+        toastClose.type = 'button';
+        toastClose.className = 'btn-close btn-close-white me-2 m-auto';
+        toastClose.setAttribute('data-bs-dismiss', 'toast');
+        toastClose.setAttribute('aria-label', 'Close');
+        
+        toastBody.appendChild(toastMessage);
+        toastBody.appendChild(toastClose);
+        toastElement.appendChild(toastBody);
+        
+        toastContainer.appendChild(toastElement);
+        
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 5000
+        });
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.remove();
+        });
+    }
+    
     // Определяем какие билеты бесплатные
     const freeTicketIds = [];
     document.querySelectorAll('.ticket-card').forEach(card => {
@@ -131,6 +172,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const openBuyBtn = document.getElementById('openBuyModal');
     if (openBuyBtn && !openBuyBtn.disabled) {
         openBuyBtn.addEventListener('click', function(e) {
+            // Партнёрам недоступна покупка билетов
+            if (window.IS_PARTNER) {
+                showToast('Покупка билетов недоступна для партнёров.');
+                e.preventDefault();
+                return false;
+            }
+            
             // Проверяем лимит бесплатных билетов через сервер
             const emailInput = document.getElementById('buyerEmail');
             const email = emailInput ? emailInput.value.trim() : '';
