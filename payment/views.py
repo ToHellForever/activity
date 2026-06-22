@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser
+from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
 from django.db import transaction, models
 from django.db.models import Sum, F
 import json
@@ -346,6 +347,7 @@ def create_invoice(request, package_id):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+@csrf_exempt
 def bulk_buy_tickets(request, event_id):
     """
     API для покупки нескольких типов билетов за один раз.
@@ -477,113 +479,90 @@ def bulk_buy_tickets(request, event_id):
             'phone': phone
         }
 
-        # Создаём заказы для каждого типа билета
+        # === РАЗДЕЛЕНИЕ НА БЕСПЛАТНЫЕ И ПЛАТНЫЕ ===
+        free_ticket_items = []
+        paid_ticket_items = []
+        
+        for item in tickets_data:
+            tid = item['id']
+            qty = item.get('quantity', 0)
+            if qty <= 0:
+                continue
+            ticket = Ticket.objects.filter(id=tid).first()
+            if ticket and float(ticket.price) == 0:
+                free_ticket_items.append(item)
+            else:
+                paid_ticket_items.append(item)
+        
         orders = []
-        with transaction.atomic():
-            logger.info('[bulk_buy] Начало транзакции создания заказов', extra={'event_id': event_id})
-            
-            for ticket_item in tickets_data:
-                ticket_id = ticket_item.get('id')
-                quantity = int(ticket_item.get('quantity', 0))
-                
-                if quantity <= 0:
-                    logger.warning('[bulk_buy] Пропуск билета с quantity=0', extra={'ticket_id': ticket_id})
-                    continue
-                
-                ticket = get_object_or_404(Ticket, id=ticket_id, event=event)
-                logger.info('[bulk_buy] Проверка доступности билета', extra={
-                    'ticket_id': ticket_id,
-                    'ticket_name': ticket.name,
-                    'quantity': quantity
-                })
-                
-                # Проверяем доступность
-                if not ticket.is_available(quantity):
-                    available = ticket.get_available_count()
-                    logger.error('[bulk_buy] Билет недоступен', extra={
-                        'ticket_id': ticket_id,
-                        'requested': quantity,
-                        'available': available
-                    })
-                    return JsonResponse({
-                        'error': f'Билет "{ticket.name}" недоступен в количестве {quantity}. Доступно: {available}'
-                    }, status=400)
-                
-                # Создаём заказ
-                order = Order.objects.create(
-                    ticket=ticket,
+        free_orders = []
+        
+        # === БРОНИРОВАНИЕ БЕСПЛАТНЫХ БИЛЕТОВ (сразу succeeded) ===
+        if free_ticket_items:
+            try:
+                free_orders = bulk_reserve_tickets(
+                    event_id=event_id,
+                    tickets_data=free_ticket_items,
                     participant_data=participant_data,
-                    total_price=ticket.price * quantity,
-                    quantity=quantity,
+                    payment_status='succeeded',
+                    purchase_type='free_registration',
+                    is_paid=True,
+                )
+                orders.extend(free_orders)
+                logger.info('[bulk_buy] Бесплатные билеты забронированы', extra={'count': len(free_orders)})
+            except TicketReservationError as e:
+                logger.error('[bulk_buy] Ошибка бронирования бесплатных: %s', e)
+                return JsonResponse({'error': str(e)}, status=400)
+        
+        # === БРОНИРОВАНИЕ ПЛАТНЫХ БИЛЕТОВ ===
+        paid_orders = []
+        if paid_ticket_items:
+            try:
+                paid_orders = bulk_reserve_tickets(
+                    event_id=event_id,
+                    tickets_data=paid_ticket_items,
+                    participant_data=participant_data,
                     payment_status='pending',
                     purchase_type='paid_ticket',
-                    payment_deadline=timezone.now() + timedelta(minutes=10),
                 )
-
-                orders.append(order)
-                logger.info('[bulk_buy] Заказ создан', extra={
-                    'order_id': order.id,
-                    'ticket_name': ticket.name,
-                    'quantity': quantity,
-                    'total_price': str(order.total_price)
-                })
-            
-            logger.info('[bulk_buy] Все заказы созданы', extra={
-                'orders_count': len(orders),
-                'event_id': event_id
-            })
+                orders.extend(paid_orders)
+                logger.info('[bulk_buy] Платные билеты забронированы', extra={'count': len(paid_orders)})
+            except TicketReservationError as e:
+                # Откатываем бесплатные билеты
+                for fo in free_orders:
+                    fo.delete()
+                logger.error('[bulk_buy] Ошибка бронирования платных: %s', e)
+                return JsonResponse({'error': str(e)}, status=400)
         
-        # Определяем логику оплаты
-        # Сначала обрабатываем бесплатные билеты отдельно
-        free_orders = [o for o in orders if o.total_price == 0]
-        paid_orders = [o for o in orders if o.total_price > 0]
-        
+        # === ОБРАБОТКА БЕСПЛАТНЫХ БИЛЕТОВ ===
         if free_orders:
-            logger.info('[bulk_buy] Обработка бесплатных билетов', extra={'orders_count': len(free_orders)})
-            
-            for order in free_orders:
-                order.payment_status = 'succeeded'
-                order.is_paid = True
-                order.purchase_type = 'free_registration'
-                order.save()
-                logger.info('[bulk_buy] Бесплатный заказ оплачен', extra={'order_id': order.id})
-
-            # Отправка писем для бесплатных билетов
             for order in free_orders:
                 try:
                     send_order_confirmation_email(order, request)
                     logger.info('[bulk_buy] Письмо отправлено', extra={'order_id': order.id, 'email': email})
                 except Exception as e:
                     logger.error('[bulk_buy] Ошибка отправки письма', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
-
-            logger.info('[bulk_buy] Бесплатные билеты успешно оформлены', extra={
-                'orders_count': len(free_orders)
-            })
             
-            # Считаем общее количество бесплатных билетов пользователя
             total_free = Order.objects.filter(
                 participant_data__email=email,
                 ticket__price=0,
                 payment_status='succeeded'
             ).aggregate(total=Sum('quantity'))['total'] or 0
-            
-        # Убираем бесплатные заказы из списка для платной обработки
-        orders = paid_orders
         
-        if not orders:
+        # === ПЛАТНЫЕ БИЛЕТЫ — СОЗДАНИЕ ПЛАТЕЖА ===
+        if not paid_orders:
             # Все билеты бесплатные
             return JsonResponse({
                 'success': True,
                 'message': 'Билеты успешно оформлены! Проверьте вашу почту.',
                 'orders': [o.id for o in free_orders],
-                'free_tickets_count': total_free
+                'free_tickets_count': total_free if free_orders else 0
             })
         
         # Платные билеты - создаём платёж
-        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'orders_count': len(orders)})
+        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'orders_count': len(paid_orders)})
         
-        # Объединяем все заказы в один платёж
-        combined_total = sum(o.total_price for o in orders)
+        combined_total = sum(o.total_price for o in paid_orders)
         
         payment = Payment.create(
             {
@@ -591,13 +570,13 @@ def bulk_buy_tickets(request, event_id):
                 "confirmation": {
                     "type": "redirect",
                     "return_url": request.build_absolute_uri(
-                        f"/payment/success/{orders[0].id}/"
+                        f"/payment/success/{paid_orders[0].id}/"
                     ),
                 },
                 "capture": True,
                 "description": f"Оплата заказа для мероприятия {event.title}",
                 "metadata": {
-                    "order_ids": json.dumps([o.id for o in orders]),
+                    "order_ids": json.dumps([o.id for o in paid_orders]),
                     "event_id": event_id,
                     "free_order_ids": json.dumps([o.id for o in free_orders]) if free_orders else None
                 },
@@ -606,8 +585,7 @@ def bulk_buy_tickets(request, event_id):
         )
 
         # Сохраняем ID платежей для каждого заказа
-        for order in orders:
-            order.payment_status = 'pending'
+        for order in paid_orders:
             order.yookassa_payment_id = payment.id
             order.save()
             logger.info('[bulk_buy] Сохранён ID платежа для заказа', extra={
@@ -617,14 +595,14 @@ def bulk_buy_tickets(request, event_id):
         
         logger.info('[bulk_buy] Платёж создан успешно', extra={
             'payment_id': payment.id,
-            'orders_count': len(orders)
+            'orders_count': len(paid_orders)
         })
         
         return JsonResponse({
             'success': True,
             'payment_url': payment.confirmation.confirmation_url,
             'order_ids': [o.id for o in orders],
-            'order_id': orders[0].id if orders else None,
+            'order_id': paid_orders[0].id if paid_orders else (free_orders[0].id if free_orders else None),
             'free_tickets_count': total_free if free_orders else 0
         })
         
@@ -644,6 +622,7 @@ def bulk_buy_tickets(request, event_id):
 def create_payment(request, ticket_id):
     """
     Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
+    Использует атомарное бронирование с двойной защитой от гонки (Redis + SELECT FOR UPDATE).
     """
     import traceback
 
@@ -651,8 +630,6 @@ def create_payment(request, ticket_id):
         return JsonResponse({"error": "Метод не поддерживается"}, status=405)
 
     try:
-        print("POST data:", request.POST)
-        print("Ticket ID:", ticket_id)
         ticket = get_object_or_404(Ticket, id=ticket_id)
 
         # Данные участника из формы
@@ -715,42 +692,21 @@ def create_payment(request, ticket_id):
             )
 
         quantity = int(request.POST.get("quantity", 1))
-        if not ticket.is_available() or ticket.get_available_count() < quantity:
+        
+        # Проверка лимита бесплатных билетов за один заказ
+        if ticket.price == 0 and quantity > 2:
             from django.shortcuts import render
             return render(
                 request,
                 "buy_ticket.html",
                 {
                     "ticket": ticket,
-                    "error_message": f"Запрошенное количество билетов {ticket.name} недоступно"
+                    "error_message": "За один заказ можно получить не более 2 бесплатных билетов."
                 },
             )
 
-        # Проверка максимального количества билетов за один заказ для бесплатных билетов
+        # Проверка лимита бесплатных билетов на пользователя
         if ticket.price == 0:
-            max_tickets_per_order = 2  # Максимальное количество бесплатных билетов за один заказ
-            if quantity > max_tickets_per_order:
-                from django.shortcuts import render
-                return render(
-                    request,
-                    "buy_ticket.html",
-                    {
-                        "ticket": ticket,
-                        "error_message": f"За один заказ можно получить не более {max_tickets_per_order} бесплатных билетов."
-                    },
-                )
-
-        # Проверка доступности билетов
-        if not ticket.is_available() or ticket.get_available_count() < quantity:
-            return JsonResponse(
-                {"error": f"Запрошенное количество билетов {ticket.name} недоступно"},
-                status=400,
-            )
-
-        # Проверка на бесплатные билеты
-        if ticket.price == 0:
-            # Проверка количества бесплатных билетов на одно устройство
-            device_id = request.session.session_key
             free_tickets_count = Order.objects.filter(
                 participant_data__email=participant_data["email"],
                 ticket__price=0,
@@ -768,71 +724,91 @@ def create_payment(request, ticket_id):
                     },
                 )
 
-            # Создание заказа для бесплатного билета
-            order = Order.objects.create(
-                ticket=ticket,
-                participant_data=participant_data,
-                total_price=0,
-                quantity=quantity,
-                payment_status="succeeded",
-                is_paid=True,
-                purchase_type="free_registration",
-            )
-
-            # Отправка билетов на почту
-            send_order_confirmation_email(order, request)
-
-            return redirect(f"/payment/success/{order.id}/")
-
         total_price = ticket.price * quantity
 
         # Проверка, выбран ли чекбокс "Забронировать без оплаты"
         reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
 
-        # Создание заказа
-        order = Order.objects.create(
-            ticket=ticket,
-            participant_data=participant_data,
-            total_price=total_price,
-            quantity=quantity,
-            payment_status="reserved" if reserve_without_payment else "pending",
-            payment_deadline=timezone.now() + timedelta(
-                hours=24 if reserve_without_payment else 10
-            ),
+        # Определяем статус платежа
+        if ticket.price == 0:
+            payment_status = "succeeded"
+            purchase_type = "free_registration"
+            is_paid = True
+            payment_deadline = None
+        elif reserve_without_payment:
+            payment_status = "reserved"
+            purchase_type = "paid_ticket"
+            is_paid = False
+            payment_deadline = timezone.now() + timedelta(hours=24)
+        else:
+            payment_status = "pending"
+            purchase_type = "paid_ticket"
+            is_paid = False
+            payment_deadline = timezone.now() + timedelta(hours=10)
+
+        # === АТОМАРНОЕ БРОНИРОВАНИЕ С ЗАЩИТОЙ ОТ ГОНКИ ===
+        try:
+            order = reserve_tickets(
+                ticket_id=ticket_id,
+                quantity=quantity,
+                participant_data=participant_data,
+                total_price=total_price,
+                payment_status=payment_status,
+                purchase_type=purchase_type,
+                is_paid=is_paid,
+                payment_deadline=payment_deadline,
+            )
+        except TicketReservationError as e:
+            logger.warning("[create_payment] Ошибка бронирования: %s", e)
+            if ticket.price == 0:
+                from django.shortcuts import render
+                return render(
+                    request,
+                    "buy_ticket.html",
+                    {
+                        "ticket": ticket,
+                        "error_message": str(e),
+                    },
+                )
+            return JsonResponse({"error": str(e)}, status=400)
+
+        # Отправка писем для бесплатных билетов
+        if ticket.price == 0:
+            send_order_confirmation_email(order, request)
+            return redirect(f"/payment/success/{order.id}/")
+
+        # Создание платежа в ЮКассе для платных билетов
+        payment = Payment.create(
+            {
+                "amount": {"value": str(total_price), "currency": "RUB"},
+                "confirmation": {
+                    "type": "redirect",
+                    "return_url": request.build_absolute_uri(
+                        f"/payment/success/{order.id}/"
+                    ),
+                },
+                "capture": True,
+                "description": f"Оплата заказа #{order.id} для мероприятия {ticket.event.title}",
+                "metadata": {"order_id": order.id},
+            },
+            uuid.uuid4(),
         )
 
+        # Сохранение идентификатора платежа в ЮКассе для заказа
+        order.yookassa_payment_id = payment.id
+        order.save()
+
+        # Отправка письма для забронированных билетов
         if reserve_without_payment:
-            # Отправка письма с кнопкой для оплаты
             send_reservation_email(order, request)
             return redirect(f"/payment/success/{order.id}/")
-        else:
-            # Создание платежа в ЮКассе
-            payment = Payment.create(
-                {
-                    "amount": {"value": str(total_price), "currency": "RUB"},
-                    "confirmation": {
-                        "type": "redirect",
-                        "return_url": request.build_absolute_uri(
-                            f"/payment/success/{order.id}/"
-                        ),
-                    },
-                    "capture": True,
-                    "description": f"Оплата заказа #{order.id} для мероприятия {ticket.event.title}",
-                    "metadata": {"order_id": order.id},
-                },
-                uuid.uuid4(),
-            )
 
-            # Сохранение идентификатора платежа в ЮКассе для заказа
-            order.yookassa_payment_id = payment.id
-            order.save()
-
-            return JsonResponse(
-                {
-                    "payment_url": payment.confirmation.confirmation_url,
-                    "order_id": order.id,
-                }
-            )
+        return JsonResponse(
+            {
+                "payment_url": payment.confirmation.confirmation_url,
+                "order_id": order.id,
+            }
+        )
 
     except Exception as e:
         traceback.print_exc()
