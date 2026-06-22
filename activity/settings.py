@@ -236,7 +236,15 @@ CELERY_BEAT_SCHEDULE = {
     },
     "check-reserved-tickets-every-10-minutes": {
         "task": "core.tasks.check_reserved_tickets",
-        "schedule": 600.0,
+        "schedule": 1000.0,
+    },
+    "send-scheduled-reports-every-12-hours": {
+        "task": "partner_app.tasks.send_scheduled_reports",
+        "schedule": 43200.0,
+    },
+    "check-scheduled-package-changes-hourly": {
+        "task": "core.tasks.check_and_apply_scheduled_package_changes",
+        "schedule": 3600.0,
     },
 }
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
