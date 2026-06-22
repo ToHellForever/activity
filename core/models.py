@@ -474,11 +474,17 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         default=10.00,  # Ставим дефолтное значение
         verbose_name="Комиссия (%)",
     )
-    has_sold_tickets = models.BooleanField(
-        default=False,
-        verbose_name="Проданы билеты",
-        help_text="Флаг, указывающий, что на мероприятие проданы билеты",
-    )
+    @property
+    def has_sold_tickets(self):
+        """Проверяет, были ли когда-либо проданы билеты на мероприятии (включая возвращённые)."""
+        return self.tickets.filter(
+            orders__payment_status__in=["succeeded", "pending", "reserved", "refunded"]
+        ).exists()
+
+    @has_sold_tickets.setter
+    def has_sold_tickets(self, value):
+        """Сеттер для совместимости с существующим кодом."""
+        pass  # Игнорируем, так как это вычисляемое свойство
     package = models.ForeignKey(
         EventPackage,
         on_delete=models.SET_NULL,
