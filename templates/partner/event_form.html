@@ -384,15 +384,15 @@
         });
 
         // Инициализация карты для выбора местоположения
-        const placeAdditionalInfoInput = document.getElementById('place-additional-info');
+        const placeAdditionalInfoInput = document.getElementById('id_additional_adress');
         const placeDataInput = document.getElementById('id_place_data');
+        const addressDisplayInput = document.getElementById('id_place_address');
 
         // Загрузка API Яндекс Карт
         loadYandexMapsAPI();
 
         function loadYandexMapsAPI() {
-            // Проверяем, не загружен ли API уже
-            if (window.ymaps) {
+            if (window.ymaps && window.ymaps.ready) {
                 initMapWithData();
                 return;
             }
@@ -400,7 +400,6 @@
             const script = document.createElement('script');
             script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
             script.onload = function() {
-                // Ждём полной загрузки API
                 ymaps.ready(function() {
                     initMapWithData();
                 });
@@ -414,13 +413,11 @@
         }
 
         function initMapWithData() {
-            // Инициализируем карту
             initMap();
-            initSearchControl();
 
             // Если есть сохраненные данные, загружаем их
             {% if form.instance.pk and form.instance.place_data %}
-                const savedData = {{ form.instance.place_data|safe }};
+                var savedData = {{ form.instance.place_data|safe }};
                 if (savedData && savedData.coordinates) {
                     updateMapFromData(savedData);
                     if (savedData.additional_info) {
@@ -430,95 +427,79 @@
             {% endif %}
         }
 
-        // Инициализация карты
         function initMap() {
-            // Убираем индикатор загрузки
-            const mapContainer = document.getElementById('map');
+            var mapContainer = document.getElementById('map');
             mapContainer.classList.remove('map-loading');
             mapContainer.innerHTML = '';
 
             window.eventMap = new ymaps.Map("map", {
-                center: [55.030204, 82.920430], // Центр по умолчанию - Новосибирск
+                center: [55.030204, 82.920430],
                 zoom: 10,
                 controls: ['zoomControl']
-            });
-
-            // Добавляем обработчик клика на карту
-            window.eventMap.events.add('click', function (e) {
-                const coords = e.get('coords');
-                getAddress(coords).then(function(address) {
-                    updatePlaceData(coords, address);
-                });
-            });
-        }
-
-        // Инициализация поиска по карте
-        function initSearchControl() {
-            const searchControl = new ymaps.control.SearchControl({
-                options: {
-                    provider: 'yandex#search',
-                    noPlacemark: true
-                }
-            });
-
-            searchControl.events.add('resultselect', function (e) {
-                const index = e.get('index');
-                searchControl.getResult(index).then(function(res) {
-                    const coords = res.geometry.getCoordinates();
-                    getAddress(coords).then(function(address) {
-                        updatePlaceData(coords, address);
-                        window.eventMap.setCenter(coords, 15);
-                    });
-                });
-            });
-
-            window.eventMap.controls.add(searchControl);
-        }
-
-        // Получение адреса по координатам
-        function getAddress(coords) {
-            return ymaps.geocode(coords, { kind: 'house', results: 1 }).then(function(res) {
-                const firstGeoObject = res.geoObjects.get(0);
-                return firstGeoObject ? firstGeoObject.getAddressLine() : coords.join(', ');
-            });
-        }
-
-        // Обновление данных о месте
-        function updatePlaceData(coords, address) {
-            const additionalInfo = placeAdditionalInfoInput.value;
-            const placeData = {
-                coordinates: coords,
-                address: address,
-                additional_info: additionalInfo
-            };
-
-            placeDataInput.value = JSON.stringify(placeData);
-            document.getElementById('id_place_address').value = address;
-
-            // Очищаем карту и ставим новую метку
-            window.eventMap.geoObjects.removeAll();
-            window.eventMap.geoObjects.add(new ymaps.Placemark(coords, {
-                balloonContent: address + (additionalInfo ? '<br>Дополнительно: ' + additionalInfo : '')
             }, {
-                preset: 'islands#icon',
-                iconColor: '#3b5998'
-            }));
+                suppressMapOpenBlock: true
+            });
+
+            // Ставим метку при клике на карту
+            window.eventMap.events.add('click', function (e) {
+                var coords = e.get('coords');
+                placePlacemark(coords);
+            });
+        }
+
+        // Ставим метку на карту по координатам (всегда только одна метка)
+        function placePlacemark(coords) {
+            var additionalInfo = placeAdditionalInfoInput.value;
+            var address = '';
+
+            // Удаляем все метки с карты перед добавлением новой
+            window.eventMap.geoObjects.removeAll();
+
+            var placemark = new ymaps.Placemark(coords, {
+                hintContent: 'Выбранное место',
+                balloonContent: 'Выбранное место'
+            }, {
+                preset: 'islands#blueStretchyIcon'
+            });
+
+            window.eventMap.geoObjects.add(placemark);
+            window.eventMap.setCenter(coords, 15);
+
+            // Получаем адрес асинхронно
+            ymaps.geocode(coords, { kind: 'house', results: 1 }).then(function(res) {
+                var firstGeoObject = res.geoObjects.get(0);
+                address = firstGeoObject ? firstGeoObject.getAddressLine() : coords.join(', ');
+
+                addressDisplayInput.value = address;
+                placemark.properties.set({
+                    balloonContent: address + (additionalInfo ? '<br>Дополнительно: ' + additionalInfo : '')
+                });
+
+                var placeData = {
+                    coordinates: coords,
+                    address: address,
+                    additional_info: additionalInfo
+                };
+                placeDataInput.value = JSON.stringify(placeData);
+            });
         }
 
         // Обновление карты из сохраненных данных
         function updateMapFromData(data) {
             if (data.coordinates && data.coordinates.length === 2) {
-                const coords = data.coordinates;
+                var coords = data.coordinates;
                 placeAdditionalInfoInput.value = data.additional_info || '';
-                document.getElementById('id_place_address').value = data.address;
+                addressDisplayInput.value = data.address || '';
 
                 window.eventMap.setCenter(coords, 15);
-                window.eventMap.geoObjects.add(new ymaps.Placemark(coords, {
+
+                var placemark = new ymaps.Placemark(coords, {
                     balloonContent: data.address + (data.additional_info ? '<br>Дополнительно: ' + data.additional_info : '')
                 }, {
-                    preset: 'islands#icon',
-                    iconColor: '#3b5998'
-                }));
+                    preset: 'islands#blueStretchyIcon'
+                });
+
+                window.eventMap.geoObjects.add(placemark);
             }
         }
 
@@ -529,7 +510,7 @@
         });
 
         // Инициализация обработчиков удаления строк билетов
-        document.querySelectorAll('.remove-ticket-row').forEach(button => {
+        document.querySelectorAll('.remove-ticket-row').forEach(function(button) {
             button.addEventListener('click', function() {
                 this.closest('tr').remove();
                 updateTicketTypesHiddenField();
@@ -537,9 +518,9 @@
         });
 
         // Инициализация валидации полей цены и количества
-        document.querySelectorAll('#ticketTable tbody').forEach(tbody => {
+        document.querySelectorAll('#ticketTable tbody').forEach(function(tbody) {
             tbody.addEventListener('input', function(e) {
-                const target = e.target;
+                var target = e.target;
                 if (target.matches('input[name="ticket_price[]"], input[name="ticket_quantity[]"]')) {
                     validateIntegerInput(target);
                     updateTicketTypesHiddenField();

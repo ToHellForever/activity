@@ -179,60 +179,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // Проверяем лимит бесплатных билетов через сервер
-            const emailInput = document.getElementById('buyerEmail');
-            const email = emailInput ? emailInput.value.trim() : '';
-            
-            if (!email) {
-                alert('Пожалуйста, сначала укажите email для покупки.');
-                emailInput.focus();
-                e.preventDefault();
-                return false;
-            }
-            
-            addLog('Проверка лимита бесплатных билетов на сервере...', 'info');
-            
-            fetch(window.BULK_BUY_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    check_free_limit: true,
-                    email: email
-                })
-            })
-            .then(function(response) {
-                return response.json().then(function(data) {
-                    return { response: response, data: data };
-                });
-            })
-            .then(function(result) {
-                var response = result.response;
-                var data = result.data;
-                
-                if (!response.ok) {
-                    // 400 от проверки лимита — лимит исчерпан
-                    e.preventDefault();
-                    alert(data.error || 'Превышен лимит бесплатных билетов.');
-                    return;
-                }
-                
-                // Лимит в порядке — открываем модалку
-                addLog('Модальное окно открыто', 'info');
-                updateFreeTicketLimits();
-                updateCartDisplay();
-                buyModal.show();
-            })
-            .catch(function(error) {
-                addLog('Ошибка проверки лимита: ' + error.message, 'error');
-                // При ошибке сети всё равно открываем — сервер проверит повторно при покупке
-                addLog('Модальное окно открыто', 'info');
-                updateFreeTicketLimits();
-                updateCartDisplay();
-                buyModal.show();
-            });
+            addLog('Модальное окно открыто', 'info');
+            updateFreeTicketLimits();
+            updateCartDisplay();
+            buyModal.show();
         });
     } else if (openBuyBtn && openBuyBtn.disabled) {
         addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
