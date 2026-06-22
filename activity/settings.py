@@ -253,3 +253,23 @@ YOOKASSA_WEBHOOK_KEY = os.getenv("YOOKASSA_WEBHOOK_KEY")
 
 USE_L10N = True
 LANGUAGE_CODE = 'ru-ru'
+
+# === ВАЛИДАЦИЯ ОБЯЗАТЕЛЬНЫХ ПЕРЕМЕННЫХ ===
+from django.core.exceptions import ImproperlyConfigured
+
+REQUIRED_ENV_VARS = {
+    "YOOKASSA_SHOP_ID": YOOKASSA_SHOP_ID,
+    "YOOKASSA_SECRET_KEY": YOOKASSA_SECRET_KEY,
+    "YOOKASSA_WEBHOOK_KEY": YOOKASSA_WEBHOOK_KEY,
+    "EMAIL_HOST": EMAIL_HOST,
+    "EMAIL_HOST_USER": EMAIL_HOST_USER,
+    "EMAIL_HOST_PASSWORD": EMAIL_HOST_PASSWORD,
+    "DEFAULT_FROM_EMAIL": DEFAULT_FROM_EMAIL,
+}
+
+for var, value in REQUIRED_ENV_VARS.items():
+    if not value:
+        raise ImproperlyConfigured(
+            f"Отсутствует обязательная переменная окружения '{var}'. "
+            f"Скопируйте .env.example в .env и заполните данные."
+        )

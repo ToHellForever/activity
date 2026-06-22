@@ -12,6 +12,8 @@ from django.db import transaction, models
 from django.db.models import Sum, F
 import json
 import uuid
+import hmac
+import hashlib
 from yookassa import Configuration, Payment
 # timedelta
 from datetime import timedelta
@@ -705,27 +707,6 @@ def create_payment(request, ticket_id):
                 },
             )
 
-        # Проверка лимита бесплатных билетов на пользователя
-        if ticket.price == 0:
-            free_tickets_count = Order.objects.filter(
-                participant_data__email=participant_data["email"],
-                ticket__price=0,
-                payment_status="succeeded"
-            ).count()
-
-            if free_tickets_count >= 2:
-                from django.shortcuts import render
-                return render(
-                    request,
-                    "buy_ticket.html",
-                    {
-                        "ticket": ticket,
-                        "error_message": "На одно устройство можно получить не более 2 бесплатных билетов."
-                    },
-                )
-
-        total_price = ticket.price * quantity
-
         # Проверка, выбран ли чекбокс "Забронировать без оплаты"
         reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
 
@@ -746,18 +727,40 @@ def create_payment(request, ticket_id):
             is_paid = False
             payment_deadline = timezone.now() + timedelta(hours=10)
 
+        total_price = ticket.price * quantity
+
         # === АТОМАРНОЕ БРОНИРОВАНИЕ С ЗАЩИТОЙ ОТ ГОНКИ ===
         try:
-            order = reserve_tickets(
-                ticket_id=ticket_id,
-                quantity=quantity,
-                participant_data=participant_data,
-                total_price=total_price,
-                payment_status=payment_status,
-                purchase_type=purchase_type,
-                is_paid=is_paid,
-                payment_deadline=payment_deadline,
-            )
+            with transaction.atomic():
+                # 10. Атомарная проверка лимита бесплатных билетов
+                if ticket.price == 0:
+                    free_tickets_count = Order.objects.filter(
+                        participant_data__email=participant_data["email"],
+                        ticket__price=0,
+                        payment_status="succeeded"
+                    ).count()
+
+                    if free_tickets_count >= 2:
+                        from django.shortcuts import render
+                        return render(
+                            request,
+                            "buy_ticket.html",
+                            {
+                                "ticket": ticket,
+                                "error_message": "На одно устройство можно получить не более 2 бесплатных билетов."
+                            },
+                        )
+
+                order = reserve_tickets(
+                    ticket_id=ticket_id,
+                    quantity=quantity,
+                    participant_data=participant_data,
+                    total_price=total_price,
+                    payment_status=payment_status,
+                    purchase_type=purchase_type,
+                    is_paid=is_paid,
+                    payment_deadline=payment_deadline,
+                )
         except TicketReservationError as e:
             logger.warning("[create_payment] Ошибка бронирования: %s", e)
             if ticket.price == 0:
@@ -818,12 +821,42 @@ def create_payment(request, ticket_id):
 @csrf_exempt
 def yookassa_webhook(request):
     """Обработка уведомлений от ЮКассы (вебхуки)."""
+    # 12. Обработка ошибок парсинга JSON
     try:
-        # Получение и проверка данных из вебхука
         event_json = json.loads(request.body)
-        if event_json["event"] == "payment.succeeded":
-            payment = event_json["object"]
-            metadata = payment.get("metadata", {})
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error('[webhook] Ошибка парсинга JSON', exc_info=True)
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # 9. Проверка подписи вебхука ЮКассы
+    signature = request.META.get('HTTP_IDEMPOTENCE_SECURITY_SIGNATURE', '')
+    expected_signature = hmac.new(
+        settings.YOOKASSA_SECRET_KEY.encode('utf-8'),
+        request.body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    if not hmac.compare_digest(signature, expected_signature):
+        logger.warning('[webhook] Неверная подпись вебхука')
+        return JsonResponse({"error": "Invalid signature"}, status=403)
+
+    try:
+        event_type = event_json.get("event")
+        payment_data = event_json.get("object", {})
+        payment_id = payment_data.get("id")
+
+        # 8. Защита от повторной обработки (дубликаты)
+        if event_type == "payment.succeeded":
+            already_processed = Order.objects.filter(
+                yookassa_payment_id=payment_id,
+                payment_status="succeeded"
+            ).exists()
+            if already_processed:
+                logger.info('[webhook] Платёж уже обработан, пропускаем', extra={'payment_id': payment_id})
+                return HttpResponse(status=200)
+
+        if event_type == "payment.succeeded":
+            metadata = payment_data.get("metadata", {})
 
             # Проверяем, является ли платеж за пакет
             if "package_id" in metadata and "user_id" in metadata:
@@ -869,15 +902,15 @@ def yookassa_webhook(request):
 
             else:
                 # Обработка платежа за билет
-                logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment["id"]})
+                logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment_id})
                 orders = []
                 try:
-                    order = Order.objects.get(yookassa_payment_id=payment["id"])
+                    order = Order.objects.get(yookassa_payment_id=payment_id)
                     orders = [order]
                     logger.info('[webhook] Найден одиночный заказ', extra={'order_id': order.id})
                 except Order.DoesNotExist:
-                    logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment["id"]})
-                    metadata = payment.get("metadata", {})
+                    logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment_id})
+                    metadata = payment_data.get("metadata", {})
                     order_ids_raw = metadata.get("order_ids", [])
                     order_ids = []
                     if isinstance(order_ids_raw, str):
@@ -890,14 +923,14 @@ def yookassa_webhook(request):
 
                     if order_ids:
                         # Сначала пытаемся найти по payment_id
-                        orders = Order.objects.filter(yookassa_payment_id=payment["id"], id__in=order_ids)
+                        orders = Order.objects.filter(yookassa_payment_id=payment_id, id__in=order_ids)
                         if not orders.exists():
                             logger.warning('[webhook] Не найдено по payment_id, ищу только по ID', extra={'order_ids': order_ids})
                             orders = Order.objects.filter(id__in=order_ids)
                         
                         if orders.exists():
                             for o in orders:
-                                o.yookassa_payment_id = payment["id"]
+                                o.yookassa_payment_id = payment_id
                                 o.save()
                         else:
                             logger.error('[webhook] Заказы не найдены в БД', extra={'order_ids': order_ids})
@@ -911,7 +944,7 @@ def yookassa_webhook(request):
                         try:
                             order.payment_status = "succeeded"
                             order.is_paid = True
-                            order.yookassa_payment_data = payment
+                            order.yookassa_payment_data = payment_data
                             
                             order.save()
                             
@@ -928,18 +961,16 @@ def yookassa_webhook(request):
                 else:
                     logger.error('[webhook] orders не определен после поиска')
 
-        elif event_json["event"] == "payment.canceled":
-            payment = event_json["object"]
-            order_id = payment.get("id")
+        elif event_type == "payment.canceled":
+            order_id = payment_data.get("id")
             if not order_id:
                 raise Http404("Invalid Yookassa payment data")
             order = Order.objects.get(yookassa_payment_id=order_id)
             order.payment_status = "canceled"
             order.save()
 
-        elif event_json["event"] == "refund.succeeded":
-            payment = event_json["object"]
-            order_id = payment.get("payment_id")
+        elif event_type == "refund.succeeded":
+            order_id = payment_data.get("payment_id")
             if not order_id:
                 raise Http404("Invalid Yookassa refund data")
             order = Order.objects.get(yookassa_payment_id=order_id)
@@ -948,9 +979,11 @@ def yookassa_webhook(request):
 
         return HttpResponse(status=200)
 
+    except Http404:
+        raise
     except Exception as e:
-        print(f"Error in yookassa_webhook: {e}")
-        return JsonResponse({"error": str(e)}, status=400)
+        logger.error(f'[webhook] Критическая ошибка: {e}', exc_info=True)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def refund_ticket(request, order_id):

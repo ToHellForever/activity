@@ -755,7 +755,7 @@ class Ticket(models.Model):
             sold = sum(
                 order.quantity
                 for order in self.orders.exclude(
-                    payment_status__in=["refunded", "canceled"]
+                    payment_status__in=["refunded", "canceled", "reserved"]
                 )
             )
             return max(0, self.available_quantity - sold)
