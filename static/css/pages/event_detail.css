@@ -342,89 +342,53 @@ a {
 
 
 
-
-
-
-
-
-
-
-
-
-.paid-ticket {
-    background-color: #007bff;
+/* === Модальное окно покупки билетов === */
+.modal-body-modal {
+    padding: 0px;
+    margin-top: 20px;
 }
-
-.quantity-input .btn-outline-secondary {
-    padding: 0.25rem 0.5rem;
-    font-size: 1.1rem;
-    line-height: 1;
-}
-
-.quantity-input .qty-input-field {
-    width: 60px;
-    font-weight: 600;
-}
-
-.cart-item {
-    transition: background-color 0.2s ease;
-}
-
-.cart-item:hover {
-    background-color: #f8f9fa;
-}
-
-.total-price {
-    color: #28a745;
-}
-
-/* Лог покупки */
-.log-entry {
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Стили для модального окна Bootstrap */
 .modal-content {
-    border-radius: 12px;
-    border: none;
+    border-radius: 0px;
+    display: block;
+    padding: 25px;
+}
+
+.modal-title {
+    font-family: "Verdana";
+    color: #000;
+    font-weight: 400;
+    font-size: 1.5rem;
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    padding: 0;
 }
 
-.modal-header .btn-close {
-    filter: brightness(0) invert(1);
+.email-input {
+    margin-bottom: 10px;
+}
+.email-ingo {
+    border-bottom: none;
 }
 
-.event-summary {
-    border-left: 4px solid #667eea;
+.buy-button-modal {
+    text-align: center;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 1rem;
+    color: #fff;
+    background: #FF8348;
+    border-radius: 25.28px;
+    padding: 12px 80px 12px 80px;
+    border: none;
+    /* по центру */
+    margin: 0 auto;
 }
 
-.available-count {
-    font-size: 0.75rem;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .quantity-input .qty-input-field {
-        width: 50px;
-    }
-    
-    .modal-dialog {
-        margin: 0.5rem;
-    }
+.email-input {
+    border-radius: 25px;
+    border: 1px solid #777A8D;
+    padding: 10px;
+    width: 100%;
 }

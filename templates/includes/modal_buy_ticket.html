@@ -1,28 +1,20 @@
 {% load format_filters %}
 <!-- Модальное окно покупки билетов -->
-<div class="modal fade" id="buyTicketModal" tabindex="-1" aria-labelledby="buyTicketModalLabel" aria-hidden="true">
+<div class="modal fade show d-block" id="buyTicketModal" tabindex="-1" aria-labelledby="buyTicketModalLabel" aria-hidden="false" style="display: block !important;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="buyTicketModalLabel">Покупка билетов</h5>
+                <h5 class="modal-title" id="buyTicketModalLabel">Выберите билет</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
-            <div class="modal-body">
-                <!-- Информация о мероприятии -->
-                <div class="event-summary mb-4 p-3 bg-light rounded">
-                    <h6 class="fw-bold">{{ event.title }}</h6>
-                    <p class="mb-0 text-muted">{{ event.date_time|date:"d F Y, H:i" }}</p>
-                </div>
-
+            <div class="modal-body-modal">
                 <!-- Выбор билетов -->
                 <div id="ticketSelection">
-                    <h6 class="fw-bold mb-3">Выберите билеты:</h6>
                     {% for ticket in tickets %}
-                    <div class="card mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
+                    <div class=" mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-md-5">
-                                    <span class="ticket-dot {% if ticket.price == 0 %}free-ticket{% else %}paid-ticket{% endif %}"></span>
                                     <strong>{{ ticket.name }}</strong>
                                     {% if ticket.price == 0 %}
                                         <span class="badge bg-success ms-2">Бесплатно</span>
@@ -33,13 +25,12 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="input-group quantity-input">
-                                        <button class="btn btn-outline-secondary qty-decrease" type="button" data-ticket-id="{{ ticket.id }}">−</button>
-                                        <input type="number" class="form-control text-center qty-input-field" 
+                                        <button class="minus" type="button" data-ticket-id="{{ ticket.id }}">−</button>
+                                        <input type="number" class="count-tickets" 
                                                value="0" min="0" max="{{ ticket.get_available_count|default:99 }}" 
                                                data-ticket-id="{{ ticket.id }}" id="qty_{{ ticket.id }}">
-                                        <button class="btn btn-outline-secondary qty-increase" type="button" data-ticket-id="{{ ticket.id }}">+</button>
+                                        <button class="plus" type="button" data-ticket-id="{{ ticket.id }}">+</button>
                                     </div>
-                                    <small class="text-muted available-count">Доступно: {{ ticket.get_available_count|default:0 }} шт.</small>
                                 </div>
                             </div>
                         </div>
@@ -47,48 +38,24 @@
                     {% endfor %}
                 </div>
 
-                <!-- Корзина выбранных билетов -->
-                <div id="cartSection" class="mt-4" style="display: none;">
-                    <h6 class="fw-bold mb-3">Ваша корзина:</h6>
-                    <div id="cartItems"></div>
-                    <div class="cart-total mt-3 p-3 bg-light rounded">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong>Итого:</strong>
-                            <span class="total-price fs-4 fw-bold">0 ₽</span>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Данные покупателя -->
-                <div id="buyerInfo" class="mt-4">
-                    <h6 class="fw-bold mb-3">Данные покупателя:</h6>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="buyerName" class="form-label">Имя *</label>
-                            <input type="text" class="form-control" id="buyerName" required 
-                                   value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="buyerEmail" class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="buyerEmail" required
+                <div class="email-info mt-4">
+                            <label for="buyerEmail" class="form-label" value={% if user.is_authenticated %} {{ user.email }}{% endif %}>Ваш билет (ы) будет направлен на</label>
+                            <label for="buyerEmail" class="form-label" value={% if not user.is_authenticated %} {{ user.email }}{% endif %}>Куда направить билет (ы)?</label>
+                            <input type="email" class="email-input" id="buyerEmail" required
                                    value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="buyerPhone" class="form-label">Телефон *</label>
-                            <input type="tel" class="form-control" id="buyerPhone" required
-                                   value="{% if user.is_authenticated %}{{ user.phone_number|default:'' }}{% endif %}">
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="confirmPurchaseBtn" disabled>
-                    Оформить заказ
+                            <div class="modal-footer">
+                <button type="button" class="buy-button-modal" id="confirmPurchaseBtn" disabled>
+                    ОПЛАТИТЬ
                 </button>
+            </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Модальное окно статуса покупки -->
@@ -107,3 +74,27 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Пример данных (обычно они приходят с сервера)
+    const isLoggedIn = true; // true, если пользователь залогинен
+    const userRegisteredEmail = "client@example.com"; // Email зарегистрированного пользователя
+
+    const emailInput = document.getElementById('buyerEmail');
+    const emailLabel = document.getElementById('emailLabel');
+
+    if (isLoggedIn) {
+        // Если пользователь зарегистрирован
+        emailLabel.textContent = "Ваш билет (ы) будет направлен на";
+        emailInput.value = userRegisteredEmail;
+        emailInput.disabled = true; // Запрещаем редактирование
+        emailInput.style.backgroundColor = "#e9ecef"; // Визуально выделяем, что поле заблокировано
+    } else {
+        // Если пользователь не зарегистрирован
+        emailLabel.textContent = "Куда направить билет (ы)?";
+        emailInput.value = ""; // Очищаем поле
+        emailInput.disabled = false; // Разрешаем редактирование
+        emailInput.style.backgroundColor = ""; // Возвращаем обычный стиль
+        emailInput.setAttribute('required', 'required'); // Добавляем требование заполнения
+    }
+</script>

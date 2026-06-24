@@ -169,24 +169,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusModal = new bootstrap.Modal(statusModalEl);
     
     // === ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-    const openBuyBtn = document.getElementById('openBuyModal');
-    if (openBuyBtn && !openBuyBtn.disabled) {
-        openBuyBtn.addEventListener('click', function(e) {
-            // Партнёрам недоступна покупка билетов
-            if (window.IS_PARTNER) {
-                showToast('Покупка билетов недоступна для партнёров.');
-                e.preventDefault();
-                return false;
-            }
-            
-            addLog('Модальное окно открыто', 'info');
-            updateFreeTicketLimits();
-            updateCartDisplay();
-            buyModal.show();
-        });
-    } else if (openBuyBtn && openBuyBtn.disabled) {
-        addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
+    addLog('Модальное окно отображается всегда', 'info');
+    updateFreeTicketLimits();
+    updateCartDisplay();
+    
+    // Убираем скрытие модалки Bootstrap
+    if (modalEl) {
+        modalEl.classList.remove('d-none');
+        modalEl.style.display = 'block';
     }
+    // const openBuyBtn = document.getElementById('openBuyModal');
+    // if (openBuyBtn && !openBuyBtn.disabled) {
+    //     openBuyBtn.addEventListener('click', function(e) {
+    //         // Партнёрам недоступна покупка билетов
+    //         if (window.IS_PARTNER) {
+    //             showToast('Покупка билетов недоступна для партнёров.');
+    //             e.preventDefault();
+    //             return false;
+    //         }
+            
+    //         addLog('Модальное окно открыто', 'info');
+    //         updateFreeTicketLimits();
+    //         updateCartDisplay();
+    //         buyModal.show();
+    //     });
+    // } else if (openBuyBtn && openBuyBtn.disabled) {
+    //     addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
+    // }
     
     // === УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ===
     function updateQuantity(ticketId, delta) {
@@ -269,21 +278,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        if (totalItems > 0) {
-            cartSection.style.display = 'block';
-            cartItems.innerHTML = itemsHtml;
-            document.querySelector('.total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
-            addLog('Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽', 'success');
-        } else {
-            cartSection.style.display = 'none';
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Оформить заказ';
-            addLog('Корзина пуста', 'warning');
+        if (cartSection) {
+            if (totalItems > 0) {
+                cartSection.style.display = 'block';
+                cartItems.innerHTML = itemsHtml;
+                document.querySelector('.total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
+                addLog('Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽', 'success');
+            } else {
+                cartSection.style.display = 'none';
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Оформить заказ';
+                addLog('Корзина пуста', 'warning');
+            }
         }
         
-        // Сохраняем для отправки
         window.selectedTickets = selectedTickets;
         window.cartTotal = totalPrice;
     }
@@ -293,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addLog('Начало процесса покупки', 'info');
         
         // Закрываем модалку выбора
-        buyModal.hide();
+        // buyModal.hide();
         
         // Проверяем корзину
         if (!window.selectedTickets || window.selectedTickets.length === 0) {
