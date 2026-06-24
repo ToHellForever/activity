@@ -77,29 +77,5 @@
                 </div>
             </div>
         </div>
-    </div>
 </div>
-
-<script>
-    // Пример данных (обычно они приходят с сервера)
-    const isLoggedIn = true; // true, если пользователь залогинен
-    const userRegisteredEmail = "client@example.com"; // Email зарегистрированного пользователя
-
-    const emailInput = document.getElementById('buyerEmail');
-    const emailLabel = document.getElementById('emailLabel');
-
-    if (isLoggedIn) {
-        // Если пользователь зарегистрирован
-        emailLabel.textContent = "Ваш билет (ы) будет направлен на";
-        emailInput.value = userRegisteredEmail;
-        emailInput.disabled = true; // Запрещаем редактирование
-        emailInput.style.backgroundColor = "#e9ecef"; // Визуально выделяем, что поле заблокировано
-    } else {
-        // Если пользователь не зарегистрирован
-        emailLabel.textContent = "Куда направить билет (ы)?";
-        emailInput.value = ""; // Очищаем поле
-        emailInput.disabled = false; // Разрешаем редактирование
-        emailInput.style.backgroundColor = ""; // Возвращаем обычный стиль
-        emailInput.setAttribute('required', 'required'); // Добавляем требование заполнения
-    }
-</script>
+</div>
