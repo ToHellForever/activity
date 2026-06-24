@@ -25,11 +25,11 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="quantity-input">
-                                        <button class="minus" type="button" data-ticket-id="{{ ticket.id }}">−</button>
-                                        <input type="number" class="count-tickets" 
+                                        <button class="qty-decrease minus" type="button" data-ticket-id="{{ ticket.id }}">−</button>
+                                        <input type="number" class="qty-input-field count-tickets" 
                                                value="0" min="0" max="{{ ticket.get_available_count|default:99 }}" 
                                                data-ticket-id="{{ ticket.id }}" id="qty_{{ ticket.id }}">
-                                        <button class="plus" type="button" data-ticket-id="{{ ticket.id }}">+</button>
+                                        <button class="qty-increase plus" type="button" data-ticket-id="{{ ticket.id }}">+</button>
                                     </div>
                                 </div>
                             </div>
