@@ -169,33 +169,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusModal = new bootstrap.Modal(statusModalEl);
     
     // === ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-    addLog('Модальное окно отображается всегда', 'info');
-    updateFreeTicketLimits();
-    updateCartDisplay();
     
     // Убираем скрытие модалки Bootstrap
-    if (modalEl) {
-        modalEl.classList.remove('d-none');
-        modalEl.style.display = 'block';
-    }
-    // const openBuyBtn = document.getElementById('openBuyModal');
-    // if (openBuyBtn && !openBuyBtn.disabled) {
-    //     openBuyBtn.addEventListener('click', function(e) {
-    //         // Партнёрам недоступна покупка билетов
-    //         if (window.IS_PARTNER) {
-    //             showToast('Покупка билетов недоступна для партнёров.');
-    //             e.preventDefault();
-    //             return false;
-    //         }
+    const openBuyBtn = document.getElementById('openBuyModal');
+    if (openBuyBtn && !openBuyBtn.disabled) {
+        openBuyBtn.addEventListener('click', function(e) {
+            // Партнёрам недоступна покупка билетов
+            if (window.IS_PARTNER) {
+                showToast('Покупка билетов недоступна для партнёров.');
+                e.preventDefault();
+                return false;
+            }
             
-    //         addLog('Модальное окно открыто', 'info');
-    //         updateFreeTicketLimits();
-    //         updateCartDisplay();
-    //         buyModal.show();
-    //     });
-    // } else if (openBuyBtn && openBuyBtn.disabled) {
-    //     addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
-    // }
+            addLog('Модальное окно открыто', 'info');
+            updateFreeTicketLimits();
+            updateCartDisplay();
+            buyModal.show();
+        });
+    } else if (openBuyBtn && openBuyBtn.disabled) {
+        addLog('Кнопка покупки отключена — нет доступных билетов', 'warning');
+    }
     
     // === УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ===
     function updateQuantity(ticketId, delta) {
@@ -303,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addLog('Начало процесса покупки', 'info');
         
         // Закрываем модалку выбора
-        // buyModal.hide();
+        buyModal.hide();
         
         // Проверяем корзину
         if (!window.selectedTickets || window.selectedTickets.length === 0) {
