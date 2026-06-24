@@ -292,8 +292,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // === ПОКУПКА ===
-    document.getElementById('confirmPurchaseBtn').addEventListener('click', function() {
-        addLog('Начало процесса покупки', 'info');
+    const buyBtn = document.getElementById('confirmPurchaseBtn');
+    if (buyBtn) {
+        buyBtn.addEventListener('click', function() {
+            addLog('Начало процесса покупки', 'info');
         
         // Закрываем модалку выбора
         buyModal.hide();
@@ -306,7 +308,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Собираем данные
-        const email = document.getElementById('buyerEmail').value.trim();
+        const emailInput = document.getElementById('buyerEmail');
+        const email = emailInput
+            ? emailInput.value.trim()
+            : document.querySelector('input[name="buyer_email"]')?.value?.trim() || '';
         
         if (!email) {
             addLog('Ошибка: заполните email покупателя', 'error');
@@ -394,13 +399,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; margin-top: 10px;">' +
                 '<strong>Детали ошибки:</strong><br>' + error.message +
                 '</div>';
+            });
         });
-    });
+    }
     
     addLog('Инициализация завершена', 'success');
-    
-    // Доступ к CSRF-токену из глобальной области (для отладки)
-    window.csrfToken = csrfToken;
     
     // === КАРТА ===
     function initMap() {
