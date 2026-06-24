@@ -385,8 +385,58 @@ a {
     border: none;
     margin: 0 auto;
 }
-.count-tickets {
-    margin: 0 auto;
+/* === Счётчик количества === */
+.quantity-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.quantity-input button.minus,
+.quantity-input button.plus {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: #FF8348;
+    color: black;
+    font-size: 1rem;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.quantity-input button.minus:hover,
+.quantity-input button.plus:hover {
+    opacity: 0.85;
+}
+
+.quantity-input input.count-tickets {
+    width: 48px;
+    text-align: center;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 400;
+    font-family: "Verdana", sans-serif;
+    color: #000;
+    padding: 0;
+    margin: 0;
+    /* Убираем стрелки браузера */
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.quantity-input input.count-tickets::-webkit-inner-spin-button,
+.quantity-input input.count-tickets::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .email-input {
