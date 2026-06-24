@@ -1074,14 +1074,19 @@ def partner_event_list(request):
 
     event_data = []
     for event in events:
-        # Суммируем количество проданных билетов по всем типам этого мероприятия
-        sold_tickets = sum(
-            order.quantity
-            for ticket in event.tickets.all()
-            for order in ticket.orders.all()
-        )
-        # Суммируем общее количество доступных билетов
-        total = sum(ticket.available_quantity for ticket in event.tickets.all())
+        sold_tickets = 0
+        total = 0
+        for ticket in event.tickets.all():
+            # Считаем только оплаченные заказы (без refunded/canceled)
+            sold = sum(
+                order.quantity
+                for order in ticket.orders.exclude(
+                    payment_status__in=("canceled", "refunded")
+                )
+            )
+            sold_tickets += sold
+            # Общее = проданные + доступные
+            total += sold + ticket.available_quantity
 
         event_data.append(
             {
