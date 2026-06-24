@@ -3,6 +3,8 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
+from django.core.mail import send_mail, EmailMultiAlternatives
+import logging
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -22,9 +24,8 @@ Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 
 # Логгер для покупки билетов
-import logging
-logger = logging.getLogger('ticket_purchase')
-
+import json
+logger = logging.getLogger(__name__)
 
 def send_order_confirmation_email(order, request=None):
     """
@@ -36,11 +37,9 @@ def send_order_confirmation_email(order, request=None):
         logger.warning('[email] Email участника пуст для заказа %s', order.id)
         return
 
-    from django.core.mail import EmailMultiAlternatives
-    from django.conf import settings
-
     # Генерируем QR-коды "на лету"
-    qr_codes = order.generate_qr_data()
+    base_url = getattr(settings, 'SITE_URL', request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000')
+    qr_codes = order.generate_qr_data(base_url=base_url)
     logger.info('[email] QR-коды сгенерированы для заказа %s, count=%d', order.id, len(qr_codes))
 
     context = {
@@ -48,6 +47,9 @@ def send_order_confirmation_email(order, request=None):
         "ticket": order.ticket,
         "participant_data": order.participant_data,
         "qr_codes": qr_codes,
+        "request": request,
+        "site_name": "Платформа мероприятий",
+        "now": timezone.now(),
     }
 
     email_html = render_to_string("emails/ticket_confirmation.html", context)

@@ -61,83 +61,126 @@
                 <th>Телефон</th>
                 <th>Дата покупки</th>
                 <th>Тип билета</th>
-                <th>Статус </th>
+                <th>Билет</th>
+                <th>Статус</th>
                 <th>Действия</th>
             </tr>
         </thead>
             <tbody>
                 {% for order in orders %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ order.participant_data.first_name }} {{ order.participant_data.last_name }}</td>
-                    <td>{{ order.participant_data.email }}</td>
-                    <td>{{ order.participant_data.phone }}</td>
-                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                    <td>{{ order.ticket.name }}</td>
-                    <td>
-                        {% if order.is_paid %}
-                            <span class="badge bg-success">Оплачен</span>
-                        {% else %}
-                            <span class="badge bg-danger">Не оплачен</span>
+                    {% for order_ticket in order.tickets.all %}
+                    <tr>
+                        {% if forloop.first %}
+                            <!-- Для первого билета в заказе — rowspan -->
+                            <td rowspan="{{ order.tickets.count }}">{{ forloop.parentloop.counter }}</td>
+                            <td rowspan="{{ order.tickets.count }}">{{ order.participant_data.first_name }} {{ order.participant_data.last_name }}</td>
+                            <td rowspan="{{ order.tickets.count }}">{{ order.participant_data.email }}</td>
+                            <td rowspan="{{ order.tickets.count }}">{{ order.participant_data.phone }}</td>
+                            <td rowspan="{{ order.tickets.count }}">{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                            <td rowspan="{{ order.tickets.count }}">{{ order.ticket.name }}</td>
                         {% endif %}
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <form method="post" action="{% url 'partner:mark_attendance' event.id order.id %}" class="me-2">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm {% if order.attended %}btn-outline-success{% else %}btn-outline-warning{% endif %}">
-                                    {% if order.attended %}
-                                        <i class="bi bi-check-circle"></i> Отменить
-                                    {% else %}
-                                        <i class="bi bi-person-check"></i> Отметить
-                                    {% endif %}
+                        
+                        <td>#{{ order_ticket.ticket_number }}</td>
+                        <td>
+                            {% if order.payment_status == 'succeeded' %}
+                                <span class="badge bg-success">Оплачен</span>
+                            {% elif order.payment_status == 'refunded' %}
+                                <span class="badge bg-danger">Возвращён</span>
+                            {% else %}
+                                <span class="badge bg-warning">Ожидание</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <form method="post" action="{% url 'partner:mark_attendance' event.id order.id order_ticket.ticket_number %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="btn btn-sm {% if order_ticket.attended %}btn-success{% else %}btn-outline-warning{% endif %}"
+                                            title="{% if order.payment_status == 'succeeded' %}Оплачен{% elif order.payment_status == 'refunded' %}Возвращён{% else %}Ожидание{% endif %}">
+                                        {% if order_ticket.attended %}
+                                            <i class="bi bi-check-circle-fill"></i> Отменить
+                                        {% else %}
+                                            <i class="bi bi-person-check"></i> Отметить
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#qrModal{{ order.id }}_{{ order_ticket.ticket_number }}">
+                                    <i class="bi bi-qr-code"></i> QR
                                 </button>
-                            </form>
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#qrModal{{ order.id }}">
-                                <i class="bi bi-qr-code"></i> QR
-                            </button>
-                        </div>
-                    </td>
-                    <td class="text-center" style="width: 100px;">
-                        {% for i in ""|center:order.quantity %}
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                                alt="QR-код" class="img-fluid mb-4" style="width: 70px; height: 70px; opacity: 1;">
-                        {% endfor %}
-                    </td>
-                </tr>
-                <!-- Модальное окно для QR-кодов текущего заказа -->
-                <div class="modal fade" id="qrModal{{ order.id }}" tabindex="-1" aria-labelledby="qrModalLabel{{ order.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="qrModalLabel{{ order.id }}">QR-коды для заказа #{{ order.id }}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
-                            <div class="modal-body text-center">
-                                <div class="row">
-                                    {% for i in ""|center:order.quantity %}
-                                        <div class="col-md-4 mb-3">
-                                            <p>Билет #{{ forloop.counter }}</p>
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
-                                                alt="QR-код для билета #{{ forloop.counter }}" class="img-fluid">
-                                        </div>
-                                    {% endfor %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Модальное окно для QR-кода конкретного билета -->
+                    <div class="modal fade" id="qrModal{{ order.id }}_{{ order_ticket.ticket_number }}" tabindex="-1" aria-labelledby="qrModalLabel{{ order.id }}_{{ order_ticket.ticket_number }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="qrModalLabel{{ order.id }}_{{ order_ticket.ticket_number }}">
+                                        QR-код для заказа #{{ order.id }}, Билет #{{ order_ticket.ticket_number }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                                 </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                <div class="modal-body text-center">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-4 mb-3">
+                                            <p class="mb-2">Билет #{{ order_ticket.ticket_number }}</p>
+                                            <div class="position-relative d-inline-block" style="cursor: pointer;">
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                                    alt="QR-код для билета #{{ order_ticket.ticket_number }}" 
+                                                    class="img-fluid qr-hover-target"
+                                                    data-url="{{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                                    data-ticket="{{ order_ticket.ticket_number }}"
+                                                    style="border: 3px solid {% if order.payment_status == 'succeeded' %}#28a745{% elif order.payment_status == 'refunded' %}#dc3545{% else %}#ffc107{% endif %}; padding: 5px;">
+                                                <div class="qr-tooltip" style="display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; white-space: nowrap; z-index: 1000; margin-bottom: 8px;">
+                                                    <div>Order ID: {{ order.id }}</div>
+                                                    <div>Ticket: {{ order_ticket.ticket_number }}</div>
+                                                    <div style="margin-top: 4px; color: #ffd700; word-break: break-all;">{{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
-                </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">Пока нет купленных билетов на это мероприятие.</td>
+                    </tr>
+                    {% endfor %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
 </div>
+
+<!-- JavaScript для tooltip QR -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const qrTargets = document.querySelectorAll('.qr-hover-target');
+    qrTargets.forEach(function(qr) {
+        const tooltip = qr.nextElementSibling;
+        if (tooltip && tooltip.classList.contains('qr-tooltip')) {
+            qr.addEventListener('mouseenter', function() {
+                tooltip.style.display = 'block';
+            });
+            qr.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+            });
+            // Для мобильных устройств — touch
+            qr.addEventListener('touchstart', function() {
+                tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+    });
+});
+</script>
+
 {% endblock %}

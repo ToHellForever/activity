@@ -4,7 +4,7 @@ import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-from .models import Event, CustomUser
+from .models import Event, CustomUser, Order, OrderTicket
 from .tasks import process_video_task
 import os
 
@@ -89,3 +89,40 @@ def process_video_business_card(sender, instance, **kwargs):
         )
     else:
         logger.info(f"SIGNAL: Video business card already processed for CustomUser {instance.id}, skipping")
+
+
+@receiver(post_save, sender=Order)
+def create_order_tickets(sender, instance, created, **kwargs):
+    """Автоматически создаёт OrderTicket для каждого билета в заказе."""
+    if created:
+        quantity = instance.quantity or 1
+        # Создаём билеты
+        tickets_to_create = []
+        for i in range(1, quantity + 1):
+            tickets_to_create.append(
+                OrderTicket(order=instance, ticket_number=i, attended=False)
+            )
+        if tickets_to_create:
+            OrderTicket.objects.bulk_create(tickets_to_create)
+            logger.info(f"SIGNAL: Created {quantity} OrderTicket(s) for Order {instance.id}")
+
+    # Синхронизируем quantity при изменении
+    elif hasattr(create_order_tickets, '_syncing'):
+        return
+
+    current_count = instance.tickets.count()
+    if current_count != instance.quantity:
+        # Помечаем, чтобы избежать рекурсии
+        create_order_tickets._syncing = True
+        try:
+            if current_count < instance.quantity:
+                # Нужно добавить билеты
+                for i in range(current_count + 1, instance.quantity + 1):
+                    OrderTicket.objects.create(order=instance, ticket_number=i)
+                logger.info(f"SIGNAL: Added {instance.quantity - current_count} ticket(s) to Order {instance.id}")
+            elif current_count > instance.quantity:
+                # Удаляем лишние билеты (оставляем первые quantity)
+                instance.tickets.filter(ticket_number__gt=instance.quantity).delete()
+                logger.info(f"SIGNAL: Removed {current_count - instance.quantity} excess ticket(s) from Order {instance.id}")
+        finally:
+            del create_order_tickets._syncing

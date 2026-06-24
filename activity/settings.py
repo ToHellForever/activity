@@ -18,6 +18,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['babies-intimate-legends-single.trycloudflare.com', 'localhost', '127.0.0.1']
 
+# URL сайта для генерации QR-кодов
+SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
+
 # Application definition
 
 INSTALLED_APPS = [

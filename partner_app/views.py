@@ -31,6 +31,7 @@ from core.models import (
     MainTag,
     EventPackage,
     UserPackageSubscription,
+    OrderTicket,
 )
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
 from .models import SalesReport, ReportSchedule
@@ -1252,6 +1253,7 @@ def participant_list(request, event_id):
         Order.objects.filter(ticket__event=event)
         .exclude(payment_status__in=["canceled", "refunded"])
         .select_related("ticket")
+        .prefetch_related("tickets")
     )
 
     # Применяем фильтры
@@ -1503,9 +1505,9 @@ def export_participant_list(orders, event, export_format):
     return HttpResponse("Неверный формат экспорта", status=400)
 
 @login_required
-def mark_attendance(request, event_id, order_id):
+def mark_attendance(request, event_id, order_id, ticket_number=1):
     """
-    Отмечает участника как посетившего мероприятие.
+    Отмечает конкретный билет в заказе как посещённый.
     """
     # Получаем мероприятие или выдаем 404, если его нет или оно чужое
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
@@ -1513,13 +1515,18 @@ def mark_attendance(request, event_id, order_id):
     # Получаем заказ
     order = get_object_or_404(Order, id=order_id, ticket__event=event)
 
+    # Получаем конкретный билет в заказе
+    order_ticket = get_object_or_404(
+        OrderTicket, order=order, ticket_number=ticket_number
+    )
+
     if request.method == "POST":
-        # Инвертируем статус посещения
-        order.attended = not order.attended
-        order.save()
+        # Инвертируем статус посещения конкретного билета
+        order_ticket.attended = not order_ticket.attended
+        order_ticket.save()
         messages.success(
             request,
-            f"Статус посещения для {order.participant_data.get('name', 'участника')} обновлен!",
+            f"Билет #{order_ticket.ticket_number} в заказе #{order.id} обновлён!",
         )
 
     return redirect("partner:participant_list", event_id=event.id)
@@ -1531,9 +1538,16 @@ def check_ticket(request, order_id):
     """
     order = get_object_or_404(Order, id=order_id)
 
+    # Проверяем валидность билета
+    is_valid = (
+        order.payment_status == "succeeded" 
+        and order.is_paid 
+        and not order.attended
+    )
+
     context = {
         "order": order,
-        "is_valid": True,
+        "is_valid": is_valid,
     }
     return render(request, "partner/ticket_check.html", context)
 

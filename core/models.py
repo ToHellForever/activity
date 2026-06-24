@@ -842,7 +842,7 @@ class Order(models.Model):
 
         super().save(*args, **kwargs)
 
-    def generate_qr_data(self):
+    def generate_qr_data(self, base_url=None):
         """
         Генерирует данные QR-кода "на лету" без сохранения в БД.
         Возвращает список словарей с base64-encoded изображениями QR-кодов.
@@ -850,10 +850,19 @@ class Order(models.Model):
         import base64
         import io
         import qrcode
+        from django.conf import settings
+
+        # Определяем базовый URL
+        if not base_url:
+            base_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')
+        
+        # Убираем trailing slash если есть
+        base_url = base_url.rstrip('/')
 
         qr_items = []
         for i in range(self.quantity):
-            qr_text_data = f"Order ID: {self.id}, Ticket: {i + 1}"
+            # QR содержит ссылку на проверку билета
+            qr_text_data = f"{base_url}/partner/check_ticket/{self.id}/"
 
             qr = qrcode.QRCode(
                 version=1,
@@ -902,6 +911,25 @@ class Order(models.Model):
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
+
+
+class OrderTicket(models.Model):
+    """Модель для отдельного билета в заказе."""
+
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="tickets", verbose_name="Заказ"
+    )
+    ticket_number = models.PositiveIntegerField(default=1, verbose_name="Номер билета")
+    attended = models.BooleanField(default=False, verbose_name="Посетил мероприятие")
+
+    def __str__(self):
+        return f"Заказ #{self.order.id} — Билет #{self.ticket_number}"
+
+    class Meta:
+        verbose_name = "Билет заказа"
+        verbose_name_plural = "Билеты заказов"
+        ordering = ["ticket_number"]
+
 
 class PayoutDetails(models.Model):
     """Модель для хранения реквизитов партнёра."""

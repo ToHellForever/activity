@@ -9,33 +9,49 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow">
                 <div class="card-body text-center p-5">
-                    {% if is_valid %}
-                        {% if order.attended %}
-                            <div class="mb-4">
-                                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-                            </div>
-                            <h3 class="card-title mb-3 text-success">Билет действителен</h3>
-                            <p class="card-text mb-4">
-                                Участник <strong>{{ order.participant_data.name }}</strong> уже отмечен как посетивший мероприятие.
-                            </p>
-                        {% else %}
-                            <div class="mb-4">
-                                <i class="bi bi-ticket-perforated-fill text-primary" style="font-size: 4rem;"></i>
-                            </div>
-                            <h3 class="card-title mb-3 text-primary">Билет действителен</h3>
-                            <p class="card-text mb-4">
-                                Участник: <strong>{{ order.participant_data.name }}</strong><br>
-                                Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
-                                Тип билета: <strong>{{ order.ticket.name }}</strong>
-                            </p>
-                        {% endif %}
-                    {% else %}
+                    {% if order.payment_status == "refunded" %}
+                        <!-- Билет возвращён -->
+                        <div class="mb-4">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="card-title mb-3 text-danger">Билет возвращён</h3>
+                        <p class="card-text mb-4">
+                            Этот билет был возвращён и больше не действителен.<br>
+                            Заказ: <strong>#{{ order.id }}</strong>
+                        </p>
+                    {% elif not is_valid %}
+                        <!-- Билет недействителен -->
                         <div class="mb-4">
                             <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
                         </div>
                         <h3 class="card-title mb-3 text-danger">Билет недействителен</h3>
                         <p class="card-text mb-4">
-                            Этот билет не найден в системе или уже был использован.
+                            Этот билет не найден в системе или уже был использован.<br>
+                            Заказ: <strong>#{{ order.id }}</strong>
+                        </p>
+                    {% elif order.attended %}
+                        <!-- Уже отмечен -->
+                        <div class="mb-4">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="card-title mb-3 text-success">Билет действителен</h3>
+                        <p class="card-text mb-4">
+                            Участник <strong>{{ order.participant_data.first_name|default:order.participant_data.name }}</strong> {{ order.participant_data.last_name|default:"" }}<br>
+                            Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
+                            Тип билета: <strong>{{ order.ticket.name }}</strong><br>
+                            <span class="text-muted">Участник уже отмечен как посетивший мероприятие.</span>
+                        </p>
+                    {% else %}
+                        <!-- Действительный билет -->
+                        <div class="mb-4">
+                            <i class="bi bi-ticket-perforated-fill text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="card-title mb-3 text-primary">Билет действителен</h3>
+                        <p class="card-text mb-4">
+                            Участник: <strong>{{ order.participant_data.first_name|default:order.participant_data.name }} {{ order.participant_data.last_name|default:"" }}</strong><br>
+                            Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
+                            Тип билета: <strong>{{ order.ticket.name }}</strong><br>
+                            <span class="text-muted">Заказ: #{{ order.id }}</span>
                         </p>
                     {% endif %}
 

@@ -100,8 +100,8 @@
             {% for qr in qr_codes %}
             <div style="margin-bottom: 30px; padding: 15px; border: 1px dashed #ccc;">
                 <h4>Билет №{{ qr.ticket_number }}</h4>
-                <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код" style="width: 200px; height: 200px;">
-                <p><strong>Данные:</strong> {{ qr.qr_text }}</p>
+
+                    <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код" style="width: 200px; height: 200px;">
             </div>
             {% endfor %}
         </div>
