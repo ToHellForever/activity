@@ -306,17 +306,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Собираем данные
-        const name = document.getElementById('buyerName').value.trim();
         const email = document.getElementById('buyerEmail').value.trim();
-        const phone = document.getElementById('buyerPhone').value.trim();
         
-        if (!name || !email || !phone) {
-            addLog('Ошибка: заполните все поля данных покупателя', 'error');
-            alert('Пожалуйста, заполните все обязательные поля');
+        if (!email) {
+            addLog('Ошибка: заполните email покупателя', 'error');
+            alert('Пожалуйста, укажите email');
             return;
         }
-        
-        addLog('Данные покупателя: ' + name + ', ' + email + ', ' + phone, 'info');
         
         // Показываем модалку статуса
         statusModal.show();
@@ -329,9 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const payload = {
             tickets: window.selectedTickets,
             total_price: window.cartTotal,
-            name: name,
-            email: email,
-            phone: phone
+            email: email
         };
         
         addLog('Отправка запроса на сервер...', 'info');
