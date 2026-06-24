@@ -1524,19 +1524,33 @@ def mark_attendance(request, event_id, order_id, ticket_number=1):
         # Инвертируем статус посещения конкретного билета
         order_ticket.attended = not order_ticket.attended
         order_ticket.save()
+        
+        # Если AJAX — возвращаем JSON
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'attended': order_ticket.attended,
+                'ticket_number': order_ticket.ticket_number,
+                'order_id': order.id,
+                'event_id': event.id,
+                'payment_status': order.payment_status,
+            })
+        
         messages.success(
             request,
             f"Билет #{order_ticket.ticket_number} в заказе #{order.id} обновлён!",
         )
-
-    return redirect("partner:participant_list", event_id=event.id)
+        return redirect("partner:participant_list", event_id=event.id)
 
 @login_required
 def check_ticket(request, order_id):
     """
     Проверка билета по QR-коду.
     """
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(Order.objects.prefetch_related('tickets'), id=order_id)
+
+    # Проверяем, что пользователь — организатор мероприятия
+    is_organizer = (order.ticket.event.organizer == request.user)
 
     # Проверяем валидность билета
     is_valid = (
@@ -1548,6 +1562,7 @@ def check_ticket(request, order_id):
     context = {
         "order": order,
         "is_valid": is_valid,
+        "is_organizer": is_organizer,
     }
     return render(request, "partner/ticket_check.html", context)
 

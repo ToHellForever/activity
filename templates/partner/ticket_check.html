@@ -29,18 +29,6 @@
                             Этот билет не найден в системе или уже был использован.<br>
                             Заказ: <strong>#{{ order.id }}</strong>
                         </p>
-                    {% elif order.attended %}
-                        <!-- Уже отмечен -->
-                        <div class="mb-4">
-                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-                        </div>
-                        <h3 class="card-title mb-3 text-success">Билет действителен</h3>
-                        <p class="card-text mb-4">
-                            Участник <strong>{{ order.participant_data.first_name|default:order.participant_data.name }}</strong> {{ order.participant_data.last_name|default:"" }}<br>
-                            Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
-                            Тип билета: <strong>{{ order.ticket.name }}</strong><br>
-                            <span class="text-muted">Участник уже отмечен как посетивший мероприятие.</span>
-                        </p>
                     {% else %}
                         <!-- Действительный билет -->
                         <div class="mb-4">
@@ -48,11 +36,37 @@
                         </div>
                         <h3 class="card-title mb-3 text-primary">Билет действителен</h3>
                         <p class="card-text mb-4">
-                            Участник: <strong>{{ order.participant_data.first_name|default:order.participant_data.name }} {{ order.participant_data.last_name|default:"" }}</strong><br>
+                            {% if is_organizer %}
+                                Участник: <strong>{{ order.participant_data.first_name|default:order.participant_data.name }} {{ order.participant_data.last_name|default:"" }}</strong><br>
+                            {% else %}
+                                Этот билет действителен для входа на мероприятие.
+                            {% endif %}
                             Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
                             Тип билета: <strong>{{ order.ticket.name }}</strong><br>
                             <span class="text-muted">Заказ: #{{ order.id }}</span>
                         </p>
+
+                        {% if is_organizer %}
+                            <!-- Кнопки отметки для каждого билета в заказе -->
+                            <div class="mt-4">
+                                <h5>Билеты в заказе:</h5>
+                                {% for ticket in order.tickets.all %}
+                                    <button type="button"
+                                            class="btn btn-sm attendance-btn mb-2"
+                                            data-event-id="{{ order.ticket.event.id }}"
+                                            data-order-id="{{ order.id }}"
+                                            data-ticket-number="{{ ticket.ticket_number }}"
+                                            data-attended="{{ ticket.attended|lower }}"
+                                            {% if ticket.attended %}btn-outline-success{% else %}btn-success{% endif %}>
+                                        {% if ticket.attended %}
+                                            <i class="bi bi-check-circle-fill"></i> Билет #{{ ticket.ticket_number }} — посещён
+                                        {% else %}
+                                            <i class="bi bi-person-check"></i> Билет #{{ ticket.ticket_number }} — отметить
+                                        {% endif %}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     {% endif %}
 
                     <div class="mt-4">
@@ -65,4 +79,66 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.attendance-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var eventId = this.dataset.eventId;
+            var orderId = this.dataset.orderId;
+            var ticketNumber = this.dataset.ticketNumber;
+            var isAttended = this.dataset.attended === 'true';
+
+            // Блокируем кнопку на время запроса
+            this.disabled = true;
+            var originalHTML = this.innerHTML;
+
+            fetch("/partner/mark_attendance/" + eventId + "/" + orderId + "/" + ticketNumber + "/", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var newAttended = data.attended;
+                    btn.dataset.attended = newAttended;
+                    if (newAttended) {
+                        btn.className = 'btn btn-sm attendance-btn mb-2 btn-outline-success';
+                        btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Билет #' + ticketNumber + ' — посещён';
+                    } else {
+                        btn.className = 'btn btn-sm attendance-btn mb-2 btn-success';
+                        btn.innerHTML = '<i class="bi bi-person-check"></i> Билет #' + ticketNumber + ' — отметить';
+                    }
+                } else {
+                    alert('Произошла ошибка при обновлении статуса.');
+                }
+            })
+            .catch(function() {
+                alert('Произошла ошибка сети.');
+            })
+            .finally(function() {
+                btn.disabled = false;
+            });
+        });
+    });
+
+    // Функция для получения CSRF-токена
+    function getCookie(name) {
+        var cookieValue = null;
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
 {% endblock %}

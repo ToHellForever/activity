@@ -92,18 +92,18 @@
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <form method="post" action="{% url 'partner:mark_attendance' event.id order.id order_ticket.ticket_number %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="btn btn-sm {% if order_ticket.attended %}btn-success{% else %}btn-outline-warning{% endif %}"
-                                            title="{% if order.payment_status == 'succeeded' %}Оплачен{% elif order.payment_status == 'refunded' %}Возвращён{% else %}Ожидание{% endif %}">
-                                        {% if order_ticket.attended %}
-                                            <i class="bi bi-check-circle-fill"></i> Отменить
-                                        {% else %}
-                                            <i class="bi bi-person-check"></i> Отметить
-                                        {% endif %}
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-sm {% if order_ticket.attended %}btn-success{% else %}btn-outline-warning{% endif %} attendance-btn"
+                                        data-event-id="{{ event.id }}"
+                                        data-order-id="{{ order.id }}"
+                                        data-ticket-number="{{ order_ticket.ticket_number }}"
+                                        data-attended="{{ order_ticket.attended|lower }}">
+                                    {% if order_ticket.attended %}
+                                        <i class="bi bi-check-circle-fill"></i> Отменить
+                                    {% else %}
+                                        <i class="bi bi-person-check"></i> Отметить
+                                    {% endif %}
+                                </button>
                                 <button class="btn btn-sm btn-outline-primary" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#qrModal{{ order.id }}_{{ order_ticket.ticket_number }}">
@@ -161,12 +161,58 @@
 
 </div>
 
-<!-- JavaScript для tooltip QR -->
+<!-- JavaScript для attendance и tooltip QR -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Обработка кнопок "Отметить"
+    document.querySelectorAll('.attendance-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var eventId = this.dataset.eventId;
+            var orderId = this.dataset.orderId;
+            var ticketNumber = this.dataset.ticketNumber;
+            var isAttended = this.dataset.attended === 'true';
+            var originalHTML = this.innerHTML;
+            var originalClass = this.className;
+
+            // Блокируем кнопку на время запроса
+            this.disabled = true;
+
+            fetch("/partner/mark_attendance/" + eventId + "/" + orderId + "/" + ticketNumber + "/", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var newAttended = data.attended;
+                    btn.dataset.attended = newAttended;
+                    if (newAttended) {
+                        btn.className = 'btn btn-sm btn-outline-warning attendance-btn';
+                        btn.innerHTML = '<i class="bi bi-person-check"></i> Отметить';
+                    } else {
+                        btn.className = 'btn btn-sm btn-success attendance-btn';
+                        btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Отменить';
+                    }
+                } else {
+                    alert('Произошла ошибка при обновлении статуса.');
+                }
+            })
+            .catch(function() {
+                alert('Произошла ошибка сети.');
+            })
+            .finally(function() {
+                btn.disabled = false;
+            });
+        });
+    });
+
+    // Tooltip для QR-кодов
     const qrTargets = document.querySelectorAll('.qr-hover-target');
     qrTargets.forEach(function(qr) {
-        const tooltip = qr.nextElementSibling;
+        var tooltip = qr.nextElementSibling;
         if (tooltip && tooltip.classList.contains('qr-tooltip')) {
             qr.addEventListener('mouseenter', function() {
                 tooltip.style.display = 'block';
@@ -174,12 +220,25 @@ document.addEventListener('DOMContentLoaded', function() {
             qr.addEventListener('mouseleave', function() {
                 tooltip.style.display = 'none';
             });
-            // Для мобильных устройств — touch
             qr.addEventListener('touchstart', function() {
                 tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
             });
         }
     });
+
+    // CSRF-токен
+    function getCookie(name) {
+        var cookieValue = null;
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+        return cookieValue;
+    }
 });
 </script>
 
