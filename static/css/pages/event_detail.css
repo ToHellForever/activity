@@ -351,6 +351,7 @@ a {
     border-radius: 0px;
     display: block;
     padding: 25px;
+    width: 100%;
 }
 
 .modal-title {
@@ -382,7 +383,9 @@ a {
     border-radius: 25.28px;
     padding: 12px 80px 12px 80px;
     border: none;
-    /* по центру */
+    margin: 0 auto;
+}
+.count-tickets {
     margin: 0 auto;
 }
 
@@ -391,4 +394,34 @@ a {
     border: 1px solid #777A8D;
     padding: 10px;
     width: 100%;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+.text-muted {
+    font-size: 0.9rem;
+    color: #9A9A9A;
+    font-family: "Montserrat";
+    font-weight: 500;
+}
+.form-label-modal {
+    font-size: 0.9rem;
+    color: black;
+    font-family: "Montserrat";
+    font-weight: 500;
+}
+.ticket-price-modal {
+    font-size: 0.9rem;
+    color: black;
+    font-family: "Verdana";
+    font-weight: 700;
+}
+.ticket-name-modal {
+    font-size: 0.9rem;
+    color: black;
+    font-family: "Verdana";
+    font-weight: 400;
+    margin-top: 15px;
 }

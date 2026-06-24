@@ -15,16 +15,16 @@
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-md-5">
-                                    <strong>{{ ticket.name }}</strong>
+                                    <p class="ticket-name-modal">{{ ticket.name }}</p>
                                     {% if ticket.price == 0 %}
                                         <span class="badge bg-success ms-2">Бесплатно</span>
                                     {% endif %}
                                 </div>
                                 <div class="col-md-3">
-                                    <span class="ticket-price">{{ ticket.price|format_price }} ₽</span>
+                                    <span class="ticket-price-modal">{{ ticket.price|floatformat }} ₽</span>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="input-group quantity-input">
+                                    <div class="quantity-input">
                                         <button class="minus" type="button" data-ticket-id="{{ ticket.id }}">−</button>
                                         <input type="number" class="count-tickets" 
                                                value="0" min="0" max="{{ ticket.get_available_count|default:99 }}" 
@@ -42,10 +42,15 @@
 
                 <!-- Данные покупателя -->
                 <div class="email-info mt-4">
-                            <label for="buyerEmail" class="form-label" value={% if user.is_authenticated %} {{ user.email }}{% endif %}>Ваш билет (ы) будет направлен на</label>
-                            <label for="buyerEmail" class="form-label" value={% if not user.is_authenticated %} {{ user.email }}{% endif %}>Куда направить билет (ы)?</label>
-                            <input type="email" class="email-input" id="buyerEmail" required
-                                   value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                    {% if user.is_authenticated %}
+                        <label class="form-label-modal">Ваш билет(ы) будет направлен на</label>
+                        <p class="text-muted mb-2">{{ user.email }}</p>
+                        <input type="hidden" name="buyer_email" value="{{ user.email }}">
+                    {% else %}
+                        <label for="buyerEmail" class="form-label">Куда направить билет(ы)?</label>
+                        <input type="email" class="email-input" id="buyerEmail" name="buyer_email" required
+                               placeholder="example@mail.ru">
+                    {% endif %}
                 </div>
                             <div class="modal-footer">
                 <button type="button" class="buy-button-modal" id="confirmPurchaseBtn" disabled>
