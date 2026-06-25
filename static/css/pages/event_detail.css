@@ -504,3 +504,39 @@ a {
     color: black;
     font-family: "Verdana";
 }
+
+/* === Стили корзины === */
+.cart-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.cart-left {
+    flex: 1;
+}
+
+.cart-right {
+    text-align: right;
+}
+
+.cart-item {
+    font-family: "Verdana";
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #9A9A9A;
+}
+
+.cart-total-count {
+    font-family: "Verdana";
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #666;
+}
+
+.cart-total-price {
+    font-family: "Verdana";
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000;
+}

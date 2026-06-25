@@ -257,15 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     subtotal: ticketPrice * qty
                 });
                 
-                itemsHtml += '<div class="cart-item d-flex justify-content-between align-items-center p-2 border-bottom">' +
-                    '<div>' +
-                        '<strong>' + ticketName + '</strong><br>' +
-                        '<small class="text-muted">' + qty + ' × ' + ticketPrice.toLocaleString('ru-RU') + ' ₽</small>' +
-                    '</div>' +
-                    '<div class="text-end">' +
-                        '<strong>' + (ticketPrice * qty).toLocaleString('ru-RU') + ' ₽</strong>' +
-                    '</div>' +
-                '</div>';
+                itemsHtml += '<div class="cart-item">' + ticketName + '</div>';
                 
                 addLog('Добавлено в корзину: ' + ticketName + ' x ' + qty + ' = ' + (ticketPrice * qty).toLocaleString('ru-RU') + ' ₽', 'success');
             }
@@ -275,7 +267,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (totalItems > 0) {
                 cartSection.style.display = 'block';
                 cartItems.innerHTML = itemsHtml;
-                document.querySelector('.total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
+                const countText = totalItems === 1 ? '1 билет' : (totalItems < 5 ? totalItems + ' билета' : totalItems + ' билетов');
+                document.querySelector('.cart-total-count').textContent = countText;
+                document.querySelector('.cart-total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' руб.';
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
                 addLog('Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽', 'success');
