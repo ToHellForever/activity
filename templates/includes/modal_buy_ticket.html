@@ -11,19 +11,19 @@
                 <!-- Выбор билетов -->
                 <div id="ticketSelection">
                     {% for ticket in tickets %}
-                    <div class=" mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
+                    <div class="mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
+                        <div class="card-body ticket-card-body">
+                            <div class="ticket-row">
+                                <div class="ticket-cell ticket-cell-name">
                                     <p class="ticket-name-modal">{{ ticket.name }}</p>
                                     {% if ticket.price == 0 %}
                                         <span class="badge bg-success ms-2">Бесплатно</span>
                                     {% endif %}
                                 </div>
-                                <div class="col-md-3">
+                                <div class="ticket-cell ticket-cell-price">
                                     <span class="ticket-price-modal">{{ ticket.price|floatformat }} ₽</span>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="ticket-cell ticket-cell-qty">
                                     <div class="quantity-input">
                                         <button class="qty-decrease minus" type="button" data-ticket-id="{{ ticket.id }}">−</button>
                                         <input type="number" class="qty-input-field count-tickets" 
