@@ -48,18 +48,24 @@ def create_test_events():
             'user_type': 'partner',
             'is_verified': True,
             'verification_status': 'approved',
-            'company_name': 'ООО "Бизнес Решения"',
-            'phone_number': '+7 (999) 123-45-67',
-            'contact_person': 'Иванов Иван Иванович'
         }
     )
     if created:
         partner.set_password('password123')
         partner.save()
-        print(f"[OK] Создан партнёр: {partner.company_name}")
+        from partner_app.models import PartnerProfile
+        PartnerProfile.objects.get_or_create(
+            user=partner,
+            defaults={
+                'company_name': 'ООО "Бизнес Решения"',
+                'phone': '+7 (999) 123-45-67',
+                'contact_person': 'Иванов Иван Иванович',
+            }
+        )
+        print(f"[OK] Создан партнёр: {partner.partner_profile.company_name}")
     else:
-        print(f"[OK] Партнёр уже существует: {partner.company_name}")
-    
+        print(f"[OK] Партнёр уже существует: {partner.partner_profile.company_name}")
+        
     # 2. Получаем или создаём пакет "Приоритет"
     package, created = EventPackage.objects.get_or_create(
         name='Приоритет',

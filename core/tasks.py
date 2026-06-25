@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.conf import settings
 from core.models import Event, Ticket
 from venues.models import Venue
+from partner_app.models import PartnerProfile
 from django.core.management import call_command
 from django.conf import settings
 
@@ -148,6 +149,8 @@ def process_video_task(
         else:
             if "Venue" in str(model_name):
                 app_label = "venues"
+            elif "PartnerProfile" in str(model_name):
+                app_label = "partner_app"
             else:
                 app_label = "core"
 

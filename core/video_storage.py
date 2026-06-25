@@ -18,6 +18,8 @@ class YandexVideoProcessingStorage(FileSystemStorage):
     """
     
     def __init__(self, *args, **kwargs):
+        # Получаем subdirectory из kwargs или используем 'event_videos' по умолчанию
+        self.subdirectory = kwargs.pop('subdirectory', 'event_videos')
         temp_dir = getattr(settings, 'MEDIA_TEMP_DIR', os.path.join(settings.BASE_DIR, 'media_temp'))
         super().__init__(location=temp_dir, base_url=None)
         
@@ -48,7 +50,7 @@ class YandexVideoProcessingStorage(FileSystemStorage):
         """
         ext = os.path.splitext(name)[1]
         unique_name = f"{uuid.uuid4().hex}{ext}"
-        unique_path = os.path.join(self.location, 'event_videos', unique_name)
+        unique_path = os.path.join(self.location, self.subdirectory, unique_name)
         
         os.makedirs(os.path.dirname(unique_path), exist_ok=True)
         
@@ -57,5 +59,5 @@ class YandexVideoProcessingStorage(FileSystemStorage):
         
         logger.info(f"Video storage: saved to temp storage at {unique_path}")
         
-        relative_path = os.path.join('event_videos', unique_name)
+        relative_path = os.path.join(self.subdirectory, unique_name)
         return unique_path, [temp_path]

@@ -1808,11 +1808,20 @@ def profile_edit(request):
     Включает обработку видео-визитки.
     """
     from core.models import PartnerDocument
+    from partner_app.models import PartnerProfile
     
+    # Получаем или создаём профиль партнёра
+    profile, created = PartnerProfile.objects.get_or_create(
+        user=request.user, 
+        defaults={
+            'registration_type': 'legal',
+        }
+    )
+
     if request.method == "POST":
-        # Инициализируем форму с данными и файлами
-        user_form = PartnerProfileForm(
-            request.POST, request.FILES, instance=request.user
+        # Инициализируем форму профиля с instance=profile
+        profile_form = PartnerProfileForm(
+            request.POST, request.FILES, instance=profile
         )
 
         # --- НАЧАЛО БЛОКА ИЗМЕНЕНИЙ ---
@@ -1823,24 +1832,24 @@ def profile_edit(request):
         new_video_file = request.FILES.get("video_business_card")
 
         # Если новый файл есть, и у пользователя уже было старое видео...
-        if new_video_file and request.user.video_business_card:
+        if new_video_file and profile.video_business_card:
             # ...то удаляем старый файл с диска.
-            # Метод .delete() у FileField удаляет файл с диска.
-            # Параметр save=False важен: мы не хотим сохранять модель сейчас.
-            request.user.video_business_card.delete(save=False)
+            profile.video_business_card.delete(save=False)
         
         # Проверяем, был ли загружен НОВЫЙ файл для поля 'logo'
         new_logo_file = request.FILES.get("logo")
         
         # Если новый файл есть, и у пользователя уже было старое лого...
-        if new_logo_file and request.user.logo:
+        if new_logo_file and profile.logo:
             # ...то удаляем старый файл с диска/облака.
-            request.user.logo.delete(save=False)
+            profile.logo.delete(save=False)
         # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
 
         # Обработка основной формы профиля (включая видео-визитку)
-        if user_form.is_valid():
-            user_form.save()  # Сохранение здесь запустит сигнал для обработки нового видео
+        if profile_form.is_valid():
+            profile_form.save()  # Сохранение здесь запустит сигнал для обработки нового видео
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
 
         # Обработка формы смены пароля
         password_form = PasswordChangeForm(user=request.user, data=request.POST)
@@ -1875,12 +1884,12 @@ def profile_edit(request):
                 messages.success(request, "Ваши документы загружены и находятся на рассмотрении.")
             else:
                 messages.error(request, "Ошибка при загрузке документов. Пожалуйста, исправьте ошибки ниже.")
-
-        messages.success(request, "Ваши изменения успешно сохранены!")
+        else:
+            messages.success(request, "Ваши изменения успешно сохранены!")
         return redirect("partner:dashboard")
 
     else:
-        user_form = PartnerProfileForm(instance=request.user)
+        profile_form = PartnerProfileForm(instance=profile)
         password_form = PasswordChangeForm(user=request.user)
         document_form = DocumentUploadForm(user=request.user)
 
@@ -1896,7 +1905,7 @@ def profile_edit(request):
     ).first()
 
     context = {
-        "user_form": user_form,
+        "user_form": profile_form,  # Переименовал в profile_form для ясности
         "password_form": password_form,
         "document_form": document_form,
         "rejection_messages": get_rejection_messages(request),
@@ -2076,17 +2085,19 @@ def remove_media(request, media_type, media_id):
                 )
 
         elif media_type == "video_business_card":
-            if request.user.video_business_card:
-                request.user.delete_file_field("video_business_card")
-                request.user.video_business_card = None
-                request.user.save()
+            profile = request.user.partner_profile
+            if profile.video_business_card:
+                profile.delete_file_field("video_business_card")
+                profile.video_business_card = None
+                profile.save()
                 return JsonResponse({"status": "success"})
 
         elif media_type == "logo":
-            if request.user.logo:
-                request.user.delete_file_field("logo")
-                request.user.logo = None
-                request.user.save()
+            profile = request.user.partner_profile
+            if profile.logo:
+                profile.delete_file_field("logo")
+                profile.logo = None
+                profile.save()
                 return JsonResponse({"status": "success"})
 
         return JsonResponse(

@@ -822,8 +822,8 @@ class PartnerAdmin(admin.ModelAdmin):
     """
 
     list_display = (
-        'username', 'email', 'company_name', 'contact_person',
-        'phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases'
+        'username', 'email', 'get_company_name', 'get_contact_person',
+        'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases'
     )
 
     list_filter = (
@@ -833,7 +833,7 @@ class PartnerAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
-        'username', 'email', 'company_name', 'contact_person', 'phone_number'
+        'username', 'email', 'partner_profile__company_name', 'partner_profile__contact_person', 'partner_profile__phone'
     )
 
     inlines = [PartnerSubscriptionInline, PartnerEventInline, PartnerPayoutInline]
@@ -842,16 +842,28 @@ class PartnerAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('username', 'email', 'first_name', 'last_name')
         }),
-        ('Компания', {
-            'fields': ('company_name', 'contact_person', 'phone_number', 'logo', 'social_links')
-        }),
         ('Статус', {
             'fields': ('user_type', 'is_verified', 'verification_status')
         }),
-        ('Видео-визитка', {
-            'fields': ('video_business_card', 'video_business_card_processing_status')
-        }),
     )
+
+    def get_company_name(self, obj):
+        if hasattr(obj, 'partner_profile') and obj.partner_profile:
+            return obj.partner_profile.company_name or '-'
+        return '-'
+    get_company_name.short_description = "Компания"
+
+    def get_contact_person(self, obj):
+        if hasattr(obj, 'partner_profile') and obj.partner_profile:
+            return obj.partner_profile.contact_person or '-'
+        return '-'
+    get_contact_person.short_description = "Контактное лицо"
+
+    def get_phone_number(self, obj):
+        if hasattr(obj, 'partner_profile') and obj.partner_profile:
+            return obj.partner_profile.phone or '-'
+        return '-'
+    get_phone_number.short_description = "Телефон"
 
     def get_active_subscriptions(self, obj):
         """Возвращает количество активных подписок партнёра"""
@@ -879,7 +891,8 @@ class PartnerAdmin(admin.ModelAdmin):
         return qs.filter(user_type='partner').prefetch_related(
             'userpackagesubscription_set',
             'event_set',
-            'payoutrequest_set'
+            'payoutrequest_set',
+            'partner_profile'
         )
 
     def get_inline_instances(self, request, obj=None):

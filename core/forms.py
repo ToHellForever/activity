@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import CustomUser
 from .models import SupportTicket
+from partner_app.models import PartnerProfile
 
 class EventAdminForm(ModelForm):
     class Meta:
@@ -174,24 +175,38 @@ class PartnerProfileForm(forms.ModelForm):
     email = forms.EmailField(required=True)  # Делаем email обязательным
 
     class Meta:
-        model = CustomUser
+        model = PartnerProfile
         # Здесь перечислены все поля, которые партнер может менять
         fields = [
-            "first_name",
-            "last_name",
-            "email",
-            "phone_number",
             "company_name",
+            "short_name",
+            "description",
+            "ogrn",
+            "inn",
+            "kpp",
+            "legal_address",
+            "actual_address",
+            "website",
+            "contact_person",
+            "phone",
+            "email",
+            "social_links",
+            "vk_link",
+            "max_link",
+            "telegram_link",
+            "cases",
+            "reviews",
             "logo",
             "video_business_card",
-            "social_links",
         ]
 
         widgets = {
-            # Подсказка для соцсетей
+            "description": forms.Textarea(attrs={"rows": 3}),
             "social_links": forms.Textarea(
                 attrs={"placeholder": "Ссылки по одной на строку"}
             ),
+            "cases": forms.Textarea(attrs={"rows": 3}),
+            "reviews": forms.Textarea(attrs={"rows": 3}),
             "video_business_card": forms.FileInput(
                 attrs={
                     "accept": "video/mp4,video/quicktime,video/x-msvideo",

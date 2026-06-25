@@ -27,11 +27,11 @@
     <div class="form-group">
         <label>Логотип компании</label>
         <div id="logo-preview-container" class="media-preview-container mb-2">
-            {% if request.user.logo %}
+            {% if request.user.partner_profile.logo %}
             <div class="media-preview">
-                <img src="{{ request.user.logo.url }}" alt="Логотип" style="max-width: 200px; max-height: 200px; border-radius: 4px;" class="mr-2">
+                <img src="{{ request.user.partner_profile.logo.url }}" alt="Логотип" style="max-width: 200px; max-height: 200px; border-radius: 4px;" class="mr-2">
                 <button type="button" class="btn btn-danger btn-sm remove-media-btn"
-                        data-media-type="logo" data-media-id="{{ request.user.id }}">
+                        data-media-type="logo" data-media-id="{{ request.user.partner_profile.id }}">
                     ×
                 </button>
             </div>
@@ -40,7 +40,7 @@
         <input type="file" name="logo" id="id_logo" class="custom-media-input"
                data-media-type="logo" style="display: none;" accept="image/jpeg,image/png,image/gif,image/webp">
         <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="logo">
-            {% if request.user.logo %}Изменить{% else %}Добавить{% endif %} логотип
+            {% if request.user.partner_profile.logo %}Изменить{% else %}Добавить{% endif %} логотип
         </button>
         <small class="form-text text-muted">Разрешены форматы: JPG, PNG, GIF, WEBP. Максимальный размер: 10MB.</small>
     </div>
@@ -49,14 +49,14 @@
     <div class="form-group">
         <label>Видео-визитка</label>
         <div id="video_business_card-preview-container" class="media-preview-container mb-2">
-            {% if request.user.video_business_card %}
+            {% if request.user.partner_profile.video_business_card %}
             <div class="media-preview">
                 <video controls style="max-width: 300px;" class="mr-2">
-                    <source src="{{ request.user.video_business_card.url }}" type="video/mp4">
+                    <source src="{{ request.user.partner_profile.video_business_card.url }}" type="video/mp4">
                     Ваш браузер не поддерживает видео.
                 </video>
                 <button type="button" class="btn btn-danger btn-sm remove-media-btn"
-                        data-media-type="video_business_card" data-media-id="{{ request.user.id }}">
+                        data-media-type="video_business_card" data-media-id="{{ request.user.partner_profile.id }}">
                     ×
                 </button>
             </div>
@@ -65,7 +65,7 @@
         <input type="file" name="video_business_card" id="id_video_business_card" class="custom-media-input"
                data-media-type="video_business_card" style="display: none;">
         <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="video_business_card">
-            {% if request.user.video_business_card %}Изменить{% else %}Добавить{% endif %} видео-визитку
+            {% if request.user.partner_profile.video_business_card %}Изменить{% else %}Добавить{% endif %} видео-визитку
         </button>
     </div>
 

@@ -30,12 +30,12 @@ class VenuesConfig(AppConfig):
             logger = logging.getLogger(__name__)
             logger.error(f"Не удалось применить хранилища: {e}")
 
-        # Применяем хранилище к полю video_business_card модели CustomUser
+        # Применяем хранилище к полю video_business_card модели PartnerProfile
         try:
             from core.video_storage import YandexVideoProcessingStorage
-            from core.models import CustomUser
+            from partner_app.models import PartnerProfile
             
-            CustomUser._meta.get_field('video_business_card').storage = YandexVideoProcessingStorage()
+            PartnerProfile._meta.get_field('video_business_card').storage = YandexVideoProcessingStorage()
         except ImportError as e:
             import logging
             logger = logging.getLogger(__name__)

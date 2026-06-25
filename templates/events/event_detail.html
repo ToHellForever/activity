@@ -148,10 +148,10 @@
                     <span class="info-tag">
                         <span class="tag-label">Организатор:</span>
                         <span class="tag-value">
-                            {% if event.organizer.company_name %}
-                                {{ event.organizer.company_name }}
-                            {% elif event.organizer.contact_person %}
-                                {{ event.organizer.contact_person }}
+                            {% if event.organizer.partner_profile.company_name %}
+                                {{ event.organizer.partner_profile.company_name }}
+                            {% elif event.organizer.partner_profile.contact_person %}
+                                {{ event.organizer.partner_profile.contact_person }}
                             {% else %}
                                 {{ event.organizer.get_full_name|default:event.organizer.username }}
                             {% endif %}

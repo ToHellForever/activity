@@ -37,7 +37,8 @@ class CoreConfig(AppConfig):
             from .image_storage import YandexImageProcessingStorage
             from .video_storage import YandexVideoProcessingStorage
             from .document_storage import YandexDocumentProcessingStorage
-            from .models import Event, EventImage, PartnerDocument, CustomUser
+            from .models import Event, EventImage, PartnerDocument
+            from partner_app.models import PartnerProfile
             
             # Применяем хранилище к полю image модели Event
             Event._meta.get_field('image').storage = YandexImageProcessingStorage()
@@ -54,8 +55,8 @@ class CoreConfig(AppConfig):
             # Применяем хранилище к полю document модели PartnerDocument
             PartnerDocument._meta.get_field('document').storage = YandexDocumentProcessingStorage()
             
-            # Применяем хранилище к полю logo модели CustomUser
-            CustomUser._meta.get_field('logo').storage = YandexImageProcessingStorage()
+            # Применяем хранилище к полю logo модели PartnerProfile
+            PartnerProfile._meta.get_field('logo').storage = YandexImageProcessingStorage()
             
         except ImportError as e:
             import logging

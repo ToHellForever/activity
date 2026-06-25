@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
 from .models import Event, CustomUser, Order, OrderTicket
+from partner_app.models import PartnerProfile
 from .tasks import process_video_task
 import os
 
@@ -65,9 +66,9 @@ def process_event_video(sender, instance, **kwargs):
         )
         logger.info(f"SIGNAL: Task sent with ID: {result.id}")
         
-@receiver(post_save, sender=CustomUser)
+@receiver(post_save, sender=PartnerProfile)
 def process_video_business_card(sender, instance, **kwargs):
-    logger.info(f"SIGNAL: process_video_business_card triggered for CustomUser {instance.id}")
+    logger.info(f"SIGNAL: process_video_business_card triggered for PartnerProfile {instance.id}")
     
     # Проверяем, не вызвано ли это обновлением хэша после обработки
     update_fields = kwargs.get('update_fields', None)
@@ -80,15 +81,15 @@ def process_video_business_card(sender, instance, **kwargs):
 
      # Запускаем задачу только если хэш не совпадает или отсутствует (видео новое/заменено)
     if instance._should_process_video(instance.video_business_card, instance.processed_video_business_card_hash):
-        logger.info(f"SIGNAL: Sending process_video_task.delay for CustomUser {instance.id}")
+        logger.info(f"SIGNAL: Sending process_video_task.delay for PartnerProfile {instance.id}")
         process_video_task.delay(
-            model_name='CustomUser',
+            model_name='PartnerProfile',
             instance_id=instance.id,
             video_field_name='video_business_card',
             hash_field_name='processed_video_business_card_hash'
         )
     else:
-        logger.info(f"SIGNAL: Video business card already processed for CustomUser {instance.id}, skipping")
+        logger.info(f"SIGNAL: Video business card already processed for PartnerProfile {instance.id}, skipping")
 
 
 @receiver(post_save, sender=Order)

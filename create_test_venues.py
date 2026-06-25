@@ -43,17 +43,24 @@ def create_test_venues():
             'user_type': 'partner',
             'is_verified': True,
             'verification_status': 'approved',
-            'company_name': 'ООО "Конференц Сервис"',
-            'phone_number': '+7 (999) 987-65-43',
-            'contact_person': 'Петров Петр Петрович'
         }
     )
     if created:
         partner.set_password('password123')
         partner.save()
-        print(f"[OK] Создан партнёр: {partner.company_name}")
+        # Создаём профиль партнёра
+        from partner_app.models import PartnerProfile
+        PartnerProfile.objects.get_or_create(
+            user=partner,
+            defaults={
+                'company_name': 'ООО "Конференц Сервис"',
+                'phone': '+7 (999) 987-65-43',
+                'contact_person': 'Петров Петр Петрович',
+            }
+        )
+        print(f"[OK] Создан партнёр и профиль: {partner.partner_profile.company_name}")
     else:
-        print(f"[OK] Партнёр уже существует: {partner.company_name}")
+        print(f"[OK] Партнёр уже существует: {partner.partner_profile.company_name}")
     
     # 2. Создаём типы площадок
     from venues.models import VenueType, VenueFormat
