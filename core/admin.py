@@ -841,8 +841,8 @@ class PartnerAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Организатор', {
-            'fields': ('verification_status', 'rejection_reason'),
-            'description': 'Статус проверки документов и причина отказа'
+            'fields': ('is_verified', 'verification_status', 'rejection_reason'),
+            'description': '1 - Статус организатора (почта), 2 - Статус верификации (дать право партнёру иметь полный функционал), 3 - Причина отказа'
         }),
         ('Аккаунт', {
             'fields': ('user_type', 'first_name', 'last_name', 'username', 'date_joined'),
