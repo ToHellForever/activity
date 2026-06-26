@@ -840,31 +840,23 @@ class PartnerAdmin(admin.ModelAdmin):
     inlines = [PartnerSubscriptionInline, PartnerEventInline, PartnerPayoutInline]
 
     fieldsets = (
-        (None, {
-            'fields': ('username', 'email', 'first_name', 'last_name')
+        ('Организатор', {
+            'fields': ( 'verification_status', 'rejection_reason'),
+            'description': 'Статус проверенного организатора и причина отказа'
         }),
-        ('Статус', {
-            'fields': ('user_type', 'is_verified', 'verification_status')
+        ('Аккаунт', {
+            'fields': ('user_type', 'first_name', 'last_name', 'email', 'username', 'date_joined'),
         }),
-        ('Права и причины', {
-            'fields': ('permissions', 'rejection_reason'),
-            'description': '<b>permissions</b> — JSON с правами. <b>rejection_reason</b> — причина отклонения.'
+        ('Права доступа', {
+            'fields': ('can_create_events', 'can_request_reports', 'can_request_payments'),
+            'description': 'Функции, доступные партнёру'
         }),
     )
 
-    readonly_fields = ('username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined', 'is_verified')
+    readonly_fields = ('username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined')
 
     change_form_template = "admin/partner_change_form.html"
-
-    def formfield_for_db_field(self, db_field, request, **kwargs):
-        """Переопределяем отображение поля permissions"""
-        if db_field.name == 'permissions':
-            kwargs['widget'] = forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': '{"can_create_events": true, "can_request_reports": false, "can_request_payments": true}',
-                'help_text': 'Формат JSON: {"can_create_events": bool, "can_request_reports": bool, "can_request_payments": bool}'
-            })
-        return super().formfield_for_db_field(db_field, request, **kwargs)
+    form = PartnerAdminForm
 
     def get_company_name(self, obj):
         if hasattr(obj, 'partner_profile') and obj.partner_profile:

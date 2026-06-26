@@ -5,14 +5,14 @@
 <div id="content-main">
     {{ block.super }}
     
-    <!-- Блок управления правами и статусом -->
+    <!-- Блок действий: одобрить / отклонить -->
     {% if obj %}
     <div id="partner-actions" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6;">
-        <h3 style="margin-top: 0; margin-bottom: 15px;">Управление партнёром</h3>
+        <h3 style="margin-top: 0; margin-bottom: 15px;">Быстрые действия</h3>
         
         <!-- Статус -->
         <div style="margin-bottom: 20px; padding: 10px; background: white; border-radius: 4px;">
-            <strong>Текущий статус:</strong>
+            <strong>Статус аккаунта:</strong>
             {% if obj.verification_status == 'approved' %}
                 <span style="color: green; font-weight: bold;">✓ Одобрено</span>
             {% elif obj.verification_status == 'rejected' %}
@@ -27,24 +27,14 @@
             {% endif %}
         </div>
         
-        <!-- Права доступа -->
+        <!-- Статус организатора -->
         <div style="margin-bottom: 20px; padding: 10px; background: white; border-radius: 4px;">
-            <strong>Права доступа (отображаются после одобрения):</strong><br><br>
-            {% with obj.permissions|default:"{}" as perms %}
-            <label style="display: block; margin: 5px 0;">
-                <input type="checkbox" {% if perms.can_create_events %}checked{% endif %} disabled> 
-                Создавать мероприятия
-            </label>
-            <label style="display: block; margin: 5px 0;">
-                <input type="checkbox" {% if perms.can_request_reports %}checked{% endif %} disabled> 
-                Запрашивать отчёты
-            </label>
-            <label style="display: block; margin: 5px 0;">
-                <input type="checkbox" {% if perms.can_request_payments %}checked{% endif %} disabled> 
-                Запрашивать выплаты
-            </label>
-            {% endwith %}
-            <small style="color: #666;">Для изменения прав используйте форму ниже и нажмите "Сохранить"</small>
+            <strong>Проверенный организатор:</strong>
+            {% if obj.is_verified %}
+                <span style="color: green; font-weight: bold;">✓ Да</span>
+            {% else %}
+                <span style="color: red; font-weight: bold;">✗ Нет</span>
+            {% endif %}
         </div>
         
         <!-- Кнопки действий -->

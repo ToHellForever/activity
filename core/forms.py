@@ -454,7 +454,7 @@ class PartnerAdminForm(forms.ModelForm):
     
     class Meta:
         model = CustomUser
-        fields = ['permissions', 'rejection_reason', 'verification_status', 'is_verified']
+        fields = ['permissions', 'verification_status', 'is_verified']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -177,7 +177,7 @@
             <li><a href="{% url 'partner:partner_event_list' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>2. Мои мероприятия</a></li>
             <li><a href="{% url 'partner:reports' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>3. Продажи и отчёты</a></li>
             <li><a href="{% url 'partner:finances' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>6. Финансы и выплаты</a></li>
-            <li><a href="{% url 'partner:profile_edit' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>6. Настройки профиля</a></li>
+            <li><a href="{% url 'partner:profile_edit' %}" class="always-active-link">6. Настройки профиля</a></li>
             <li><a href="{% url 'support_dashboard' %}" class="always-active-link">7. Поддержка / обратная связь</a></li>
         </ul>
     </div>
