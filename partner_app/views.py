@@ -145,7 +145,7 @@ def create_event(request):
                         request,
                         "Для создания мероприятий необходимо приобрести пакет. Пожалуйста, выберите и оплатите подходящий пакет."
                     )
-                    return redirect("payment:package_selection")
+                    return redirect("partner:dashboard")
                 package = active_subscription.package
         else:
             # Если это создание нового мероприятия
@@ -154,7 +154,7 @@ def create_event(request):
                     request,
                     "Для создания мероприятий необходимо приобрести пакет. Пожалуйста, выберите и оплатите подходящий пакет."
                 )
-                return redirect("payment:package_selection")
+                return redirect("partner:dashboard")
             package = active_subscription.package
 
         form = EventForm(request.POST, request.FILES, user=request.user, current_package=package)
@@ -515,7 +515,7 @@ def create_event(request):
                 request,
                 "У вас нет активного пакета. Пожалуйста, выберите и купите пакет для создания мероприятий."
             )
-            return redirect("payment:package_selection")
+            return redirect("partner:dashboard")
 
         form = EventForm(user=request.user, current_package=active_subscription.package)
 

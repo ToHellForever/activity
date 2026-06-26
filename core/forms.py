@@ -228,7 +228,7 @@ class PartnerRegistrationForm(forms.Form):
     actual_address = forms.CharField(
         max_length=255,
         required=False,
-        label="Фактический адрес",
+        label="Фактический адрес (если отличается)",
         widget=forms.TextInput(attrs={"placeholder": "Фактический адрес (если отличается)"}),
     )
 
@@ -308,6 +308,20 @@ class PartnerRegistrationForm(forms.Form):
         label="Разрешаю публикацию профиля организации на платформе",
     )
 
+    # Пароли
+    password1 = forms.CharField(
+        required=True,
+        label="Пароль",
+        widget=forms.PasswordInput,
+        min_length=8,
+    )
+    password2 = forms.CharField(
+        required=True,
+        label="Повторите пароль",
+        widget=forms.PasswordInput,
+        min_length=8,
+    )
+
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "")
         if phone:
@@ -315,6 +329,20 @@ class PartnerRegistrationForm(forms.Form):
             if not digits.isdigit() or len(digits) < 10:
                 raise forms.ValidationError("Введите корректный номер телефона")
         return phone
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+        email = cleaned_data.get("email")
+
+        if password1 and password2 and password1 != password2:
+            self.add_error("password2", "Пароли не совпадают.")
+
+        if email and CustomUser.objects.filter(email=email).exists():
+            self.add_error("email", "Пользователь с таким email уже существует.")
+
+        return cleaned_data
 
 
 # --- ФОРМА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ПАРТНЕРА ---

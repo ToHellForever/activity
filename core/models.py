@@ -37,6 +37,12 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         default="not_submitted",
     )
 
+    def delete(self, *args, **kwargs):
+        """Удаляет все связанные объекты перед удалением пользователя."""
+        # Удаляем все подписки пользователя
+        self.userpackagesubscription_set.all().delete()
+        super().delete(*args, **kwargs)
+
 User = get_user_model()
 
 class PartnerDocument(models.Model):

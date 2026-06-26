@@ -599,7 +599,7 @@ class SubscriptionInline(admin.TabularInline):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
@@ -790,7 +790,7 @@ class PartnerSubscriptionInline(admin.TabularInline):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 class PartnerEventInline(admin.TabularInline):
     model = Event
@@ -802,7 +802,7 @@ class PartnerEventInline(admin.TabularInline):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 class PartnerPayoutInline(admin.TabularInline):
     model = PayoutRequest
@@ -813,7 +813,7 @@ class PartnerPayoutInline(admin.TabularInline):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 @admin.register(CustomUser)
 class PartnerAdmin(admin.ModelAdmin):
@@ -901,6 +901,17 @@ class PartnerAdmin(admin.ModelAdmin):
             return super().get_inline_instances(request, obj)
         return []
 
+    def delete_model(self, request, obj):
+        """Удаляем подписки перед удалением пользователя"""
+        obj.userpackagesubscription_set.all().delete()
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        """Удаляем подписки перед массовым удалением пользователей"""
+        for obj in queryset:
+            obj.userpackagesubscription_set.all().delete()
+        super().delete_queryset(request, queryset)
+
 # Регистрируем модели, которые ещё не зарегистрированы
 try:
     admin.site.unregister(CustomUser)
@@ -928,7 +939,7 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):

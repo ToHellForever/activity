@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse, Http404, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
@@ -26,6 +26,7 @@ Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 # Логгер для покупки билетов
 import json
 logger = logging.getLogger(__name__)
+
 
 def send_order_confirmation_email(order, request=None):
     """

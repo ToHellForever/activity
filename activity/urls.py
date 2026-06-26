@@ -55,7 +55,7 @@ urlpatterns = [
     path("venues/", include("venues.urls")),
     path("admin/venues/", include("venues.urls", namespace="admin_venues")),
     path("reports/sales-register/", sales_register, name="sales_register"),
-    path("payment/", include("payment.urls")),
+    path("payment/", include(("payment.urls", "payment"), namespace="payment")),
 ]
 
 

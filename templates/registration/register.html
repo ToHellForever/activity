@@ -43,6 +43,7 @@
     <!-- Форма для участника -->
     <form id="visitor-form" method="post" style="display: none;">
         {% csrf_token %}
+        <input type="hidden" name="form_type" value="visitor">
 
         <div class="form-section">
             <div class="form-row double">
@@ -79,6 +80,7 @@
     <!-- Форма для партнёра -->
     <form id="partner-form" method="post" enctype="multipart/form-data" style="display: none;">
         {% csrf_token %}
+        <input type="hidden" name="form_type" value="partner">
         
         <!-- Переключатель типа лица -->
         <div class="form-section">

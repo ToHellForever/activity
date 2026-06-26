@@ -213,61 +213,54 @@ def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
     from .forms import CustomUserCreationForm
     
+    form = CustomUserCreationForm()
+    partner_form = PartnerRegistrationForm()
+    
     if request.method == "POST":
         user_type = request.POST.get("form_type", "visitor")
         
         if user_type == "partner":
-            form = PartnerRegistrationForm(request.POST, request.FILES)
-            if form.is_valid():
+            partner_form = PartnerRegistrationForm(request.POST, request.FILES)
+            if partner_form.is_valid():
                 # Создаём пользователя
-                email = form.cleaned_data["email"]
-                password1 = request.POST.get("password1")
-                password2 = request.POST.get("password2")
+                user = CustomUser.objects.create_user(
+                    email=partner_form.cleaned_data["email"],
+                    password=partner_form.cleaned_data["password1"],
+                    username=partner_form.cleaned_data["email"],  # Логин = email
+                    user_type="partner",
+                )
                 
-                # Проверяем email
-                if CustomUser.objects.filter(email=email).exists():
-                    form.add_error("email", "Пользователь с таким email уже существует.")
-                # Проверяем совпадение паролей
-                elif password1 != password2:
-                    form.add_error("agree_terms", "Пароли не совпадают.")
-                else:
-                    user = CustomUser.objects.create_user(
-                        email=email,
-                        password=password1,
-                        user_type="partner",
+                # Создаём профиль партнёра
+                from django.db import transaction
+                with transaction.atomic():
+                    profile = PartnerProfile.objects.create(
+                        user=user,
+                        company_name=partner_form.cleaned_data["company_name"],
+                        short_name=partner_form.cleaned_data.get("short_name", ""),
+                        registration_type=partner_form.cleaned_data.get("registration_type", "legal"),
+                        description=partner_form.cleaned_data.get("description", ""),
+                        ogrn=partner_form.cleaned_data.get("ogrn", ""),
+                        inn=partner_form.cleaned_data.get("inn", ""),
+                        kpp=partner_form.cleaned_data.get("kpp", ""),
+                        legal_address=partner_form.cleaned_data.get("legal_address", ""),
+                        actual_address=partner_form.cleaned_data.get("actual_address", ""),
+                        website=partner_form.cleaned_data.get("website", ""),
+                        contact_person=partner_form.cleaned_data["contact_person"],
+                        phone=partner_form.cleaned_data["phone"],
+                        email=partner_form.cleaned_data["email"],
+                        vk_link=partner_form.cleaned_data.get("vk_link", ""),
+                        max_link=partner_form.cleaned_data.get("max_link", ""),
+                        telegram_link=partner_form.cleaned_data.get("telegram_link", ""),
+                        cases=partner_form.cleaned_data.get("cases", ""),
+                        reviews=partner_form.cleaned_data.get("reviews", ""),
+                        logo=partner_form.cleaned_data.get("logo"),
                     )
-                    
-                    # Создаём профиль партнёра
-                    from django.db import transaction
-                    with transaction.atomic():
-                        profile = PartnerProfile.objects.create(
-                            user=user,
-                            company_name=form.cleaned_data["company_name"],
-                            short_name=form.cleaned_data.get("short_name", ""),
-                            registration_type=form.cleaned_data.get("registration_type", "legal"),
-                            description=form.cleaned_data.get("description", ""),
-                            ogrn=form.cleaned_data.get("ogrn", ""),
-                            inn=form.cleaned_data.get("inn", ""),
-                            kpp=form.cleaned_data.get("kpp", ""),
-                            legal_address=form.cleaned_data.get("legal_address", ""),
-                            actual_address=form.cleaned_data.get("actual_address", ""),
-                            website=form.cleaned_data.get("website", ""),
-                            contact_person=form.cleaned_data["contact_person"],
-                            phone=form.cleaned_data["phone"],
-                            email=form.cleaned_data["email"],
-                            vk_link=form.cleaned_data.get("vk_link", ""),
-                            max_link=form.cleaned_data.get("max_link", ""),
-                            telegram_link=form.cleaned_data.get("telegram_link", ""),
-                            cases=form.cleaned_data.get("cases", ""),
-                            reviews=form.cleaned_data.get("reviews", ""),
-                            logo=form.cleaned_data.get("logo"),
-                        )
-                    
-                    # Отправляем код подтверждения
-                    form_instance = CustomUserCreationForm(instance=user)
-                    form_instance.send_verification_code(request)
-                    request.session['unverified_user_id'] = user.id
-                    return redirect("verify_email")
+                
+                # Отправляем код подтверждения
+                form_instance = CustomUserCreationForm(instance=user)
+                form_instance.send_verification_code(request)
+                request.session['unverified_user_id'] = user.id
+                return redirect("verify_email")
         else:
             form = CustomUserCreationForm(request.POST)
             if form.is_valid():
@@ -283,9 +276,6 @@ def register_view(request):
 
                 # Редирект на страницу ввода кода подтверждения
                 return redirect("verify_email")
-    else:
-        form = CustomUserCreationForm()
-        partner_form = PartnerRegistrationForm()
 
     return render(request, "registration/register.html", {
         "form": form,
