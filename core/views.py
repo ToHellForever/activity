@@ -8,7 +8,7 @@ from django.shortcuts import (
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
-from .forms import CustomAuthenticationForm, CustomUserCreationForm
+from .forms import CustomAuthenticationForm, CustomUserCreationForm, PartnerRegistrationForm
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import login, authenticate
 from .models import Event, Ticket, Tag, MainTag
@@ -16,6 +16,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from core.forms import SupportTicketForm
 from django.utils import timezone
 from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order, MainTag
+from partner_app.models import PartnerProfile
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
@@ -210,25 +211,86 @@ def forgot_password(request):
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
+    from .forms import CustomUserCreationForm
+    
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)  # Сохраняем пользователя в БД, но не коммитим
-            user.backend = "core.backends.EmailBackend"
-            user.save()
+        user_type = request.POST.get("form_type", "visitor")
+        
+        if user_type == "partner":
+            form = PartnerRegistrationForm(request.POST, request.FILES)
+            if form.is_valid():
+                # Создаём пользователя
+                email = form.cleaned_data["email"]
+                password1 = request.POST.get("password1")
+                password2 = request.POST.get("password2")
+                
+                # Проверяем email
+                if CustomUser.objects.filter(email=email).exists():
+                    form.add_error("email", "Пользователь с таким email уже существует.")
+                # Проверяем совпадение паролей
+                elif password1 != password2:
+                    form.add_error("agree_terms", "Пароли не совпадают.")
+                else:
+                    user = CustomUser.objects.create_user(
+                        email=email,
+                        password=password1,
+                        user_type="partner",
+                    )
+                    
+                    # Создаём профиль партнёра
+                    from django.db import transaction
+                    with transaction.atomic():
+                        profile = PartnerProfile.objects.create(
+                            user=user,
+                            company_name=form.cleaned_data["company_name"],
+                            short_name=form.cleaned_data.get("short_name", ""),
+                            registration_type=form.cleaned_data.get("registration_type", "legal"),
+                            description=form.cleaned_data.get("description", ""),
+                            ogrn=form.cleaned_data.get("ogrn", ""),
+                            inn=form.cleaned_data.get("inn", ""),
+                            kpp=form.cleaned_data.get("kpp", ""),
+                            legal_address=form.cleaned_data.get("legal_address", ""),
+                            actual_address=form.cleaned_data.get("actual_address", ""),
+                            website=form.cleaned_data.get("website", ""),
+                            contact_person=form.cleaned_data["contact_person"],
+                            phone=form.cleaned_data["phone"],
+                            email=form.cleaned_data["email"],
+                            vk_link=form.cleaned_data.get("vk_link", ""),
+                            max_link=form.cleaned_data.get("max_link", ""),
+                            telegram_link=form.cleaned_data.get("telegram_link", ""),
+                            cases=form.cleaned_data.get("cases", ""),
+                            reviews=form.cleaned_data.get("reviews", ""),
+                            logo=form.cleaned_data.get("logo"),
+                        )
+                    
+                    # Отправляем код подтверждения
+                    form_instance = CustomUserCreationForm(instance=user)
+                    form_instance.send_verification_code(request)
+                    request.session['unverified_user_id'] = user.id
+                    return redirect("verify_email")
+        else:
+            form = CustomUserCreationForm(request.POST)
+            if form.is_valid():
+                user = form.save(commit=False)
+                user.backend = "core.backends.EmailBackend"
+                user.save()
 
-            # Отправляем код подтверждения на почту
-            form.send_verification_code(request)
+                # Отправляем код подтверждения на почту
+                form.send_verification_code(request)
 
-            # Сохраняем пользователя в сессии для дальнейшего подтверждения
-            request.session['unverified_user_id'] = user.id
+                # Сохраняем пользователя в сессии для дальнейшего подтверждения
+                request.session['unverified_user_id'] = user.id
 
-            # Редирект на страницу ввода кода подтверждения
-            return redirect("verify_email")
+                # Редирект на страницу ввода кода подтверждения
+                return redirect("verify_email")
     else:
         form = CustomUserCreationForm()
+        partner_form = PartnerRegistrationForm()
 
-    return render(request, "registration/register.html", {"form": form})
+    return render(request, "registration/register.html", {
+        "form": form,
+        "partner_form": partner_form,
+    })
 
 def verify_email_view(request):
     """Обрабатывает ввод кода подтверждения."""

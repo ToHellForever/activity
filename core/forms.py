@@ -168,6 +168,155 @@ class CustomUserCreationForm(UserCreationForm):
         msg.send()
 
 
+# --- ФОРМА РЕГИСТРАЦИИ ПАРТНЁРА ---
+class PartnerRegistrationForm(forms.Form):
+    """Полная форма регистрации партнёра со всеми полями профиля."""
+
+    # Основные данные
+    company_name = forms.CharField(
+        max_length=255,
+        required=True,
+        label="Название организации / ФИО",
+        widget=forms.TextInput(attrs={"placeholder": "Название организации / ФИО"}),
+    )
+    short_name = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Краткое наименование, бренд/торговое имя",
+        widget=forms.TextInput(attrs={"placeholder": "Краткое наименование, бренд/торговое имя"}),
+    )
+    registration_type = forms.ChoiceField(
+        choices=PartnerProfile.REGISTRATION_TYPE_CHOICES,
+        required=True,
+        label="Тип лица",
+        initial="legal",
+    )
+    description = forms.CharField(
+        required=False,
+        max_length=500,
+        label="Описание организации",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Описание организации. Кратко о деятельности (до 500 символов)"}),
+    )
+
+    # Реквизиты
+    ogrn = forms.CharField(
+        max_length=15,
+        required=False,
+        label="ОГРН/ОГРНИП",
+        widget=forms.TextInput(attrs={"placeholder": "ОГРН/ОГРНИП"}),
+    )
+    inn = forms.CharField(
+        max_length=20,
+        required=False,
+        label="ИНН",
+        widget=forms.TextInput(attrs={"placeholder": "ИНН"}),
+    )
+    kpp = forms.CharField(
+        max_length=9,
+        required=False,
+        label="КПП",
+        widget=forms.TextInput(attrs={"placeholder": "КПП"}),
+    )
+
+    # Адреса
+    legal_address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Юридический адрес",
+        widget=forms.TextInput(attrs={"placeholder": "Юридический адрес"}),
+    )
+    actual_address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Фактический адрес",
+        widget=forms.TextInput(attrs={"placeholder": "Фактический адрес (если отличается)"}),
+    )
+
+    # Контакты
+    website = forms.URLField(
+        required=False,
+        label="Сайт компании URL",
+        widget=forms.URLInput(attrs={"placeholder": "Сайт компании URL"}),
+    )
+    contact_person = forms.CharField(
+        max_length=255,
+        required=True,
+        label="Контактное лицо (имя)",
+        widget=forms.TextInput(attrs={"placeholder": "Контактное лицо (имя)"}),
+    )
+    phone = forms.CharField(
+        max_length=30,
+        required=True,
+        label="Телефон",
+        widget=forms.TextInput(attrs={"placeholder": "Телефон"}),
+    )
+    email = forms.EmailField(
+        required=True,
+        label="E-mail",
+        widget=forms.EmailInput(attrs={"placeholder": "E-mail"}),
+    )
+
+    # Портфолио и ссылки
+    vk_link = forms.URLField(
+        required=False,
+        label="VK",
+        widget=forms.URLInput(attrs={"placeholder": "VK"}),
+    )
+    max_link = forms.URLField(
+        required=False,
+        label="MAX",
+        widget=forms.URLInput(attrs={"placeholder": "MAX"}),
+    )
+    telegram_link = forms.URLField(
+        required=False,
+        label="Telegram",
+        widget=forms.URLInput(attrs={"placeholder": "Telegram"}),
+    )
+    cases = forms.CharField(
+        required=False,
+        label="Кейсы/прошедшие мероприятия",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Кейсы/прошедшие мероприятия. Ссылки или краткое описание"}),
+    )
+    reviews = forms.CharField(
+        required=False,
+        label="Отзывы и публикации в СМИ",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Отзывы и публикации в СМИ. Ссылки"}),
+    )
+
+    # Файлы
+    logo = forms.FileField(
+        required=False,
+        label="Логотип",
+        widget=forms.FileInput(attrs={"accept": "image/png,image/svg+xml,image/jpeg"}),
+    )
+
+    # Согласия
+    agree_terms = forms.BooleanField(
+        required=True,
+        label="Я подтверждаю достоверность указанных данных",
+    )
+    agree_user_agreement = forms.BooleanField(
+        required=True,
+        label="Согласен(на) с пользовательским соглашением и офертой",
+    )
+    agree_personal_data = forms.BooleanField(
+        required=True,
+        label="Согласен(на) на обработку персональных данных",
+    )
+    agree_publish_profile = forms.BooleanField(
+        required=False,
+        label="Разрешаю публикацию профиля организации на платформе",
+    )
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone", "")
+        if phone:
+            digits = phone.replace("+", "").replace("-", "").replace("(", "").replace(")", "").replace(" ", "")
+            if not digits.isdigit() or len(digits) < 10:
+                raise forms.ValidationError("Введите корректный номер телефона")
+        return phone
+
+
 # --- ФОРМА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ПАРТНЕРА ---
 class PartnerProfileForm(forms.ModelForm):
     """Форма для редактирования профиля партнера."""
