@@ -784,7 +784,9 @@ class EventPackageAdmin(admin.ModelAdmin):
 class PartnerSubscriptionInline(admin.TabularInline):
     model = UserPackageSubscription
     extra = 0
+    max_num = 2
     readonly_fields = ('package', 'start_date', 'end_date', 'is_active')
+    fields = ('package', 'start_date', 'end_date', 'is_active')
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -792,22 +794,18 @@ class PartnerSubscriptionInline(admin.TabularInline):
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
-class PartnerEventInline(admin.TabularInline):
-    model = Event
-    extra = 0
-    readonly_fields = ('title', 'status', 'date_time', 'package')
-    fields = ('title', 'status', 'date_time', 'package')
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj=None, **kwargs)
+        formset.extra = 0
+        if obj:
+            formset.queryset = obj.userpackagesubscription_set.order_by('-start_date')[:2]
+        return formset
 
 class PartnerPayoutInline(admin.TabularInline):
     model = PayoutRequest
     extra = 0
-    readonly_fields = ('amount', 'status', 'created_at')
+    readonly_fields = ('amount', 'status', 'created_at', 'payment_details', 'comment')
+    fields = ('amount', 'status', 'created_at', 'payment_details', 'comment')
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -824,7 +822,7 @@ class PartnerAdmin(admin.ModelAdmin):
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
         'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases',
-        'verification_status', 'get_permissions_status'
+        'verification_status', 'is_verified', 'get_permissions_status'
     )
 
     list_filter = (
@@ -837,7 +835,7 @@ class PartnerAdmin(admin.ModelAdmin):
         'username', 'email', 'partner_profile__company_name', 'partner_profile__contact_person', 'partner_profile__phone'
     )
 
-    inlines = [PartnerSubscriptionInline, PartnerEventInline, PartnerPayoutInline]
+    inlines = [PartnerSubscriptionInline, PartnerPayoutInline]
 
     fieldsets = (
         ('Организатор', {
@@ -907,12 +905,18 @@ class PartnerAdmin(admin.ModelAdmin):
         return mark_safe('<span style="color: gray;">—</span>')
     get_permissions_status.short_description = "Статус партнёра"
 
+    def get_is_verified(self, obj):
+        """Показывает статус проверенного организатора"""
+        if obj.is_verified:
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Да</span>')
+        return mark_safe('<span style="color: red; font-weight: bold;">✗ Нет</span>')
+    get_is_verified.short_description = "Проверенный организатор"
+
     def get_queryset(self, request):
         """Фильтруем только партнёров"""
         qs = super().get_queryset(request)
         return qs.filter(user_type='partner').prefetch_related(
             'userpackagesubscription_set',
-            'event_set',
             'payoutrequest_set',
             'partner_profile'
         )

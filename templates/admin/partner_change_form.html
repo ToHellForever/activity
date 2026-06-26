@@ -27,16 +27,6 @@
             {% endif %}
         </div>
         
-        <!-- Статус организатора -->
-        <div style="margin-bottom: 20px; padding: 10px; background: white; border-radius: 4px;">
-            <strong>Проверенный организатор:</strong>
-            {% if obj.is_verified %}
-                <span style="color: green; font-weight: bold;">✓ Да</span>
-            {% else %}
-                <span style="color: red; font-weight: bold;">✗ Нет</span>
-            {% endif %}
-        </div>
-        
         <!-- Кнопки действий -->
         {% if obj.verification_status != 'approved' %}
         <form method="post" style="margin-top: 15px; display: inline-block;">
