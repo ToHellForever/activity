@@ -88,12 +88,25 @@
 </div>
 {% elif request.user.verification_status == 'rejected' %}
 <div class="alert alert-danger">
-    <strong>Ваши документы были отклонены.</strong><br>
+    <strong>✗ Ваши документы были отклонены.</strong><br>
     {% if last_rejected_document and last_rejected_document.rejection_reason %}
         <p class="mb-2"><strong>Причина:</strong> {{ last_rejected_document.rejection_reason }}</p>
+    {% elif request.user.rejection_reason %}
+        <p class="mb-2"><strong>Причина:</strong> {{ request.user.rejection_reason }}</p>
     {% endif %}
-    Вы можете загрузить документы ещё раз.
+    <p>Вы можете исправить данные в настройках профиля и отправить заявку повторно.</p>
 </div>
+
+<!-- Форма для отправки на пересмотр -->
+<form method="post" style="margin-top: 15px; padding: 15px; border: 1px solid #f5c6cb; border-radius: 4px; background-color: #fff5f5;">
+    {% csrf_token %}
+    <h3 style="margin-top: 0;">Отправить на пересмотр</h3>
+    <p>После нажатия кнопки ваши данные будут отправлены на повторное рассмотрение администратору.</p>
+    <button type="submit" name="resubmit" class="btn btn-warning">
+        🔄 Отправить на пересмотр
+    </button>
+</form>
+
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <h2>Повторная верификация</h2>

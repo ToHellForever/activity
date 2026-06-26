@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> 
-<style>
+    <style>
     .package-card {
         border: none;
         border-radius: 12px;
@@ -59,9 +59,48 @@
     .package-card .card-text strong {
         color: #212529;
     }
+    
+    /* Стили для дизейбленных ссылок */
+    .disabled-link {
+        pointer-events: none;
+        opacity: 0.5;
+        text-decoration: none;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    /* Стили для активной ссылки (чат поддержки) */
+    .always-active-link {
+        pointer-events: auto;
+        opacity: 1;
+        color: #007bff;
+        text-decoration: underline;
+    }
+    
+    .always-active-link:hover {
+        color: #0056b3;
+    }
 </style>
 {% endblock extra_css %}
 {% block content %}
+    <!-- Баннер статуса партнёра -->
+    <div id="partner-status-banner" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; {% if user.verification_status == 'approved' %}background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724;{% elif user.verification_status == 'rejected' %}background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24;{% else %}background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404;{% endif %}">
+        {% if user.verification_status == 'approved' %}
+            <strong>✓ Ваш аккаунт одобрен</strong> — у вас есть полный доступ к функционалу.
+        {% elif user.verification_status == 'rejected' %}
+            <strong>✗ Аккаунт отклонён</strong><br>
+            {% if user.rejection_reason %}
+                Причина: {{ user.rejection_reason }}
+            {% else %}
+                Причина не указана.
+            {% endif %}
+            <br><small>Вы можете изменить данные в настройках профиля и отправить заявку повторно.</small>
+        {% else %}
+            <strong>⏳ Заявка на рассмотрении</strong><br>
+            Ваш аккаунт ожидает одобрения администратора. Функционал ограничен до рассмотрения.
+        {% endif %}
+    </div>
+
     <h1>Партнерский кабинет</h1>
 
     <div>
@@ -93,7 +132,9 @@
                             {% if package.has_program_and_speakers %}Программа: Да{% else %}Программа: Нет{% endif %}<br>
                             {% if package.is_monthly %}Подписка: Ежемесячная{% else %}Подписка: Разовый пакет{% endif %}
                         </p>
-                        <button class="btn btn-primary buy-package-btn" data-package-id="{{ package.id }}">Купить</button>
+                        <button class="btn btn-primary buy-package-btn {% if user.verification_status != 'approved' %}disabled{% endif %}" 
+                                data-package-id="{{ package.id }}"
+                                {% if user.verification_status != 'approved' %}disabled{% endif %}>Купить</button>
                     </div>
                 </div>
             </div>
@@ -128,16 +169,16 @@
         </form>
     </div>
 </div>
-        <!-- Блок с навигацией по разделам -->
+<!-- Блок с навигацией по разделам -->
         <h2>Навигация</h2>
         <ul>
-            <li><a href="#">1. Главная панель / Дашборд</a></li>
+            <li><a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">1. Главная панель / Дашборд</a></li>
             {% comment %} ссылка на мероприятия конкретно этого партнера {% endcomment %}
-            <li><a href="{% url 'partner:partner_event_list' %}">2. Мои мероприятия</a></li>
-            <li><a href="{% url 'partner:reports' %}">3. Продажи и отчёты</a></li>
-            <li><a href="{% url 'partner:finances' %}">6. Финансы и выплаты</a></li>
-            <li><a href="{% url 'partner:profile_edit' %}">6. Настройки профиля</a></li>
-            <li><a href="{% url 'support_dashboard' %}">7. Поддержка / обратная связь</a></li>
+            <li><a href="{% url 'partner:partner_event_list' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>2. Мои мероприятия</a></li>
+            <li><a href="{% url 'partner:reports' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>3. Продажи и отчёты</a></li>
+            <li><a href="{% url 'partner:finances' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>6. Финансы и выплаты</a></li>
+            <li><a href="{% url 'partner:profile_edit' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>6. Настройки профиля</a></li>
+            <li><a href="{% url 'support_dashboard' %}" class="always-active-link">7. Поддержка / обратная связь</a></li>
         </ul>
     </div>
 
@@ -167,7 +208,7 @@
             <h3>Запросить отчёт о продажах</h3>
             <button
                 id="request-report-btn"
-                style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; {% if user.verification_status != 'approved' %}opacity: 0.5; cursor: not-allowed; pointer-events: none;{% endif %}"
                 onclick="openReportModal()"
             >
                 Сгенерировать отчёт

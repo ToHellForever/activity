@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
 from .proxy_models import EventRequestProxy, VisitorUser
-from .forms import EventAdminForm
+from .forms import EventAdminForm, PartnerAdminForm
 from django import forms
 from django.contrib import messages
 from django.conf import settings
@@ -823,7 +823,8 @@ class PartnerAdmin(admin.ModelAdmin):
 
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
-        'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases'
+        'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases',
+        'verification_status', 'get_permissions_status'
     )
 
     list_filter = (
@@ -845,7 +846,25 @@ class PartnerAdmin(admin.ModelAdmin):
         ('Статус', {
             'fields': ('user_type', 'is_verified', 'verification_status')
         }),
+        ('Права и причины', {
+            'fields': ('permissions', 'rejection_reason'),
+            'description': '<b>permissions</b> — JSON с правами. <b>rejection_reason</b> — причина отклонения.'
+        }),
     )
+
+    readonly_fields = ('username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined', 'is_verified')
+
+    change_form_template = "admin/partner_change_form.html"
+
+    def formfield_for_db_field(self, db_field, request, **kwargs):
+        """Переопределяем отображение поля permissions"""
+        if db_field.name == 'permissions':
+            kwargs['widget'] = forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': '{"can_create_events": true, "can_request_reports": false, "can_request_payments": true}',
+                'help_text': 'Формат JSON: {"can_create_events": bool, "can_request_reports": bool, "can_request_payments": bool}'
+            })
+        return super().formfield_for_db_field(db_field, request, **kwargs)
 
     def get_company_name(self, obj):
         if hasattr(obj, 'partner_profile') and obj.partner_profile:
@@ -885,6 +904,17 @@ class PartnerAdmin(admin.ModelAdmin):
         return obj.userpackagesubscription_set.count()
     get_total_purchases.short_description = "Всего покупок"
 
+    def get_permissions_status(self, obj):
+        """Показывает статус прав партнёра"""
+        if obj.verification_status == 'approved':
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Одобрено</span>')
+        elif obj.verification_status == 'rejected':
+            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонено</span>')
+        elif obj.verification_status == 'pending':
+            return mark_safe('<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>')
+        return mark_safe('<span style="color: gray;">—</span>')
+    get_permissions_status.short_description = "Статус партнёра"
+
     def get_queryset(self, request):
         """Фильтруем только партнёров"""
         qs = super().get_queryset(request)
@@ -911,6 +941,89 @@ class PartnerAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.userpackagesubscription_set.all().delete()
         super().delete_queryset(request, queryset)
+
+    def save_model(self, request, obj, form, change):
+        """Сохраняем модель и обновляем связанные данные"""
+        super().save_model(request, obj, form, change)
+
+    def response_change(self, request, obj):
+        """Обрабатываем кнопки одобрения/отклонения"""
+        if '_approve' in request.POST:
+            return self.approve_partner(request, obj)
+        elif '_reject' in request.POST:
+            return self.reject_partner(request, obj)
+        return super().response_change(request, obj)
+    
+    def approve_partner(self, request, obj):
+        """Одобряет партнёра"""
+        obj.verification_status = 'approved'
+        obj.is_verified = True
+        obj.permissions = obj.permissions or {}  # Сохраняем текущие права
+        obj.rejection_reason = None
+        obj.save(update_fields=['verification_status', 'is_verified', 'permissions', 'rejection_reason'])
+        
+        self.message_user(request, f"Партнёр {obj.get_full_name()} успешно одобрен.")
+        
+        # Отправляем email
+        from django.core.mail import send_mail
+        from django.conf import settings
+        try:
+            send_mail(
+                subject='Ваш аккаунт одобрен',
+                message=f'''Здравствуйте, {obj.get_full_name()}!
+
+Ваш аккаунт успешно одобрен. Теперь вы можете использовать все функции платформы.
+
+С уважением,
+Администрация платформы''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[obj.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Не удалось отправить email об одобрении: {e}")
+        
+        return redirect(request.META.get('HTTP_REFERER', '/admin/'))
+    
+    def reject_partner(self, request, obj):
+        """Отклоняет партнёра с причиной"""
+        rejection_reason = request.POST.get('rejection_reason', '')
+        obj.verification_status = 'rejected'
+        obj.is_verified = False
+        obj.permissions = {}  # Сбрасываем права
+        obj.rejection_reason = rejection_reason
+        obj.save(update_fields=['verification_status', 'is_verified', 'permissions', 'rejection_reason'])
+        
+        self.message_user(request, f"Партнёр {obj.get_full_name()} отклонён.")
+        
+        # Отправляем email с причиной
+        from django.core.mail import send_mail
+        from django.conf import settings
+        try:
+            send_mail(
+                subject='Ваш аккаунт отклонён',
+                message=f'''Здравствуйте, {obj.get_full_name()}!
+
+Ваш аккаунт был отклонён модератором.
+
+Причина отклонения: {rejection_reason or "Не указана"}
+
+Вы можете исправить данные в настройках профиля и отправить заявку повторно.
+
+С уважением,
+Администрация платформы''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[obj.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Не удалось отправить email об отклонении: {e}")
+        
+        return redirect(request.META.get('HTTP_REFERER', '/admin/'))
 
 # Регистрируем модели, которые ещё не зарегистрированы
 try:

@@ -1,0 +1,81 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div id="content-main">
+    {{ block.super }}
+    
+    <!-- Блок управления правами и статусом -->
+    {% if obj %}
+    <div id="partner-actions" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6;">
+        <h3 style="margin-top: 0; margin-bottom: 15px;">Управление партнёром</h3>
+        
+        <!-- Статус -->
+        <div style="margin-bottom: 20px; padding: 10px; background: white; border-radius: 4px;">
+            <strong>Текущий статус:</strong>
+            {% if obj.verification_status == 'approved' %}
+                <span style="color: green; font-weight: bold;">✓ Одобрено</span>
+            {% elif obj.verification_status == 'rejected' %}
+                <span style="color: red; font-weight: bold;">✗ Отклонено</span>
+                {% if obj.rejection_reason %}
+                    <br><small>Причина: {{ obj.rejection_reason }}</small>
+                {% endif %}
+            {% elif obj.verification_status == 'pending' %}
+                <span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>
+            {% else %}
+                <span style="color: gray;">Не отправлено</span>
+            {% endif %}
+        </div>
+        
+        <!-- Права доступа -->
+        <div style="margin-bottom: 20px; padding: 10px; background: white; border-radius: 4px;">
+            <strong>Права доступа (отображаются после одобрения):</strong><br><br>
+            {% with obj.permissions|default:"{}" as perms %}
+            <label style="display: block; margin: 5px 0;">
+                <input type="checkbox" {% if perms.can_create_events %}checked{% endif %} disabled> 
+                Создавать мероприятия
+            </label>
+            <label style="display: block; margin: 5px 0;">
+                <input type="checkbox" {% if perms.can_request_reports %}checked{% endif %} disabled> 
+                Запрашивать отчёты
+            </label>
+            <label style="display: block; margin: 5px 0;">
+                <input type="checkbox" {% if perms.can_request_payments %}checked{% endif %} disabled> 
+                Запрашивать выплаты
+            </label>
+            {% endwith %}
+            <small style="color: #666;">Для изменения прав используйте форму ниже и нажмите "Сохранить"</small>
+        </div>
+        
+        <!-- Кнопки действий -->
+        {% if obj.verification_status != 'approved' %}
+        <form method="post" style="margin-top: 15px; display: inline-block;">
+            {% csrf_token %}
+            <input type="hidden" name="_approve" value="1">
+            <button type="submit" style="background: #417690; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                ✓ Одобрить партнёра
+            </button>
+        </form>
+        {% endif %}
+        
+        {% if obj.verification_status != 'rejected' %}
+        <form method="post" style="margin-top: 15px; display: inline-block;">
+            {% csrf_token %}
+            <input type="hidden" name="_reject" value="1">
+            <button type="submit" onclick="document.getElementById('reject-reason').style.display='block'; this.style.display='none';" style="background: #d63638; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                ✗ Отклонить заявку
+            </button>
+            
+            <div id="reject-reason" style="display: none; margin-top: 15px;">
+                <label for="rejection_reason" style="display: block; margin-bottom: 5px; font-weight: bold;">Укажите причину отклонения:</label>
+                <textarea name="rejection_reason" id="rejection_reason" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+                <button type="submit" style="background: #d63638; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                    Подтвердить отклонение
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

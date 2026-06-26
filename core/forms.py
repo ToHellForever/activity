@@ -424,3 +424,65 @@ class SupportTicketForm(forms.ModelForm):
                 widget=forms.Select(attrs={"class": "form-control"}),
                 label="Связанное мероприятие",
             )
+
+
+# --- ФОРМА ДЛЯ АДМИНКИ ПАРТНЁРОВ ---
+class PartnerAdminForm(forms.ModelForm):
+    """Кастомная форма для админки партнёров с чекбоксами прав."""
+    
+    can_create_events = forms.BooleanField(
+        required=False,
+        label="Создавать мероприятия",
+        help_text="Разрешить партнёру создавать и управлять мероприятиями"
+    )
+    can_request_reports = forms.BooleanField(
+        required=False,
+        label="Запрашивать отчёты",
+        help_text="Разрешить партнёру генерировать и скачивать отчёты"
+    )
+    can_request_payments = forms.BooleanField(
+        required=False,
+        label="Запрашивать выплаты",
+        help_text="Разрешить партнёру запрашивать выплаты средств"
+    )
+    rejection_reason = forms.CharField(
+        required=False,
+        label="Причина отклонения",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Укажите причину, по которой заявка партнёра была отклонена..."}),
+        help_text="Эта причина будет показана партнёру в его кабинете"
+    )
+    
+    class Meta:
+        model = CustomUser
+        fields = ['permissions', 'rejection_reason', 'verification_status', 'is_verified']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Загружаем текущие права из JSON
+        if self.instance and self.instance.permissions:
+            perms = self.instance.permissions
+            self.fields['can_create_events'].initial = perms.get('can_create_events', False)
+            self.fields['can_request_reports'].initial = perms.get('can_request_reports', False)
+            self.fields['can_request_payments'].initial = perms.get('can_request_payments', False)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        # Собираем права обратно в JSON
+        permissions = {
+            'can_create_events': cleaned_data.get('can_create_events', False),
+            'can_request_reports': cleaned_data.get('can_request_reports', False),
+            'can_request_payments': cleaned_data.get('can_request_payments', False),
+        }
+        cleaned_data['permissions'] = permissions
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.permissions = self.cleaned_data['permissions']
+        if commit:
+            instance.save()
+        return instance
+
+    def save_m2m(self):
+        # Переопределяем, чтобы не сохранять m2m поля
+        pass

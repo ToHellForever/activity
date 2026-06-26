@@ -37,6 +37,22 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         default="not_submitted",
     )
 
+    # Права доступа партнёра (выдаются админом при одобрении)
+    permissions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Права доступа",
+        help_text="Функции, доступные партнёру: создание ивентов, отчёты, выплаты и т.д.",
+    )
+
+    # Причина отказа (заполняется админом при отклонении)
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Причина отказа",
+        help_text="Причина, по которой заявка партнёра была отклонена",
+    )
+
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""
         # Удаляем все подписки пользователя

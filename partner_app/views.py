@@ -41,6 +41,36 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+def check_partner_status(permission_key=None):
+    """
+    Декоратор для проверки статуса партнёра и прав доступа.
+    Если партнёр не одобрен или не имеет нужного права — редирект на дашборд с сообщением.
+    """
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            if request.user.user_type != "partner":
+                return redirect("visitor:dashboard")
+
+            if request.user.verification_status != "approved":
+                messages.error(
+                    request,
+                    "Ваш аккаунт на рассмотрении. Доступ к функционалу ограничен до одобрения администратором."
+                )
+                return redirect("partner:dashboard")
+            
+            if permission_key:
+                if not request.user.permissions.get(permission_key, False):
+                    messages.error(
+                        request,
+                        "У вас нет прав для выполнения этого действия. Обратитесь к администратору."
+                    )
+                    return redirect("partner:dashboard")
+            
+            return view_func(request, *args, **kwargs)
+        wrapper.__name__ = view_func.__name__
+        return wrapper
+    return decorator
+
 def get_rejection_messages(request):
     """Возвращает сообщения об отклонении мероприятий для текущего пользователя."""
     from core.models import Event
@@ -115,6 +145,7 @@ def partner_dashboard(request):
     return render(request, "partner/dashboard.html", context)
 
 @login_required
+@check_partner_status('can_create_events')
 def create_event(request):
     """
     View для создания нового мероприятия.
@@ -551,6 +582,7 @@ def notify_organizer(event):
     send_mail(subject, message, "settings.DEFAULT_FROM_EMAIL", [event.organizer.email])
 
 @login_required
+@check_partner_status('can_manage_events')
 def edit_event(request, event_id):
     """
     View для редактирования мероприятия.
@@ -1167,6 +1199,7 @@ def bulk_delete_events(request):
     return redirect("partner:partner_event_list")
 
 @login_required
+@check_partner_status('can_request_reports')
 def reports(request):
     """
     Отчеты и статистика продаж для партнера.
@@ -1618,6 +1651,7 @@ def finances(request):
 
 @require_POST
 @csrf_exempt
+@check_partner_status('can_request_payments')
 def request_payout(request):
     """
     Обработка AJAX-запроса на создание запроса выплаты.
@@ -1776,6 +1810,7 @@ def delete_reports(request):
         )
 
 @login_required
+@check_partner_status('can_request_payments')
 def payout_details(request):
     """
     Страница для добавления и просмотра реквизитов для выплат.
@@ -1819,6 +1854,15 @@ def profile_edit(request):
     )
 
     if request.method == "POST":
+        # Обработка кнопки "Отправить на пересмотр"
+        if "resubmit" in request.POST:
+            request.user.verification_status = "pending"
+            request.user.permissions = {}  # Сбрасываем права
+            request.user.rejection_reason = None
+            request.user.save(update_fields=['verification_status', 'permissions', 'rejection_reason'])
+            messages.info(request, "Ваши данные отправлены на повторное рассмотрение. Ожидайте решения администратора.")
+            return redirect("partner:dashboard")
+        
         # Инициализируем форму профиля с instance=profile
         profile_form = PartnerProfileForm(
             request.POST, request.FILES, instance=profile
@@ -1914,6 +1958,7 @@ def profile_edit(request):
     return render(request, "partner/profile_edit.html", context)
 
 @login_required
+@check_partner_status('can_request_reports')
 def generate_report(request):
     """
     Генерирует отчёт о продажах за указанный период в выбранном формате.
@@ -2002,6 +2047,7 @@ def generate_report(request):
     )
 
 @login_required
+@check_partner_status('can_request_reports')
 def report_schedule(request):
     """
     Настройка расписания отправки отчётов.

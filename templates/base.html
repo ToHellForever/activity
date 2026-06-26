@@ -13,6 +13,26 @@
     <link rel="stylesheet" href="/static/css/fonts.css">
     <link rel="stylesheet" href="/static/css/nav_menu.css">
     {% block extra_css %}{% endblock %}
+    
+    <style>
+    /* Глобальные стили для дизейбленных ссылок партнёра */
+    .disabled-link {
+        pointer-events: none;
+        opacity: 0.5;
+        text-decoration: none;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+    .always-active-link {
+        pointer-events: auto;
+        opacity: 1;
+        color: #007bff;
+        text-decoration: underline;
+    }
+    .always-active-link:hover {
+        color: #0056b3;
+    }
+    </style>
 </head>
 <body>
     {% block navbar %}{% include 'includes/nav_menu.html' %}{% endblock %}
