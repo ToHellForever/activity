@@ -74,27 +74,32 @@
 
 <h1>Смена пароля</h1>
 <a href="{% url 'partner:change_password' %}">смена пароля</a>
-{% if request.user.verification_status == 'not_submitted' %}
-<form method="post" enctype="multipart/form-data">
+{% if request.user.verification_status == 'approved' %}
+<div class="alert alert-success">
+    ✓ Ваш статус: Подтверждённый организатор
+</div>
+{% else %}
+<h3>Документы для верификации</h3>
+<p>Загрузите документы для подтверждения статуса организатора:</p>
+<form method="post" enctype="multipart/form-data" style="margin-top: 15px; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px;">
     {% csrf_token %}
-    <h2>Верификация</h2>
-    <p>Для получения статуса "Подтверждённый организатор" загрузите документы:</p>
     {{ document_form.as_p }}
-    <button type="submit" name="upload_documents" class="btn btn-success">Подтвердить квалификацию</button>
+    <button type="submit" name="upload_documents" class="btn btn-primary">{% if request.user.verification_status == 'not_submitted' %}Отправить на проверку{% else %}Загрузить документы{% endif %}</button>
 </form>
-{% elif request.user.verification_status == 'pending' %}
-<div class="alert alert-info">
-    Ваши документы на рассмотрении. Ожидайте решения модератора.
+
+{% if request.user.verification_status == 'pending' %}
+<div class="alert alert-info" style="margin-top: 15px;">
+    ⏳ Ваши документы на рассмотрении. Ожидайте решения модератора.
 </div>
 {% elif request.user.verification_status == 'rejected' %}
-<div class="alert alert-danger">
+<div class="alert alert-danger" style="margin-top: 15px;">
     <strong>✗ Ваши документы были отклонены.</strong><br>
     {% if last_rejected_document and last_rejected_document.rejection_reason %}
         <p class="mb-2"><strong>Причина:</strong> {{ last_rejected_document.rejection_reason }}</p>
     {% elif request.user.rejection_reason %}
         <p class="mb-2"><strong>Причина:</strong> {{ request.user.rejection_reason }}</p>
     {% endif %}
-    <p>Вы можете исправить данные в настройках профиля и отправить заявку повторно.</p>
+    <p>Вы можете загрузить документы заново выше.</p>
 </div>
 
 <!-- Форма для отправки на пересмотр -->
@@ -106,18 +111,7 @@
         🔄 Отправить на пересмотр
     </button>
 </form>
-
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <h2>Повторная верификация</h2>
-    <p>Попробуйте загрузить документы ещё раз:</p>
-    {{ document_form.as_p }}
-    <button type="submit" name="upload_documents" class="btn btn-warning">Загрузить документы повторно</button>
-</form>
-{% elif request.user.is_verified %}
-<div class="alert alert-success">
-    Ваш статус: Подтверждённый организатор ✓
-</div>
+{% endif %}
 {% endif %}
 
 <!-- Ссылка на соглашение -->

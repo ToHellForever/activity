@@ -841,11 +841,11 @@ class PartnerAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Организатор', {
-            'fields': ( 'verification_status', 'rejection_reason'),
-            'description': 'Статус проверенного организатора и причина отказа'
+            'fields': ('verification_status', 'rejection_reason'),
+            'description': 'Статус проверки документов и причина отказа'
         }),
         ('Аккаунт', {
-            'fields': ('user_type', 'first_name', 'last_name', 'email', 'username', 'date_joined'),
+            'fields': ('user_type', 'first_name', 'last_name', 'username', 'date_joined'),
         }),
         ('Права доступа', {
             'fields': ('can_create_events', 'can_request_reports', 'can_request_payments'),
