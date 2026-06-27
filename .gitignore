@@ -22,3 +22,5 @@ qr_code*
 media/*
 !media/icon/
 !media/icon/*
+__pycache__/
+*.pyc
