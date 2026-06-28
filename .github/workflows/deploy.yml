@@ -4,7 +4,7 @@ name: Deploy to VPS
 # Указываем когда запускать - при push в main ветку
 on:
   push:
-    branches: [ main ]
+    branches: [ main, my-changes ]
 
 # Определяем задачи для выполнения 
 jobs:
