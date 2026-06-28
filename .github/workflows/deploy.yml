@@ -20,17 +20,14 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
-          # Используем секреты из GitHub для подключения
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-
-          # Команды выполняемые на сервере
           script: |
             # Переходим в директорию проекта
             cd /home/v/activity
 
-            # Останавливаем службу приложения  (с sudo и передачей пароля)
+            # Останавливаем службу приложения (с sudo и передачей пароля)
             echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop activity
 
             # Обновляем код из репозитория (с sudo и передачей пароля)
@@ -45,8 +42,6 @@ jobs:
 
             # Если у вас Poetry
             /home/v/.local/bin/poetry install --no-root
-
-            # Тут можно добавить команду для создания миграций
 
             # Создаем файл .env из секрета где записано все его содержимое
             echo "${{ secrets.ENV_FILE }}" > .env
