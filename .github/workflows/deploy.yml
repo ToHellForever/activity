@@ -20,15 +20,18 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
+          # Используем секреты из GitHub для подключения
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+
+          # Команды выполняемые на сервере
           script: |
             # Переходим в директорию проекта
             cd /home/v/activity
 
-            # Останавливаем службу приложения (с sudo и передачей пароля)
-            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop activity
+            # Останавливаем службу приложения  (с sudo и передачей пароля)
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop gunicorn_activity
 
             # Обновляем код из репозитория (с sudo и передачей пароля)
             echo "${{ secrets.PASSWORD }}" | git pull
@@ -40,11 +43,17 @@ jobs:
             # Обновляем зависимости
             # pip install -r requirements.txt
 
-            # Если у вас Poetry
-            /home/v/.local/bin/poetry install --no-root
+            # Если у вас Poetry (Можно определить путь до poetry which poetry)
+            /home/v/.local/bin/poetry install --no-root 
+
+            # Миграции
+            /home/v/.local/bin/poetry run python manage.py migrate
 
             # Создаем файл .env из секрета где записано все его содержимое
             echo "${{ secrets.ENV_FILE }}" > .env
 
+            # Собираем статику 
+            /home/v/.local/bin/poetry run python manage.py collectstatic --noinput
+
             # Перезапускаем systemd сервис (с sudo и передачей пароля)
-            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl start activity
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl start gunicorn_activity
