@@ -131,6 +131,10 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+FIXTURE_DIRS = [
+    os.path.join(BASE_DIR, 'fixtures'),
+]
+
 USE_YANDEX_CLOUD = os.getenv('USE_YANDEX_CLOUD', 'False').lower() == 'true'
 
 # Путь к водяному знаку
