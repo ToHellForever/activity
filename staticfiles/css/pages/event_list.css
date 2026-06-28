@@ -1,0 +1,168 @@
+.dropdown-toggle {
+  color: #ffffff;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 1rem;
+  border-radius: 20px;
+  background: transparent;
+  border: none;
+  margin-top: 10px;
+  padding: 7px 15px 7px 15px;
+  outline: none;
+}
+
+.dropdown-toggle::after {
+  display: none !important;
+}
+
+.dropdown-toggle:hover {
+  outline: 1px solid #ffffff;
+}
+
+.filter-item .d-flex.flex-wrap {
+  width: 90%;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.form-check-label {
+  white-space: nowrap;
+}
+
+/* Стили для чекбоксов тегов - оранжевый цвет #ff8348 */
+.form-check-input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid #ff8348;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.form-check-input[type="checkbox"]:checked {
+  background-color: #ff8348;
+  border-color: #ff8348;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input[type="checkbox"]:hover {
+  border-color: #e6743c;
+}
+
+.form-check-input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 131, 72, 0.25);
+}
+
+.btn:hover,
+.btn:focus,
+.btn:active {
+  color: #ffffff;
+}
+
+.filter-item .btn .triangle-down {
+  display: none;
+}
+
+.dropdown-menu {
+  width: auto;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.filter-input::placeholder {
+  padding: 10px;
+  padding-left: 20px;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-style: italic;
+  color: #777a8d;
+}
+
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Процентная ширина колонок */
+.filter-col-category {
+  width: 15%;
+}
+
+.filter-col-date {
+  width: 25%;
+}
+
+.filter-col-title {
+  width: 35%;
+}
+
+.filter-col-format {
+  width: 15%;
+}
+
+.filter-col-button {
+  width: 10%;
+  min-width: 100px;
+  align-self: flex-end; 
+}
+
+/* Кнопка сброса фильтров */
+.filter-reset-btn {
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #FFFFFF;
+  text-decoration: none;
+  position: absolute; 
+  right: 3rem;         
+  bottom: 0;    
+  margin-bottom: 1rem; 
+}
+
+/* Инпут даты — скрываем курсор */
+#dateFromInput {
+    cursor: pointer;
+    caret-color: transparent;
+}
+
+/* === Карточки в списках: 2/3/4 в строке === */
+/* <900px — 2 карточки в строке */
+@media (max-width: 899px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 50% !important;
+    max-width: 50% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}
+
+/* 900px – 1299px — 3 карточки в строке */
+@media (min-width: 900px) and (max-width: 1299px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 33.333% !important;
+    max-width: 33.333% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}
+
+/* >=1300px — 4 карточки в строке */
+@media (min-width: 1300px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 25% !important;
+    max-width: 25% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}

@@ -1,0 +1,267 @@
+/* Стили для кастомного календаря */
+.calendar-popup {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 9999 !important;
+    padding: 15px;
+    min-width: 300px;
+}
+
+.calendar-popup.active {
+    display: block;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.calendar-header button {
+    background: #ff8348;
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-header button:hover {
+    background: #e6743c;
+}
+
+.calendar-month-year {
+    font-family: "Montserrat";
+    font-weight: 600;
+    font-size: 1rem;
+    color: #00056e;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.calendar-day-header {
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: #9a9a9a;
+    text-align: center;
+    padding: 5px;
+}
+
+.calendar-day {
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #333;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.calendar-day:hover:not(.calendar-day-empty):not(.calendar-day-disabled) {
+    background: #ff8348;
+    color: white;
+}
+
+.calendar-day.calendar-day-empty {
+    cursor: default;
+}
+
+.calendar-day.calendar-day-disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.calendar-day.calendar-day-today {
+    background: #00056e;
+    color: white;
+}
+
+.calendar-day.calendar-day-selected {
+    background: #ff8348;
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.calendar-footer button {
+    flex: 1;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-family: "Montserrat";
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.calendar-clear {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.calendar-clear:hover {
+    background: #e0e0e0;
+}
+
+.calendar-close {
+    background: #00056e;
+    color: white;
+}
+
+.calendar-close:hover {
+    background: #00045a;
+}
+
+/* Стили для выпадающего списка */
+.dropdown-container {
+    position: relative;
+    z-index: 9999;
+}
+
+.dropdown-menu-custom {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0;
+    background: #ffffff;
+    border-radius: 0 0 15px 15px;
+    z-index: 9999 !important;
+    max-height: 300px;
+    overflow-y: auto;
+    min-width: 100%;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+}
+
+.dropdown-menu-custom.active {
+    display: block !important;
+}
+
+.dropdown-option {
+    padding: 12px 15px;
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: clamp(0.7rem, 1vw, 1rem) ;
+    color: #777A8D;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+
+.dropdown-option:hover {
+    background: #f8f9fa;
+    color: #ff8348;
+}
+
+
+/* Стили для input с выпадающим списком */
+.filter-input-dropdown {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.filter-input-dropdown:focus {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* При открытом dropdown убираем нижние border-radius у инпута */
+.dropdown-container.open .filter-input-dropdown {
+    border-radius: 20px 20px 0 0 !important;
+}
+
+/* Убираем тень у инпута при открытом списке для плавного перехода */
+.dropdown-container.open .filter-input {
+    box-shadow: none;
+}
+
+/* Стили кнопки dropdown при открытом меню */
+.dropdown-container.open .dropdown-toggle-btn {
+    background: transparent;
+}
+
+.dropdown-container.open .dropdown-toggle-btn .triangle-down {
+    border-top: 12px solid #ff8348;
+    transform: rotate(180deg);
+}
+
+/* Стили кнопки календаря при открытом меню */
+.date-container.open .calendar-toggle-btn {
+    background: transparent;
+}
+
+.date-container.open .calendar-toggle-btn .triangle-down {
+    border-top: 12px solid #ff8348;
+    transform: rotate(180deg);
+}
+
+/* Плавная анимация для кнопок */
+.dropdown-toggle-btn,
+.calendar-toggle-btn {
+    transition: background 0.3s ease;
+}
+
+.dropdown-toggle-btn .triangle-down,
+.calendar-toggle-btn .triangle-down {
+    transition: transform 0.3s ease, border-top-color 0.3s ease;
+}
+
+.dropdown-menu-custom {
+    pointer-events: auto; /* Возвращаем клики для dropdown */
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+    .calendar-popup {
+        min-width: 280px;
+        padding: 10px;
+    }
+
+    .calendar-day {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+
+    .calendar-month-year {
+        font-size: 0.9rem;
+    }
+
+    .calendar-header button {
+        width: 25px;
+        height: 25px;
+        font-size: 1rem;
+    }
+}
