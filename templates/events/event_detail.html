@@ -8,7 +8,7 @@
 {% include "includes/modal_buy_ticket.html" %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU" type="text/javascript"></script>
 <script>
-    window.BULK_BUY_URL = "{% url 'bulk_buy_tickets' event.id %}";
+    window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
     window.IS_PARTNER = {% if request.user.is_authenticated and request.user.user_type == "partner" %}true{% else %}false{% endif %};
 </script>
 <script src="{% static 'js/pages/event_detail.js' %}"></script>
