@@ -65,34 +65,6 @@
   display: none;
 }
 
-.type-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 400;
-  color: #666;
-  cursor: pointer;
-  user-select: none;
-}
-
-.type-option::before {
-  content: "";
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid #ccc;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  background: #fff;
-}
-
-.registration-type-switcher input[type="radio"]:checked + .type-option::before {
-  background: #ff6b35;
-  border-color: #ff6b35;
-}
-
 .registration-type-switcher input[type="checkbox"],
 .registration-type-switcher input[type="radio"] {
   display: none;
@@ -107,6 +79,7 @@
   color: #666;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .type-option::before {
@@ -118,6 +91,23 @@
   border-radius: 4px;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  background: #fff;
+  position: relative;
+}
+
+.type-option::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .registration-type-switcher
@@ -128,18 +118,25 @@
   border-color: #ff6b35;
 }
 
+.registration-type-switcher
+  input[type="checkbox"]:checked
+  + .type-option::after,
+.registration-type-switcher input[type="radio"]:checked + .type-option::after {
+  opacity: 1;
+}
+
 /* ===== СЕКЦИИ ФОРМЫ ===== */
 .email-section {
-    width: 24%;
+  width: 24%;
 }
 .password-section {
-    width: 49%;
+  width: 49%;
 }
 .company-info-section {
-    width: 55%;
+  width: 55%;
 }
 .contact-info-section {
-    width: 70%;
+  width: 70%;
 }
 .form-section {
   margin-bottom: 12px;
