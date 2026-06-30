@@ -120,7 +120,12 @@ class PartnerProfile(models.Model):
     email = models.EmailField(
         blank=True,
         null=True,
-        verbose_name="E-mail",
+        verbose_name="E-mail (для входа)",
+    )
+    additional_email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Дополнительный E-mail",
     )
 
     # === Социальные сети и ссылки ===

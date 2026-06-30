@@ -248,6 +248,7 @@ def register_view(request):
                         contact_person=partner_form.cleaned_data["contact_person"],
                         phone=partner_form.cleaned_data["phone"],
                         email=partner_form.cleaned_data["email"],
+                        additional_email=partner_form.cleaned_data.get("additional_email", ""),
                         vk_link=partner_form.cleaned_data.get("vk_link", ""),
                         max_link=partner_form.cleaned_data.get("max_link", ""),
                         telegram_link=partner_form.cleaned_data.get("telegram_link", ""),

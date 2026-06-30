@@ -188,9 +188,9 @@
                 </div>
             </div>
             
-            <!-- 9. Контактное лицо, Телефон -->
+            <!-- 9. Контактное лицо, Телефон, Доп. Email -->
             <div class="form-section">
-                <div class="form-row form-row-double">
+                <div class="form-row form-row-triple">
                     <div class="form-group">
                         <label class="form-label">Контактное лицо (имя)</label>
                         {{ partner_form.contact_person }}
@@ -200,6 +200,11 @@
                         <label class="form-label">Телефон</label>
                         {{ partner_form.phone }}
                         {% if partner_form.phone.errors %}<ul class="errorlist">{{ partner_form.phone.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дополнительный E-mail</label>
+                        {{ partner_form.additional_email }}
+                        {% if partner_form.additional_email.errors %}<ul class="errorlist">{{ partner_form.additional_email.errors }}</ul>{% endif %}
                     </div>
                 </div>
             </div>
@@ -224,7 +229,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- 11. Кейсы -->
             <div class="form-section">
                 <div class="form-group form-group-full">
@@ -242,7 +247,7 @@
                     {% if partner_form.reviews.errors %}<ul class="errorlist">{{ partner_form.reviews.errors }}</ul>{% endif %}
                 </div>
             </div>
-            
+
             <!-- Документы -->
             <div class="form-section">
                 <h3 class="section-title">Документы для отметки «надёжный организатор»</h3>

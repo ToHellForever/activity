@@ -255,6 +255,11 @@ class PartnerRegistrationForm(forms.Form):
         label="E-mail",
         widget=forms.EmailInput(attrs={"placeholder": "E-mail"}),
     )
+    additional_email = forms.EmailField(
+        required=False,
+        label="Дополнительный E-mail",
+        widget=forms.EmailInput(attrs={"placeholder": "Дополнительный E-mail"}),
+    )
 
     # Портфолио и ссылки
     vk_link = forms.URLField(
@@ -321,7 +326,7 @@ class PartnerRegistrationForm(forms.Form):
         widget=forms.PasswordInput,
         min_length=8,
     )
-
+    
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "")
         if phone:
@@ -343,7 +348,7 @@ class PartnerRegistrationForm(forms.Form):
             self.add_error("email", "Пользователь с таким email уже существует.")
 
         return cleaned_data
-
+    
 
 # --- ФОРМА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ПАРТНЕРА ---
 class PartnerProfileForm(forms.ModelForm):
