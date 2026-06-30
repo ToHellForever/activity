@@ -162,6 +162,11 @@
   min-width: 160px;
 }
 
+.form-row-quadruple .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
 .form-group-full {
   margin-bottom: 16px;
 }

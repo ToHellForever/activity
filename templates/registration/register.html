@@ -66,56 +66,54 @@
             {% csrf_token %}
             <input type="hidden" name="form_type" value="partner">
             
-            <!-- Переключатель типа лица -->
+            <!-- 1. Email -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">Электронная почта</label>
+                    {{ partner_form.email }}
+                    {% if partner_form.email.errors %}<ul class="errorlist">{{ partner_form.email.errors }}</ul>{% endif %}
+                </div>
+            </div>
+
+            <!-- 2. Пароль + Повторите пароль -->
+            <div class="form-section">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" name="password1" id="id_password1" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Повторите пароль</label>
+                        <input type="password" name="password2" id="id_password2" required minlength="8">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Тип партнёра -->
             <div class="form-section">
                 <div class="registration-type-switcher">
-                    <input type="radio" id="type-physical" name="registration_type" value="physical" checked onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-physical" name="registration_type" value="physical" checked>
                     <label for="type-physical" class="type-option">Физическое лицо</label>
                     
-                    <input type="radio" id="type-legal" name="registration_type" value="legal" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-legal" name="registration_type" value="legal">
                     <label for="type-legal" class="type-option">Юридическое лицо</label>
                     
-                    <input type="radio" id="type-ip" name="registration_type" value="ip" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-ip" name="registration_type" value="ip">
                     <label for="type-ip" class="type-option">ИП</label>
                     
-                    <input type="radio" id="type-self-employed" name="registration_type" value="self_employed" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-self-employed" name="registration_type" value="self_employed">
                     <label for="type-self-employed" class="type-option">Самозанятый</label>
                 </div>
             </div>
 
-            <!-- Основная информация -->
+            <!-- 4. Название организации, ОГРН, ИНН, КПП -->
             <div class="form-section">
-                <div class="form-row form-row-double">
+                <div class="form-row form-row-quadruple">
                     <div class="form-group">
                         <label class="form-label">Название организации / ФИО</label>
                         {{ partner_form.company_name }}
                         {% if partner_form.company_name.errors %}<ul class="errorlist">{{ partner_form.company_name.errors }}</ul>{% endif %}
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Краткое наименование, бренд/торговое имя</label>
-                        {{ partner_form.short_name }}
-                        {% if partner_form.short_name.errors %}<ul class="errorlist">{{ partner_form.short_name.errors }}</ul>{% endif %}
-                    </div>
-                </div>
-                
-                <div class="form-row form-row-double">
-                    <div class="form-group">
-                        <label class="form-label">Сайт компании: URL</label>
-                        {{ partner_form.website }}
-                        {% if partner_form.website.errors %}<ul class="errorlist">{{ partner_form.website.errors }}</ul>{% endif %}
-                    </div>
-                </div>
-                
-                <div class="form-group form-group-full">
-                    <label class="form-label">Описание организации: кратко о деятельности (до 500 символов)</label>
-                    {{ partner_form.description }}
-                    {% if partner_form.description.errors %}<ul class="errorlist">{{ partner_form.description.errors }}</ul>{% endif %}
-                </div>
-            </div>
-
-            <!-- Реквизиты (показываются для юрлица, ИП, самозанятого) -->
-            <div class="form-section organization-fields" id="organization-fields">
-                <div class="form-row form-row-double">
                     <div class="form-group">
                         <label class="form-label">ОГРН/ОГРНИП</label>
                         {{ partner_form.ogrn }}
@@ -126,9 +124,6 @@
                         {{ partner_form.inn }}
                         {% if partner_form.inn.errors %}<ul class="errorlist">{{ partner_form.inn.errors }}</ul>{% endif %}
                     </div>
-                </div>
-                
-                <div class="form-row form-row-double">
                     <div class="form-group">
                         <label class="form-label">КПП</label>
                         {{ partner_form.kpp }}
@@ -136,8 +131,24 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Адреса -->
+            
+            <!-- 5. Краткое наименование, Сайт компании -->
+            <div class="form-section">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">Краткое наименование: бренд/торговое имя</label>
+                        {{ partner_form.short_name }}
+                        {% if partner_form.short_name.errors %}<ul class="errorlist">{{ partner_form.short_name.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Сайт компании: URL</label>
+                        {{ partner_form.website }}
+                        {% if partner_form.website.errors %}<ul class="errorlist">{{ partner_form.website.errors }}</ul>{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 6. Юридический адрес, Фактический адрес -->
             <div class="form-section">
                 <div class="form-row form-row-double">
                     <div class="form-group">
@@ -152,8 +163,17 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Логотип -->
+            
+            <!-- 7. Описание организации -->
+            <div class="form-section">
+                <div class="form-group form-group-full">
+                    <label class="form-label">Описание организации: кратко о деятельности (до 500 символов)</label>
+                    {{ partner_form.description }}
+                    {% if partner_form.description.errors %}<ul class="errorlist">{{ partner_form.description.errors }}</ul>{% endif %}
+                </div>
+            </div>
+            
+            <!-- 8. Логотип -->
             <div class="form-section">
                 <div class="form-group form-group-full">
                     <label class="form-label">Логотип PNG/SVG/JPG, до 5 МБ</label>
@@ -168,9 +188,9 @@
                 </div>
             </div>
             
-            <!-- Контакты -->
+            <!-- 9. Контактное лицо, Телефон -->
             <div class="form-section">
-                <div class="form-row form-row-triple">
+                <div class="form-row form-row-double">
                     <div class="form-group">
                         <label class="form-label">Контактное лицо (имя)</label>
                         {{ partner_form.contact_person }}
@@ -181,18 +201,11 @@
                         {{ partner_form.phone }}
                         {% if partner_form.phone.errors %}<ul class="errorlist">{{ partner_form.phone.errors }}</ul>{% endif %}
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">E-mail</label>
-                        {{ partner_form.email }}
-                        {% if partner_form.email.errors %}<ul class="errorlist">{{ partner_form.email.errors }}</ul>{% endif %}
-                    </div>
                 </div>
             </div>
 
-            <!-- Портфолио и ссылки -->
+            <!-- 10. VK, MAX, Telegram -->
             <div class="form-section">
-                <h3 class="section-title">Портфолио и ссылки</h3>
-                
                 <div class="form-row form-row-triple">
                     <div class="form-group">
                         <label class="form-label">VK</label>
@@ -210,13 +223,19 @@
                         {% if partner_form.telegram_link.errors %}<ul class="errorlist">{{ partner_form.telegram_link.errors }}</ul>{% endif %}
                     </div>
                 </div>
-                
+            </div>
+
+            <!-- 11. Кейсы -->
+            <div class="form-section">
                 <div class="form-group form-group-full">
                     <label class="form-label">Кейсы/прошедшие мероприятия: ссылки или краткое описание</label>
                     {{ partner_form.cases }}
                     {% if partner_form.cases.errors %}<ul class="errorlist">{{ partner_form.cases.errors }}</ul>{% endif %}
                 </div>
-                
+            </div>
+            
+            <!-- 12. Отзывы -->
+            <div class="form-section">
                 <div class="form-group form-group-full">
                     <label class="form-label">Отзывы и публикации в СМИ: ссылки</label>
                     {{ partner_form.reviews }}
@@ -246,20 +265,6 @@
                 </div>
                 
                 <p class="advantages-text">Преимущества отметки: бейдж в профиле, повышенный доверительный рейтинг, приоритетное размещение в каталоге</p>
-            </div>
-            
-            <!-- Пароли -->
-            <div class="form-section">
-                <div class="form-row form-row-double">
-                    <div class="form-group">
-                    <label class="form-label">Пароль</label>
-                        <input type="password" name="password1" id="id_password1" required minlength="8">
-                    </div>
-                    <div class="form-group">
-                    <label class="form-label">Повторите пароль</label>
-                        <input type="password" name="password2" id="id_password2" required minlength="8">
-                    </div>
-                </div>
             </div>
 
             <!-- Согласия -->
@@ -312,22 +317,6 @@ document.getElementById('id_logo').addEventListener('change', function() {
 document.getElementById('documents-upload').addEventListener('change', function() {
     const count = this.files.length;
     document.getElementById('documents-filename').textContent = count > 0 ? 'Выбрано файлов: ' + count : '';
-});
-
-// Переключение видимости полей организации
-function toggleOrganizationFields() {
-    const type = document.querySelector('input[name="registration_type"]:checked').value;
-    const orgFields = document.getElementById('organization-fields');
-    if (type === 'physical') {
-        orgFields.style.display = 'none';
-    } else {
-        orgFields.style.display = 'block';
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    toggleOrganizationFields();
 });
 </script>
 </div>
