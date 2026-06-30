@@ -16,7 +16,9 @@
   margin-bottom: 24px;
   text-align: left;
 }
-
+ul {
+    padding-left: 15px;
+}
 /* ===== ПЕРЕКЛЮЧАТЕЛЬ ТИПА РЕГИСТРАЦИИ ===== */
 .type-switcher {
   display: flex;
@@ -74,9 +76,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 400;
-  color: #666;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0C0C0C;
   cursor: pointer;
   user-select: none;
   position: relative;
@@ -143,7 +146,8 @@
 }
 
 .section-title {
-  font-size: 16px;
+    font-family: 'Verdana', sans-serif;
+  font-size: 13px;
   font-weight: 400;
   color: #1a1a1a;
   margin-bottom: 5px;
@@ -181,15 +185,13 @@
 }
 
 /* ===== ГРУППЫ ПОЛЕЙ ===== */
-.form-group {
-  margin-bottom: 0;
-}
 
 .form-label {
   display: block;
-  font-size: 11px;
-  font-weight: 400;
-  color: #999;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  color: #9A9A9A;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
   text-transform: uppercase;
@@ -265,9 +267,8 @@
 
 .file-upload-label {
   display: inline-block;
-  padding: 8px 20px;
-  background: #ff6b35;
-  color: #fff;
+  background: transparent;
+  color: #02369C;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
@@ -275,10 +276,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: background 0.2s ease;
-}
-
-.file-upload-label:hover {
-  background: #e55a28;
 }
 
 .file-name-display {
@@ -298,15 +295,19 @@
 
 .documents-list {
   font-size: 12px;
-  color: #666;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
+  color: #000000;
   line-height: 1.7;
 }
 
 .advantages-text {
   font-size: 12px;
-  color: #999;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
+  color: black;
   margin-top: 12px;
-  margin-bottom: 0;
+  margin-bottom: 20px;
 }
 
 /* ===== СОГЛАШЕНИЯ ===== */
@@ -321,8 +322,10 @@
   align-items: flex-start;
   gap: 8px;
   cursor: pointer;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
   font-size: 12px;
-  color: #666;
+  color: #000000;
   line-height: 1.5;
 }
 
@@ -336,8 +339,8 @@
 }
 
 .agreement-item a {
-  color: #ff6b35;
-  text-decoration: underline;
+  color: #02369C;
+  text-decoration: none;
 }
 
 .agreement-item a:hover {
@@ -429,6 +432,13 @@
 
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
+
+    .email-section,
+    .password-section,
+    .company-info-section,
+    .contact-info-section {
+        width: 100%;
+    }
   .register-page {
     padding: 20px 12px;
   }
