@@ -1,10 +1,9 @@
-document.addEventListener('DOMContentLoaded', function() {
+﻿document.addEventListener('DOMContentLoaded', function() {
     // По умолчанию показываем форму участника
     showForm('visitor');
     
     // Добавляем поля пароля в форму участника при отправке
     document.getElementById('visitor-form').addEventListener('submit', function(e) {
-        // Генерируем случайный пароль если пустой
         const password1 = this.querySelector('input[name="password1"]');
         const password2 = this.querySelector('input[name="password2"]');
         

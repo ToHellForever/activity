@@ -4,375 +4,334 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/register.css' %}">
 <script src="{% static 'js/pages/register.js' %}"></script>
-<div class="register-container">
-    <h1>Регистрация</h1>
 
-    <!-- Переключатель типа регистрации -->
-    <div class="type-switcher" style="margin-bottom: 30px;">
-        <input type="radio" id="switch-visitor" name="form_type" value="visitor" checked onchange="showForm('visitor')">
-        <label for="switch-visitor" style="padding: 10px 20px; border: 2px solid #e0e0e0; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; user-select: none;">
-            👤 Участник
-        </label>
-        
-        <input type="radio" id="switch-partner" name="form_type" value="partner" onchange="showForm('partner')">
-        <label for="switch-partner" style="padding: 10px 20px; border: 2px solid #e0e0e0; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; user-select: none; margin-left: 10px;">
-            🏢 Партнёр
-        </label>
-    </div>
+<div class="register-page">
+    <div class="register-container">
+        <h1 class="register-title">Регистрация</h1>
 
-    <style>
-        .type-switcher input[type="radio"] { display: none; }
-        .type-switcher input[type="radio"]:checked + label {
-            border-color: #ff6b35;
-            background: #fff3ef;
-            color: #ff6b35;
-        }
-    </style>
-
-    {% if form.non_field_errors %}
-        <div class="form-errors">
-            <strong>Ошибка:</strong>
-            <ul>
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
+        <!-- Переключатель типа регистрации -->
+        <div class="type-switcher">
+            <input type="radio" id="switch-visitor" name="form_type" value="visitor" checked onchange="showForm('visitor')">
+            <label for="switch-visitor" class="type-switcher-label">Участник</label>
+            
+            <input type="radio" id="switch-partner" name="form_type" value="partner" onchange="showForm('partner')">
+            <label for="switch-partner" class="type-switcher-label">Партнёр</label>
         </div>
-    {% endif %}
 
-    <!-- Форма для участника -->
-    <form id="visitor-form" method="post" style="display: none;">
-        {% csrf_token %}
-        <input type="hidden" name="form_type" value="visitor">
+        {% if form.non_field_errors or partner_form.non_field_errors %}
+            <div class="form-errors">
+                <strong>Ошибка:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for error in partner_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+            
+        <!-- ===== ФОРМА УЧАСТНИКА ===== -->
+        <form id="visitor-form" method="post" class="register-form">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="visitor">
 
-        <div class="form-section">
-            <div class="form-row double">
+            <div class="form-section">
                 <div class="form-group">
-                    <label>Электронная почта</label>
+                    <label class="form-label">Электронная почта</label>
                     {{ form.email }}
-                    {% if form.email.errors %}
-                        <ul class="errorlist">{{ form.email.errors }}</ul>
-                    {% endif %}
+                    {% if form.email.errors %}<ul class="errorlist">{{ form.email.errors }}</ul>{% endif %}
                 </div>
             </div>
             
-            <div class="form-row double">
+            <div class="form-row form-row-double">
                 <div class="form-group">
-                    <label>Пароль</label>
+                    <label class="form-label">Пароль</label>
                     {{ form.password1 }}
-                    {% if form.password1.errors %}
-                        <ul class="errorlist">{{ form.password1.errors }}</ul>
-                    {% endif %}
+                    {% if form.password1.errors %}<ul class="errorlist">{{ form.password1.errors }}</ul>{% endif %}
                 </div>
                 <div class="form-group">
-                    <label>Повторите пароль</label>
+                    <label class="form-label">Повторите пароль</label>
                     {{ form.password2 }}
-                    {% if form.password2.errors %}
-                        <ul class="errorlist">{{ form.password2.errors }}</ul>
-                    {% endif %}
+                    {% if form.password2.errors %}<ul class="errorlist">{{ form.password2.errors }}</ul>{% endif %}
                 </div>
             </div>
-        </div>
 
-        <button type="submit" class="submit-btn">Зарегистрироваться</button>
-    </form>
+            <button type="submit" class="submit-btn">Зарегистрироваться</button>
+        </form>
 
-    <!-- Форма для партнёра -->
-    <form id="partner-form" method="post" enctype="multipart/form-data" style="display: none;">
-        {% csrf_token %}
-        <input type="hidden" name="form_type" value="partner">
-        
-        <!-- Переключатель типа лица -->
-        <div class="form-section">
-            <div class="type-switcher">
-                <input type="radio" id="type-physical" name="registration_type" value="physical" checked>
-                <label for="type-physical">Физическое лицо</label>
+        <!-- ===== ФОРМА ПАРТНЁРА ===== -->
+        <form id="partner-form" method="post" enctype="multipart/form-data" class="register-form" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="partner">
+            
+            <!-- Переключатель типа лица -->
+            <div class="form-section">
+                <div class="registration-type-switcher">
+                    <input type="checkbox" id="type-physical" name="registration_type" value="physical" checked onchange="toggleOrganizationFields()">
+                    <label for="type-physical" class="type-option">Физическое лицо</label>
+                    
+                    <input type="checkbox" id="type-legal" name="registration_type" value="legal" onchange="toggleOrganizationFields()">
+                    <label for="type-legal" class="type-option">Юридическое лицо</label>
+                    
+                    <input type="checkbox" id="type-ip" name="registration_type" value="ip" onchange="toggleOrganizationFields()">
+                    <label for="type-ip" class="type-option">ИП</label>
+                    
+                    <input type="checkbox" id="type-self-employed" name="registration_type" value="self_employed" onchange="toggleOrganizationFields()">
+                    <label for="type-self-employed" class="type-option">Самозанятый</label>
+                </div>
+            </div>
+
+            <!-- Основная информация -->
+            <div class="form-section">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">Название организации / ФИО</label>
+                        {{ partner_form.company_name }}
+                        {% if partner_form.company_name.errors %}<ul class="errorlist">{{ partner_form.company_name.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Краткое наименование, бренд/торговое имя</label>
+                        {{ partner_form.short_name }}
+                        {% if partner_form.short_name.errors %}<ul class="errorlist">{{ partner_form.short_name.errors }}</ul>{% endif %}
+                    </div>
+                </div>
                 
-                <input type="radio" id="type-legal" name="registration_type" value="legal">
-                <label for="type-legal">Юридическое лицо</label>
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">Сайт компании: URL</label>
+                        {{ partner_form.website }}
+                        {% if partner_form.website.errors %}<ul class="errorlist">{{ partner_form.website.errors }}</ul>{% endif %}
+                    </div>
+                </div>
                 
-                <input type="radio" id="type-ip" name="registration_type" value="ip">
-                <label for="type-ip">ИП</label>
+                <div class="form-group form-group-full">
+                    <label class="form-label">Описание организации: кратко о деятельности (до 500 символов)</label>
+                    {{ partner_form.description }}
+                    {% if partner_form.description.errors %}<ul class="errorlist">{{ partner_form.description.errors }}</ul>{% endif %}
+                </div>
+            </div>
+
+            <!-- Реквизиты (показываются для юрлица, ИП, самозанятого) -->
+            <div class="form-section organization-fields" id="organization-fields">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">ОГРН/ОГРНИП</label>
+                        {{ partner_form.ogrn }}
+                        {% if partner_form.ogrn.errors %}<ul class="errorlist">{{ partner_form.ogrn.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ИНН</label>
+                        {{ partner_form.inn }}
+                        {% if partner_form.inn.errors %}<ul class="errorlist">{{ partner_form.inn.errors }}</ul>{% endif %}
+                    </div>
+                </div>
                 
-                <input type="radio" id="type-self-employed" name="registration_type" value="self_employed">
-                <label for="type-self-employed">Самозанятый</label>
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">КПП</label>
+                        {{ partner_form.kpp }}
+                        {% if partner_form.kpp.errors %}<ul class="errorlist">{{ partner_form.kpp.errors }}</ul>{% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- Основная информация -->
-        <div class="form-section">
-            <h3 class="section-title">Основная информация</h3>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Название организации / ФИО</label>
-                    {{ partner_form.company_name }}
-                    {% if partner_form.company_name.errors %}
-                        <ul class="errorlist">{{ partner_form.company_name.errors }}</ul>
-                    {% endif %}
+            <!-- Адреса -->
+            <div class="form-section">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                        <label class="form-label">Юридический адрес</label>
+                        {{ partner_form.legal_address }}
+                        {% if partner_form.legal_address.errors %}<ul class="errorlist">{{ partner_form.legal_address.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Фактический адрес (если отличается)</label>
+                        {{ partner_form.actual_address }}
+                        {% if partner_form.actual_address.errors %}<ul class="errorlist">{{ partner_form.actual_address.errors }}</ul>{% endif %}
+                    </div>
                 </div>
             </div>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>Краткое наименование, бренд/торговое имя</label>
-{{ partner_form.short_name }}
-                    {% if partner_form.short_name.errors %}
-                        <ul class="errorlist">{{ partner_form.short_name.errors }}</ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>Сайт компании URL</label>
-{{ partner_form.website }}
-                    {% if partner_form.website.errors %}
-                        <ul class="errorlist">{{ partner_form.website.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Описание организации. Кратко о деятельности (до 500 символов)</label>
-{{ partner_form.description }}
-                    {% if partner_form.description.errors %}
-                        <ul class="errorlist">{{ partner_form.description.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
 
-        <!-- Реквизиты -->
-        <div class="form-section">
-            <h3 class="section-title">Реквизиты</h3>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>ОГРН/ОГРНИП</label>
-{{ partner_form.ogrn }}
-                    {% if partner_form.ogrn.errors %}
-                        <ul class="errorlist">{{ partner_form.ogrn.errors }}</ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>ИНН</label>
-{{ partner_form.inn }}
-                    {% if partner_form.inn.errors %}
-                        <ul class="errorlist">{{ partner_form.inn.errors }}</ul>
-                    {% endif %}
+            <!-- Логотип -->
+            <div class="form-section">
+                <div class="form-group form-group-full">
+                    <label class="form-label">Логотип PNG/SVG/JPG, до 5 МБ</label>
+                    <div class="file-upload-area">
+                        <input type="file" id="id_logo" name="logo" accept=".png,.svg,.jpg,.jpeg" class="file-input-hidden">
+                        <label for="id_logo" class="file-upload-label">
+                            <span class="file-upload-text">+ ЗАГРУЗИТЬ</span>
+                        </label>
+                        <span id="logo-filename" class="file-name-display"></span>
+                    </div>
+                    {% if partner_form.logo.errors %}<ul class="errorlist">{{ partner_form.logo.errors }}</ul>{% endif %}
                 </div>
             </div>
             
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>КПП</label>
-{{ partner_form.kpp }}
-                    {% if partner_form.kpp.errors %}
-                        <ul class="errorlist">{{ partner_form.kpp.errors }}</ul>
-                    {% endif %}
+            <!-- Контакты -->
+            <div class="form-section">
+                <div class="form-row form-row-triple">
+                    <div class="form-group">
+                        <label class="form-label">Контактное лицо (имя)</label>
+                        {{ partner_form.contact_person }}
+                        {% if partner_form.contact_person.errors %}<ul class="errorlist">{{ partner_form.contact_person.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Телефон</label>
+                        {{ partner_form.phone }}
+                        {% if partner_form.phone.errors %}<ul class="errorlist">{{ partner_form.phone.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-mail</label>
+                        {{ partner_form.email }}
+                        {% if partner_form.email.errors %}<ul class="errorlist">{{ partner_form.email.errors }}</ul>{% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Адреса -->
-        <div class="form-section">
-            <h3 class="section-title">Адреса</h3>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Юридический адрес</label>
-{{ partner_form.legal_address }}
-                    {% if partner_form.legal_address.errors %}
-                        <ul class="errorlist">{{ partner_form.legal_address.errors }}</ul>
-                    {% endif %}
+            <!-- Портфолио и ссылки -->
+            <div class="form-section">
+                <h3 class="section-title">Портфолио и ссылки</h3>
+                
+                <div class="form-row form-row-triple">
+                    <div class="form-group">
+                        <label class="form-label">VK</label>
+                        {{ partner_form.vk_link }}
+                        {% if partner_form.vk_link.errors %}<ul class="errorlist">{{ partner_form.vk_link.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">MAX</label>
+                        {{ partner_form.max_link }}
+                        {% if partner_form.max_link.errors %}<ul class="errorlist">{{ partner_form.max_link.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telegram</label>
+                        {{ partner_form.telegram_link }}
+                        {% if partner_form.telegram_link.errors %}<ul class="errorlist">{{ partner_form.telegram_link.errors }}</ul>{% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group form-group-full">
+                    <label class="form-label">Кейсы/прошедшие мероприятия: ссылки или краткое описание</label>
+                    {{ partner_form.cases }}
+                    {% if partner_form.cases.errors %}<ul class="errorlist">{{ partner_form.cases.errors }}</ul>{% endif %}
+                </div>
+                
+                <div class="form-group form-group-full">
+                    <label class="form-label">Отзывы и публикации в СМИ: ссылки</label>
+                    {{ partner_form.reviews }}
+                    {% if partner_form.reviews.errors %}<ul class="errorlist">{{ partner_form.reviews.errors }}</ul>{% endif %}
                 </div>
             </div>
             
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Фактический адрес (если отличается)</label>
-{{ partner_form.actual_address }}
-                    {% if partner_form.actual_address.errors %}
-                        <ul class="errorlist">{{ partner_form.actual_address.errors }}</ul>
-                    {% endif %}
+            <!-- Документы -->
+            <div class="form-section">
+                <h3 class="section-title">Документы для отметки «надёжный организатор»</h3>
+                <p class="documents-hint">Загрузите чёткие сканы/файлы:</p>
+                <ul class="documents-list">
+                    <li>Выписка из ЕГРЮЛ/ЕГРИП (не старше 3 месяцев)</li>
+                    <li>Устав или учредительный договор (ключевые страницы) — для юрлиц</li>
+                    <li>Документ о полномочиях руководителя: приказ/протокол о назначении</li>
+                    <li>Доверенность — если подписывает/действует представитель</li>
+                    <li>Паспорт руководителя/представителя (страница с фото) — по запросу</li>
+                    <li>Политика возврата билетов/оферта для участников</li>
+                </ul>
+                
+                <div class="file-upload-area">
+                    <input type="file" id="documents-upload" name="documents" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" class="file-input-hidden">
+                    <label for="documents-upload" class="file-upload-label">
+                        <span class="file-upload-text">+ ЗАГРУЗИТЬ</span>
+                    </label>
+                    <span id="documents-filename" class="file-name-display"></span>
+                </div>
+                
+                <p class="advantages-text">Преимущества отметки: бейдж в профиле, повышенный доверительный рейтинг, приоритетное размещение в каталоге</p>
+            </div>
+            
+            <!-- Пароли -->
+            <div class="form-section">
+                <div class="form-row form-row-double">
+                    <div class="form-group">
+                    <label class="form-label">Пароль</label>
+                        <input type="password" name="password1" id="id_password1" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                    <label class="form-label">Повторите пароль</label>
+                        <input type="password" name="password2" id="id_password2" required minlength="8">
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Логотип -->
-        <div class="form-section">
-            <h3 class="section-title">Логотип</h3>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Логотип PNG/SVG/JPG, до 5 МБ</label>
-                    <label class="file-upload" for="id_logo">
-                        <span class="file-upload-text">+ Загрузить</span>
-                        <span class="file-upload-hint">PNG, SVG, JPG до 5 МБ</span>
-{{ partner_form.logo }}
-                    {% if partner_form.logo.errors %}
-                        <ul class="errorlist">{{ partner_form.logo.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Контакты -->
-        <div class="form-section">
-            <h3 class="section-title">Контактная информация</h3>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>Контактное лицо (имя)</label>
-{{ partner_form.contact_person }}
-                    {% if partner_form.contact_person.errors %}
-                        <ul class="errorlist">{{ partner_form.contact_person.errors }}</ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>Телефон</label>
-{{ partner_form.phone }}
-                    {% if partner_form.phone.errors %}
-                        <ul class="errorlist">{{ partner_form.phone.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>E-mail</label>
-                    {{ partner_form.email }}
-                    {% if partner_form.email.errors %}
-                        <ul class="errorlist">{{ partner_form.email.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Портфолио и ссылки -->
-        <div class="form-section">
-            <h3 class="section-title">Портфолио и ссылки</h3>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>VK</label>
-{{ partner_form.vk_link }}
-                    {% if partner_form.vk_link.errors %}
-                        <ul class="errorlist">{{ partner_form.vk_link.errors }}</ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>MAX</label>
-{{ partner_form.max_link }}
-                    {% if partner_form.max_link.errors %}
-                        <ul class="errorlist">{{ partner_form.max_link.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>Telegram</label>
-{{ partner_form.telegram_link }}
-                    {% if partner_form.telegram_link.errors %}
-                        <ul class="errorlist">{{ partner_form.telegram_link.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Кейсы/прошедшие мероприятия. Ссылки или краткое описание</label>
-{{ partner_form.cases }}
-                    {% if partner_form.cases.errors %}
-                        <ul class="errorlist">{{ partner_form.cases.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label>Отзывы и публикации в СМИ. Ссылки</label>
-{{ partner_form.reviews }}
-                    {% if partner_form.reviews.errors %}
-                        <ul class="errorlist">{{ partner_form.reviews.errors }}</ul>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Документы -->
-        <div class="form-section">
-            <h3 class="section-title">Документы для отметки «Надёжный организатор»</h3>
-            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
-                Загрузите чёткие сканы/файлы:
-            </p>
-            <ul style="font-size: 13px; color: #666; margin-bottom: 20px; padding-left: 20px;">
-                <li>Выписка из ЕГРЮЛ/ЕГРИП (не старше 3 месяцев)</li>
-                <li>Устав или учредительный договор (ключевые страницы) — для юрлиц</li>
-                <li>Доверенность — если подписывает/действует представитель</li>
-                <li>Паспорт руководителя/представителя (страница с фото) — по запросу</li>
-                <li>Политика возврата билетов/оферта для участников</li>
-            </ul>
-            
-            <div class="form-row single">
-                <div class="form-group">
-                    <label class="file-upload">
-                        <span class="file-upload-text">+ Загрузить документы</span>
-                        <input type="file" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png">
+            <!-- Согласия -->
+            <div class="form-section">
+                <div class="agreements">
+                    <label class="agreement-item">
+                        <input type="checkbox" name="agree_terms" required>
+                        <span>Я подтверждаю достоверность указанных данных</span>
+                    </label>
+                    
+                    <label class="agreement-item">
+                        <input type="checkbox" name="agree_user_agreement" required>
+                        <span>Согласен(на) с <a href="#" target="_blank">пользовательским соглашением и офертой</a></span>
+                    </label>
+                    
+                    <label class="agreement-item">
+                        <input type="checkbox" name="agree_personal_data" required>
+                        <span>Согласен(на) на <a href="#" target="_blank">обработку персональных данных</a></span>
+                    </label>
+                    
+                    <label class="agreement-item">
+                        <input type="checkbox" name="agree_publish_profile">
+                        <span>Разрешаю публикацию профиля организации на платформе</span>
                     </label>
                 </div>
             </div>
-            
-            <p style="font-size: 13px; color: #888; margin-top: 10px;">
-                Преимущества отметки: бейдж в профиле, повышенный доверительный рейтинг, приоритетное размещение в каталоге
-            </p>
-        </div>
 
-        <!-- Согласия -->
-        <div class="form-section">
-            <div class="agreements">
-                <div class="agreement-item">
-                    <input type="checkbox" id="id_agree_terms" name="agree_terms" required>
-                    <label for="id_agree_terms">Я подтверждаю достоверность указанных данных</label>
-                </div>
-                
-                <div class="agreement-item">
-                    <input type="checkbox" id="id_agree_user_agreement" name="agree_user_agreement" required>
-                    <label for="id_agree_user_agreement">
-                        <a href="#">Согласен(на) с пользовательским соглашением и офертой</a>
-                    </label>
-                </div>
-                
-                <div class="agreement-item">
-                    <input type="checkbox" id="id_agree_personal_data" name="agree_personal_data" required>
-                    <label for="id_agree_personal_data">Согласен(на) на обработку персональных данных</label>
-                </div>
-                
-                <div class="agreement-item">
-                    <input type="checkbox" id="id_agree_publish_profile" name="agree_publish_profile">
-                    <label for="id_agree_publish_profile">Разрешаю публикацию профиля организации на платформе</label>
-                </div>
-            </div>
-        </div>
+            <button type="submit" class="submit-btn submit-btn-partner">СТАТЬ ПАРТНЁРОМ</button>
+        </form>
+    </div>
+</div>
 
-        <!-- Скрытые поля пароля -->
-        <div class="form-section">
-            <h3 class="section-title">Безопасность</h3>
-            
-            <div class="form-row double">
-                <div class="form-group">
-                    <label>Пароль</label>
-                    <input type="password" name="password1" id="id_password1" required minlength="8">
-                </div>
-                <div class="form-group">
-                    <label>Повторите пароль</label>
-                    <input type="password" name="password2" id="id_password2" required minlength="8">
-                </div>
-            </div>
-        </div>
+<!-- Чат-виджет (как на скриншоте) -->
+<div class="chat-widget">
+    <div class="chat-widget-button">
+        <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5L2 22l5.17-1.34A9.96 9.96 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
+        </svg>
+    </div>
+</div>
 
-        <button type="submit" class="submit-btn">Отправить на модерацию</button>
-    </form>
+<script>
+// Обработка отображения имени файла логотипа
+document.getElementById('id_logo').addEventListener('change', function() {
+    const filename = this.files.length > 0 ? this.files[0].name : '';
+    document.getElementById('logo-filename').textContent = filename;
+});
+
+// Обработка отображения имени файла документов
+document.getElementById('documents-upload').addEventListener('change', function() {
+    const count = this.files.length;
+    document.getElementById('documents-filename').textContent = count > 0 ? 'Выбрано файлов: ' + count : '';
+});
+
+// Переключение видимости полей организации
+function toggleOrganizationFields() {
+    const hasAny = document.getElementById('type-legal').checked ||
+                   document.getElementById('type-ip').checked ||
+                   document.getElementById('type-self-employed').checked;
+    const orgFields = document.getElementById('organization-fields');
+    if (hasAny) {
+        orgFields.style.display = 'block';
+    } else {
+        orgFields.style.display = 'none';
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    toggleOrganizationFields();
+});
+</script>
 </div>
 
 {% endblock %}
