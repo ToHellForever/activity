@@ -4,7 +4,7 @@ name: Deploy to VPS
 # Указываем когда запускать - при push в main ветку
 on:
   push:
-    branches: ['*']
+    branches: [main, my-changes, watermark_on_video]
 
 # Определяем задачи для выполнения 
 jobs:
