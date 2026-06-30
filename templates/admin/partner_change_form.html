@@ -5,7 +5,7 @@
 <div id="content-main">
     {{ block.super }}
     
-    <!-- Блок действий: одобрить / отклонить -->
+    <!-- Блок действий: одобрить / отклонить / выдать пакет -->
     {% if obj %}
     <div id="partner-actions" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6;">
         <h3 style="margin-top: 0; margin-bottom: 15px;">Быстрые действия</h3>
@@ -55,7 +55,84 @@
             </div>
         </form>
         {% endif %}
+
+        <!-- Кнопка выдачи пакета -->
+        <form method="post" style="margin-top: 15px; display: inline-block;">
+            {% csrf_token %}
+            <input type="hidden" name="_assign_package" value="1">
+            <button type="button" onclick="openAssignPackageModal()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                📦 Выдать пакет
+            </button>
+        </form>
     </div>
     {% endif %}
 </div>
+
+<!-- Модальное окно выдачи пакета -->
+<div id="assign-package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:24px; border-radius:8px; width:500px; max-width:90%;">
+        <h3 style="margin-top:0;">Выдать пакет партнёру</h3>
+        <form id="assign-package-form" method="post" style="display:flex; flex-direction:column; gap:12px;">
+            {% csrf_token %}
+            <input type="hidden" name="_assign_package" value="1">
+            
+            <div>
+                <label for="assign-user" style="display:block; margin-bottom:4px; font-weight:bold;">Партнёр:</label>
+                <select id="assign-user" name="user_id" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="">— Выберите партнёра —</option>
+                    {% for u in admin_context.users %}
+                    <option value="{{ u.id }}" {% if obj and u.id == obj.id %}selected{% endif %}>{{ u.email }}{% if u.partner_profile.company_name %} ({{ u.partner_profile.company_name }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="assign-package" style="display:block; margin-bottom:4px; font-weight:bold;">Пакет:</label>
+                <select id="assign-package" name="package_id" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="">— Выберите пакет —</option>
+                    {% for p in admin_context.packages %}
+                    <option value="{{ p.id }}">{{ p.name }} — {{ p.price }} ₽</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label for="assign-start" style="display:block; margin-bottom:4px; font-weight:bold;">Начало:</label>
+                    <input type="datetime-local" id="assign-start" name="start_date" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label for="assign-end" style="display:block; margin-bottom:4px; font-weight:bold;">Окончание:</label>
+                    <input type="datetime-local" id="assign-end" name="end_date" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                <button type="button" onclick="closeAssignPackageModal()" style="padding:8px 16px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer;">Отмена</button>
+                <button type="submit" style="padding:8px 16px; background:#28a745; color:#fff; border:none; border-radius:4px; cursor:pointer;">Выдать</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAssignPackageModal() {
+    document.getElementById('assign-package-modal').style.display = 'flex';
+}
+function closeAssignPackageModal() {
+    document.getElementById('assign-package-modal').style.display = 'none';
+}
+
+// Установить даты по умолчанию
+document.addEventListener('DOMContentLoaded', function() {
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('assign-start').value = now.toISOString().slice(0,16);
+    
+    var end = new Date();
+    end.setDate(end.getDate() + 30);
+    end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+    document.getElementById('assign-end').value = end.toISOString().slice(0,16);
+});
+</script>
 {% endblock %}

@@ -784,22 +784,142 @@ class EventPackageAdmin(admin.ModelAdmin):
 class PartnerSubscriptionInline(admin.TabularInline):
     model = UserPackageSubscription
     extra = 0
-    max_num = 2
-    readonly_fields = ('package', 'start_date', 'end_date', 'is_active')
-    fields = ('package', 'start_date', 'end_date', 'is_active')
+    readonly_fields = ('package', 'start_date', 'end_date', 'is_active', 'subscription_type')
+    fields = ('package', 'subscription_type', 'start_date', 'end_date', 'is_active')
 
     def has_add_permission(self, request, obj=None):
-        return False
+        return True
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj=None, **kwargs)
-        formset.extra = 0
+        formset.extra = 1
         if obj:
-            formset.queryset = obj.userpackagesubscription_set.order_by('-start_date')[:2]
+            formset.queryset = obj.userpackagesubscription_set.order_by('-start_date')
         return formset
+
+
+@admin.register(UserPackageSubscription)
+class UserPackageSubscriptionAdmin(admin.ModelAdmin):
+    """Админка для подписок на пакеты — полный контроль."""
+
+    list_display = ('id', 'user', 'package', 'subscription_type', 'start_date', 'end_date', 'is_active')
+    list_filter = ('is_active', 'subscription_type', 'package')
+    search_fields = ('user__email', 'user__username', 'package__name')
+    readonly_fields = ('start_date',)
+    date_hierarchy = 'start_date'
+
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'package', 'subscription_type')
+        }),
+        ('Даты', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Статус', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change or not obj.start_date:
+            obj.start_date = timezone.now()
+        super().save_model(request, obj, form, change)
+
+    def response_change(self, request, obj):
+        if '_assign_package' in request.POST:
+            return self.assign_package_action(request, obj)
+        return super().response_change(request, obj)
+
+    def assign_package_action(self, request, obj):
+        """Просто редирект — основная логика через action."""
+        return redirect(request.META.get('HTTP_REFERER', '/admin/core/userpackagesubscription/'))
+
+    def get_urls(self):
+        from django.urls import path
+
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'assign_package/',
+                self.admin_site.admin_view(self.assign_package_view),
+                name='assign_package',
+            ),
+        ]
+        return custom_urls + urls
+
+    def assign_package_view(self, request):
+        """Выдать пакет любому партнёру на любой срок."""
+        from django.contrib.auth import get_user_model
+        from django.shortcuts import render, get_object_or_404
+        from django.http import JsonResponse
+
+        users = CustomUser.objects.filter(user_type='partner').order_by('email')
+        packages = EventPackage.objects.all()
+
+        if request.method == 'POST':
+            user_id = request.POST.get('user_id')
+            package_id = request.POST.get('package_id')
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+
+            user = get_object_or_404(CustomUser, id=user_id)
+            package = get_object_or_404(EventPackage, id=package_id)
+
+            from django.forms import DateTimeField
+            try:
+                start = DateTimeField().clean(start_date) if start_date else timezone.now()
+            except Exception:
+                start = timezone.now()
+            try:
+                end = DateTimeField().clean(end_date) if end_date else start + timezone.timedelta(days=30)
+            except Exception:
+                end = start + timezone.timedelta(days=30)
+
+            # Если была активная подписка — деактивируем
+            UserPackageSubscription.objects.filter(user=user, is_active=True).update(is_active=False)
+
+            subscription = UserPackageSubscription.objects.create(
+                user=user,
+                package=package,
+                start_date=start,
+                end_date=end,
+                is_active=True,
+                subscription_type='monthly' if package.is_monthly else 'one_time',
+            )
+
+            # Если это AJAX — вернём JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'ok',
+                    'message': f'Пакет "{package.name}" выдан {user.email} до {end_date}',
+                })
+
+            self.message_user(
+                request,
+                f'Пакет "{package.name}" успешно выдан {user.get_full_name()} ({user.email}) до {end.strftime("%d.%m.%Y %H:%M")}',
+                messages.SUCCESS,
+            )
+            return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
+
+        return render(request, 'admin/assign_package.html', {
+            'users': users,
+            'packages': packages,
+            'title': 'Выдать пакет партнёру',
+        })
+
+    def assign_package(self, request, queryset):
+        """Выдать выбранным партнёрам пакет (через модальное окно)."""
+        # Просто перенаправляем на форму — основной интерфейс через форму партнёра
+        self.message_user(
+            request,
+            'Используйте кнопку "Выдать пакет" на странице партнёра для выдачи.',
+            messages.INFO,
+        )
+
+    assign_package.short_description = 'Выдать пакет'
 
 class PartnerPayoutInline(admin.TabularInline):
     model = PayoutRequest
@@ -855,6 +975,14 @@ class PartnerAdmin(admin.ModelAdmin):
 
     change_form_template = "admin/partner_change_form.html"
     form = PartnerAdminForm
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['admin_context'] = {
+            'users': CustomUser.objects.filter(user_type='partner').order_by('email'),
+            'packages': EventPackage.objects.all(),
+        }
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
     def get_company_name(self, obj):
         if hasattr(obj, 'partner_profile') and obj.partner_profile:
@@ -943,12 +1071,59 @@ class PartnerAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
     def response_change(self, request, obj):
-        """Обрабатываем кнопки одобрения/отклонения"""
+        """Обрабатываем кнопки одобрения/отклонения/выдачи пакета"""
         if '_approve' in request.POST:
             return self.approve_partner(request, obj)
         elif '_reject' in request.POST:
             return self.reject_partner(request, obj)
+        elif '_assign_package' in request.POST:
+            return self.assign_package_from_form(request, obj)
         return super().response_change(request, obj)
+    
+    def assign_package_from_form(self, request, obj):
+        """Выдаёт пакет из формы партнёра."""
+        from django.forms import DateTimeField
+        from django.shortcuts import redirect
+
+        user_id = request.POST.get('user_id')
+        package_id = request.POST.get('package_id')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+
+        if not user_id or not package_id:
+            self.message_user(request, 'Выберите партнёра и пакет.', messages.ERROR)
+            return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
+
+        user = get_object_or_404(CustomUser, id=user_id)
+        package = get_object_or_404(EventPackage, id=package_id)
+
+        try:
+            start = DateTimeField().clean(start_date) if start_date else timezone.now()
+        except Exception:
+            start = timezone.now()
+        try:
+            end = DateTimeField().clean(end_date) if end_date else start + timezone.timedelta(days=30)
+        except Exception:
+            end = start + timezone.timedelta(days=30)
+
+        # Деактивируем текущие активные подписки
+        UserPackageSubscription.objects.filter(user=user, is_active=True).update(is_active=False)
+
+        subscription = UserPackageSubscription.objects.create(
+            user=user,
+            package=package,
+            start_date=start,
+            end_date=end,
+            is_active=True,
+            subscription_type='monthly' if package.is_monthly else 'one_time',
+        )
+
+        self.message_user(
+            request,
+            f'Пакет "{package.name}" выдан {user.get_full_name()} ({user.email}) до {end.strftime("%d.%m.%Y %H:%M")}',
+            messages.SUCCESS,
+        )
+        return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
     
     def approve_partner(self, request, obj):
         """Одобряет партнёра"""
@@ -982,7 +1157,7 @@ class PartnerAdmin(admin.ModelAdmin):
             logger.error(f"Не удалось отправить email об одобрении: {e}")
         
         return redirect(request.META.get('HTTP_REFERER', '/admin/'))
-    
+
     def reject_partner(self, request, obj):
         """Отклоняет партнёра с причиной"""
         rejection_reason = request.POST.get('rejection_reason', '')
@@ -1032,24 +1207,6 @@ admin.site.register(CustomUser, PartnerAdmin)
 
 
 # Регистрируем подписки на пакеты
-@admin.register(UserPackageSubscription)
-class UserPackageSubscriptionAdmin(admin.ModelAdmin):
-    """
-    Админка для управления подписками пользователей на пакеты.
-    """
-
-    list_display = ('user', 'package', 'start_date', 'end_date', 'is_active')
-    list_filter = ('is_active', 'package', 'start_date')
-    search_fields = ('user__username', 'user__email', 'package__name')
-
-    readonly_fields = ('start_date', 'end_date')
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """
