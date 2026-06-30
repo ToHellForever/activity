@@ -159,6 +159,7 @@ ul {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+align-items: flex-end;
 }
 
 .form-row-double {
@@ -430,9 +431,16 @@ ul {
   box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
 }
 
+@media (max-width: 969px) {
+    .email-section {
+        width: 49%;
+    }
+    .password-section {
+        width: 100%;
+    }
+}
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
-
     .email-section,
     .password-section,
     .company-info-section,
@@ -451,6 +459,7 @@ ul {
   .form-row {
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
   }
 
   .form-row-double .form-group,
