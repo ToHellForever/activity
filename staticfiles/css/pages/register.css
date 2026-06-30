@@ -1,0 +1,526 @@
+﻿/* ===== СТРАНИЦА РЕГИСТРАЦИИ ===== */
+.register-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 30px 20px;
+}
+
+.register-container {
+  margin: 0 auto;
+}
+
+.register-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  text-align: left;
+}
+ul {
+    padding-left: 15px;
+}
+/* ===== ПЕРЕКЛЮЧАТЕЛЬ ТИПА РЕГИСТРАЦИИ ===== */
+.type-switcher {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.type-switcher input[type="radio"] {
+  display: none;
+}
+
+.type-switcher-label {
+  padding: 10px 24px;
+  border: 1.5px solid #777a8d;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.25s ease;
+  user-select: none;
+  background: #fff;
+}
+
+.type-switcher-label:hover {
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+.type-switcher input[type="radio"]:checked + .type-switcher-label {
+  border-color: #ff6b35;
+  background: #fff3ef;
+  color: #ff6b35;
+}
+
+/* ===== ТИП ЛИЦА — ЧЕКБОКСЫ-ВИД В СТРОКУ ===== */
+.registration-type-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.registration-type-switcher input[type="radio"] {
+  display: none;
+}
+
+.registration-type-switcher input[type="checkbox"],
+.registration-type-switcher input[type="radio"] {
+  display: none;
+}
+
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0C0C0C;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.type-option::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #777a8d;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background: #fff;
+  position: relative;
+}
+
+.type-option::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.registration-type-switcher
+  input[type="checkbox"]:checked
+  + .type-option::before,
+.registration-type-switcher input[type="radio"]:checked + .type-option::before {
+  background: #ff6b35;
+  border-color: #ff6b35;
+}
+
+.registration-type-switcher
+  input[type="checkbox"]:checked
+  + .type-option::after,
+.registration-type-switcher input[type="radio"]:checked + .type-option::after {
+  opacity: 1;
+}
+
+/* ===== СЕКЦИИ ФОРМЫ ===== */
+.email-section {
+  width: 24%;
+}
+.password-section {
+  width: 49%;
+}
+.company-info-section {
+  width: 55%;
+}
+.contact-info-section {
+  width: 70%;
+}
+.form-section {
+  margin-bottom: 12px;
+}
+
+.section-title {
+    font-family: 'Verdana', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+  margin-top: 0;
+}
+
+/* ===== СТРУКТУРА СТРОК ===== */
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+align-items: flex-end;
+}
+
+.form-row-double {
+  flex-wrap: wrap;
+}
+
+.form-row-double .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-row-triple .form-group {
+  flex: 1;
+  min-width: 160px;
+}
+
+.form-row-quadruple .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.form-group-full {
+  margin-bottom: 16px;
+}
+
+/* ===== ГРУППЫ ПОЛЕЙ ===== */
+
+.form-label {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  color: #9A9A9A;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* ===== ПОЛЯ ВВОДА ===== */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="url"],
+.form-group input[type="tel"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 7px 16px;
+  border: 1px solid #777a8d;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus,
+.form-group input[type="url"]:focus,
+.form-group input[type="tel"]:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.08);
+}
+
+.form-group input[type="text"]::placeholder,
+.form-group input[type="email"]::placeholder,
+.form-group input[type="password"]::placeholder,
+.form-group input[type="url"]::placeholder,
+.form-group input[type="tel"]::placeholder,
+.form-group textarea::placeholder {
+  color: #bbb;
+  font-size: 13px;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  border-radius: 16px;
+}
+
+/* ===== ЗАГРУЗКА ФАЙЛОВ ===== */
+.file-upload-area {
+  border: 1px solid #777a8d;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  background: #fafafa;
+  transition: border-color 0.2s ease;
+}
+
+.file-upload-area:hover {
+  border-color: #ff6b35;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-upload-label {
+  display: inline-block;
+  background: transparent;
+  color: #02369C;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s ease;
+}
+
+.file-name-display {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #888;
+}
+
+/* ===== СПИСОК ДОКУМЕНТОВ ===== */
+.documents-hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+  margin-top: 0;
+}
+
+.documents-list {
+  font-size: 12px;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
+  color: #000000;
+  line-height: 1.7;
+}
+
+.advantages-text {
+  font-size: 12px;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
+  color: black;
+  margin-top: 12px;
+  margin-bottom: 20px;
+}
+
+/* ===== СОГЛАШЕНИЯ ===== */
+.agreements {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.agreement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Verdana', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #000000;
+  line-height: 1.5;
+}
+
+.agreement-item input[type="checkbox"] {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  accent-color: #ff6b35;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.agreement-item a {
+  color: #02369C;
+  text-decoration: none;
+}
+
+.agreement-item a:hover {
+  color: #e55a28;
+}
+
+/* ===== КНОПКА ОТПРАВКИ ===== */
+.submit-btn {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 30px auto 0;
+  padding: 12px 32px;
+  background: #ff6b35;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.submit-btn:hover {
+  background: #e55a28;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn-partner {
+  background: #ff6b35;
+}
+
+/* ===== ОШИБКИ ===== */
+.form-errors {
+  background: #fff3f3;
+  border: 1px solid #ffcccc;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #d32f2f;
+  font-size: 13px;
+}
+
+.form-errors ul {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+}
+
+.errorlist {
+  margin: 4px 0 0 0;
+  padding: 0;
+  list-style: none;
+  color: #d32f2f;
+  font-size: 11px;
+}
+
+/* ===== ЧАТ-ВИДЖЕТ ===== */
+.chat-widget {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+}
+
+.chat-widget-button {
+  width: 50px;
+  height: 50px;
+  background: #ff6b35;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+  transition: all 0.25s ease;
+}
+
+.chat-widget-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+}
+
+@media (max-width: 969px) {
+    .email-section {
+        width: 49%;
+    }
+    .password-section {
+        width: 100%;
+    }
+}
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+    .email-section,
+    .password-section,
+    .company-info-section,
+    .contact-info-section {
+        width: 100%;
+    }
+  .register-page {
+    padding: 20px 12px;
+  }
+
+  .register-title {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .form-row-double .form-group,
+  .form-row-triple .form-group {
+    min-width: 100%;
+  }
+
+  .type-switcher-label {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+
+  .registration-type-switcher {
+    gap: 4px 14px;
+  }
+
+  .type-option {
+    font-size: 12px;
+  }
+
+  .submit-btn {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .chat-widget {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .chat-widget-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: 0 2px;
+  }
+
+  .form-section {
+    margin-bottom: 10px;
+  }
+
+  .form-label {
+    font-size: 10px;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group input[type="password"],
+  .form-group input[type="url"],
+  .form-group textarea {
+    padding: 9px 14px;
+    font-size: 13px;
+    border-radius: 16px;
+  }
+
+  .file-upload-area {
+    border-radius: 16px;
+    padding: 18px;
+  }
+}
