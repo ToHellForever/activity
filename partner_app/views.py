@@ -582,7 +582,7 @@ def notify_organizer(event):
     send_mail(subject, message, "settings.DEFAULT_FROM_EMAIL", [event.organizer.email])
 
 @login_required
-@check_partner_status('can_manage_events')
+@check_partner_status('can_create_events')
 def edit_event(request, event_id):
     """
     View для редактирования мероприятия.
