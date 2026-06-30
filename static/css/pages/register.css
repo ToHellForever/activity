@@ -129,15 +129,27 @@
 }
 
 /* ===== СЕКЦИИ ФОРМЫ ===== */
+.email-section {
+    width: 24%;
+}
+.password-section {
+    width: 49%;
+}
+.company-info-section {
+    width: 55%;
+}
+.contact-info-section {
+    width: 70%;
+}
 .form-section {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .section-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   color: #1a1a1a;
-  margin-bottom: 16px;
+  margin-bottom: 5px;
   margin-top: 0;
 }
 
@@ -183,6 +195,7 @@
   color: #999;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
+  text-transform: uppercase;
 }
 
 /* ===== ПОЛЯ ВВОДА ===== */
@@ -194,7 +207,7 @@
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 10px 16px;
+  padding: 7px 16px;
   border: 1px solid #777a8d;
   border-radius: 20px;
   font-size: 14px;
@@ -289,13 +302,7 @@
 .documents-list {
   font-size: 12px;
   color: #666;
-  margin-bottom: 18px;
-  padding-left: 18px;
   line-height: 1.7;
-}
-
-.documents-list li {
-  margin-bottom: 3px;
 }
 
 .advantages-text {
@@ -309,7 +316,7 @@
 .agreements {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 5px;
 }
 
 .agreement-item {
@@ -479,7 +486,7 @@
   }
 
   .form-section {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 
   .form-label {

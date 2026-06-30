@@ -67,7 +67,7 @@
             <input type="hidden" name="form_type" value="partner">
             
             <!-- 1. Email -->
-            <div class="form-section">
+            <div class="form-section email-section">
                 <div class="form-group">
                     <label class="form-label">Электронная почта</label>
                     {{ partner_form.email }}
@@ -76,7 +76,7 @@
             </div>
 
             <!-- 2. Пароль + Повторите пароль -->
-            <div class="form-section">
+            <div class="form-section password-section">
                 <div class="form-row form-row-double">
                     <div class="form-group">
                         <label class="form-label">Пароль</label>
@@ -133,7 +133,7 @@
             </div>
             
             <!-- 5. Краткое наименование, Сайт компании -->
-            <div class="form-section">
+            <div class="form-section company-info-section">
                 <div class="form-row form-row-double">
                     <div class="form-group">
                         <label class="form-label">Краткое наименование: бренд/торговое имя</label>
@@ -189,7 +189,7 @@
             </div>
             
             <!-- 9. Контактное лицо, Телефон, Доп. Email -->
-            <div class="form-section">
+            <div class="form-section contact-info-section">
                 <div class="form-row form-row-triple">
                     <div class="form-group">
                         <label class="form-label">Контактное лицо (имя)</label>
@@ -210,7 +210,7 @@
             </div>
 
             <!-- 10. VK, MAX, Telegram -->
-            <div class="form-section">
+            <div class="form-section contact-info-section">
                 <div class="form-row form-row-triple">
                     <div class="form-group">
                         <label class="form-label">VK</label>
@@ -250,8 +250,7 @@
 
             <!-- Документы -->
             <div class="form-section">
-                <h3 class="section-title">Документы для отметки «надёжный организатор»</h3>
-                <p class="documents-hint">Загрузите чёткие сканы/файлы:</p>
+                <h3 class="section-title">Документы для отметки <strong>«надёжный организатор»</strong> Загрузите чёткие сканы/файлы:</h3>
                 <ul class="documents-list">
                     <li>Выписка из ЕГРЮЛ/ЕГРИП (не старше 3 месяцев)</li>
                     <li>Устав или учредительный договор (ключевые страницы) — для юрлиц</li>
