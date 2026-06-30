@@ -69,16 +69,16 @@
             <!-- Переключатель типа лица -->
             <div class="form-section">
                 <div class="registration-type-switcher">
-                    <input type="checkbox" id="type-physical" name="registration_type" value="physical" checked onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-physical" name="registration_type" value="physical" checked onchange="toggleOrganizationFields()">
                     <label for="type-physical" class="type-option">Физическое лицо</label>
                     
-                    <input type="checkbox" id="type-legal" name="registration_type" value="legal" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-legal" name="registration_type" value="legal" onchange="toggleOrganizationFields()">
                     <label for="type-legal" class="type-option">Юридическое лицо</label>
                     
-                    <input type="checkbox" id="type-ip" name="registration_type" value="ip" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-ip" name="registration_type" value="ip" onchange="toggleOrganizationFields()">
                     <label for="type-ip" class="type-option">ИП</label>
                     
-                    <input type="checkbox" id="type-self-employed" name="registration_type" value="self_employed" onchange="toggleOrganizationFields()">
+                    <input type="radio" id="type-self-employed" name="registration_type" value="self_employed" onchange="toggleOrganizationFields()">
                     <label for="type-self-employed" class="type-option">Самозанятый</label>
                 </div>
             </div>
@@ -316,14 +316,12 @@ document.getElementById('documents-upload').addEventListener('change', function(
 
 // Переключение видимости полей организации
 function toggleOrganizationFields() {
-    const hasAny = document.getElementById('type-legal').checked ||
-                   document.getElementById('type-ip').checked ||
-                   document.getElementById('type-self-employed').checked;
+    const type = document.querySelector('input[name="registration_type"]:checked').value;
     const orgFields = document.getElementById('organization-fields');
-    if (hasAny) {
-        orgFields.style.display = 'block';
-    } else {
+    if (type === 'physical') {
         orgFields.style.display = 'none';
+    } else {
+        orgFields.style.display = 'block';
     }
 }
 
