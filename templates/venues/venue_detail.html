@@ -44,7 +44,13 @@
             {% endif %}
         
             <div class="venue-price">
-                <strong>Стоимость аренды:</strong> {{ venue.price|format_price }} руб. / {% if venue.price_unit == 'hour' %}час{% elif venue.price_unit == 'day' %}день{% else %}{{ venue.get_price_unit_display }}{% endif %}
+                <strong>Стоимость аренды:</strong>         {% if venue.price_unit == 'hour' %}
+        {{ venue.price|format_price }}.- час
+        {% elif venue.price_unit == 'day' %}
+        {{ venue.price|format_price }}.- день
+        {% else %}
+        Договорная
+        {% endif %}
             </div>
             
 
@@ -73,7 +79,13 @@
                         <span>до {{ other_venue.max_capacity }} человек</span>
                     </div>
                     <div class="venue-card-price">
-                        {{ other_venue.price|format_price }}.- {% if other_venue.price_unit == 'hour' %}час{% elif other_venue.price_unit == 'day' %}день{% else %}{{ other_venue.get_price_unit_display }}{% endif %}
+                        {% if other_venue.price_unit == 'hour' %}
+                        {{ other_venue.price|format_price }}.- час
+                        {% elif other_venue.price_unit == 'day' %}
+                        {{ other_venue.price|format_price }}.- день
+                        {% else %}
+                        Договорная
+                        {% endif %}
                     </div>
                     <a href="{% url 'venues:venue_detail' other_venue.slug %}" class="book-button">ЗАБРОНИРОВАТЬ</a>
                 </div>
