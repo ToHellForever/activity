@@ -659,12 +659,21 @@ class Ticket(models.Model):
         verbose_name="Цена за человека",
         help_text="Отметьте для групповых билетов (от 5 чел.) — цена будет отображаться как 'руб/чел'",
     )
+    min_quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Мин. количество для покупки",
+        help_text="Минимальное количество билетов, которое можно купить за один раз (1 = без ограничений)",
+    )
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 
     def is_available(self, quantity=1):
         """Проверяет, доступно ли указанное количество билетов для покупки."""
         from django.db import transaction
+
+        # Проверяем, что количество не меньше минимального
+        if quantity < self.min_quantity:
+            return False
 
         try:
             # Используем распределенную блокировку, если доступно

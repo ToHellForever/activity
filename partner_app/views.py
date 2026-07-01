@@ -526,6 +526,7 @@ def create_event(request):
         ticket_names = request.POST.getlist("ticket_name[]")
         ticket_prices = request.POST.getlist("ticket_price[]")
         ticket_quantities = request.POST.getlist("ticket_quantity[]")
+        ticket_min_quantities = request.POST.getlist("ticket_min_quantity[]")
         ticket_descriptions = request.POST.getlist("ticket_description[]")
         ticket_is_per_person = request.POST.getlist("ticket_is_per_person[]")
 
@@ -575,6 +576,7 @@ def create_event(request):
         ):
             if name and price and quantity:
                 try:
+                    min_quantity = int(ticket_min_quantities[i]) if i < len(ticket_min_quantities) and ticket_min_quantities[i] else 1
                     event.tickets.create(
                         name=name,
                         price=(
@@ -587,6 +589,7 @@ def create_event(request):
                         is_per_person=(
                             i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
                         ),
+                        min_quantity=min_quantity,
                     )
                 except (ValueError, TypeError):
                     continue
@@ -1001,6 +1004,7 @@ def edit_event(request, event_id):
             ticket_names = request.POST.getlist("ticket_name[]")
             ticket_prices = request.POST.getlist("ticket_price[]")
             ticket_quantities = request.POST.getlist("ticket_quantity[]")
+            ticket_min_quantities = request.POST.getlist("ticket_min_quantity[]")
             ticket_descriptions = request.POST.getlist("ticket_description[]")
             ticket_is_per_person = request.POST.getlist("ticket_is_per_person[]")
 
@@ -1052,6 +1056,7 @@ def edit_event(request, event_id):
             ):
                 if name and price and quantity:
                     try:
+                        min_quantity = int(ticket_min_quantities[i]) if i < len(ticket_min_quantities) and ticket_min_quantities[i] else 1
                         event.tickets.create(
                             name=name,
                             price=(
@@ -1064,6 +1069,7 @@ def edit_event(request, event_id):
                             is_per_person=(
                                 i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
                             ),
+                            min_quantity=min_quantity,
                         )
                     except (ValueError, TypeError):
                         continue

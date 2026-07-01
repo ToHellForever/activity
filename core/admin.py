@@ -562,11 +562,14 @@ class TicketAdmin(admin.ModelAdmin):
         "name",
         "event",
         "price",
+        "min_quantity",
         "available_quantity",
         "get_sold_count",
         "get_available_count",
+        "is_per_person",
     )
     search_fields = ("name", "event__title")
+    list_filter = ("is_per_person", "min_quantity")
 
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""

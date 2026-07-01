@@ -11,17 +11,28 @@
                 <!-- Выбор билетов -->
                 <div id="ticketSelection">
                     {% for ticket in tickets %}
-                    <div class="mb-3 ticket-card" data-ticket-id="{{ ticket.id }}" data-ticket-name="{{ ticket.name }}" data-ticket-price="{{ ticket.price }}" data-max-qty="{{ ticket.get_available_count|default:0 }}">
+                    <div class="mb-3 ticket-card" 
+                         data-ticket-id="{{ ticket.id }}" 
+                         data-ticket-name="{{ ticket.name }}" 
+                         data-ticket-price="{{ ticket.price }}" 
+                         data-max-qty="{{ ticket.get_available_count|default:0 }}"
+                         data-min-qty="{{ ticket.min_quantity|default:1 }}"
+                         data-is-per-person="{{ ticket.is_per_person|yesno:'true,false' }}">
                         <div class="card-body ticket-card-body">
                             <div class="ticket-row">
                                 <div class="ticket-cell ticket-cell-name">
                                     <p class="ticket-name-modal">{{ ticket.name }}</p>
                                     {% if ticket.price == 0 %}
                                         <span class="badge bg-success ms-2">Бесплатно</span>
+                                    {% elif ticket.is_per_person %}
                                     {% endif %}
                                 </div>
                                 <div class="ticket-cell ticket-cell-price">
-                                    <span class="ticket-price-modal">{{ ticket.price|floatformat }} ₽</span>
+                                    {% if ticket.is_per_person %}
+                                        <span class="ticket-price-modal">{{ ticket.price|floatformat }} руб/чел</span>
+                                    {% else %}
+                                        <span class="ticket-price-modal">{{ ticket.price|floatformat }} ₽</span>
+                                    {% endif %}
                                 </div>
                                 <div class="ticket-cell ticket-cell-qty">
                                     <div class="quantity-input">

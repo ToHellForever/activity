@@ -286,6 +286,7 @@
                     <th>Название</th>
                     <th>Цена</th>
                     <th>Количество</th>
+                    <th>Мин. кол-во</th>
                     <th>Описание</th>
                     <th>За человека</th>
                     <th>Действия</th>
@@ -298,6 +299,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="0" class="form-control" required></td>
+                        <td><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control" required></td>
                         <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control"></td>
                         <td><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check"></td>
                         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
@@ -309,6 +311,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="0" class="form-control" required></td>
+                        <td><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity }}" min="1" class="form-control" required></td>
                         <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control"></td>
                         <td><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check" {% if ticket.is_per_person %}checked{% endif %}></td>
                         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>

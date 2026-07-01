@@ -92,6 +92,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Устанавливаем начальные значения для is_per_person билетов
+    document.querySelectorAll('.ticket-card').forEach(card => {
+        const ticketId = card.dataset.ticketId;
+        const input = document.getElementById('qty_' + ticketId);
+        const minQty = parseInt(card.dataset.minQty) || 1;
+        const isPerPerson = card.dataset.isPerPerson === 'true';
+        
+        if (input && isPerPerson && minQty > 1) {
+            // Устанавливаем minQty как начальное значение
+            input.value = 0; // Оставляем 0, но при первом нажатии + будет minQty
+        }
+    });
+    
     // Подсчёт уже полученных бесплатных билетов на ЭТОМ мероприятии (из localStorage)
     function getAlreadyFreeTicketsForEvent() {
         try {
@@ -232,8 +245,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById('qty_' + ticketId);
         const card = input.closest('.ticket-card');
         const maxQty = parseInt(card.dataset.maxQty) || 99;
-        let newQty = (parseInt(input.value) || 0) + delta;
-        newQty = Math.max(0, Math.min(newQty, maxQty));
+        const minQty = parseInt(card.dataset.minQty) || 1;
+        const isPerPerson = card.dataset.isPerPerson === 'true';
+        
+        let currentQty = parseInt(input.value) || 0;
+        let newQty;
+        
+        if (isPerPerson && minQty > 1) {
+            // Для групповых билетов шаг = minQty
+            if (currentQty === 0) {
+                // Если 0, устанавливаем minQty
+                newQty = minQty;
+            } else {
+                // Прибавляем/убавляем minQty
+                newQty = currentQty + (delta * minQty);
+            }
+        } else {
+            // Обычные билеты — шаг 1
+            newQty = currentQty + delta;
+        }
+        
+        // Ограничиваем диапазон
+        const effectiveMin = isPerPerson && minQty > 1 ? minQty : 0;
+        newQty = Math.max(effectiveMin, Math.min(newQty, maxQty));
         input.value = newQty;
         
         addLog('Новое количество для билета ' + ticketId + ': ' + newQty, 'info');
@@ -257,7 +291,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const ticketId = this.dataset.ticketId;
             const card = this.closest('.ticket-card');
             const maxQty = parseInt(card.dataset.maxQty) || 99;
+            const minQty = parseInt(card.dataset.minQty) || 1;
+            const isPerPerson = card.dataset.isPerPerson === 'true';
             let val = parseInt(this.value) || 0;
+            
+            // Для групповых билетов — округляем до minQty
+            if (isPerPerson && minQty > 1 && val > 0) {
+                val = Math.max(minQty, Math.ceil(val / minQty) * minQty);
+            }
+            
             val = Math.max(0, Math.min(val, maxQty));
             this.value = val;
             addLog('Ручной ввод количества для билета ' + ticketId + ': ' + val, 'info');
@@ -280,22 +322,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const ticketId = card.dataset.ticketId;
             const ticketName = card.dataset.ticketName;
             const ticketPrice = parseFloat(card.dataset.ticketPrice) || 0;
+            const isPerPerson = card.dataset.isPerPerson === 'true';
             const qty = parseInt(document.getElementById('qty_' + ticketId).value) || 0;
             
             if (qty > 0) {
                 totalItems += qty;
+                // Для is_per_person цена уже за человека, итого = цена × кол-во
                 totalPrice += ticketPrice * qty;
                 selectedTickets.push({
                     id: ticketId,
                     name: ticketName,
                     price: ticketPrice,
                     quantity: qty,
-                    subtotal: ticketPrice * qty
+                    subtotal: ticketPrice * qty,
+                    is_per_person: isPerPerson
                 });
                 
-                itemsHtml += '<div class="cart-item">' + ticketName + '</div>';
+                let itemLabel = ticketName;
+                if (isPerPerson) {
+                    itemLabel += ' (' + qty + ' чел.)';
+                }
+                itemsHtml += '<div class="cart-item">' + itemLabel + '</div>';
                 
-                addLog('Добавлено в корзину: ' + ticketName + ' x ' + qty + ' = ' + (ticketPrice * qty).toLocaleString('ru-RU') + ' ₽', 'success');
+                addLog('Добавлено в корзину: ' + itemLabel + ' = ' + (ticketPrice * qty).toLocaleString('ru-RU') + ' руб.', 'success');
             }
         });
         
@@ -439,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
+            
     addLog('Инициализация завершена', 'success');
     
     // === КАРТА ===
