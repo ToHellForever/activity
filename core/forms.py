@@ -355,6 +355,15 @@ class PartnerProfileForm(forms.ModelForm):
     """Форма для редактирования профиля партнера."""
 
     email = forms.EmailField(required=True)  # Делаем email обязательным
+    registration_type = forms.ChoiceField(
+        choices=PartnerProfile.REGISTRATION_TYPE_CHOICES,
+        required=True,
+        label="Тип лица",
+    )
+    additional_email = forms.EmailField(
+        required=False,
+        label="Дополнительный E-mail",
+    )
 
     class Meta:
         model = PartnerProfile
@@ -362,6 +371,7 @@ class PartnerProfileForm(forms.ModelForm):
         fields = [
             "company_name",
             "short_name",
+            "registration_type",
             "description",
             "ogrn",
             "inn",
@@ -372,6 +382,7 @@ class PartnerProfileForm(forms.ModelForm):
             "contact_person",
             "phone",
             "email",
+            "additional_email",
             "social_links",
             "vk_link",
             "max_link",

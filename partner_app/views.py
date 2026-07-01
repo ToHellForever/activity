@@ -34,7 +34,8 @@ from core.models import (
     OrderTicket,
 )
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm
-from .models import SalesReport, ReportSchedule
+from core.forms import PartnerProfileForm
+from .models import SalesReport, ReportSchedule, PartnerProfile
 from .utils import generate_sales_report
 from core.forms import PartnerProfileForm, PasswordChangeForm
 from django.utils import timezone
@@ -133,6 +134,59 @@ def partner_dashboard(request):
         .first()
     )
 
+    # Получаем профиль партнёра
+    partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+
+    # Получаем последний отклонённый документ
+    last_rejected_document = None
+    last_rejection_reason = None
+    if request.user.verification_status == 'rejected':
+        try:
+            from core.models import PartnerDocument
+            last_rejected_document = PartnerDocument.objects.filter(
+                user=request.user,
+                is_approved=False
+            ).order_by('-uploaded_at').first()
+            if last_rejected_document:
+                last_rejection_reason = last_rejected_document.rejection_reason
+        except Exception:
+            pass
+
+    # Обработка формы редактирования профиля
+    if request.method == 'POST':
+        profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
+        
+        # Обработка загрузки документов
+        if 'upload_documents' in request.POST:
+            document_form = DocumentUploadForm(request.POST, request.FILES, user=request.user)
+            if document_form.is_valid():
+                doc = document_form.save(commit=False)
+                doc.user = request.user
+                doc.save()
+                messages.success(request, "Документы успешно загружены!")
+                return redirect("partner:dashboard")
+        elif 'resubmit' in request.POST:
+            request.user.verification_status = 'pending'
+            request.user.rejection_reason = ''
+            request.user.save(update_fields=['verification_status', 'rejection_reason'])
+            messages.success(request, "Ваши данные отправлены на повторное рассмотрение.")
+            return redirect("partner:dashboard")
+        else:
+            document_form = DocumentUploadForm()
+
+        if profile_form.is_valid():
+            profile_form.save()
+            # Обновляем email пользователя
+            new_email = profile_form.cleaned_data.get('email')
+            if new_email and new_email != request.user.email:
+                request.user.email = new_email
+                request.user.save(update_fields=['email'])
+            messages.success(request, "Профиль успешно обновлён!")
+            return redirect("partner:dashboard")
+    else:
+        profile_form = PartnerProfileForm(instance=partner_profile)
+        document_form = DocumentUploadForm()
+
     context = {
         "user": request.user,
         "active_events_count": active_events,
@@ -141,6 +195,11 @@ def partner_dashboard(request):
         "rejection_messages": rejection_messages,
         "packages": EventPackage.objects.all(),
         "user_subscription": user_subscription,
+        "partner_profile": partner_profile,
+        "profile_form": profile_form,
+        "document_form": document_form,
+        "last_rejected_document": last_rejected_document,
+        "last_rejection_reason": last_rejection_reason,
     }
     return render(request, "partner/dashboard.html", context)
 

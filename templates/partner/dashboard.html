@@ -2,672 +2,926 @@
 {% load static %}
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> 
-    <style>
-    .package-card {
-        border: none;
-        border-radius: 12px;
-        height: 100%;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        overflow: hidden;
+<style>
+    /* ===== Sidebar ===== */
+    .partner-sidebar {
+        width: 220px;
+        min-height: calc(100vh - 100px);
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        padding: 20px 14px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-profile {
+        text-align: center;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 12px;
+    }
+
+    .sidebar-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        overflow: visible;
         position: relative;
     }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    .sidebar-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .sidebar-avatar i {
+        font-size: 22px;
+        color: #999;
+    }
+
+    .sidebar-avatar .camera-badge {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 22px;
+        height: 22px;
+        background: #ff8c42;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .sidebar-name {
+        font-weight: 700;
+        font-size: 12px;
+        color: #333;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .sidebar-email {
+        font-size: 10px;
+        color: #888;
+        word-break: break-all;
+    }
+
+    .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: #555;
+        text-decoration: none;
+        font-size: 12px;
+        transition: all 0.2s;
+        margin-bottom: 2px;
+    }
+
+    .sidebar-nav a:hover {
+        background: #f8f8f8;
+    }
+
+    .sidebar-nav a.active {
+        background: #fff3e6;
+        color: #ff8c42;
+        font-weight: 600;
+    }
+
+    .sidebar-nav a.disabled-link {
+        pointer-events: none;
+        opacity: 0.4;
+        color: #999;
+    }
+
+    .sidebar-nav a i {
+        font-size: 15px;
+        width: 18px;
+        text-align: center;
+    }
+
+    /* ===== Main content ===== */
+    .partner-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Status line */
+    .status-approved {
+        background: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        color: #2e7d32;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .status-rejected {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .status-pending {
+        background: #fff8e1;
+        border: 1px solid #ffecb3;
+        color: #f57f17;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    /* ===== Form sections ===== */
+    .profile-section {
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+
+    .profile-section .section-title {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #bbb;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .form-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #aaa;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #333;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #ff8c42;
+        box-shadow: 0 0 0 2px rgba(255,140,66,0.1);
+        background: #fff;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .form-group .help-text {
+        font-size: 10px;
+        color: #999;
+        margin-top: 3px;
+    }
+
+    .form-group .error-message {
+        font-size: 10px;
+        color: #f44336;
+        margin-top: 3px;
+    }
+
+    /* ===== File upload ===== */
+    .file-upload-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .file-upload-btn {
+        padding: 6px 14px;
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 11px;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .file-upload-btn:hover {
+        background: #ff8c42;
+        color: #fff;
+        border-color: #ff8c42;
+    }
+
+    .file-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        background: #f0f8ff;
+        border: 1px solid #d0e8ff;
+        border-radius: 8px;
+        font-size: 11px;
+    }
+
+    .file-preview img,
+    .file-preview video {
+        max-width: 100px;
+        max-height: 80px;
+        border-radius: 4px;
+    }
+
+    .file-remove-btn {
+        width: 20px;
+        height: 20px;
+        background: #f44336;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ===== Save button ===== */
+    .save-section {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .btn-save {
+        padding: 8px 24px;
+        background: #ff8c42;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-save:hover {
+        background: #e87a30;
+    }
+
+    .btn-secondary-save {
+        padding: 8px 24px;
+        background: #f5f5f5;
+        color: #555;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary-save:hover {
+        background: #eee;
+    }
+
+    /* ===== Documents section ===== */
+    .documents-section {
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+
+    .documents-section .section-title {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #bbb;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* ===== Package cards ===== */
+    .package-cards {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .package-card {
+        flex: 1;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 16px;
+        padding: 18px;
+        position: relative;
+        transition: box-shadow 0.2s;
+        min-height: 260px;
+    }
+
+    .package-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
     .package-card.subscribed {
-        border: 2px solid #28a745;
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: 2px solid #4caf50;
+        background: #f1f8e9;
     }
 
     .package-card.subscribed::after {
-        content: 'АКТИВНАЯ ПОДПИСКА';
+        content: 'АКТИВЕН';
         position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #28a745;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 15px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        z-index: 1;
-    }
-
-
-
-    .package-card .card-body {
-        padding: 1.5rem;
-    }
-
-    .package-card .card-title {
-        color: #2c3e50;
+        top: -8px;
+        right: 12px;
+        background: #4caf50;
+        color: #fff;
+        padding: 1px 10px;
+        border-radius: 8px;
+        font-size: 10px;
         font-weight: 700;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
     }
 
-    .package-card .card-text {
-        color: #343a40;
-        margin-bottom: 0;
-        line-height: 1.5;
-        font-size: 0.95rem;
+    .package-card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: #222;
     }
 
-    .package-card .card-text strong {
-        color: #212529;
+    .package-card .subtitle {
+        font-size: 11px;
+        color: #888;
+        margin-bottom: 10px;
     }
-    
-    /* Стили для дизейбленных ссылок */
-    .disabled-link {
-        pointer-events: none;
-        opacity: 0.5;
-        text-decoration: none;
-        color: #6c757d;
+
+    .package-card .features {
+        font-size: 11px;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 12px;
+        flex-grow: 1;
+    }
+
+    .package-card .features span.dimmed {
+        color: #bbb;
+        text-decoration: line-through;
+    }
+
+    .package-card .price {
+        font-size: 15px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .package-card .btn-buy {
+        width: 100%;
+        padding: 7px;
+        border: none;
+        border-radius: 8px;
+        background: #ff8c42;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .package-card .btn-buy:hover {
+        background: #e87a30;
+    }
+
+    .package-card .btn-buy:disabled {
+        background: #ccc;
         cursor: not-allowed;
     }
-    
-    /* Стили для активной ссылки (чат поддержки) */
-    .always-active-link {
-        pointer-events: auto;
-        opacity: 1;
-        color: #007bff;
-        text-decoration: underline;
-    }
-    
-    .always-active-link:hover {
-        color: #0056b3;
+
+    /* ===== Responsive ===== */
+    @media (max-width: 992px) {
+        .partner-layout { flex-direction: column; }
+        .partner-sidebar { width: 100%; min-height: auto; }
+        .package-cards { flex-direction: column; }
     }
 </style>
 {% endblock extra_css %}
+
 {% block content %}
-    <!-- Баннер статуса партнёра -->
-    <div id="partner-status-banner" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; {% if user.verification_status == 'approved' %}background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724;{% elif user.verification_status == 'rejected' %}background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24;{% else %}background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404;{% endif %}">
-        {% if user.verification_status == 'approved' %}
-            <strong>✓ Ваш аккаунт одобрен</strong> — у вас есть полный доступ к функционалу.
-        {% elif user.verification_status == 'rejected' %}
-            <strong>✗ Аккаунт отклонён</strong><br>
-            {% if user.rejection_reason %}
-                Причина: {{ user.rejection_reason }}
+{% with partner_profile=partner_profile|default:None %}
+<div class="container-fluid py-2">
+    <div class="row partner-layout" style="display:flex; gap:14px;">
+
+        <!-- ===== Sidebar ===== -->
+        <aside class="partner-sidebar">
+            <div class="sidebar-profile">
+                <div class="sidebar-avatar">
+                    {% if partner_profile and partner_profile.logo %}
+                        <img src="{{ partner_profile.logo.url }}" alt="Logo">
+                    {% else %}
+                        <i class="bi bi-person-fill"></i>
+                    {% endif %}
+                    <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
+                        <i class="bi bi-camera-fill"></i>
+                    </span>
+                </div>
+                <div class="sidebar-name">{{ partner_profile.company_name|default:"Имя" }}</div>
+                <div class="sidebar-email">{{ user.email }}</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active">
+                    <i class="bi bi-person-fill"></i> Профиль
+                </a>
+                <a href="{% url 'partner:partner_event_list' %}"
+                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-star-fill"></i> Мои события
+                </a>
+                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-chat-dots-fill"></i> Чаты
+                </a>
+                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-portfolio-fill"></i> Портфолио
+                </a>
+                <a href="{% url 'partner:finances' %}"
+                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-cash-stack"></i> Финансы и выплаты
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== Main content ===== -->
+        <div class="partner-main">
+
+            <!-- Status -->
+            {% if user.verification_status == 'approved' %}
+            <div class="status-approved">
+                ✓ Статус партнёра: <strong>Согласован</strong>
+            </div>
+            {% elif user.verification_status == 'rejected' %}
+            <div class="status-rejected">
+                ✗ Аккаунт отклонён
+                {% if user.rejection_reason %} — {{ user.rejection_reason }}{% endif %}
+            </div>
             {% else %}
-                Причина не указана.
+            <div class="status-pending">
+                ⏳ Заявка на рассмотрении
+            </div>
             {% endif %}
-            <br><small>Вы можете изменить данные в настройках профиля и отправить заявку повторно.</small>
-        {% else %}
-            <strong>⏳ Заявка на рассмотрении</strong><br>
-            Ваш аккаунт ожидает одобрения администратора. Функционал ограничен до рассмотрения.
-        {% endif %}
-    </div>
 
-    <h1>Партнерский кабинет</h1>
+            <!-- ===== Package cards ===== -->
+            <div class="package-cards">
+                {% for package in packages %}
+                <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% endif %}">
+                    <h3>{{ package.name }}</h3>
+                    <div class="subtitle">{{ package.get_event_card_type_display }}</div>
+                    <div class="features">
+                        {% if package.get_description_type_display == "detailed" %}
+                            Описание: подробное до 2000 символов<br>
+                        {% else %}
+                            Описание: <span class="dimmed">подробное до 2000 символов</span><br>
+                        {% endif %}
+                        Фото: до {{ package.max_photos }} шт.<br>
+                        {% if package.has_video %}
+                            Видео: размещается<br>
+                        {% else %}
+                            Видео: <span class="dimmed">не размещается</span><br>
+                        {% endif %}
+                        {% if package.has_program_and_speakers %}
+                            Программа мероприятия: размещается<br>
+                        {% else %}
+                            Программа мероприятия: <span class="dimmed">не размещается</span><br>
+                        {% endif %}
+                        {% if package.has_ticket_sales %}
+                            Приоритет: размещение на главной странице, максимальный приоритет в поисковой выдаче и каталоге<br>
+                        {% elif package.has_free_registration %}
+                            Приоритет: повышенный приоритет в поиске<br>
+                        {% else %}
+                            Приоритет: базовый приоритет в поиске — стандартные позиции<br>
+                        {% endif %}
+                    </div>
+                    <div class="price">Цена: {{ package.price }} руб.</div>
+                    <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
+                            onclick="openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
+                        {% if user_subscription and user_subscription.package.id == package.id %}Ваш пакет{% else %}КУПИТЬ{% endif %}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
 
-    <div>
-        <p>Приветствуем, <strong>{{ user.email }}</strong>!</p>
-<!-- Кастомное поле для выбора пакета -->
-    <div class="form-group">
-        <label>Пакет мероприятия</label>
-        <div class="row package-cards-container">
-            {% for package in packages %}
-            <div class="col-md-4 mb-3">
-                <div class="card package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% endif %}"
-                     data-package-id="{{ package.id }}"
-                     data-event-card-type="{{ package.event_card_type }}"
-                     data-description-type="{{ package.description_type }}"
-                     data-has-program="{{ package.has_program_and_speakers }}"
-                     data-max-photos="{{ package.max_photos }}"
-                     data-has-video="{{ package.has_video }}"
-                     data-has-platform-request="{{ package.has_platform_request }}"
-                     data-has-free-registration="{{ package.has_free_registration }}"
-                     data-has-ticket-sales="{{ package.has_ticket_sales }}"
-                     data-is-monthly="{{ package.is_monthly }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ package.name }}</h5>
-                        <p class="card-text">
-                            Тип карточки: {{ package.get_event_card_type_display }}<br>
-                            Описание: {{ package.get_description_type_display }}<br>
-                            Фото: {{ package.max_photos }}<br>
-                            {% if package.has_video %}Видео: Да{% else %}Видео: Нет{% endif %}<br>
-                            {% if package.has_program_and_speakers %}Программа: Да{% else %}Программа: Нет{% endif %}<br>
-                            {% if package.is_monthly %}Подписка: Ежемесячная{% else %}Подписка: Разовый пакет{% endif %}
-                        </p>
-                        <button class="btn btn-primary buy-package-btn {% if user.verification_status != 'approved' %}disabled{% endif %}" 
-                                data-package-id="{{ package.id }}"
-                                {% if user.verification_status != 'approved' %}disabled{% endif %}>Купить</button>
+            <!-- ===== Edit Profile Form ===== -->
+            <form method="post" enctype="multipart/form-data" id="profile-edit-form">
+                {% csrf_token %}
+
+                <!-- Основная информация -->
+                <div class="profile-section">
+                    <div class="section-title">Основная информация</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Тип лица</label>
+                            <select name="registration_type" id="id_registration_type">
+                                <option value="physical" {% if partner_profile and partner_profile.registration_type == 'physical' %}selected{% endif %}>Физическое лицо</option>
+                                <option value="legal" {% if partner_profile and partner_profile.registration_type == 'legal' %}selected{% endif %}>Юридическое лицо</option>
+                                <option value="ip" {% if partner_profile and partner_profile.registration_type == 'ip' %}selected{% endif %}>ИП</option>
+                                <option value="self_employed" {% if partner_profile and partner_profile.registration_type == 'self_employed' %}selected{% endif %}>Самозанятый</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Название организации / ФИО</label>
+                            <input type="text" name="company_name" value="{{ partner_profile.company_name|default:'' }}" placeholder="ООО Ромашка / Иванов И.И.">
+                        </div>
+                        <div class="form-group">
+                            <label>Краткое наименование</label>
+                            <input type="text" name="short_name" value="{{ partner_profile.short_name|default:'' }}" placeholder="Бренд / Торговое имя">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Описание</label>
+                            <textarea name="description" rows="3" placeholder="Кратко о деятельности (до 500 символов)">{{ partner_profile.description|default:'' }}</textarea>
+                            <div class="help-text">До 500 символов</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-        <input type="hidden" name="package" id="id_package" required>
-        <small class="form-text text-muted">Выберите пакет для вашего мероприятия</small>
-    </div>
 
-<!-- Модальное окно для покупки пакета -->
-<div id="buy-package-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-    <div style="background-color: white; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%;">
-        <h3>Покупка пакета</h3>
-        <form id="buy-package-form" method="post" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Реквизиты -->
+                <div class="profile-section">
+                    <div class="section-title">Реквизиты</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ОГРН/ОГРНИП</label>
+                            <input type="text" name="ogrn" value="{{ partner_profile.ogrn|default:'' }}" placeholder="15-значный номер">
+                        </div>
+                        <div class="form-group">
+                            <label>ИНН</label>
+                            <input type="text" name="inn" value="{{ partner_profile.inn|default:'' }}" placeholder="10 или 12 цифр">
+                        </div>
+                        <div class="form-group">
+                            <label>КПП</label>
+                            <input type="text" name="kpp" value="{{ partner_profile.kpp|default:'' }}" placeholder="9 цифр">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Адреса -->
+                <div class="profile-section">
+                    <div class="section-title">Адреса</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Юридический адрес</label>
+                            <input type="text" name="legal_address" value="{{ partner_profile.legal_address|default:'' }}" placeholder="Полный адрес">
+                        </div>
+                        <div class="form-group">
+                            <label>Фактический адрес</label>
+                            <input type="text" name="actual_address" value="{{ partner_profile.actual_address|default:'' }}" placeholder="Полный адрес">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Контакты -->
+                <div class="profile-section">
+                    <div class="section-title">Контакты</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Сайт</label>
+                            <input type="url" name="website" value="{{ partner_profile.website|default:'' }}" placeholder="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Контактное лицо</label>
+                            <input type="text" name="contact_person" value="{{ partner_profile.contact_person|default:'' }}" placeholder="ФИО">
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" name="phone" value="{{ partner_profile.phone|default:'' }}" placeholder="+7 (999) 999-99-99">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>E-mail (для входа)</label>
+                            <input type="email" name="email" value="{{ partner_profile.email|default:user.email }}" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Дополнительный E-mail</label>
+                            <input type="email" name="additional_email" value="{{ partner_profile.additional_email|default:'' }}" placeholder="Доп. почта">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Социальные сети -->
+                <div class="profile-section">
+                    <div class="section-title">Портфолио и ссылки</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>VK</label>
+                            <input type="url" name="vk_link" value="{{ partner_profile.vk_link|default:'' }}" placeholder="https://vk.com/club...">
+                        </div>
+                        <div class="form-group">
+                            <label>MAX</label>
+                            <input type="url" name="max_link" value="{{ partner_profile.max_link|default:'' }}" placeholder="https://max.ru/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Telegram</label>
+                            <input type="url" name="telegram_link" value="{{ partner_profile.telegram_link|default:'' }}" placeholder="https://t.me/...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Социальные сети (текст)</label>
+                            <textarea name="social_links" rows="2" placeholder="Ссылки по одной на строку">{{ partner_profile.social_links|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / 2;">
+                            <label>Кейсы / мероприятия</label>
+                            <textarea name="cases" rows="2" placeholder="Ссылки или описание">{{ partner_profile.cases|default:'' }}</textarea>
+                        </div>
+                        <div class="form-group" style="grid-column: 2 / -1;">
+                            <label>Отзывы / СМИ</label>
+                            <textarea name="reviews" rows="2" placeholder="Ссылки на публикации">{{ partner_profile.reviews|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Медиафайлы -->
+                <div class="profile-section">
+                    <div class="section-title">Медиафайлы</div>
+                    
+                    <!-- Логотип -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Логотип компании</label>
+                            <div class="file-upload-area">
+                                {% if partner_profile and partner_profile.logo %}
+                                <div class="file-preview">
+                                    <img src="{{ partner_profile.logo.url }}" alt="Логотип">
+                                    <span>Логотип загружен</span>
+                                    <button type="button" class="file-remove-btn" onclick="removeFile('logo')" title="Удалить">×</button>
+                                </div>
+                                {% endif %}
+                                <input type="file" name="logo" id="id_logo" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
+                                <button type="button" class="file-upload-btn" onclick="document.getElementById('id_logo').click()">
+                                    {% if partner_profile and partner_profile.logo %}Изменить{% else %}Добавить{% endif %} логотип
+                                </button>
+                            </div>
+                            <div class="help-text">JPG, PNG, GIF, WEBP. Макс. 10MB</div>
+                        </div>
+                    </div>
+
+                    <!-- Видео-визитка -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Видео-визитка</label>
+                            <div class="file-upload-area">
+                                {% if partner_profile and partner_profile.video_business_card %}
+                                <div class="file-preview">
+                                    <video controls style="max-width:120px;max-height:80px;">
+                                        <source src="{{ partner_profile.video_business_card.url }}" type="video/mp4">
+                                    </video>
+                                    <span>Видео загружено</span>
+                                    <button type="button" class="file-remove-btn" onclick="removeFile('video_business_card')" title="Удалить">×</button>
+                                </div>
+                                {% endif %}
+                                <input type="file" name="video_business_card" id="id_video_business_card" accept="video/mp4,video/quicktime,video/x-msvideo" style="display:none;">
+                                <button type="button" class="file-upload-btn" onclick="document.getElementById('id_video_business_card').click()">
+                                    {% if partner_profile and partner_profile.video_business_card %}Изменить{% else %}Добавить{% endif %} видео-визитку
+                                </button>
+                            </div>
+                            <div class="help-text">MP4, MOV, AVI. Макс. 5 минут</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки сохранения -->
+                <div class="profile-section">
+                    <div class="save-section">
+                        <button type="button" class="btn-secondary-save" onclick="window.location.reload()">Отмена</button>
+                        <button type="submit" class="btn-save">Сохранить изменения</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- ===== Документы для верификации ===== -->
+            {% if user.verification_status != 'approved' %}
+            <div class="documents-section">
+                <div class="section-title">Документы для верификации</div>
+                <p style="font-size:12px;color:#666;margin-bottom:12px;">
+                    Загрузите документы для подтверждения статуса организатора
+                </p>
+                <form method="post" enctype="multipart/form-data" style="margin-bottom:12px;">
+                    {% csrf_token %}
+                    {{ document_form.as_p }}
+                    <button type="submit" name="upload_documents" class="btn-save">
+                        {% if user.verification_status == 'not_submitted' %}Отправить на проверку{% else %}Загрузить документы{% endif %}
+                    </button>
+                </form>
+
+                {% if user.verification_status == 'pending' %}
+                <div class="status-pending" style="margin-bottom:0;">
+                    ⏳ Ваши документы на рассмотрении. Ожидайте решения модератора.
+                </div>
+                {% elif user.verification_status == 'rejected' %}
+                <div class="status-rejected" style="margin-bottom:12px;">
+                    <strong>✗ Документы отклонены.</strong>
+                    {% if last_rejection_reason %}
+                        <br>Причина: {{ last_rejection_reason }}
+                    {% elif user.rejection_reason %}
+                        <br>Причина: {{ user.rejection_reason }}
+                    {% endif %}
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" name="resubmit" class="btn-save" style="background:#ff9800;">
+                        🔄 Отправить на пересмотр
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div><!-- /partner-main -->
+    </div><!-- /row -->
+</div><!-- /container -->
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- ===== Buy package modal ===== -->
+<div id="buy-package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:24px; border-radius:12px; width:460px; max-width:90%;">
+        <h4 style="margin-bottom:16px;">Покупка пакета</h4>
+        <form id="buy-package-form" method="post">
             {% csrf_token %}
             <input type="hidden" id="modal-package-id" name="package_id">
-            <div>
-                <label for="payment-method">Способ оплаты:</label>
-                <select id="payment-method" name="payment_method" required style="padding: 8px; width: 100%;">
-                    <option value="yookassa">ЮКасса (для физ. лиц и самозанятых)</option>
-                    <option value="invoice">Классический счет (для юр. лиц)</option>
+            <div style="margin-bottom:12px;">
+                <label for="payment-method" style="font-size:13px; color:#555;">Способ оплаты:</label>
+                <select id="payment-method" name="payment_method" required style="padding:8px; width:100%; margin-top:4px; border-radius:8px; border:1px solid #ddd;">
+                    <option value="yookassa">ЮКасса</option>
+                    <option value="invoice">Счёт (для юр. лиц)</option>
                 </select>
             </div>
-            <div id="invoice-admin-field" style="display: none;">
-                <label for="admin-email">Email администратора для выставления счета:</label>
-                <input type="email" id="admin-email" name="admin_email" style="padding: 8px; width: 100%;">
+            <div id="invoice-admin-field" style="display:none; margin-bottom:12px;">
+                <label for="admin-email" style="font-size:13px; color:#555;">Email администратора:</label>
+                <input type="email" id="admin-email" name="admin_email" style="padding:8px; width:100%; margin-top:4px; border-radius:8px; border:1px solid #ddd;">
             </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" onclick="closeBuyPackageModal()" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Отмена</button>
-                <button type="submit" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Купить</button>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+                <button type="button" onclick="closeBuyPackageModal()" style="padding:8px 20px; background:#f44336; color:#fff; border:none; border-radius:8px; cursor:pointer;">Отмена</button>
+                <button type="submit" style="padding:8px 20px; background:#ff8c42; color:#fff; border:none; border-radius:8px; cursor:pointer;">Купить</button>
             </div>
         </form>
     </div>
 </div>
-<!-- Блок с навигацией по разделам -->
-        <h2>Навигация</h2>
-        <ul>
-            <li><a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">1. Главная панель / Дашборд</a></li>
-            {% comment %} ссылка на мероприятия конкретно этого партнера {% endcomment %}
-            <li><a href="{% url 'partner:partner_event_list' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>2. Мои мероприятия</a></li>
-            <li><a href="{% url 'partner:reports' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>3. Продажи и отчёты</a></li>
-            <li><a href="{% url 'partner:finances' %}" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}" {% if user.verification_status != 'approved' %}title="Доступно после одобрения"{% endif %}>6. Финансы и выплаты</a></li>
-            <li><a href="{% url 'partner:profile_edit' %}" class="always-active-link">6. Настройки профиля</a></li>
-            <li><a href="{% url 'support_dashboard' %}" class="always-active-link">7. Поддержка / обратная связь</a></li>
-        </ul>
-    </div>
 
-<!-- Блок основного контента -->
-    <div style="margin-top: 20px; padding: 15px; border: 1px solid #ccc;">
-        <h2>Текущий раздел: Дашборд (Сводная информация)</h2>
-        <p>Здесь будет отображаться информация по активным мероприятиям, продажам и статусам.</p>
-
-<!-- Здесь будут графики и карточки -->
-        <div style="display: flex; gap: 20px;">
-            <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
-                <h3>Активные мероприятия</h3>
-                <p>Количество: <span>{{ active_events_count }}</span></p>
-            </div>
-            <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
-                <h3>Продажи за месяц</h3>
-                <p>Сумма: <span>{{ monthly_sales_sum }} ₽</span></p>
-            </div>
-            <div style="border: 1px solid #aaa; padding: 10px; width: 30%;">
-                <h3>Статус выплат</h3>
-                <p>Ожидает выплаты: <span>{{ pending_payouts_count }}</span></p>
-            </div>
-        </div>
-
-        <!-- Кнопка для запроса отчёта -->
-        <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
-            <h3>Запросить отчёт о продажах</h3>
-            <button
-                id="request-report-btn"
-                style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; {% if user.verification_status != 'approved' %}opacity: 0.5; cursor: not-allowed; pointer-events: none;{% endif %}"
-                onclick="openReportModal()"
-            >
-                Сгенерировать отчёт
-            </button>
-        </div>
-    </div>
-
-    <!-- Модальное окно для запроса отчёта -->
-    <div id="report-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background-color: white; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%;">
-            <h3>Запрос отчёта о продажах</h3>
-            <form id="report-form" method="post" style="display: flex; flex-direction: column; gap: 15px;">
-                {% csrf_token %}
-                <div>
-                    <label for="period_start">Начало периода:</label>
-                    <input type="date" id="period_start" name="period_start" required style="padding: 8px; width: 100%;">
-                </div>
-                <div>
-                    <label for="period_end">Конец периода:</label>
-                    <input type="date" id="period_end" name="period_end" required style="padding: 8px; width: 100%;">
-                </div>
-                <div>
-                    <label for="report_type">Формат отчёта:</label>
-                    <select id="report_type" name="report_type" required style="padding: 8px; width: 100%;">
-                        <option value="pdf">PDF</option>
-                        <option value="csv">CSV</option>
-                        <option value="excel">Excel</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="closeReportModal()" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Отмена</button>
-                    <button type="submit" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Сгенерировать</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Кнопка выхода -->
-    <a href="{% url 'logout' %}" class="logout-btn" style="display: block; text-align: center; margin-top: 20px;">Выйти</a>
-
-{% endblock %}
-
-{% block extra_js %}
 <script>
-        function openReportModal() {
-            document.getElementById("report-modal").style.display = "flex";
-
-        }
-
-        function closeReportModal() {
-            document.getElementById("report-modal").style.display = "none";
-        }
-
-        document.getElementById("report-form").addEventListener("submit", function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector("button[type='submit']");
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Генерация...";
-
-            fetch("{% url 'partner:generate_report' %}", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    alert("Отчёт успешно сгенерирован! Скачайте его по ссылке: " + data.download_url);
-                    closeReportModal();
-                    window.location.reload();
-                } else {
-                    alert("Ошибка: " + data.message);
-                }
-            })
-            .catch(error => {
-                alert("Произошла ошибка: " + error);
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Сгенерировать";
-            });
-        });
-
-    // Функция для динамической фильтрации полей на основе выбранного пакета
-    function updateFieldsBasedOnPackage() {
-        const packageId = document.getElementById('id_package').value;
-        if (!packageId) return;
-
-        // Находим выбранную карточку пакета
-        const selectedCard = document.querySelector(`.package-card[data-package-id="${packageId}"]`);
-        if (!selectedCard) return;
-
-        // Получаем данные о пакете из атрибутов карточки
-        const hasVideo = selectedCard.dataset.hasVideo === 'True';
-        const hasProgram = selectedCard.dataset.hasProgram === 'True';
-        const hasPlatformRequest = selectedCard.dataset.hasPlatformRequest === 'True';
-        const hasFreeRegistration = selectedCard.dataset.hasFreeRegistration === 'True';
-        const hasTicketSales = selectedCard.dataset.hasTicketSales === 'True';
-        const maxPhotos = parseInt(selectedCard.dataset.maxPhotos, 10);
-        const descriptionType = selectedCard.dataset.descriptionType;
-
-        // Поля, которые нужно скрыть/показать
-        const videoUrlGroup = document.querySelector('.form-group:has(#id_video_url)');
-        const programFileGroup = document.querySelector('.form-group:has(#id_program_file)');
-        const allowPlatformRequestsField = document.querySelector('.form-group:has(#id_allow_platform_requests)');
-        const allowBookingWithoutPaymentField = document.querySelector('.form-group:has(#id_allow_booking_without_payment)');
-        const ticketTableContainer = document.querySelector('.ticket-table-container');
-
-        // Скрываем/показываем поля на основе пакета
-        if (videoUrlGroup) {
-            videoUrlGroup.style.display = hasVideo ? 'block' : 'none';
-        }
-
-        if (programFileGroup) {
-            programFileGroup.style.display = hasProgram ? 'block' : 'none';
-        }
-
-        if (allowPlatformRequestsField) {
-            allowPlatformRequestsField.style.display = hasPlatformRequest ? 'block' : 'none';
-        }
-
-        if (allowBookingWithoutPaymentField) {
-            allowBookingWithoutPaymentField.style.display = hasFreeRegistration ? 'block' : 'none';
-        }
-
-        if (ticketTableContainer) {
-            ticketTableContainer.style.display = hasTicketSales ? 'block' : 'none';
-        }
-
-        // Скрываем поле полного описания, если пакет поддерживает только краткое описание
-        if (descriptionFullGroup) {
-            descriptionFullGroup.style.display = (descriptionType === 'short') ? 'none' : 'block';
-        }
+function openBuyPackageModal(packageId, packageName, price) {
+    if ('{{ user.verification_status }}' !== 'approved') {
+        alert('Для покупки пакета аккаунт должен быть одобрен.');
+        return;
     }
+    document.getElementById('modal-package-id').value = packageId;
+    document.getElementById('buy-package-modal').style.display = 'flex';
+}
 
-    // Обработчик выбора пакета при клике на карточку
-    function handlePackageCardClick(event) {
-        const card = event.currentTarget;
-        const packageId = card.dataset.packageId;
+function closeBuyPackageModal() {
+    document.getElementById('buy-package-modal').style.display = 'none';
+}
 
-        // Убираем выделение со всех карточек
-        document.querySelectorAll('.package-card').forEach(c => {
-            c.classList.remove('selected');
-        });
+document.getElementById('payment-method').addEventListener('change', function() {
+    document.getElementById('invoice-admin-field').style.display =
+        this.value === 'invoice' ? 'block' : 'none';
+});
 
-        // Выделяем выбранную карточку
-        card.classList.add('selected');
+document.getElementById('buy-package-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const packageId = formData.get('package_id');
+    const paymentMethod = formData.get('payment_method');
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Обработка…';
 
-        // Устанавливаем значение в скрытое поле
-        document.getElementById('id_package').value = packageId;
-
-        // Обновляем поля на основе выбранного пакета
-        updateFieldsBasedOnPackage();
-    }
-
-    // Обработчик клика на кнопку покупки пакета
-    function handleBuyPackageClick(event) {
-        event.stopPropagation();
-        const packageId = event.currentTarget.dataset.packageId;
-        document.getElementById('modal-package-id').value = packageId;
-        document.getElementById('buy-package-modal').style.display = "flex";
-    }
-
-    // Закрытие модального окна покупки пакета
-    function closeBuyPackageModal() {
-        document.getElementById('buy-package-modal').style.display = "none";
-    }
-
-    // Обработчик изменения способа оплаты
-    function handlePaymentMethodChange() {
-        const paymentMethod = document.getElementById('payment-method').value;
-        const invoiceAdminField = document.getElementById('invoice-admin-field');
-
-        if (paymentMethod === 'invoice') {
-            invoiceAdminField.style.display = 'block';
-        } else {
-            invoiceAdminField.style.display = 'none';
-        }
-    }
-
-        // Обработчик отправки формы покупки пакета
-        document.getElementById("buy-package-form").addEventListener("submit", function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const packageId = formData.get("package_id");
-            const paymentMethod = formData.get("payment_method");
-            const submitBtn = this.querySelector("button[type='submit']");
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Обработка...";
-
-            if (paymentMethod === 'yookassa') {
-                // Для оплаты через ЮКассу
-                fetch(`/payment/create_package_payment/${packageId}/`, {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.payment_url) {
-                        window.location.href = data.payment_url;
-                    } else if (data.has_active_subscription) {
-                        // Если есть активная подписка, показываем модальное окно с выбором
-                        showPackageChangeChoiceModal(data);
-                    } else {
-                        alert("Ошибка: " + data.error);
-                    }
-                })
-                .catch(error => {
-                    alert("Произошла ошибка: " + error);
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Купить";
-                });
-            } else if (paymentMethod === 'invoice') {
-                // Для оплаты через счет
-                const adminEmail = formData.get("admin_email");
-                if (!adminEmail) {
-                    alert("Пожалуйста, укажите email администратора для выставления счета");
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Купить";
-                    return;
-                }
-
-                fetch(`/payment/create_invoice/${packageId}/`, {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        alert("Заявка на выставление счета успешно отправлена администратору. Счет будет выставлен в ближайшее время, и вы получите уведомление на указанный email.");
-                        closeBuyPackageModal();
-                        window.location.reload();
-                    } else {
-                        alert("Ошибка: " + data.error);
-                    }
-                })
-                .catch(error => {
-                    alert("Произошла ошибка: " + error);
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Купить";
-                });
-            }
-        });
-
-    // Функция для показа модального окна выбора способа смены пакета
-    function showPackageChangeChoiceModal(data) {
-        // Закрываем текущее модальное окно покупки
-        closeBuyPackageModal();
-
-        // Создаем модальное окно для выбора способа смены пакета
-        const modal = document.createElement('div');
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        modal.style.zIndex = '2000';
-        modal.style.display = 'flex';
-        modal.style.justifyContent = 'center';
-        modal.style.alignItems = 'center';
-
-        const modalContent = document.createElement('div');
-        modalContent.style.backgroundColor = 'white';
-        modalContent.style.padding = '20px';
-        modalContent.style.borderRadius = '8px';
-        modalContent.style.width = '500px';
-        modalContent.style.maxWidth = '90%';
-
-        modalContent.innerHTML = `
-            <h3>Выбор способа смены пакета</h3>
-            <p>У вас уже есть активная подписка на пакет <strong>${data.current_package.name}</strong>, которая действует до <strong>${data.current_package.end_date}</strong>.</p>
-            <p>Вы можете:</p>
-
-            <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
-                <button id="immediate-change-btn" style="padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                    Изменить пакет сразу
-                </button>
-                <p style="text-align: center; color: #666;">или</p>
-                <button id="scheduled-change-btn" style="padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                    Запланировать смену пакета после окончания текущей подписки
-                </button>
-            </div>
-
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
-                    <strong>Новый пакет:</strong> ${data.new_package.name}<br>
-                    <strong>Стоимость:</strong> ${data.new_package.price} ₽
-                </p>
-                <button id="cancel-package-change-btn" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Отмена
-                </button>
-            </div>
-        `;
-
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-
-        // Обработчики кнопок
-        document.getElementById('immediate-change-btn').addEventListener('click', function() {
-            handlePackageChangeSelection(data.new_package.id, 'immediate');
-            document.body.removeChild(modal);
-        });
-
-        document.getElementById('scheduled-change-btn').addEventListener('click', function() {
-            handlePackageChangeSelection(data.new_package.id, 'scheduled');
-            document.body.removeChild(modal);
-        });
-
-        document.getElementById('cancel-package-change-btn').addEventListener('click', function() {
-            document.body.removeChild(modal);
-        });
-    }
-
-    // Функция для обработки выбора способа смены пакета
-    function handlePackageChangeSelection(packageId, changeType) {
-        const modal = document.createElement('div');
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        modal.style.zIndex = '2000';
-        modal.style.display = 'flex';
-        modal.style.justifyContent = 'center';
-        modal.style.alignItems = 'center';
-
-        const modalContent = document.createElement('div');
-        modalContent.style.backgroundColor = 'white';
-        modalContent.style.padding = '20px';
-        modalContent.style.borderRadius = '8px';
-        modalContent.style.width = '400px';
-        modalContent.style.maxWidth = '90%';
-
-        modalContent.innerHTML = `
-            <h3>Обработка запроса</h3>
-            <p>Пожалуйста, подождите, идет обработка вашего запроса...</p>
-            <div style="text-align: center; margin: 20px 0;">
-                <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4CAF50; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-            </div>
-        `;
-
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-
-        // Отправляем запрос на сервер
-        fetch('/payment/handle_package_change_choice/', {
+    if (paymentMethod === 'yookassa') {
+        fetch('/payment/create_package_payment/' + packageId + '/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-            body: JSON.stringify({
-                package_id: packageId,
-                change_type: changeType
-            })
+            body: formData,
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-            document.body.removeChild(modal);
-
-            if (data.status === 'success') {
-                if (changeType === 'immediate') {
-                    // Перенаправляем на страницу оплаты, если выбран способ оплаты через ЮКассу
-                    if (data.payment_url) {
-                        window.location.href = data.payment_url;
-                    } else {
-                        showSuccessModal('Пакет успешно изменен', `Теперь у вас активен пакет ${data.new_subscription.package_name} до ${data.new_subscription.end_date}`);
-                    }
-                } else {
-                    showSuccessModal('Изменение пакета запланировано', `После окончания текущей подписки будет активирован пакет ${data.scheduled_change.new_package} (${data.scheduled_change.change_date})`);
-                }
+            if (data.payment_url) {
+                window.location.href = data.payment_url;
+            } else if (data.has_active_subscription) {
+                alert('У вас уже есть активная подписка.');
             } else {
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                alert('Ошибка: ' + (data.error || ''));
             }
         })
-        .catch(error => {
-            document.body.removeChild(modal);
-            alert('Произошла ошибка: ' + error);
-        });
+        .catch(err => alert('Ошибка: ' + err))
+        .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
+    } else {
+        const adminEmail = formData.get('admin_email');
+        if (!adminEmail) {
+            alert('Укажите email администратора для выставления счёта.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Купить';
+            return;
+        }
+        fetch('/payment/create_invoice/' + packageId + '/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Заявка на выставление счёта отправлена.');
+                closeBuyPackageModal();
+                window.location.reload();
+            } else {
+                alert('Ошибка: ' + (data.error || ''));
+            }
+        })
+        .catch(err => alert('Ошибка: ' + err))
+        .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
     }
+});
 
-    // Функция для показа модального окна с успехом
-    function showSuccessModal(title, message) {
-        const modal = document.createElement('div');
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        modal.style.zIndex = '2000';
-        modal.style.display = 'flex';
-        modal.style.justifyContent = 'center';
-        modal.style.alignItems = 'center';
-
-        const modalContent = document.createElement('div');
-        modalContent.style.backgroundColor = 'white';
-        modalContent.style.padding = '20px';
-        modalContent.style.borderRadius = '8px';
-        modalContent.style.width = '400px';
-        modalContent.style.maxWidth = '90%';
-        modalContent.style.textAlign = 'center';
-
-        modalContent.innerHTML = `
-            <h3 style="color: #4CAF50;">✓ ${title}</h3>
-            <p style="margin: 20px 0;">${message}</p>
-            <button id="success-ok-btn" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                Хорошо
-            </button>
-        `;
-
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-
-        document.getElementById('success-ok-btn').addEventListener('click', function() {
-            document.body.removeChild(modal);
-            window.location.reload();
-        });
+function removeFile(type) {
+    if (confirm('Удалить файл?')) {
+        const input = document.getElementById('id_' + type);
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('change'));
+        }
+        // Убираем превью
+        const preview = input?.closest('.form-group')?.querySelector('.file-preview');
+        if (preview) preview.remove();
+        // Показываем кнопку снова
+        const btn = input?.closest('.form-group')?.querySelector('.file-upload-btn');
+        if (btn) {
+            btn.textContent = type === 'logo' ? 'Добавить логотип' : 'Добавить видео-визитку';
+        }
     }
+}
 
-    // Инициализация обработчика изменения пакета
-    document.addEventListener('DOMContentLoaded', function() {
-        const packageSelect = document.getElementById('id_package');
-        const packageCards = document.querySelectorAll('.package-card');
-        const buyPackageButtons = document.querySelectorAll('.buy-package-btn');
-        const paymentMethodSelect = document.getElementById('payment-method');
+// Показываем имя файла при выборе
+document.getElementById('id_logo').addEventListener('change', function() {
+    if (this.files.length > 0) {
+        const btn = this.closest('.form-group').querySelector('.file-upload-btn');
+        btn.textContent = 'Изменить';
+    }
+});
 
-        // Обработчики клика на карточки пакетов
-        packageCards.forEach(card => {
-            card.addEventListener('click', handlePackageCardClick);
-        });
-
-        // Обработчики клика на кнопки покупки пакета
-        buyPackageButtons.forEach(button => {
-            button.addEventListener('click', handleBuyPackageClick);
-        });
-
-        // Обработчик изменения способа оплаты
-        paymentMethodSelect.addEventListener('change', handlePaymentMethodChange);
-
-        // Вызываем функцию при загрузке страницы, чтобы установить начальное состояние
-        updateFieldsBasedOnPackage();
-    });
+document.getElementById('id_video_business_card').addEventListener('change', function() {
+    if (this.files.length > 0) {
+        const btn = this.closest('.form-group').querySelector('.file-upload-btn');
+        btn.textContent = 'Изменить';
+    }
+});
 </script>
-{% endblock %}
+{% endblock extra_js %}
