@@ -1,0 +1,115 @@
+    /* ===== Sidebar ===== */
+    .partner-sidebar {
+        width: 220px;
+        min-height: calc(100vh - 100px);
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        padding: 20px 14px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-profile {
+        text-align: center;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 12px;
+    }
+
+    .sidebar-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        overflow: visible;
+        position: relative;
+    }
+
+    .sidebar-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .sidebar-avatar i {
+        font-size: 22px;
+        color: #999;
+    }
+
+    .sidebar-avatar .camera-badge {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 22px;
+        height: 22px;
+        background: #ff8c42;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .sidebar-name {
+        font-weight: 700;
+        font-size: 12px;
+        color: #333;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .sidebar-email {
+        font-size: 10px;
+        color: #888;
+        word-break: break-all;
+    }
+
+    .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: #555;
+        text-decoration: none;
+        font-size: 12px;
+        transition: all 0.2s;
+        margin-bottom: 2px;
+    }
+
+    .sidebar-nav a:hover {
+        background: #f8f8f8;
+    }
+    .sidebar-nav a.active {
+        background-color: #e9f5ff; /* Светло-синий фон */
+        color: #0d6efd !important; /* Основной синий цвет текста */
+    }
+
+    .sidebar-nav a.active i {
+        color: #0d6efd !important; /* Цвет иконки */
+    }
+    .sidebar-nav a.disabled-link {
+        pointer-events: none;
+        opacity: 0.4;
+        color: #999;
+    }
+
+    .sidebar-nav a i {
+        font-size: 15px;
+        width: 18px;
+        text-align: center;
+    }
+
+    .partner-main {
+    flex: 1;
+    min-width: 0;
+    }
