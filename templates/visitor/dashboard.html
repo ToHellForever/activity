@@ -157,7 +157,7 @@
                                     {% endwith %}
                                     {% if 'pending' in order.payment_status or 'reserved' in order.payment_status %}
                                         {% if not order.is_paid %}
-                                            <a href="{% url 'pay_reserved_order' order.id %}" class="btn btn-sm btn-outline-success">Оплатить билет</a>
+                                            <a href="{% url 'payment:pay_reserved_order' order.id %}" class="btn btn-sm btn-outline-success">Оплатить билет</a>
                                         {% endif %}
                                     {% endif %}
                                 </div>

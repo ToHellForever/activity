@@ -7,6 +7,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const purchaseLog = [];
     const MAX_FREE_TICKETS = 2;
     
+    // === UTM-МЕТКИ ===
+    function captureUtmParams() {
+        const params = new URLSearchParams(window.location.search);
+        const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        const utmData = {};
+        let hasUtm = false;
+        
+        utmKeys.forEach(key => {
+            const value = params.get(key);
+            if (value) {
+                utmData[key] = value;
+                hasUtm = true;
+            }
+        });
+        
+        if (hasUtm) {
+            try {
+                localStorage.setItem('utm_params', JSON.stringify(utmData));
+                addLog('UTM-метки сохранены: ' + JSON.stringify(utmData), 'info');
+            } catch(e) {}
+        }
+    }
+    
+    function getUtmParams() {
+        try {
+            const stored = localStorage.getItem('utm_params');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch(e) {}
+        return {};
+    }
+    
+    // Захватываем UTM-метки при загрузке страницы
+    captureUtmParams();
+    
     // === Toast-уведомления ===
     function showToast(message, isError = true) {
         const toastContainer = document.getElementById('toastContainer');
@@ -326,6 +362,13 @@ document.addEventListener('DOMContentLoaded', function() {
             total_price: window.cartTotal,
             email: email
         };
+        
+        // Добавляем UTM-метки в payload
+        const utmParams = getUtmParams();
+        if (Object.keys(utmParams).length > 0) {
+            payload.utm_params = utmParams;
+            addLog('UTM-метки добавлены в запрос: ' + JSON.stringify(utmParams), 'info');
+        }
         
         addLog('Отправка запроса на сервер...', 'info');
         document.getElementById('purchaseStatusText').textContent = 'Отправка запроса...';

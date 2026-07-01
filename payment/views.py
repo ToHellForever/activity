@@ -356,8 +356,20 @@ def create_invoice(request, package_id):
 def bulk_buy_tickets(request, event_id):
     """
     API для покупки нескольких типов билетов за один раз.
+    При GET-запросе перенаправляет на страницу мероприятия.
     """
     import traceback
+
+    # При GET-запросе перенаправляем на страницу мероприятия с UTM-метками
+    if request.method == 'GET':
+        event = get_object_or_404(Event, id=event_id)
+        utm_params = request.GET.dict()
+        if utm_params:
+            query_string = '&'.join(f'{k}={v}' for k, v in utm_params.items())
+            redirect_url = f'/events/{event_id}/?{query_string}'
+        else:
+            redirect_url = f'/events/{event_id}/'
+        return redirect(redirect_url)
 
     if request.method != 'POST':
         logger.error('[bulk_buy] Метод не POST', extra={'event_id': event_id})
@@ -381,6 +393,9 @@ def bulk_buy_tickets(request, event_id):
         buyer_name = data.get('name', '').strip()
         email = data.get('email', '').strip()
         phone = data.get('phone', '').strip()
+        
+        # Получаем UTM-метки из JSON (если пришли с фронтенда)
+        utm_from_json = data.get('utm_params', {})
         
         logger.info('[bulk_buy] Данные получены', extra={
             'tickets_count': len(tickets_data),
@@ -477,6 +492,22 @@ def bulk_buy_tickets(request, event_id):
                         'error': 'Вы уже получили максимальное количество бесплатных билетов на это мероприятие (2).'
                     }, status=400)
         
+        # === ИЗВЛЕЧЕНИЕ UTM-МЕТОК ИЗ URL И JSON ===
+        # Сначала берём из GET (приоритет выше)
+        utm_params = {
+            "utm_source": request.GET.get("utm_source"),
+            "utm_medium": request.GET.get("utm_medium"),
+            "utm_campaign": request.GET.get("utm_campaign"),
+            "utm_term": request.GET.get("utm_term"),
+            "utm_content": request.GET.get("utm_content"),
+        }
+        
+        # Затем дополняем из JSON (если пришли с фронтенда)
+        if utm_from_json:
+            for key in ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]:
+                if key in utm_from_json and not utm_params.get(key):
+                    utm_params[key] = utm_from_json[key]
+        
         # Создаём participant_data
         participant_data = {
             'name': buyer_name,
@@ -512,6 +543,7 @@ def bulk_buy_tickets(request, event_id):
                     payment_status='succeeded',
                     purchase_type='free_registration',
                     is_paid=True,
+                    **utm_params,  # <-- передаём UTM-метки
                 )
                 orders.extend(free_orders)
                 logger.info('[bulk_buy] Бесплатные билеты забронированы', extra={'count': len(free_orders)})
@@ -529,6 +561,7 @@ def bulk_buy_tickets(request, event_id):
                     participant_data=participant_data,
                     payment_status='pending',
                     purchase_type='paid_ticket',
+                    **utm_params,  # <-- передаём UTM-метки
                 )
                 orders.extend(paid_orders)
                 logger.info('[bulk_buy] Платные билеты забронированы', extra={'count': len(paid_orders)})
@@ -698,6 +731,15 @@ def create_payment(request, ticket_id):
 
         quantity = int(request.POST.get("quantity", 1))
         
+        # === ИЗВЛЕЧЕНИЕ UTM-МЕТОК ИЗ URL ===
+        utm_params = {
+            "utm_source": request.GET.get("utm_source"),
+            "utm_medium": request.GET.get("utm_medium"),
+            "utm_campaign": request.GET.get("utm_campaign"),
+            "utm_term": request.GET.get("utm_term"),
+            "utm_content": request.GET.get("utm_content"),
+        }
+
         # Проверка лимита бесплатных билетов за один заказ
         if ticket.price == 0 and quantity > 2:
             from django.shortcuts import render
@@ -709,7 +751,6 @@ def create_payment(request, ticket_id):
                     "error_message": "За один заказ можно получить не более 2 бесплатных билетов."
                 },
             )
-
         # Проверка, выбран ли чекбокс "Забронировать без оплаты"
         reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
 
@@ -763,6 +804,7 @@ def create_payment(request, ticket_id):
                     purchase_type=purchase_type,
                     is_paid=is_paid,
                     payment_deadline=payment_deadline,
+                    **utm_params,  # <-- передаём UTM-метки
                 )
         except TicketReservationError as e:
             logger.warning("[create_payment] Ошибка бронирования: %s", e)
