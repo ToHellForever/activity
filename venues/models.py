@@ -177,8 +177,12 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     )
     title = models.CharField(max_length=255, verbose_name="Название площадки")
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    description = models.TextField(verbose_name="Описание", blank=True, default="", max_length=1500)
-
+    description = models.TextField(
+        verbose_name="Описание",
+        help_text="Максимум 1500 символов",
+        blank=True,
+        default="",
+    )
     venue_type = models.ForeignKey(
         VenueType, on_delete=models.SET_NULL, null=True, verbose_name="Тип площадки"
     )
