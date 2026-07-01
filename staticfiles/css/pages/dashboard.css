@@ -404,11 +404,6 @@
         flex-grow: 1;
     }
 
-    .package-card .features span.dimmed {
-        color: #bbb;
-        text-decoration: line-through;
-    }
-
     .package-card .price {
         font-size: 15px;
         font-weight: 700;

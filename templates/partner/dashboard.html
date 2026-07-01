@@ -73,34 +73,31 @@
                     <h3>{{ package.name }}</h3>
                     <div class="subtitle">{{ package.get_event_card_type_display }}</div>
                     <div class="features">
-                        {% if package.get_description_type_display == "detailed" %}
-                            Описание: подробное до 2000 символов<br>
-                        {% else %}
-                            Описание: <span class="dimmed">подробное до 2000 символов</span><br>
-                        {% endif %}
-                        Фото: до {{ package.max_photos }} шт.<br>
-                        {% if package.has_video %}
-                            Видео: размещается<br>
-                        {% else %}
-                            Видео: <span class="dimmed">не размещается</span><br>
-                        {% endif %}
-                        {% if package.has_program_and_speakers %}
-                            Программа мероприятия: размещается<br>
-                        {% else %}
-                            Программа мероприятия: <span class="dimmed">не размещается</span><br>
-                        {% endif %}
-                        {% if package.has_ticket_sales %}
-                            Приоритет: размещение на главной странице, максимальный приоритет в поисковой выдаче и каталоге<br>
-                        {% elif package.has_free_registration %}
-                            Приоритет: повышенный приоритет в поиске<br>
-                        {% else %}
-                            Приоритет: базовый приоритет в поиске — стандартные позиции<br>
-                        {% endif %}
-                    </div>
-                    <div class="price">Цена: {{ package.price }} руб.</div>
+                        {% comment %} описание{% endcomment %}
+                        <div>{{ package.description_type }}</div>
+                        {% comment %} фото {% endcomment %}
+                        <div>Фото: до {{ package.max_photos }}</div>
+                        {% comment %} видео да или нет {% endcomment %}
+                        <div>{% if package.has_video %}Видео: размещается{% else %}Видео: не размещается{% endif %}</div>
+                        {% comment %} программа да или нет {% endcomment %}
+                        <div>{% if package.has_program_and_speakers %}Программа мероприятия: размещается{% else %}Программа мероприятия: не размещается{% endif %}</div>
+                        {% comment %} приоритет {% endcomment %}
+                        <div>
+                            {% if package.visibility_level == 'basic' %}
+                                Приоритет: Базовый приоритет в поиске — стандартные позиции
+                            {% elif package.visibility_level == 'enhanced' %}
+                                Повышенный приоритет в поиске; может попадать в тематические подборки (без размещения на главной)
+                            {% elif package.visibility_level == 'priority' %}
+                                Приоритет: размещение на главной странице, максимальный приоритет в поисковой выдаче и каталоге
+                            {% else %}
+                                Неизвестный уровень приоритета: {{ package.visibility_level }}
+                            {% endif %}
+                        </div>
+                        </div>
+                    <div class="price">Цена: {{ package.price|floatformat }} руб.</div>
                     <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
                             onclick="openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
-                        {% if user_subscription and user_subscription.package.id == package.id %}Ваш пакет{% else %}КУПИТЬ{% endif %}
+                        {% if user_subscription and user_subscription.package.id == package.id %} Ваш пакет{% else %}КУПИТЬ{% endif %}
                     </button>
                 </div>
                 {% endfor %}
