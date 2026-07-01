@@ -1,0 +1,37 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+        <aside class="partner-sidebar">
+            <div class="sidebar-profile">
+                <div class="sidebar-avatar">
+                    {% if partner_profile and partner_profile.logo %}
+                        <img src="{{ partner_profile.logo.url }}" alt="Logo">
+                    {% else %}
+                        <i class="bi bi-person-fill"></i>
+                    {% endif %}
+                    <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
+                        <i class="bi bi-camera-fill"></i>
+                    </span>
+                </div>
+                <div class="sidebar-name">{{ partner_profile.company_name|default:"Имя" }}</div>
+                <div class="sidebar-email">{{ user.email }}</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active">
+                    <i class="bi bi-person-fill"></i> Профиль
+                </a>
+                <a href="{% url 'partner:partner_event_list' %}"
+                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-star-fill"></i> Мои события
+                </a>
+                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-chat-dots-fill"></i> Чаты
+                </a>
+                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-portfolio-fill"></i> Портфолио
+                </a>
+                <a href="{% url 'partner:finances' %}"
+                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <i class="bi bi-cash-stack"></i> Финансы и выплаты
+                </a>
+            </nav>
+        </aside>

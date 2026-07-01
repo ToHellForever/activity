@@ -58,7 +58,8 @@
 {% endblock %}
 
 {% block content %}
-
+<div class="row partner-layout" style="display:flex; gap:14px;">
+{% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <!-- Toast уведомления -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
     <div id="toastContainer"></div>
@@ -73,7 +74,7 @@
         </div>
     {% endfor %}
 {% endif %}
-
+<div class="partner-main">
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
@@ -325,7 +326,8 @@
 
     <button type="submit" class="btn btn-primary">Сохранить мероприятие</button>
 </form>
-
+</div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

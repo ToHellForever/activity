@@ -2,8 +2,11 @@
 {% load static %}
 
 {% block content %}
-<h1>Финансы и выплаты</h1>
 
+<h1>Финансы и выплаты</h1>
+<div class="row partner-layout" style="display:flex; gap:14px;">
+{% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+<div class="partner-main">
 <!-- Модальное окно для запроса выплаты -->
 <div class="modal fade" id="payoutModal" tabindex="-1" aria-labelledby="payoutModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -113,6 +116,8 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

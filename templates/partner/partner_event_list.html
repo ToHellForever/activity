@@ -6,7 +6,9 @@
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100" id="toastContainer"></div>
 
 <h1>Мои мероприятия</h1>
-
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
 <form method="post" action="{% url 'partner:bulk_delete_events' %}" id="bulkDeleteForm">
   {% csrf_token %}
   <div class="row mb-3">
@@ -78,6 +80,8 @@
   </div>
 </form>
 
+    </div>
+</div>
 <script>
     // === Toast-уведомления ===
     function showToast(message, isError = true) {
