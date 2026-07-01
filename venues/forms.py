@@ -79,21 +79,6 @@ class VenueForm(forms.ModelForm):
                 self.fields["full_description"].widget = forms.HiddenInput()
                 self.fields["full_description"].required = False
 
-    def clean_short_description(self):
-        short_description = self.cleaned_data.get("short_description")
-        tariff = self.cleaned_data.get("tariff")
-
-        if short_description and tariff:
-            # Для Free тарифа краткое описание ограничено 500 символами
-            if tariff == 1 and len(short_description) > 500:
-                raise ValidationError(
-                    _(
-                        "Максимальная длина краткого описания для тарифа Free - 500 символов."
-                    )
-                )
-
-        return short_description
-
     def clean_full_description(self):
         full_description = self.cleaned_data.get("full_description")
         tariff = self.cleaned_data.get("tariff")

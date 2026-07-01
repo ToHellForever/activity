@@ -108,7 +108,7 @@ class VenueAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Описание", {"fields": ("short_description", "full_description")}),
+        ("Описание", {"fields": ("description",)}),
         ("Характеристики", {"fields": ("area", "max_capacity", "price", "price_unit")}),
         ("Оборудование и удобства", {"fields": ("equipment", "formats")}),
         ("Медиа", {"fields": ("video",)}),
