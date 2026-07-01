@@ -6,15 +6,15 @@
 
     /* Status line */
     .status-approved {
-        background: #e8f5e9;
-        border: 1px solid #c8e6c9;
-        color: #2e7d32;
+        color: #777A8D;
         padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
     }
-
+    .text-status {
+        color: #108725;
+    }
     .status-rejected {
         background: #ffebee;
         border: 1px solid #ffcdd2;

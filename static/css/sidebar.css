@@ -89,13 +89,14 @@
     .sidebar-nav a:hover {
         background: #f8f8f8;
     }
-
     .sidebar-nav a.active {
-        background: #fff3e6;
-        color: #ff8c42;
-        font-weight: 600;
+        background-color: #e9f5ff; /* Светло-синий фон */
+        color: #0d6efd !important; /* Основной синий цвет текста */
     }
 
+    .sidebar-nav a.active i {
+        color: #0d6efd !important; /* Цвет иконки */
+    }
     .sidebar-nav a.disabled-link {
         pointer-events: none;
         opacity: 0.4;

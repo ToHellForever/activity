@@ -16,16 +16,16 @@
             <!-- Status -->
             {% if user.verification_status == 'approved' %}
             <div class="status-approved">
-                ✓ Статус партнёра: <strong>Согласован</strong>
+                Статус партнёра: <strong class="text-status">Согласован</strong>
             </div>
             {% elif user.verification_status == 'rejected' %}
             <div class="status-rejected">
-                ✗ Аккаунт отклонён
+                Статус партнёра: <strong class="text-status">Отклонён</strong>
                 {% if user.rejection_reason %} — {{ user.rejection_reason }}{% endif %}
             </div>
             {% else %}
             <div class="status-pending">
-                ⏳ Заявка на рассмотрении
+                Статус партнёра: <strong class="text-status">В ожидании</strong>
             </div>
             {% endif %}
 

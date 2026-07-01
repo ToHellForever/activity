@@ -16,21 +16,24 @@
                 <div class="sidebar-email">{{ user.email }}</div>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="active">
+                <a href="{% url 'partner:dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <i class="bi bi-person-fill"></i> Профиль
                 </a>
                 <a href="{% url 'partner:partner_event_list' %}"
-                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                class="{% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <i class="bi bi-star-fill"></i> Мои события
                 </a>
-                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                <a href="{% url 'support_dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
                     <i class="bi bi-chat-dots-fill"></i> Чаты
                 </a>
-                <a href="#" class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                <a href="#"
+                class="{% if request.resolver_match.url_name == 'portfolio' %}active{% endif %}">
                     <i class="bi bi-portfolio-fill"></i> Портфолио
                 </a>
                 <a href="{% url 'partner:finances' %}"
-                   class="{% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                class="{% if request.resolver_match.url_name == 'finances' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <i class="bi bi-cash-stack"></i> Финансы и выплаты
                 </a>
             </nav>
