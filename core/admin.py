@@ -767,6 +767,14 @@ class EventPackageAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Описание",
+            {
+                "fields": (
+                    "description",
+                    "priority_description",
+                )
+            },
+        ),
         (
             "Функциональные возможности",
             {

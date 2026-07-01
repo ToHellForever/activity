@@ -143,6 +143,8 @@ class EventPackage(models.Model):
         ('short', 'Краткое'),
         ('detailed', 'Подробное'),
     ], default='short', verbose_name="Тип описания")
+    description = models.TextField(verbose_name="Описание", default="", blank=True, null=True)
+    priority_description = models.TextField(verbose_name="Описание приоритета", default="", blank=True, null=True)
     has_program_and_speakers = models.BooleanField(default=True, verbose_name="Программа и спикеры")
     max_photos = models.PositiveIntegerField(default=1, verbose_name="Максимум фото")
     has_video = models.BooleanField(default=False, verbose_name="Видео")
