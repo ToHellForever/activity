@@ -162,7 +162,7 @@
         {% elif venue.price_unit == 'day' %}
         {{ venue.price|format_price }}.- день
         {% else %}
-        {{ venue.price|format_price }} руб (по запросу)
+        Договорная
         {% endif %}</p>
 <a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
             </div>
