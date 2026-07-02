@@ -155,13 +155,14 @@ def create_package_payment(request, package_id):
             # Если есть активная подписка, предлагаем выбор: изменить сейчас или запланировать
             return JsonResponse({
                 "has_active_subscription": True,
+                "package_id": package_id,
                 "current_package": {
                     "id": active_subscription.package.id,
                     "name": active_subscription.package.name,
                     "end_date": active_subscription.end_date.strftime('%Y-%m-%d %H:%M:%S')
                 },
                 "new_package": {
-                    "id": package.id,
+                    "id": package_id,
                     "name": package.name,
                     "price": str(package.price)
                 }

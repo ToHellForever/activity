@@ -7,7 +7,6 @@
     /* Status line */
     .status-approved {
         color: #777A8D;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -19,7 +18,6 @@
         background: #ffebee;
         border: 1px solid #ffcdd2;
         color: #c62828;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -29,7 +27,6 @@
         background: #fff8e1;
         border: 1px solid #ffecb3;
         color: #f57f17;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -248,29 +245,38 @@
         padding: 18px;
         position: relative;
         transition: box-shadow 0.2s;
-        min-height: 260px;
+        display: flex;
+        flex-direction: column;
     }
 
     .package-card:hover {
         box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
-    .package-card.subscribed {
-        border: 2px solid #4caf50;
-        background: #f1f8e9;
+
+    .package-card.inactive {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
     }
 
-    .package-card.subscribed::after {
-        content: 'АКТИВЕН';
-        position: absolute;
-        top: -8px;
-        right: 12px;
-        background: #4caf50;
-        color: #fff;
-        padding: 1px 10px;
-        border-radius: 8px;
-        font-size: 10px;
-        font-weight: 700;
+    .package-card.inactive h3 {
+        color: #999;
+    }
+
+    .package-card.inactive .features {
+        color: #888;
+    }
+
+    .package-card.inactive .price {
+        color: #777;
+    }
+
+    .package-card.inactive .btn-buy {
+        background: #999;
+    }
+
+    .package-card.inactive .btn-buy:hover {
+        background: #777;
     }
 
     .package-card h3 {
@@ -299,6 +305,7 @@
         font-weight: 700;
         color: #333;
         margin-bottom: 10px;
+        margin-top: auto;
     }
 
     .package-card .btn-buy {
@@ -323,4 +330,10 @@
     .package-card .btn-buy:disabled {
         background: #ccc;
         cursor: not-allowed;
+    }
+
+    .package-card .btn-buy[disabled] {
+        background: #4caf50;
+        color: #fff;
+        cursor: default;
     }

@@ -7,32 +7,50 @@
 
 {% block content %}
 {% with partner_profile=partner_profile|default:None %}
-<div class="container-fluid py-2">
+<div class="container-fluid py-2" data-verification-status="{{ user.verification_status }}">
     <div class="row partner-layout" style="display:flex; gap:14px;">
         {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
         <!-- ===== Main content ===== -->
         <div class="partner-main">
+            <!-- Company info -->
+            {% if partner_profile %}
+            <div class="company-info" style="font-size:12px; color:#555; margin-bottom:8px;">
+                {{ partner_profile.company_name|default:"—" }},
+                юр. адрес: {{ partner_profile.legal_address|default:"—" }},
+                ИНН: {{ partner_profile.inn|default:"—" }},
+                КПП: {{ partner_profile.kpp|default:"—" }}
+            </div>
+            {% endif %}
 
             <!-- Status -->
             {% if user.verification_status == 'approved' %}
             <div class="status-approved">
                 Статус партнёра: <strong class="text-status">Согласован</strong>
             </div>
+            <div class="status-approved" style="margin-top:4px;">
+                Организатор: <strong class="text-status">Подтверждён</strong>
+            </div>
             {% elif user.verification_status == 'rejected' %}
             <div class="status-rejected">
                 Статус партнёра: <strong class="text-status">Отклонён</strong>
                 {% if user.rejection_reason %} — {{ user.rejection_reason }}{% endif %}
             </div>
+            <div class="status-rejected" style="margin-top:4px;">
+                Организатор: <strong style="color:#c62828;">Не подтверждён</strong>
+            </div>
             {% else %}
             <div class="status-pending">
                 Статус партнёра: <strong class="text-status">В ожидании</strong>
             </div>
+            <div class="status-pending" style="margin-top:4px;">
+                Организатор: <strong style="color:#f57f17;">На проверке</strong>
+            </div>
             {% endif %}
-
+            <p>Для размещения события и доступа ко всем сервисам выбирете тариф на размещение</p>
             <!-- ===== Package cards ===== -->
             <div class="package-cards">
                 {% for package in packages %}
-                <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% endif %}">
+                <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% else %}inactive{% endif %}">
                     <h3>{{ package.name }}</h3>
                     <div class="features">
                         {% comment %} описание{% endcomment %}
@@ -47,10 +65,16 @@
                         <div>Приоритет: {{ package.priority_description }}</div>
                         </div>
                     <div class="price">Цена: {{ package.price|floatformat }} руб.</div>
-                    <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
-                            onclick="openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
-                        {% if user_subscription and user_subscription.package.id == package.id %} Ваш пакет{% else %}КУПИТЬ{% endif %}
+                    {% if user_subscription and user_subscription.package.id == package.id %}
+                    <button class="btn-buy" disabled style="cursor:default;">
+                        Ваш пакет
                     </button>
+                    {% else %}
+                    <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
+                            onclick="{% if has_active_subscription %}openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }}){% else %}openBuyNewPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }}){% endif %}">
+                        {% if has_active_subscription %}Поменять тариф{% else %}КУПИТЬ{% endif %}
+                    </button>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -61,178 +85,12 @@
 
                 <!-- Основная информация -->
                 <div class="profile-section">
-                    <div class="section-title">Основная информация</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Тип лица</label>
-                            <select name="registration_type" id="id_registration_type">
-                                <option value="physical" {% if partner_profile and partner_profile.registration_type == 'physical' %}selected{% endif %}>Физическое лицо</option>
-                                <option value="legal" {% if partner_profile and partner_profile.registration_type == 'legal' %}selected{% endif %}>Юридическое лицо</option>
-                                <option value="ip" {% if partner_profile and partner_profile.registration_type == 'ip' %}selected{% endif %}>ИП</option>
-                                <option value="self_employed" {% if partner_profile and partner_profile.registration_type == 'self_employed' %}selected{% endif %}>Самозанятый</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Название организации / ФИО</label>
-                            <input type="text" name="company_name" value="{{ partner_profile.company_name|default:'' }}" placeholder="ООО Ромашка / Иванов И.И.">
-                        </div>
-                        <div class="form-group">
-                            <label>Краткое наименование</label>
-                            <input type="text" name="short_name" value="{{ partner_profile.short_name|default:'' }}" placeholder="Бренд / Торговое имя">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label>Описание</label>
-                            <textarea name="description" rows="3" placeholder="Кратко о деятельности (до 500 символов)">{{ partner_profile.description|default:'' }}</textarea>
+                            {% comment %} Информация {% endcomment %}
+                            <label>Информация</label>
+                            <textarea name="info" rows="3" placeholder="Кратко о деятельности (до 500 символов)">{{ partner_profile.info|default:'' }}</textarea>
                             <div class="help-text">До 500 символов</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Реквизиты -->
-                <div class="profile-section">
-                    <div class="section-title">Реквизиты</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>ОГРН/ОГРНИП</label>
-                            <input type="text" name="ogrn" value="{{ partner_profile.ogrn|default:'' }}" placeholder="15-значный номер">
-                        </div>
-                        <div class="form-group">
-                            <label>ИНН</label>
-                            <input type="text" name="inn" value="{{ partner_profile.inn|default:'' }}" placeholder="10 или 12 цифр">
-                        </div>
-                        <div class="form-group">
-                            <label>КПП</label>
-                            <input type="text" name="kpp" value="{{ partner_profile.kpp|default:'' }}" placeholder="9 цифр">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Адреса -->
-                <div class="profile-section">
-                    <div class="section-title">Адреса</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Юридический адрес</label>
-                            <input type="text" name="legal_address" value="{{ partner_profile.legal_address|default:'' }}" placeholder="Полный адрес">
-                        </div>
-                        <div class="form-group">
-                            <label>Фактический адрес</label>
-                            <input type="text" name="actual_address" value="{{ partner_profile.actual_address|default:'' }}" placeholder="Полный адрес">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Контакты -->
-                <div class="profile-section">
-                    <div class="section-title">Контакты</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Сайт</label>
-                            <input type="url" name="website" value="{{ partner_profile.website|default:'' }}" placeholder="https://example.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Контактное лицо</label>
-                            <input type="text" name="contact_person" value="{{ partner_profile.contact_person|default:'' }}" placeholder="ФИО">
-                        </div>
-                        <div class="form-group">
-                            <label>Телефон</label>
-                            <input type="tel" name="phone" value="{{ partner_profile.phone|default:'' }}" placeholder="+7 (999) 999-99-99">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>E-mail (для входа)</label>
-                            <input type="email" name="email" value="{{ partner_profile.email|default:user.email }}" placeholder="email@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Дополнительный E-mail</label>
-                            <input type="email" name="additional_email" value="{{ partner_profile.additional_email|default:'' }}" placeholder="Доп. почта">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Социальные сети -->
-                <div class="profile-section">
-                    <div class="section-title">Портфолио и ссылки</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>VK</label>
-                            <input type="url" name="vk_link" value="{{ partner_profile.vk_link|default:'' }}" placeholder="https://vk.com/club...">
-                        </div>
-                        <div class="form-group">
-                            <label>MAX</label>
-                            <input type="url" name="max_link" value="{{ partner_profile.max_link|default:'' }}" placeholder="https://max.ru/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Telegram</label>
-                            <input type="url" name="telegram_link" value="{{ partner_profile.telegram_link|default:'' }}" placeholder="https://t.me/...">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label>Социальные сети (текст)</label>
-                            <textarea name="social_links" rows="2" placeholder="Ссылки по одной на строку">{{ partner_profile.social_links|default:'' }}</textarea>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group" style="grid-column: 1 / 2;">
-                            <label>Кейсы / мероприятия</label>
-                            <textarea name="cases" rows="2" placeholder="Ссылки или описание">{{ partner_profile.cases|default:'' }}</textarea>
-                        </div>
-                        <div class="form-group" style="grid-column: 2 / -1;">
-                            <label>Отзывы / СМИ</label>
-                            <textarea name="reviews" rows="2" placeholder="Ссылки на публикации">{{ partner_profile.reviews|default:'' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Медиафайлы -->
-                <div class="profile-section">
-                    <div class="section-title">Медиафайлы</div>
-                    
-                    <!-- Логотип -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Логотип компании</label>
-                            <div class="file-upload-area">
-                                {% if partner_profile and partner_profile.logo %}
-                                <div class="file-preview">
-                                    <img src="{{ partner_profile.logo.url }}" alt="Логотип">
-                                    <span>Логотип загружен</span>
-                                    <button type="button" class="file-remove-btn" onclick="removeFile('logo')" title="Удалить">×</button>
-                                </div>
-                                {% endif %}
-                                <input type="file" name="logo" id="id_logo" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
-                                <button type="button" class="file-upload-btn" onclick="document.getElementById('id_logo').click()">
-                                    {% if partner_profile and partner_profile.logo %}Изменить{% else %}Добавить{% endif %} логотип
-                                </button>
-                            </div>
-                            <div class="help-text">JPG, PNG, GIF, WEBP. Макс. 10MB</div>
-                        </div>
-                    </div>
-
-                    <!-- Видео-визитка -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Видео-визитка</label>
-                            <div class="file-upload-area">
-                                {% if partner_profile and partner_profile.video_business_card %}
-                                <div class="file-preview">
-                                    <video controls style="max-width:120px;max-height:80px;">
-                                        <source src="{{ partner_profile.video_business_card.url }}" type="video/mp4">
-                                    </video>
-                                    <span>Видео загружено</span>
-                                    <button type="button" class="file-remove-btn" onclick="removeFile('video_business_card')" title="Удалить">×</button>
-                                </div>
-                                {% endif %}
-                                <input type="file" name="video_business_card" id="id_video_business_card" accept="video/mp4,video/quicktime,video/x-msvideo" style="display:none;">
-                                <button type="button" class="file-upload-btn" onclick="document.getElementById('id_video_business_card').click()">
-                                    {% if partner_profile and partner_profile.video_business_card %}Изменить{% else %}Добавить{% endif %} видео-визитку
-                                </button>
-                            </div>
-                            <div class="help-text">MP4, MOV, AVI. Макс. 5 минут</div>
                         </div>
                     </div>
                 </div>
@@ -314,6 +172,22 @@
                 <button type="submit" style="padding:8px 20px; background:#ff8c42; color:#fff; border:none; border-radius:8px; cursor:pointer;">Купить</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ===== Package change modal ===== -->
+<div id="package-change-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:24px; border-radius:12px; width:500px; max-width:90%;">
+        <h4 style="margin-bottom:16px;">Смена пакета</h4>
+        <p style="font-size:13px; color:#555; margin-bottom:16px;">
+            У вас есть активная подписка на пакет <strong id="current-package-name"></strong> до <span id="current-package-end-date"></span>.
+            Вы хотите перейти на пакет <strong id="new-package-name"></strong> за <span id="new-package-price"></span>.
+        </p>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" onclick="closePackageChangeModal()" style="padding:8px 20px; background:#f44336; color:#fff; border:none; border-radius:8px; cursor:pointer;">Отмена</button>
+            <button type="button" onclick="changePackageScheduled()" style="padding:8px 20px; background:#2196f3; color:#fff; border:none; border-radius:8px; cursor:pointer;">Запланировать на конец подписки</button>
+            <button type="button" onclick="changePackageImmediate()" style="padding:8px 20px; background:#ff8c42; color:#fff; border:none; border-radius:8px; cursor:pointer;">Поменять сейчас</button>
+        </div>
     </div>
 </div>
 

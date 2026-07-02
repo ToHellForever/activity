@@ -187,14 +187,22 @@ def partner_dashboard(request):
         profile_form = PartnerProfileForm(instance=partner_profile)
         document_form = DocumentUploadForm()
 
+    # Сортируем пакеты от «крутого» к «обычному»: priority > extended > basic
+    package_order = {"priority": 0, "extended": 1, "basic": 2}
+    packages = sorted(
+        EventPackage.objects.all(),
+        key=lambda p: package_order.get(p.event_card_type, 99),
+    )
+
     context = {
         "user": request.user,
         "active_events_count": active_events,
         "monthly_sales_sum": monthly_sales,
         "pending_payouts_count": pending_payouts,
         "rejection_messages": rejection_messages,
-        "packages": EventPackage.objects.all(),
+        "packages": packages,
         "user_subscription": user_subscription,
+        "has_active_subscription": user_subscription is not None,
         "partner_profile": partner_profile,
         "profile_form": profile_form,
         "document_form": document_form,
