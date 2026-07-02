@@ -1962,6 +1962,14 @@ def profile_edit(request):
             profile.logo.delete(save=False)
         # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
 
+        # Обработка удаления видео-визитки
+        if "delete_video" in request.POST:
+            if profile.video_business_card:
+                profile.video_business_card.delete(save=False)
+                profile.save(update_fields=["video_business_card"])
+            messages.success(request, "Видео-визитка удалена.")
+            return redirect("partner:dashboard")
+
         # Обработка основной формы профиля (включая видео-визитку)
         if profile_form.is_valid():
             profile_form.save()  # Сохранение здесь запустит сигнал для обработки нового видео
@@ -2315,3 +2323,55 @@ def send_partner_all_tickets_sold_notification(event):
         [organizer_email],
         html_message=message,
     )
+
+
+@login_required
+@require_POST
+def save_field(request):
+    """
+    Сохранение отдельного поля профиля партнёра через AJAX.
+    """
+    if request.user.user_type != "partner":
+        return JsonResponse({"status": "error", "message": "Доступ запрещён"}, status=403)
+
+    # Обработка загрузки видео
+    if request.GET.get("action") == "upload_video":
+        video_file = request.FILES.get("video_business_card")
+        if video_file:
+            profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+            if profile.video_business_card:
+                profile.video_business_card.delete(save=False)
+            profile.video_business_card = video_file
+            profile.save()
+            return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "error", "message": "Файл не найден"}, status=400)
+
+    field_name = request.POST.get("field_name")
+    field_value = request.POST.get("field_value")
+
+    if not field_name:
+        return JsonResponse({"status": "error", "message": "Не указано поле"}, status=400)
+
+    # Разрешённые поля для редактирования
+    allowed_fields = [
+        "description",
+        "contact_person",
+        "phone",
+        "email",
+        "additional_email",
+        "vk_link",
+        "max_link",
+        "telegram_link",
+    ]
+
+    if field_name not in allowed_fields:
+        return JsonResponse({"status": "error", "message": "Недопустимое поле"}, status=400)
+
+    try:
+        profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+        setattr(profile, field_name, field_value)
+        profile.save(update_fields=[field_name])
+        return JsonResponse({"status": "success"})
+    except Exception as e:
+        logger.error(f"Ошибка сохранения поля {field_name}: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
