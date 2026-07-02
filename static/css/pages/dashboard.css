@@ -110,10 +110,19 @@
         padding-right: 36px;
         border-radius: 20px;
         border: 1px solid #e0e0e0;
-        background: #fff;
+        background: #fafafa;
         font-size: 13px;
         color: #333;
         height: 36px;
+        cursor: default;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .editable-field--active input,
+    .editable-field--active textarea {
+        pointer-events: auto;
+        user-select: text;
     }
 
     .editable-field textarea {
@@ -130,6 +139,12 @@
         outline: none;
     }
 
+    /* Неактивное состояние — нельзя редактировать */
+    .editable-field input:not([readonly]),
+    .editable-field textarea:not([readonly]) {
+        /* по умолчанию не readonly, но блокируем через JS */
+    }
+
     .editable-field .edit-icon {
         position: absolute;
         right: 12px;
@@ -137,8 +152,36 @@
         transform: translateY(-50%);
         font-size: 12px;
         color: #bbb;
-        pointer-events: none;
         line-height: 1;
+        transition: color 0.2s, transform 0.15s;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+
+    .editable-field .edit-icon:hover {
+        color: #888;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .editable-field:not(.editable-field--active) input::placeholder,
+    .editable-field:not(.editable-field--active) textarea::placeholder {
+        color: #bbb;
+        font-style: italic;
+    }
+
+    .editable-field .edit-icon svg,
+    .editable-field .edit-icon img {
+        width: 18px;
+        height: 18px;
+        display: block;
+    }
+
+    .editable-field--active .edit-icon {
+        color: #4caf50;
+    }
+
+    .editable-field--active .edit-icon:hover {
+        color: #388e3c;
     }
 
     .editable-field--textarea .edit-icon {
