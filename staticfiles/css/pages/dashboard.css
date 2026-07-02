@@ -7,7 +7,6 @@
     /* Status line */
     .status-approved {
         color: #777A8D;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -19,7 +18,6 @@
         background: #ffebee;
         border: 1px solid #ffcdd2;
         color: #c62828;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -29,7 +27,6 @@
         background: #fff8e1;
         border: 1px solid #ffecb3;
         color: #f57f17;
-        padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         margin-bottom: 8px;
@@ -101,6 +98,107 @@
     .form-group textarea {
         resize: vertical;
         min-height: 60px;
+    }
+
+    /* ===== Editable fields with pencil icon ===== */
+    .editable-field {
+        position: relative;
+    }
+
+    .editable-field input,
+    .editable-field textarea {
+        padding-right: 36px;
+        border-radius: 20px;
+        border: 1px solid #e0e0e0;
+        background: #fafafa;
+        font-size: 13px;
+        color: #333;
+        height: 36px;
+        cursor: default;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .editable-field--active input,
+    .editable-field--active textarea {
+        pointer-events: auto;
+        user-select: text;
+    }
+
+    .editable-field textarea {
+        height: auto;
+        min-height: 60px;
+        padding-top: 8px;
+        padding-right: 36px;
+    }
+
+    .editable-field input:focus,
+    .editable-field textarea:focus {
+        border-color: #ff8c42;
+        box-shadow: 0 0 0 2px rgba(255,140,66,0.1);
+        outline: none;
+    }
+
+    /* Неактивное состояние — нельзя редактировать */
+    .editable-field input:not([readonly]),
+    .editable-field textarea:not([readonly]) {
+        /* по умолчанию не readonly, но блокируем через JS */
+    }
+
+    .editable-field .edit-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #bbb;
+        line-height: 1;
+        transition: color 0.2s, transform 0.15s;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+
+    .editable-field .edit-icon:hover {
+        color: #888;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .editable-field:not(.editable-field--active) input::placeholder,
+    .editable-field:not(.editable-field--active) textarea::placeholder {
+        color: #bbb;
+        font-style: italic;
+    }
+
+    .editable-field .edit-icon svg,
+    .editable-field .edit-icon img {
+        width: 18px;
+        height: 18px;
+        display: block;
+    }
+
+    .editable-field--active .edit-icon {
+        color: #4caf50;
+    }
+
+    .editable-field--active .edit-icon:hover {
+        color: #388e3c;
+    }
+
+    .editable-field--textarea .edit-icon {
+        top: auto;
+        bottom: 8px;
+        transform: none;
+    }
+
+    /* Section title */
+    .profile-section .section-title {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #bbb;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
     }
 
     .form-group .help-text {
@@ -248,29 +346,38 @@
         padding: 18px;
         position: relative;
         transition: box-shadow 0.2s;
-        min-height: 260px;
+        display: flex;
+        flex-direction: column;
     }
 
     .package-card:hover {
         box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
-    .package-card.subscribed {
-        border: 2px solid #4caf50;
-        background: #f1f8e9;
+
+    .package-card.inactive {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
     }
 
-    .package-card.subscribed::after {
-        content: 'АКТИВЕН';
-        position: absolute;
-        top: -8px;
-        right: 12px;
-        background: #4caf50;
-        color: #fff;
-        padding: 1px 10px;
-        border-radius: 8px;
-        font-size: 10px;
-        font-weight: 700;
+    .package-card.inactive h3 {
+        color: #999;
+    }
+
+    .package-card.inactive .features {
+        color: #888;
+    }
+
+    .package-card.inactive .price {
+        color: #777;
+    }
+
+    .package-card.inactive .btn-buy {
+        background: #999;
+    }
+
+    .package-card.inactive .btn-buy:hover {
+        background: #777;
     }
 
     .package-card h3 {
@@ -299,6 +406,7 @@
         font-weight: 700;
         color: #333;
         margin-bottom: 10px;
+        margin-top: auto;
     }
 
     .package-card .btn-buy {
@@ -323,4 +431,97 @@
     .package-card .btn-buy:disabled {
         background: #ccc;
         cursor: not-allowed;
+    }
+
+    .package-card .btn-buy[disabled] {
+        background: #4caf50;
+        color: #fff;
+        cursor: default;
+    }
+
+    /* ===== Видео-визитка ===== */
+    .video-carditka-section {
+        width: 100%;
+    }
+
+    .video-carditka-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .video-carditka-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .video-carditka-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .video-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+        background: #fff;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .video-action-btn:hover {
+        background: #f5f5f5;
+        border-color: #ff8c42;
+        color: #ff8c42;
+    }
+
+    .video-delete-btn:hover {
+        border-color: #f44336;
+        color: #f44336;
+        background: #fff3f3;
+    }
+
+    .video-player-wrapper {
+        width: 100%;
+        background: #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .video-player-wrapper video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    .video-player-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e0e0e0;
+    }
+
+    .play-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.5;
     }
