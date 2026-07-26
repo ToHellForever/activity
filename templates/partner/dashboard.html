@@ -24,27 +24,43 @@
             {% endif %}
 
             <!-- Status -->
+            <!-- Partner Status -->
             {% if user.verification_status == 'approved' %}
             <div class="status-approved">
                 Статус партнёра: <strong class="text-status">Согласован</strong>
-            </div>
-            <div class="status-approved" style="margin-top:4px;">
-                Организатор: <strong class="text-status">Подтверждён</strong>
             </div>
             {% elif user.verification_status == 'rejected' %}
             <div class="status-rejected">
                 Статус партнёра: <strong class="text-status">Отклонён</strong>
                 {% if user.rejection_reason %} — {{ user.rejection_reason }}{% endif %}
             </div>
-            <div class="status-rejected" style="margin-top:4px;">
-                Организатор: <strong style="color:#c62828;">Не подтверждён</strong>
-            </div>
-            {% else %}
+            {% elif user.verification_status == 'pending' %}
             <div class="status-pending">
                 Статус партнёра: <strong class="text-status">В ожидании</strong>
             </div>
+            {% else %}
+            <div class="status-pending">
+                Статус партнёра: <strong class="text-status">Не отправлено</strong>
+            </div>
+            {% endif %}
+
+            <!-- Organizer Status -->
+            {% if user.organizer_status == 'approved' %}
+            <div class="status-approved" style="margin-top:4px;">
+                Организатор: <strong class="text-status">Подтверждён</strong>
+            </div>
+            {% elif user.organizer_status == 'rejected' %}
+            <div class="status-rejected" style="margin-top:4px;">
+                Организатор: <strong class="text-status">Отклонён</strong>
+                {% if user.organizer_rejection_reason %} — {{ user.organizer_rejection_reason }}{% endif %}
+            </div>
+            {% elif user.organizer_status == 'pending' %}
             <div class="status-pending" style="margin-top:4px;">
-                Организатор: <strong style="color:#f57f17;">На проверке</strong>
+                Организатор: <strong class="text-status">На проверке</strong>
+            </div>
+            {% else %}
+            <div class="status-pending" style="margin-top:4px;">
+                Организатор: <strong class="text-status">Нет отметки</strong>
             </div>
             {% endif %}
             <p>Для размещения события и доступа ко всем сервисам выбирете тариф на размещение</p>
@@ -206,7 +222,7 @@
             </div>
 
             <!-- ===== Документы для верификации ===== -->
-            {% if user.verification_status != 'approved' %}
+            {% if user.organizer_status != 'approved' %}
             <div class="documents-section">
                 <div class="section-title">Документы для верификации</div>
                 <p style="font-size:12px;color:#666;margin-bottom:12px;">
@@ -216,21 +232,21 @@
                     {% csrf_token %}
                     {{ document_form.as_p }}
                     <button type="submit" name="upload_documents" class="btn-save">
-                        {% if user.verification_status == 'not_submitted' %}Отправить на проверку{% else %}Загрузить документы{% endif %}
+                        {% if user.organizer_status == 'none' %}Отправить на проверку{% else %}Загрузить документы{% endif %}
                     </button>
                 </form>
 
-                {% if user.verification_status == 'pending' %}
+                {% if user.organizer_status == 'pending' %}
                 <div class="status-pending" style="margin-bottom:0;">
                     ⏳ Ваши документы на рассмотрении. Ожидайте решения модератора.
                 </div>
-                {% elif user.verification_status == 'rejected' %}
+                {% elif user.organizer_status == 'rejected' %}
                 <div class="status-rejected" style="margin-bottom:12px;">
                     <strong>✗ Документы отклонены.</strong>
                     {% if last_rejection_reason %}
                         <br>Причина: {{ last_rejection_reason }}
-                    {% elif user.rejection_reason %}
-                        <br>Причина: {{ user.rejection_reason }}
+                    {% elif user.organizer_rejection_reason %}
+                        <br>Причина: {{ user.organizer_rejection_reason }}
                     {% endif %}
                 </div>
                 <form method="post">

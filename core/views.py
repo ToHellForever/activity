@@ -228,6 +228,7 @@ def register_view(request):
                     password=partner_form.cleaned_data["password1"],
                     username=partner_form.cleaned_data["email"],  # Логин = email
                     user_type="partner",
+                    verification_status="pending",  # После регистрации — на рассмотрении
                 )
                 
                 # Создаём профиль партнёра

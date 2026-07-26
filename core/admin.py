@@ -98,8 +98,8 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
             obj.save(update_fields=['reviewed_at', 'reviewer'])
             
             obj.user.is_verified = True
-            obj.user.verification_status = "approved"
-            obj.user.save(update_fields=['is_verified', 'verification_status'])
+            obj.user.organizer_status = "approved"
+            obj.user.save(update_fields=['is_verified', 'organizer_status'])
             
             # Отправляем уведомление партнёру
             try:
@@ -124,8 +124,9 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
                 
         elif is_rejection:
             # Документ отклонён
-            obj.user.verification_status = "rejected"
-            obj.user.save(update_fields=['verification_status'])
+            obj.user.organizer_status = "rejected"
+            obj.user.organizer_rejection_reason = obj.rejection_reason or None
+            obj.user.save(update_fields=['organizer_status', 'organizer_rejection_reason'])
             
             # Отправляем уведомление с причиной
             reason_text = obj.rejection_reason or "Причина не указана"
@@ -953,13 +954,14 @@ class PartnerAdmin(admin.ModelAdmin):
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
         'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases',
-        'verification_status', 'is_verified', 'get_permissions_status'
+        'get_organizer_status', 'is_verified', 'get_permissions_status'
     )
 
     list_filter = (
         'user_type',
         'is_verified',
         'verification_status',
+        'organizer_status',
     )
 
     search_fields = (
@@ -969,9 +971,13 @@ class PartnerAdmin(admin.ModelAdmin):
     inlines = [PartnerSubscriptionInline, PartnerPayoutInline]
 
     fieldsets = (
-        ('Организатор', {
-            'fields': ('is_verified', 'verification_status', 'rejection_reason'),
-            'description': '1 - Статус организатора (почта), 2 - Статус верификации (дать право партнёру иметь полный функционал), 3 - Причина отказа'
+        ('Статус партнёра', {
+            'fields': ('verification_status', 'rejection_reason'),
+            'description': 'Статус заявки партнёра: на рассмотрении (после регистрации), подтверждено/отклонено админом. Причина отказа — если отклонено.'
+        }),
+        ('Проверенный организатор', {
+            'fields': ('is_verified', 'organizer_status', 'organizer_rejection_reason'),
+            'description': 'Статус на основе загруженных документов: нет отметки, на рассмотрении, подтверждено, отклонено.'
         }),
         ('Аккаунт', {
             'fields': ('user_type', 'first_name', 'last_name', 'username', 'date_joined'),
@@ -1044,12 +1050,16 @@ class PartnerAdmin(admin.ModelAdmin):
         return mark_safe('<span style="color: gray;">—</span>')
     get_permissions_status.short_description = "Статус партнёра"
 
-    def get_is_verified(self, obj):
+    def get_organizer_status(self, obj):
         """Показывает статус проверенного организатора"""
-        if obj.is_verified:
-            return mark_safe('<span style="color: green; font-weight: bold;">✓ Да</span>')
-        return mark_safe('<span style="color: red; font-weight: bold;">✗ Нет</span>')
-    get_is_verified.short_description = "Проверенный организатор"
+        if obj.organizer_status == 'approved':
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Подтверждено</span>')
+        elif obj.organizer_status == 'rejected':
+            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонено</span>')
+        elif obj.organizer_status == 'pending':
+            return mark_safe('<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>')
+        return mark_safe('<span style="color: gray;">Нет отметки</span>')
+    get_organizer_status.short_description = "Проверенный организатор"
 
     def get_queryset(self, request):
         """Фильтруем только партнёров"""

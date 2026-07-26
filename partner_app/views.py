@@ -137,10 +137,10 @@ def partner_dashboard(request):
     # Получаем профиль партнёра
     partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
 
-    # Получаем последний отклонённый документ
+# Получаем последний отклонённый документ
     last_rejected_document = None
     last_rejection_reason = None
-    if request.user.verification_status == 'rejected':
+    if request.user.organizer_status == 'rejected':
         try:
             from core.models import PartnerDocument
             last_rejected_document = PartnerDocument.objects.filter(
@@ -156,20 +156,22 @@ def partner_dashboard(request):
     if request.method == 'POST':
         profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
         
-        # Обработка загрузки документов
+# Обработка загрузки документов
         if 'upload_documents' in request.POST:
             document_form = DocumentUploadForm(request.POST, request.FILES, user=request.user)
             if document_form.is_valid():
                 doc = document_form.save(commit=False)
                 doc.user = request.user
                 doc.save()
+                request.user.organizer_status = 'pending'
+                request.user.save(update_fields=['organizer_status'])
                 messages.success(request, "Документы успешно загружены!")
                 return redirect("partner:dashboard")
         elif 'resubmit' in request.POST:
-            request.user.verification_status = 'pending'
-            request.user.rejection_reason = ''
-            request.user.save(update_fields=['verification_status', 'rejection_reason'])
-            messages.success(request, "Ваши данные отправлены на повторное рассмотрение.")
+            request.user.organizer_status = 'pending'
+            request.user.organizer_rejection_reason = None
+            request.user.save(update_fields=['organizer_status', 'organizer_rejection_reason'])
+            messages.success(request, "Документы отправлены на повторное рассмотрение.")
             return redirect("partner:dashboard")
         else:
             document_form = DocumentUploadForm()
@@ -1938,11 +1940,10 @@ def profile_edit(request):
     if request.method == "POST":
         # Обработка кнопки "Отправить на пересмотр"
         if "resubmit" in request.POST:
-            request.user.verification_status = "pending"
-            request.user.permissions = {}  # Сбрасываем права
-            request.user.rejection_reason = None
-            request.user.save(update_fields=['verification_status', 'permissions', 'rejection_reason'])
-            messages.info(request, "Ваши данные отправлены на повторное рассмотрение. Ожидайте решения администратора.")
+            request.user.organizer_status = "pending"
+            request.user.organizer_rejection_reason = None
+            request.user.save(update_fields=['organizer_status', 'organizer_rejection_reason'])
+            messages.info(request, "Документы отправлены на повторное рассмотрение. Ожидайте решения администратора.")
             return redirect("partner:dashboard")
         
         # Инициализируем форму профиля с instance=profile
@@ -1991,14 +1992,14 @@ def profile_edit(request):
             password_form.save()
             update_session_auth_hash(request, password_form.user)
 
-        # Обработка формы загрузки документов
+# Обработка формы загрузки документов
         if "upload_documents" in request.POST:
             document_form = DocumentUploadForm(
                 request.POST, request.FILES, user=request.user
             )
             if document_form.is_valid():
                 # Если был статус rejected, удаляем старый документ
-                if request.user.verification_status == "rejected":
+                if request.user.organizer_status == "rejected":
                     old_doc = PartnerDocument.objects.filter(
                         user=request.user, 
                         is_approved=False
@@ -2013,7 +2014,7 @@ def profile_edit(request):
                         old_doc.delete()
 
                 document = document_form.save()
-                request.user.verification_status = "pending"
+                request.user.organizer_status = "pending"
                 request.user.save()
                 messages.success(request, "Ваши документы загружены и находятся на рассмотрении.")
             else:

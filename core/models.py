@@ -35,6 +35,25 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
             ("rejected", "Отклонено"),
         ],
         default="not_submitted",
+        verbose_name="Статус партнёра",
+    )
+
+    # Статус "Проверенный организатор" (на основе загруженных документов)
+    organizer_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("none", "Нет отметки"),
+            ("pending", "На рассмотрении"),
+            ("approved", "Подтверждено"),
+            ("rejected", "Отклонено"),
+        ],
+        default="none",
+        verbose_name="Статус проверенного организатора",
+    )
+    organizer_rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Причина отклонения документов организатора",
     )
 
     # Права доступа партнёра (выдаются админом при одобрении)
