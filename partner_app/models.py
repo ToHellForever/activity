@@ -86,6 +86,12 @@ class PartnerProfile(models.Model):
     )
 
     # === Адреса ===
+    postal_code = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Почтовый индекс",
+    )
     legal_address = models.CharField(
         max_length=255,
         blank=True,

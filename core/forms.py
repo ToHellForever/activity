@@ -225,6 +225,12 @@ class PartnerRegistrationForm(forms.Form):
         label="Юридический адрес",
         widget=forms.TextInput(attrs={"placeholder": "Юридический адрес"}),
     )
+    postal_code = forms.CharField(
+        max_length=20,
+        required=False,
+        label="Почтовый индекс",
+        widget=forms.HiddenInput(),
+    )
     actual_address = forms.CharField(
         max_length=255,
         required=False,

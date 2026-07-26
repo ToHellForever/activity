@@ -14,9 +14,10 @@
         <div class="partner-main">
             <!-- Company info -->
             {% if partner_profile %}
-            <div class="company-info" style="font-size:12px; color:#555; margin-bottom:8px;">
-                {{ partner_profile.company_name|default:"—" }},
-                юр. адрес: {{ partner_profile.legal_address|default:"—" }},
+            <div class="company-info">
+                Компания: {{ partner_profile.company_name|default:"—" }},
+                Индекс: {{ partner_profile.postal_code|default:"—" }},
+                Юр. адрес: {{ partner_profile.legal_address|default:"—" }},
                 ИНН: {{ partner_profile.inn|default:"—" }},
                 КПП: {{ partner_profile.kpp|default:"—" }}
             </div>

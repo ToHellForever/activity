@@ -32,7 +32,7 @@ class PartnerProfileAdmin(admin.ModelAdmin):
             "fields": ("ogrn", "inn", "kpp"),
         }),
         ("Адреса", {
-            "fields": ("legal_address", "actual_address"),
+            "fields": ("postal_code", "legal_address", "actual_address"),
         }),
         ("Контакты", {
             "fields": ("website", "contact_person", "phone", "email", "additional_email"),

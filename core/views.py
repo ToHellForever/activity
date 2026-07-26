@@ -243,6 +243,7 @@ def register_view(request):
                         inn=partner_form.cleaned_data.get("inn", ""),
                         kpp=partner_form.cleaned_data.get("kpp", ""),
                         legal_address=partner_form.cleaned_data.get("legal_address", ""),
+                        postal_code=partner_form.cleaned_data.get("postal_code", ""),
                         actual_address=partner_form.cleaned_data.get("actual_address", ""),
                         website=partner_form.cleaned_data.get("website", ""),
                         contact_person=partner_form.cleaned_data["contact_person"],

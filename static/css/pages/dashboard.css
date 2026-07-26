@@ -8,7 +8,9 @@
     .status-approved {
         color: #777A8D;
         border-radius: 6px;
-        font-size: 12px;
+        font-family: 'Verdana';
+        font-size: clamp(0.7rem, 1vw, 0.9rem);
+        font-weight: 700;
         margin-bottom: 8px;
     }
     .text-status {
@@ -33,6 +35,13 @@
     }
 
     /* ===== Form sections ===== */
+    .company-info {
+        font-family: 'Montserrat';
+        font-weight: 500;
+        font-size: clamp(0.7rem, 1vw, 0.9rem);
+        color: #9A9A9A;
+        margin-bottom: 20px;
+    }
     .profile-section {
         background: #fff;
         border: 1px solid #e8e8e8;
