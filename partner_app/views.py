@@ -1226,10 +1226,11 @@ def delete_event(request, event_id):
         event.delete()
         return redirect("partner:partner_event_list")
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     return render(
         request,
         "partner/event_confirm_delete.html",
-        {"event": event},
+        {"event": event, "partner_profile": partner_profile},
     )
 
 @login_required
@@ -1333,6 +1334,7 @@ def reports(request):
     except ReportSchedule.DoesNotExist:
         report_schedule = None
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
@@ -1343,6 +1345,7 @@ def reports(request):
         "traffic_sources_data": traffic_sources_data,
         "user_reports": user_reports,
         "report_schedule": report_schedule,
+        "partner_profile": partner_profile,
     }
     return render(request, "partner/reports.html", context)
 
@@ -1384,9 +1387,11 @@ def participant_list(request, event_id):
         export_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
         return export_participant_list(export_orders, event, export_format)
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "event": event,
         "orders": orders,
+        "partner_profile": partner_profile,
     }
     context["rejection_messages"] = get_rejection_messages(request)
     return render(request, "partner/participant_list.html", context)
@@ -1670,10 +1675,12 @@ def check_ticket(request, order_id):
         and not order.attended
     )
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "order": order,
         "is_valid": is_valid,
         "is_organizer": is_organizer,
+        "partner_profile": partner_profile,
     }
     return render(request, "partner/ticket_check.html", context)
 
@@ -1902,10 +1909,12 @@ def payout_details(request):
     else:
         form = PayoutDetailsForm()
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "form": form,
         "details": details,
         "rejection_messages": get_rejection_messages(request),
+        "partner_profile": partner_profile,
     }
     return render(request, "partner/payout_details.html", context)
 
@@ -2035,6 +2044,7 @@ def profile_edit(request):
         "document_form": document_form,
         "rejection_messages": get_rejection_messages(request),
         "last_rejected_document": last_rejected_doc,
+        "partner_profile": profile,
     }
     return render(request, "partner/profile_edit.html", context)
 
@@ -2150,10 +2160,11 @@ def report_schedule(request):
         else:
             form = ReportScheduleForm(instance=schedule, partner=request.user)
 
+        partner_profile = getattr(request.user, 'partner_profile', None)
         return render(
             request,
             "partner/report_schedule.html",
-            {"form": form, "rejection_messages": get_rejection_messages(request)},
+            {"form": form, "rejection_messages": get_rejection_messages(request), "partner_profile": partner_profile},
         )
     except Exception as e:
         import logging

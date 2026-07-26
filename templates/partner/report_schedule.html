@@ -9,6 +9,9 @@
 {% endblock %}
 
 {% block content %}
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Настройка расписания отчётов</h2>
@@ -172,6 +175,8 @@
             </a>
         </div>
     </form>
+</div>
+    </div>
 </div>
 
 {% endblock %}

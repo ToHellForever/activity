@@ -440,11 +440,13 @@ def support_dashboard(request):
             else []
         )
 
+    partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
         "events": user_events,
+        "partner_profile": partner_profile,
     }
     return render(request, "support_dashboard.html", context)
 

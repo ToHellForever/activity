@@ -3,6 +3,9 @@
 {% load static %}
 
 {% block content %}
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
 <h1>Мои реквизиты для выплат</h1>
 
 <div class="card mb-4">
@@ -59,4 +62,6 @@
 {% else %}
 <p>У вас пока нет сохранённых реквизитов. Добавьте их с помощью формы выше.</p>
 {% endif %}
+    </div>
+</div>
 {% endblock %}

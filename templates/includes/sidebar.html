@@ -1,40 +1,62 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
         <aside class="partner-sidebar">
+            <p class='sidebar-p'>Личный кабинет</p>
             <div class="sidebar-profile">
-                <div class="sidebar-avatar">
-                    {% if partner_profile and partner_profile.logo %}
-                        <img src="{{ partner_profile.logo.url }}" alt="Logo">
-                    {% else %}
-                        <i class="bi bi-person-fill"></i>
-                    {% endif %}
-                    <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
-                        <i class="bi bi-camera-fill"></i>
-                    </span>
+                <div class="sidebar-profile-row">
+                    <div class="sidebar-avatar" {% if not partner_profile.logo %}onclick="document.getElementById('id_logo').click()"{% endif %}>
+                        {% if partner_profile and partner_profile.logo %}
+                            <img src="{{ partner_profile.logo.url }}" alt="Logo">
+                            <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
+                                <i class="bi bi-camera-fill"></i>
+                            </span>
+                        {% else %}
+                            <img src="/media/icon/camera.svg" alt="">
+                        {% endif %}
+                    </div>
+                    <div class="sidebar-profile-info">
+                        <div class="sidebar-name">{{ partner_profile.company_name|default:"Имя" }}</div>
+                        <div class="sidebar-email">{{ user.email }}</div>
+                    </div>
                 </div>
-                <div class="sidebar-name">{{ partner_profile.company_name|default:"Имя" }}</div>
-                <div class="sidebar-email">{{ user.email }}</div>
             </div>
             <nav class="sidebar-nav">
                 <a href="{% url 'partner:dashboard' %}"
                 class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <i class="bi bi-person-fill"></i> Профиль
+                    <img src="/media/icon/gray-profile.svg" alt="" class="sidebar-icon">Профиль
                 </a>
                 <a href="{% url 'partner:partner_event_list' %}"
                 class="{% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
-                    <i class="bi bi-star-fill"></i> Мои события
+                    <img src="/media/icon/star.svg" alt="" class="sidebar-icon">Мои события
                 </a>
                 <a href="{% url 'support_dashboard' %}"
                 class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
-                    <i class="bi bi-chat-dots-fill"></i> Чаты
+                    <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты
                 </a>
                 <a href="#"
                 class="{% if request.resolver_match.url_name == 'portfolio' %}active{% endif %}">
-                    <i class="bi bi-portfolio-fill"></i> Портфолио
+                    <img src="/media/icon/portfolio.svg" alt="" class="sidebar-icon"> Портфолио
+                </a>
+                {% comment %} Продажи и отчёты {% endcomment %}
+                <a href="{% url 'partner:report_schedule' %}">
+                    <img src="/media/icon/reports.svg" alt="" class="sidebar-icon"> Продажи и отчёты
                 </a>
                 <a href="{% url 'partner:finances' %}"
                 class="{% if request.resolver_match.url_name == 'finances' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
-                    <i class="bi bi-cash-stack"></i> Финансы и выплаты
+                    <img src="/media/icon/finances.svg" alt="" class="sidebar-icon"> Финансы и выплаты
+                </a>
+                {% comment %} мои площадки {% endcomment %}
+                <a href="#"
+                class="{% if request.resolver_match.url_name == 'partner_places' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <img src="/media/icon/S.png" alt="" class="sidebar-icon"> Мои площадки
+                </a>
+                {% comment %} поддержка {% endcomment %}
+                <a href="{% url 'support_dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                    <img src="/media/icon/support.svg" alt="" class="sidebar-icon"> Поддержка
+                </a>
+                <a href="{% url 'logout' %}" class="logout-btn">
+                    <img src="/media/icon/logout.svg" alt="" class="sidebar-icon"> Выйти из аккаунта
                 </a>
             </nav>
         </aside>

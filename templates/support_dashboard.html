@@ -2,9 +2,10 @@
 {% load static %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
 <style>
-  .container { display: flex; height: calc(100vh - 100px); }
-  .sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
+  .support-layout { display: flex; height: calc(100vh - 100px); }
+  .support-sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
   .chat-window { width: 70%; padding: 20px; display: flex; flex-direction: column; }
   .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; }
   .message { margin: 10px 0; padding: 8px 12px; border-radius: 15px; max-width: 70%; line-height: 1.4;}
@@ -14,10 +15,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
+<div class="support-layout">
   
   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
-  <div class="sidebar">
+  <div class="support-sidebar">
     <h2>Мои обращения</h2>
     
     <!-- НОВЫЙ БЛОК: Кнопка для добавления формы -->
@@ -122,6 +126,8 @@
     </div>
   </div>
 
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

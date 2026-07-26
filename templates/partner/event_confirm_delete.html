@@ -3,6 +3,9 @@
 {% load static %}
 
 {% block content %}
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
 <h1>Удаление мероприятия</h1>
 
 <p>Вы уверены, что хотите удалить мероприятие "{{ event.title }}"? Это действие нельзя будет отменить.</p>
@@ -12,5 +15,6 @@
     <button type="submit" class="btn btn-danger">Удалить</button>
     <a href="{% url 'partner:partner_event_list' %}" class="btn btn-secondary">Отмена</a>
 </form>
-
+    </div>
+</div>
 {% endblock %}
