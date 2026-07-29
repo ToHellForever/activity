@@ -12,78 +12,151 @@
         {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
         <!-- ===== Main content ===== -->
         <div class="partner-main">
-            <!-- Company info -->
-            {% if partner_profile %}
-            <div class="company-info">
-                Компания: {{ partner_profile.company_name|default:"—" }},
-                Индекс: {{ partner_profile.postal_code|default:"—" }},
-                Юр. адрес: {{ partner_profile.legal_address|default:"—" }},
-                ИНН: {{ partner_profile.inn|default:"—" }},
-                КПП: {{ partner_profile.kpp|default:"—" }}
-            </div>
-            {% endif %}
+            
+            <!-- Organizer verification section -->
+            <div class="organizer-verification-section">
+                <div class="status-row">
+                    <span class="status-label">Статус партнёра:</span>
+                    {% if user.verification_status == 'approved' %}
+                        <span class="status-value status-approved-text">Согласован</span>
+                    {% elif user.verification_status == 'rejected' %}
+                        <span class="status-value status-rejected-text">Отклонён</span>
+                        {% if user.rejection_reason %}
+                            <span class="status-reason">— {{ user.rejection_reason }}</span>
+                        {% endif %}
+                    {% elif user.verification_status == 'pending' %}
+                        <span class="status-value status-pending-text">В ожидании</span>
+                    {% else %}
+                        <span class="status-value status-pending-text">Не отправлено</span>
+                    {% endif %}
+                </div>
+                
+                {% if user.organizer_status == 'approved' %}
+                    <!-- APPROVED: зелёный бейдж -->
+                    <div class="status-row">
+                        <span class="status-label">Отметка в профиле:</span>
+                        <span class="verified-badge verified-badge--approved">
+                            <span class="badge-check">
+                                <img src="/media/icon/Vector.svg" alt="">
+                            </span>
+                            Проверенный организатор
+                        </span>
+                    </div>
+                {% elif user.organizer_status == 'rejected' %}
+                    <!-- REJECTED: красный бейдж + информация -->
+                    <div class="status-row">
+                        <span class="status-label">Отметка в профиле:</span>
+                        <span class="verified-badge verified-badge--rejected">
+                            Нет отметки «Проверенный организатор»
+                        </span>
+                    </div>
+                    <div class="verification-info-block">
+                        <p class="verification-info-text">Отметка «проверенный организатор» даёт больше приоритета в поисковой выдаче и вызывает у пользователей больше доверия</p>
+                        
+                        <div class="verification-documents">
+                            <p class="verification-documents-title">
+                                Для получения отметки <strong>«Проверенный организатор»</strong> загрузите чёткие сканы/файлы:
+                            </p>
+                            <ul class="verification-documents-list">
+                                <li>Выписка из ЕГРЮЛ/ЕГРИП (не старше 3 месяцев)</li>
+                                <li>Устав или учредительный договор (ключевые страницы) — для юрлиц</li>
+                                <li>Документ о полномочиях руководителя: приказ/протокол о назначении</li>
+                                <li>Доверенность — если подписывает/действует представитель</li>
+                                <li>Паспорт руководителя/представителя (страница с фото) — по запросу</li>
+                                <li>Политика возврата билетов/оферта для участников</li>
+                            </ul>
+                        </div>
 
-            <!-- Status -->
-            <!-- Partner Status -->
-            {% if user.verification_status == 'approved' %}
-            <div class="status-approved">
-                Статус партнёра: <strong class="text-status">Согласован</strong>
-            </div>
-            {% elif user.verification_status == 'rejected' %}
-            <div class="status-rejected">
-                Статус партнёра: <strong class="text-status">Отклонён</strong>
-                {% if user.rejection_reason %} — {{ user.rejection_reason }}{% endif %}
-            </div>
-            {% elif user.verification_status == 'pending' %}
-            <div class="status-pending">
-                Статус партнёра: <strong class="text-status">В ожидании</strong>
-            </div>
-            {% else %}
-            <div class="status-pending">
-                Статус партнёра: <strong class="text-status">Не отправлено</strong>
-            </div>
-            {% endif %}
+                        <form method="post" enctype="multipart/form-data" class="verification-upload-form">
+                            {% csrf_token %}
+                            <div class="upload-area">
+                                <label for="id_document" class="upload-area-label">
+                                    + ЗАГРУЗИТЬ
+                                    <input type="file" id="id_document" name="document" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none;">
+                                </label>
+                            </div>
+                            <button type="submit" name="upload_documents" class="btn-submit-verification">
+                                ОТПРАВИТЬ НА ПРОВЕРКУ
+                            </button>
+                        </form>
 
-            <!-- Organizer Status -->
-            {% if user.organizer_status == 'approved' %}
-            <div class="status-approved" style="margin-top:4px;">
-                Организатор: <strong class="text-status">Подтверждён</strong>
+                        {% if last_rejection_reason %}
+                        <div class="rejection-reason">
+                            <strong>Причина отклонения:</strong> {{ last_rejection_reason }}
+                        </div>
+                        {% endif %}
+                    </div>
+                {% elif user.organizer_status == 'pending' %}
+                    <!-- PENDING: на проверке -->
+                    <div class="status-row">
+                        <span class="status-label">Отметка в профиле:</span>
+                        <span class="verified-badge verified-badge--pending">
+                            На проверке
+                        </span>
+                    </div>
+                    <div class="verification-pending-message">
+                        ⏳ Ваши документы на рассмотрении. Ожидайте решения модератора.
+                    </div>
+                {% else %}
+                    <!-- NONE: нет документов -->
+                    <div class="status-row">
+                        <span class="status-label">Отметка в профиле:</span>
+                        <span class="verified-badge verified-badge--rejected">
+                            Нет отметки «Проверенный организатор»
+                        </span>
+                    </div>
+                    <div class="verification-info-block">
+                        <p class="verification-info-text">Отметка «проверенный организатор» даёт больше приоритета в поисковой выдаче и вызывает у пользователей больше доверия</p>
+                        
+                        <div class="verification-documents">
+                            <p class="verification-documents-title">
+                                Для получения отметки <strong>«Проверенный организатор»</strong> загрузите чёткие сканы/файлы:
+                            </p>
+                            <ul class="verification-documents-list">
+                                <li>Выписка из ЕГРЮЛ/ЕГРИП (не старше 3 месяцев)</li>
+                                <li>Устав или учредительный договор (ключевые страницы) — для юрлиц</li>
+                                <li>Документ о полномочиях руководителя: приказ/протокол о назначении</li>
+                                <li>Доверенность — если подписывает/действует представитель</li>
+                                <li>Паспорт руководителя/представителя (страница с фото) — по запросу</li>
+                                <li>Политика возврата билетов/оферта для участников</li>
+                            </ul>
+                        </div>
+
+                        <form method="post" enctype="multipart/form-data" class="verification-upload-form">
+                            {% csrf_token %}
+                            <div class="upload-area">
+                                <label for="id_document" class="upload-area-label">
+                                    + ЗАГРУЗИТЬ
+                                    <input type="file" id="id_document" name="document" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none;">
+                                </label>
+                            </div>
+                            <button type="submit" name="upload_documents" class="btn-submit-verification">
+                                ОТПРАВИТЬ НА ПРОВЕРКУ
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
-            {% elif user.organizer_status == 'rejected' %}
-            <div class="status-rejected" style="margin-top:4px;">
-                Организатор: <strong class="text-status">Отклонён</strong>
-                {% if user.organizer_rejection_reason %} — {{ user.organizer_rejection_reason }}{% endif %}
-            </div>
-            {% elif user.organizer_status == 'pending' %}
-            <div class="status-pending" style="margin-top:4px;">
-                Организатор: <strong class="text-status">На проверке</strong>
-            </div>
-            {% else %}
-            <div class="status-pending" style="margin-top:4px;">
-                Организатор: <strong class="text-status">Нет отметки</strong>
-            </div>
-            {% endif %}
-            <p>Для размещения события и доступа ко всем сервисам выбирете тариф на размещение</p>
+
+            <!-- Tariff heading -->
+            <p class="tariff-heading">Для размещения события и доступа ко всем сервисам выберите тариф на размещение</p>
+
             <!-- ===== Package cards ===== -->
             <div class="package-cards">
                 {% for package in packages %}
                 <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% else %}inactive{% endif %}">
-                    <h3>{{ package.name }}</h3>
-                    <div class="features">
-                        {% comment %} описание{% endcomment %}
-                        <div>{{ package.description }}</div>
-                        {% comment %} фото {% endcomment %}
-                        <div>Фото: до {{ package.max_photos }}</div>
-                        {% comment %} видео да или нет {% endcomment %}
-                        <div>{% if package.has_video %}Видео: размещается{% else %}Видео: не размещается{% endif %}</div>
-                        {% comment %} программа да или нет {% endcomment %}
-                        <div>{% if package.has_program_and_speakers %}Программа мероприятия: размещается{% else %}Программа мероприятия: не размещается{% endif %}</div>
-                        {% comment %} приоритет {% endcomment %}
-                        <div>Приоритет: {{ package.priority_description }}</div>
-                        </div>
-                    <div class="price">Цена: {{ package.price|floatformat }} руб.</div>
+                    <h3 class="package-name">{{ package.name }}</h3>
+                    <div class="package-subtitle">{{ package.subtitle }}</div>
+                    <div class="package-features">
+                        <div class="feature-item"><span class="feature-label">Описание:</span> {{ package.description }}</div>
+                        <div class="feature-item"><span class="feature-label">Фото:</span> до {{ package.max_photos }} шт.</div>
+                        <div class="feature-item"><span class="feature-label">Видео:</span> {% if package.has_video %}Да{% else %}Нет{% endif %}</div>
+                        <div class="feature-item"><span class="feature-label">Программа мероприятия:</span> {% if package.has_program_and_speakers %}Да{% else %}Нет{% endif %}</div>
+                        <div class="feature-item"><span class="feature-label">Приоритет:</span> {{ package.priority_description }}</div>
+                    </div>
+                    <div class="package-price">Цена: {{ package.price|floatformat:0 }} руб.</div>
                     {% if user_subscription and user_subscription.package.id == package.id %}
-                    <button class="btn-buy" disabled style="cursor:default;">
+                    <button class="btn-buy" disabled>
                         Ваш пакет
                     </button>
                     {% else %}
@@ -105,36 +178,33 @@
                     <div class="section-title">Информация</div>
                     <div class="form-row">
                         <div class="form-group field-full">
-                            <label>Информация</label>
                             <div class="editable-field editable-field--textarea">
                                 <textarea name="description" rows="3" placeholder="Кратко о деятельности (до 500 символов)" readonly>{{ partner_profile.description|default:'' }}</textarea>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                             </div>
-                            <div class="help-text">До 500 символов</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Контактное лицо, Телефон и Email -->
                 <div class="profile-section">
-                    <div class="section-title">Контактное лицо (имя) · Телефон · E-mail</div>
+                    <div class="section-title">Контактное лицо (имя)</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Контактное лицо (имя)</label>
                             <div class="editable-field">
                                 <input type="text" name="contact_person" value="{{ partner_profile.contact_person|default:'' }}" placeholder="Имя контактного лица" readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Телефон</label>
+                            <div class="section-title">Телефон</div>
                             <div class="editable-field">
                                 <input type="tel" name="phone" value="{{ partner_profile.phone|default:'' }}" placeholder="+7 (___) ___-__-__" readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Доп. E-mail</label>
+                            <div class="section-title">E-mail</div>
                             <div class="editable-field">
                                 <input type="email" name="email" value="{{ partner_profile.additional_email|default:'' }}" placeholder="E-mail" readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
@@ -148,21 +218,18 @@
                     <div class="section-title">Портфолио и ссылки</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>VK</label>
                             <div class="editable-field">
                                 <input type="url" name="vk_link" value="{{ partner_profile.vk_link|default:'' }}" placeholder="vk.com/..." readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>MAX</label>
                             <div class="editable-field">
                                 <input type="url" name="max_link" value="{{ partner_profile.max_link|default:'' }}" placeholder="max_id..." readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Telegram</label>
                             <div class="editable-field">
                                 <input type="url" name="telegram_link" value="{{ partner_profile.telegram_link|default:'' }}" placeholder="t.me/..." readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
@@ -175,7 +242,7 @@
                 <div class="profile-section">
                     <div class="video-carditka-section">
                         <div class="video-carditka-header">
-                            <span class="video-carditka-title">Видео-визитка</span>
+                            <span class="video-carditka-title">Видео визитка</span>
                             <div class="video-carditka-actions">
                                 <label for="id_video_business_card" class="video-action-btn" title="Загрузить">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -221,43 +288,10 @@
                 </form>
             </div>
 
-            <!-- ===== Документы для верификации ===== -->
-            {% if user.organizer_status != 'approved' %}
-            <div class="documents-section">
-                <div class="section-title">Документы для верификации</div>
-                <p style="font-size:12px;color:#666;margin-bottom:12px;">
-                    Загрузите документы для подтверждения статуса организатора
-                </p>
-                <form method="post" enctype="multipart/form-data" style="margin-bottom:12px;">
-                    {% csrf_token %}
-                    {{ document_form.as_p }}
-                    <button type="submit" name="upload_documents" class="btn-save">
-                        {% if user.organizer_status == 'none' %}Отправить на проверку{% else %}Загрузить документы{% endif %}
-                    </button>
-                </form>
-
-                {% if user.organizer_status == 'pending' %}
-                <div class="status-pending" style="margin-bottom:0;">
-                    ⏳ Ваши документы на рассмотрении. Ожидайте решения модератора.
-                </div>
-                {% elif user.organizer_status == 'rejected' %}
-                <div class="status-rejected" style="margin-bottom:12px;">
-                    <strong>✗ Документы отклонены.</strong>
-                    {% if last_rejection_reason %}
-                        <br>Причина: {{ last_rejection_reason }}
-                    {% elif user.organizer_rejection_reason %}
-                        <br>Причина: {{ user.organizer_rejection_reason }}
-                    {% endif %}
-                </div>
-                <form method="post">
-                    {% csrf_token %}
-                    <button type="submit" name="resubmit" class="btn-save" style="background:#ff9800;">
-                        🔄 Отправить на пересмотр
-                    </button>
-                </form>
-                {% endif %}
+            <!-- ===== Change password button ===== -->
+            <div class="change-password-wrapper">
+                <a href="{% url 'partner:change_password' %}" class="btn-change-password">Изменить пароль</a>
             </div>
-            {% endif %}
 
         </div><!-- /partner-main -->
     </div><!-- /row -->
