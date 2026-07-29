@@ -159,7 +159,8 @@ def partner_dashboard(request):
         # Обработка удаления видео-визитки
         if 'delete_video' in request.POST:
             if partner_profile.video_business_card:
-                partner_profile.video_business_card.delete(save=False)
+                partner_profile.delete_file_field("video_business_card")
+                partner_profile.video_business_card = None
                 partner_profile.save(update_fields=['video_business_card'])
             messages.success(request, "Видео-визитка удалена.")
             return redirect("partner:dashboard")
@@ -1968,8 +1969,8 @@ def profile_edit(request):
 
         # Если новый файл есть, и у пользователя уже было старое видео...
         if new_video_file and profile.video_business_card:
-            # ...то удаляем старый файл с диска.
-            profile.video_business_card.delete(save=False)
+            # ...то удаляем старый файл из хранилища.
+            profile.delete_file_field("video_business_card")
         
         # Проверяем, был ли загружен НОВЫЙ файл для поля 'logo'
         new_logo_file = request.FILES.get("logo")
@@ -1983,7 +1984,8 @@ def profile_edit(request):
         # Обработка удаления видео-визитки
         if "delete_video" in request.POST:
             if profile.video_business_card:
-                profile.video_business_card.delete(save=False)
+                profile.delete_file_field("video_business_card")
+                profile.video_business_card = None
                 profile.save(update_fields=["video_business_card"])
             messages.success(request, "Видео-визитка удалена.")
             return redirect("partner:dashboard")
@@ -2360,7 +2362,7 @@ def save_field(request):
         if video_file:
             profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
             if profile.video_business_card:
-                profile.video_business_card.delete(save=False)
+                profile.delete_file_field("video_business_card")
             profile.video_business_card = video_file
             profile.save()
             return JsonResponse({"status": "success"})

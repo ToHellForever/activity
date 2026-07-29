@@ -5,6 +5,7 @@ from .storage_backends import YandexCloudWithProcessingStorage
 import os
 import logging
 import uuid
+from django.core.files.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +62,24 @@ class YandexVideoProcessingStorage(FileSystemStorage):
         
         relative_path = os.path.join(self.subdirectory, unique_name)
         return unique_path, [temp_path]
+
+    def delete(self, name):
+        """Удаляет файл из локального temp-хранилища и из Yandex Cloud, если он там есть."""
+        if not name:
+            return
+
+        try:
+            if self.cloud_storage and getattr(settings, 'USE_YANDEX_CLOUD', False):
+                try:
+                    self.cloud_storage.delete(name)
+                except Exception as exc:
+                    logger.warning(f"Не удалось удалить файл {name} из облака: {exc}")
+
+            try:
+                super().delete(name)
+            except FileNotFoundError:
+                pass
+            except Exception as exc:
+                logger.warning(f"Не удалось удалить локальную копию файла {name}: {exc}")
+        except Exception as exc:
+            logger.error(f"Ошибка удаления файла {name}: {exc}", exc_info=True)

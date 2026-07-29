@@ -4,14 +4,30 @@
 
 import os
 import tempfile
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
 from core.models import Event, User
 from core.validators import validate_video_duration
+from core.video_storage import YandexVideoProcessingStorage
 from unittest.mock import patch, MagicMock
+
+
+class YandexVideoStorageTestCase(SimpleTestCase):
+    """Тесты для удаления видео из Yandex-backed хранилища."""
+
+    @override_settings(USE_YANDEX_CLOUD=True)
+    def test_delete_removes_remote_file_from_cloud_storage(self):
+        storage = YandexVideoProcessingStorage(subdirectory="partner_video")
+        storage.cloud_storage = MagicMock()
+
+        with patch("os.path.exists", return_value=True), patch("os.remove") as remove_mock:
+            storage.delete("partner_video/test.mp4")
+
+        storage.cloud_storage.delete.assert_called_once_with("partner_video/test.mp4")
+        remove_mock.assert_called_once()
 
 
 class WatermarkTestCase(TestCase):
