@@ -24,12 +24,14 @@
 .status-label {
   color: rgba(119, 122, 141, 1);
   font-family: "Verdana", sans-serif;
-  font-size: clamp(0.9rem, 1vw, 1rem);
+  font-size: clamp(0.9rem, 1vw, 0.9rem);
   font-weight: 700;
 }
 
 .status-value {
   font-weight: 700;
+  font-family: 'Verdana', sans-serif;
+  font-size: clamp(0.9rem, 1vw, 0.9rem);
 }
 
 .status-approved-text {
@@ -76,7 +78,7 @@
    ========================================= */
 .tariff-heading {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(0.9rem, 1vw, 1.1rem);
+  font-size: 16px;
   color: #333;
   margin: 20px 0 14px;
 }
@@ -243,10 +245,10 @@
 .editable-field textarea {
   width: 100%;
   padding: 8px 36px 8px 14px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(119, 122, 141, 1);
   border-radius: 20px;
   background: #fff;
-  font-family: "Verdana", sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 13px;
   color: #333;
   height: 38px;
@@ -490,8 +492,10 @@
 
 /* REJECTED: красный бейдж */
 .verified-badge--rejected {
-  background: #ff5252;
+  background: rgba(212, 70, 70, 1);
   color: #fff;
+  font-family: 'Verdana', sans-serif;
+  font-size: clamp(0.7rem, 0.8vw, 0.7rem)
 }
 
 /* PENDING: жёлтый бейдж */
@@ -521,9 +525,9 @@
 .verification-documents-title {
   font-family: "Verdana", sans-serif;
   font-size: 13px;
-  color: #333;
-  margin: 0 0 8px;
-  line-height: 1.5;
+  color: black;
+  line-height: 1;
+  margin-bottom: 5px;
 }
 
 .verification-documents-title strong {
@@ -533,14 +537,14 @@
 .verification-documents-list {
   font-family: "Verdana", sans-serif;
   font-size: 13px;
-  color: #333;
+  color: black;
   margin: 0;
-  padding: 0 0 0 20px;
-  line-height: 1.7;
+  line-height: 1.2;
 }
 
 .verification-documents-list li {
   margin-bottom: 2px;
+margin-left: -15px !important;
 }
 
 /* Форма загрузки */
@@ -552,14 +556,13 @@
 }
 
 .upload-area {
-  border: 2px solid #2196f3;
-  border-radius: 24px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
   padding: 24px;
   text-align: center;
   margin-bottom: 16px;
   transition: all 0.2s;
   width: 100%;
-  max-width: 400px;
 }
 
 .upload-area:hover {
@@ -567,10 +570,10 @@
 }
 
 .upload-area-label {
-  font-family: "Verdana", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #2196f3;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: rgba(2, 54, 156, 1);
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -585,62 +588,13 @@
   color: #fff;
   border: none;
   border-radius: 20px;
-  font-family: "Verdana", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: background 0.2s;
-}
-
-.btn-submit-verification:hover {
-  background: #e87a30;
-}
-
-.upload-area {
-  border: 2px solid #2196f3;
-  border-radius: 24px;
-  padding: 24px;
-  text-align: center;
-  margin-bottom: 16px;
-  transition: all 0.2s;
-}
-
-.upload-area:hover {
-  background: #f5f9ff;
-}
-
-.upload-area-label {
-  font-family: "Verdana", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #2196f3;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: block;
-}
-
-.btn-submit-verification {
-  display: block;
-  margin: 0 auto;
-  padding: 10px 32px;
-  background: #ff8c42;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  font-family: "Verdana", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: background 0.2s;
-}
-
-.btn-submit-verification:hover {
-  background: #e87a30;
 }
 
 /* Сообщение о причине отклонения */

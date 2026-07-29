@@ -47,7 +47,7 @@
                     <div class="status-row">
                         <span class="status-label">Отметка в профиле:</span>
                         <span class="verified-badge verified-badge--rejected">
-                            Нет отметки «Проверенный организатор»
+                            ! Нет отметки «Проверенный организатор»
                         </span>
                     </div>
                     <div class="verification-info-block">
@@ -102,7 +102,7 @@
                     <div class="status-row">
                         <span class="status-label">Отметка в профиле:</span>
                         <span class="verified-badge verified-badge--rejected">
-                            Нет отметки «Проверенный организатор»
+                             <img src="/media/icon/!.svg" alt="" style='width: 3px;'>Нет отметки "Проверенный организатор"
                         </span>
                     </div>
                     <div class="verification-info-block">
@@ -193,9 +193,9 @@
 
                 <!-- Контактное лицо, Телефон и Email -->
                 <div class="profile-section">
-                    <div class="section-title">Контактное лицо (имя)</div>
                     <div class="form-row">
                         <div class="form-group">
+                            <div class="section-title">Контактное лицо (имя)</div>
                             <div class="editable-field">
                                 <input type="text" name="contact_person" value="{{ partner_profile.contact_person|default:'' }}" placeholder="Имя контактного лица" readonly>
                                 <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
