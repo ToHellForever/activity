@@ -155,8 +155,16 @@ def partner_dashboard(request):
     # Обработка формы редактирования профиля
     if request.method == 'POST':
         profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
+
+        # Обработка удаления видео-визитки
+        if 'delete_video' in request.POST:
+            if partner_profile.video_business_card:
+                partner_profile.video_business_card.delete(save=False)
+                partner_profile.save(update_fields=['video_business_card'])
+            messages.success(request, "Видео-визитка удалена.")
+            return redirect("partner:dashboard")
         
-# Обработка загрузки документов
+        # Обработка загрузки документов
         if 'upload_documents' in request.POST:
             document_form = DocumentUploadForm(request.POST, request.FILES, user=request.user)
             if document_form.is_valid():
