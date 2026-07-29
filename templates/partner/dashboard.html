@@ -156,13 +156,18 @@
                     </div>
                     <div class="package-price">Цена: {{ package.price|floatformat:0 }} руб.</div>
                     {% if user_subscription and user_subscription.package.id == package.id %}
-                    <button class="btn-buy" disabled>
-                        Ваш пакет
+                    <button class="btn-buy btn-buy--active" disabled>
+                        Сменить тариф
+                    </button>
+                    {% elif has_active_subscription %}
+                    <button class="btn-buy"
+                            onclick="openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
+                        Сменить тариф
                     </button>
                     {% else %}
                     <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
-                            onclick="{% if has_active_subscription %}openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }}){% else %}openBuyNewPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }}){% endif %}">
-                        {% if has_active_subscription %}Поменять тариф{% else %}КУПИТЬ{% endif %}
+                            onclick="openBuyNewPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
+                        КУПИТЬ
                     </button>
                     {% endif %}
                 </div>
