@@ -219,16 +219,48 @@
         <label for="id_video_url">Видео мероприятия</label>
         <div id="video_url-preview-container" class="media-preview-container mb-2">
             {% if form.instance.video_url %}
-            <div class="media-preview">
-                <video controls style="max-width: 300px;" class="mr-2">
-                    <source src="{{ form.instance.video_url.url }}" type="video/mp4">
-                    Ваш браузер не поддерживает видео.
-                </video>
-                 <button type="button" class="btn btn-danger btn-sm remove-media-btn"
-                         data-media-type="video_url" data-media-id="{{ form.instance.id }}">
-                     ×
-                 </button>
-            </div>
+                {% if form.instance.video_processing_status == 'completed' %}
+                <div class="media-preview">
+                    <video controls style="max-width: 300px;" class="mr-2">
+                        <source src="{{ form.instance.video_url.url }}" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                     <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                             data-media-type="video_url" data-media-id="{{ form.instance.id }}">
+                         ×
+                     </button>
+                </div>
+                {% elif form.instance.video_processing_status in ['pending', 'processing'] %}
+                <div class="media-preview video-processing-container">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Обработка видео...</span>
+                    </div>
+                    <div class="mt-2">
+                        <strong>Видео обрабатывается</strong>
+                        <div class="text-muted small">
+                            Пожалуйста, подождите. Это может занять несколько минут.
+                        </div>
+                        <div class="text-muted small">
+                            Статус: <span id="video-processing-status">{{ form.instance.get_video_processing_status_display }}</span>
+                        </div>
+                    </div>
+                     <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                             data-media-type="video_url" data-media-id="{{ form.instance.id }}">
+                         ×
+                     </button>
+                </div>
+                {% else %}
+                <div class="media-preview">
+                    <div class="alert alert-warning mb-0">
+                        <strong>Ошибка обработки видео</strong>
+                        <div class="small">Попробуйте загрузить видео заново</div>
+                    </div>
+                     <button type="button" class="btn btn-danger btn-sm remove-media-btn"
+                             data-media-type="video_url" data-media-id="{{ form.instance.id }}">
+                         ×
+                     </button>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
         <div id="video_url-error-container"></div>
@@ -406,7 +438,7 @@
             }
 
             const script = document.createElement('script');
-            script.src = 'https://api-maps.yandex.ru/2.1/?apikey=f4f22e64-c72d-4d41-a5ad-76b4f6367b75&lang=ru_RU';
+            script.src = 'https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU';
             script.onload = function() {
                 ymaps.ready(function() {
                     initMapWithData();
@@ -852,5 +884,47 @@ function updatePhotosCounterAfterDeletion() {
             });
         }
     });
+
+    // Автоматическая проверка статуса обработки видео
+    {% if form.instance.pk and form.instance.video_url and form.instance.video_processing_status in ['pending', 'processing'] %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const eventId = {{ form.instance.id }};
+        const statusElement = document.getElementById('video-processing-status');
+
+        // Функция для проверки статуса обработки видео
+        function checkVideoProcessingStatus() {
+            fetch(`/partner/check_video_status/${eventId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        // Обновляем отображение - перезагружаем страницу
+                        location.reload();
+                    } else if (data.status in ['pending', 'processing']) {
+                        // Обновляем текст статуса
+                        if (statusElement) {
+                            statusElement.textContent = data.status_display;
+                        }
+                        // Продолжаем проверять через 5 секунд
+                        setTimeout(checkVideoProcessingStatus, 5000);
+                    } else {
+                        // Ошибка обработки
+                        if (statusElement) {
+                            statusElement.textContent = 'Ошибка обработки';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при проверке статуса видео:', error);
+                    // Продолжаем проверять через 10 секунд
+                    setTimeout(checkVideoProcessingStatus, 10000);
+                });
+        }
+
+        // Запускаем проверку через 5 секунд после загрузки страницы
+        setTimeout(checkVideoProcessingStatus, 5000);
+    });
+    </script>
+    {% endif %}
 </script>
 {% endblock %}

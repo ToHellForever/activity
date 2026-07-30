@@ -1,6 +1,9 @@
+from django.conf import settings
+
+
 def admin_quick_links(request):
     """
-    Добавляет быстрые ссылки в контекст для админ-панели.
+    Добавляет быстрые ссылки и API-ключи в контекст для админ-панели.
     """
     return {
         'quick_links': [
@@ -16,5 +19,6 @@ def admin_quick_links(request):
                 'icon': '📊',
                 'description': 'Отчёт по продажам всех партнёров'
             },
-        ]
+        ],
+        'YANDEX_MAPS_API_KEY': getattr(settings, 'YANDEX_MAPS_API_KEY', ''),
     }

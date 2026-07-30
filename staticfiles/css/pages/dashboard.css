@@ -1,527 +1,680 @@
-    /* ===== Main content ===== */
-    .partner-main {
-        flex: 1;
-        min-width: 0;
-    }
-
-    /* Status line */
-    .status-approved {
-        color: #777A8D;
-        border-radius: 6px;
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
-    .text-status {
-        color: #108725;
-    }
-    .status-rejected {
-        background: #ffebee;
-        border: 1px solid #ffcdd2;
-        color: #c62828;
-        border-radius: 6px;
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
-
-    .status-pending {
-        background: #fff8e1;
-        border: 1px solid #ffecb3;
-        color: #f57f17;
-        border-radius: 6px;
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
-
-    /* ===== Form sections ===== */
-    .profile-section {
-        background: #fff;
-        border: 1px solid #e8e8e8;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-    }
-
-    .profile-section .section-title {
-        font-size: 10px;
-        text-transform: uppercase;
-        color: #bbb;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-
-    .form-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 10px;
-        text-transform: uppercase;
-        color: #aaa;
-        letter-spacing: 0.5px;
-        margin-bottom: 4px;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-        width: 100%;
-        padding: 7px 10px;
-        border: 1px solid #e8e8e8;
-        border-radius: 8px;
-        font-size: 12px;
-        color: #333;
-        background: #fafafa;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-        outline: none;
-        border-color: #ff8c42;
-        box-shadow: 0 0 0 2px rgba(255,140,66,0.1);
-        background: #fff;
-    }
-
-    .form-group textarea {
-        resize: vertical;
-        min-height: 60px;
-    }
-
-    /* ===== Editable fields with pencil icon ===== */
-    .editable-field {
-        position: relative;
-    }
-
-    .editable-field input,
-    .editable-field textarea {
-        padding-right: 36px;
-        border-radius: 20px;
-        border: 1px solid #e0e0e0;
-        background: #fafafa;
-        font-size: 13px;
-        color: #333;
-        height: 36px;
-        cursor: default;
-        pointer-events: none;
-        user-select: none;
-    }
-
-    .editable-field--active input,
-    .editable-field--active textarea {
-        pointer-events: auto;
-        user-select: text;
-    }
-
-    .editable-field textarea {
-        height: auto;
-        min-height: 60px;
-        padding-top: 8px;
-        padding-right: 36px;
-    }
-
-    .editable-field input:focus,
-    .editable-field textarea:focus {
-        border-color: #ff8c42;
-        box-shadow: 0 0 0 2px rgba(255,140,66,0.1);
-        outline: none;
-    }
-
-    /* Неактивное состояние — нельзя редактировать */
-    .editable-field input:not([readonly]),
-    .editable-field textarea:not([readonly]) {
-        /* по умолчанию не readonly, но блокируем через JS */
-    }
-
-    .editable-field .edit-icon {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 12px;
-        color: #bbb;
-        line-height: 1;
-        transition: color 0.2s, transform 0.15s;
-        cursor: pointer;
-        pointer-events: auto;
-    }
-
-    .editable-field .edit-icon:hover {
-        color: #888;
-        transform: translateY(-50%) scale(1.1);
-    }
-
-    .editable-field:not(.editable-field--active) input::placeholder,
-    .editable-field:not(.editable-field--active) textarea::placeholder {
-        color: #bbb;
-        font-style: italic;
-    }
-
-    .editable-field .edit-icon svg,
-    .editable-field .edit-icon img {
-        width: 18px;
-        height: 18px;
-        display: block;
-    }
-
-    .editable-field--active .edit-icon {
-        color: #4caf50;
-    }
-
-    .editable-field--active .edit-icon:hover {
-        color: #388e3c;
-    }
-
-    .editable-field--textarea .edit-icon {
-        top: auto;
-        bottom: 8px;
-        transform: none;
-    }
-
-    /* Section title */
-    .profile-section .section-title {
-        font-size: 10px;
-        text-transform: uppercase;
-        color: #bbb;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .form-group .help-text {
-        font-size: 10px;
-        color: #999;
-        margin-top: 3px;
-    }
-
-    .form-group .error-message {
-        font-size: 10px;
-        color: #f44336;
-        margin-top: 3px;
-    }
-
-    /* ===== File upload ===== */
-    .file-upload-area {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .file-upload-btn {
-        padding: 6px 14px;
-        background: #f5f5f5;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 11px;
-        color: #555;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .file-upload-btn:hover {
-        background: #ff8c42;
-        color: #fff;
-        border-color: #ff8c42;
-    }
-
-    .file-preview {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
-        background: #f0f8ff;
-        border: 1px solid #d0e8ff;
-        border-radius: 8px;
-        font-size: 11px;
-    }
-
-    .file-preview img,
-    .file-preview video {
-        max-width: 100px;
-        max-height: 80px;
-        border-radius: 4px;
-    }
-
-    .file-remove-btn {
-        width: 20px;
-        height: 20px;
-        background: #f44336;
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* ===== Save button ===== */
-    .save-section {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid #f0f0f0;
-    }
-
-    .btn-save {
-        padding: 8px 24px;
-        background: #ff8c42;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-    .btn-save:hover {
-        background: #e87a30;
-    }
-
-    .btn-secondary-save {
-        padding: 8px 24px;
-        background: #f5f5f5;
-        color: #555;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-secondary-save:hover {
-        background: #eee;
-    }
-
-    /* ===== Documents section ===== */
-    .documents-section {
-        background: #fff;
-        border: 1px solid #e8e8e8;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-    }
-
-    .documents-section .section-title {
-        font-size: 10px;
-        text-transform: uppercase;
-        color: #bbb;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    /* ===== Package cards ===== */
-    .package-cards {
-        display: flex;
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-
-    .package-card {
-        flex: 1;
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 16px;
-        padding: 18px;
-        position: relative;
-        transition: box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .package-card:hover {
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-
-
-    .package-card.inactive {
-        background: #f5f5f5;
-        border-color: #e0e0e0;
-    }
-
-    .package-card.inactive h3 {
-        color: #999;
-    }
-
-    .package-card.inactive .features {
-        color: #888;
-    }
-
-    .package-card.inactive .price {
-        color: #777;
-    }
-
-    .package-card.inactive .btn-buy {
-        background: #999;
-    }
-
-    .package-card.inactive .btn-buy:hover {
-        background: #777;
-    }
-
-    .package-card h3 {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0 0 6px;
-        color: #222;
-    }
-
-    .package-card .subtitle {
-        font-size: 11px;
-        color: #888;
-        margin-bottom: 10px;
-    }
-
-    .package-card .features {
-        font-size: 11px;
-        color: #555;
-        line-height: 1.6;
-        margin-bottom: 12px;
-        flex-grow: 1;
-    }
-
-    .package-card .price {
-        font-size: 15px;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 10px;
-        margin-top: auto;
-    }
-
-    .package-card .btn-buy {
-        width: 100%;
-        padding: 7px;
-        border: none;
-        border-radius: 8px;
-        background: #ff8c42;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .package-card .btn-buy:hover {
-        background: #e87a30;
-    }
-
-    .package-card .btn-buy:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-    }
-
-    .package-card .btn-buy[disabled] {
-        background: #4caf50;
-        color: #fff;
-        cursor: default;
-    }
-
-    /* ===== Видео-визитка ===== */
-    .video-carditka-section {
-        width: 100%;
-    }
-
-    .video-carditka-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .video-carditka-title {
-        font-size: 14px;
-        font-weight: 500;
-        color: #333;
-    }
-
-    .video-carditka-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .video-action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        border: 1px solid #e0e0e0;
-        background: #fff;
-        color: #666;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .video-action-btn:hover {
-        background: #f5f5f5;
-        border-color: #ff8c42;
-        color: #ff8c42;
-    }
-
-    .video-delete-btn:hover {
-        border-color: #f44336;
-        color: #f44336;
-        background: #fff3f3;
-    }
-
-    .video-player-wrapper {
-        width: 100%;
-        background: #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-        aspect-ratio: 16 / 9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .video-player-wrapper video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-    }
-
-    .video-player-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #e0e0e0;
-    }
-
-    .play-icon {
-        width: 64px;
-        height: 64px;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0.5;
-    }
+/* ===== Partner main area ===== */
+.partner-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================================
+   STATUS SECTION (Статус партнёра)
+   ========================================= */
+.partner-status-section {
+  margin-bottom: 10px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.status-label {
+  color: rgba(119, 122, 141, 1);
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.9rem, 1vw, 0.9rem);
+  font-weight: 700;
+}
+
+.status-value {
+  font-weight: 700;
+  font-family: 'Verdana', sans-serif;
+  font-size: clamp(0.9rem, 1vw, 0.9rem);
+}
+
+.status-approved-text {
+  color: rgba(16, 135, 37, 1);
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.9rem, 1vw, 1rem);
+  font-weight: 700;
+}
+
+.status-rejected-text {
+  color: #c62828;
+  font-weight: 700;
+}
+
+.status-pending-text {
+  color: #f57f17;
+  font-weight: 700;
+}
+
+.status-reason {
+  color: #999;
+  font-weight: 400;
+}
+
+/* Бейдж "Проверенный организатор" */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #02369c;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.verified-badge svg {
+  flex-shrink: 0;
+}
+
+/* =========================================
+   TARIFF HEADING
+   ========================================= */
+.tariff-heading {
+  font-family: "Verdana", sans-serif;
+  font-size: 16px;
+  color: #333;
+  margin: 20px 0 14px;
+}
+
+/* =========================================
+   PACKAGE CARDS (Тарифы)
+   ========================================= */
+.package-cards {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.package-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 18px;
+  padding: 30px 20px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+}
+
+.package-card.inactive {
+  background: #fafafa;
+  border-color: #ddd;
+}
+
+.package-name {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(1rem, 1.5vw, 2.5rem);
+  font-weight: 900;
+  color: #222;
+  margin: 0 0 4px;
+  letter-spacing: 0.3px;
+}
+
+.package-subtitle {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 0.9vw, 1.1rem);
+  color: black;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.package-features {
+  font-family: "Verdana", sans-serif;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 8px;
+  flex-grow: 1;
+}
+
+.feature-item {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 0.8vw, 0.9rem);
+  color: black;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+
+.feature-label {
+  font-weight: 400;
+  font-family: "Verdana", sans-serif;
+  color: rgba(119, 122, 141, 1);
+  font-size: clamp(0.8rem, 0.8vw, 0.9rem);
+}
+
+.package-card .features .feature-item .feature-label {
+  font-weight: 700;
+}
+
+/* Выделение жирным в features */
+.package-features strong {
+  font-weight: 700;
+}
+
+.package-price {
+  font-family: "Verdana", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: black;
+  margin-bottom: 12px;
+}
+
+.btn-buy {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 20px;
+  background: #ff8c42;
+  color: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-buy:hover {
+  background: #e87a30;
+}
+
+.btn-buy:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-buy--active {
+  background: #ccc;
+  color: #fff;
+  cursor: default;
+}
+
+/* =========================================
+   PROFILE SECTIONS
+   ========================================= */
+.profile-section {
+  margin-bottom: 16px;
+}
+
+.profile-section .section-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #bbb;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  margin-top: 16px;
+}
+
+.profile-section .section-title:first-child {
+  margin-top: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+/* =========================================
+   EDITABLE FIELDS (с карандашом справа)
+   ========================================= */
+.editable-field {
+  position: relative;
+}
+
+.editable-field input,
+.editable-field textarea {
+  width: 100%;
+  padding: 8px 36px 8px 14px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  background: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  color: #333;
+  height: 38px;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.editable-field--active input,
+.editable-field--active textarea {
+  pointer-events: auto;
+  user-select: text;
+  cursor: text;
+}
+
+.editable-field textarea {
+  height: auto;
+  min-height: 60px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.editable-field input:focus,
+.editable-field textarea:focus {
+  outline: none;
+  border-color: #ff8c42;
+  box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.15);
+}
+
+.editable-field .edit-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bbb;
+  transition: color 0.2s;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editable-field .edit-icon:hover {
+  color: #888;
+}
+
+.editable-field .edit-icon svg,
+.editable-field .edit-icon img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.editable-field--textarea .edit-icon {
+  top: auto;
+  bottom: 10px;
+  transform: none;
+}
+
+.editable-field--active .edit-icon {
+  color: #4caf50;
+}
+
+.editable-field--active .edit-icon:hover {
+  color: #388e3c;
+}
+
+/* =========================================
+   VIDEO BUSINESS CARD
+   ========================================= */
+.video-carditka-section {
+  width: 100%;
+}
+
+.video-carditka-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.video-carditka-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.video-carditka-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.video-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.video-action-btn:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.video-delete-btn:hover {
+  color: #f44336;
+  background: #fff3f3;
+}
+
+.video-player-wrapper {
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.video-player-wrapper:focus-within {
+  border-color: #2196f3;
+}
+
+.video-player-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.video-player-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e0e0;
+}
+
+.play-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================
+   CHANGE PASSWORD BUTTON
+   ========================================= */
+.change-password-wrapper {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-change-password {
+  display: inline-block;
+  padding: 8px 24px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  color: #333;
+  font-family: "Verdana", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-change-password:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+/* =========================================
+   DOCUMENTS SECTION
+   ========================================= */
+.documents-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+}
+
+.documents-section .section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #bbb;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+/* =========================================
+   ORGANIZER VERIFICATION SECTION
+   ========================================= */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 5px;
+  line-height: 1.4;
+  font-family: "Verdana", sans-serif;
+}
+
+.verified-badge svg {
+  flex-shrink: 0;
+}
+
+/* APPROVED: зелёный бейдж */
+.verified-badge--approved {
+  background: #02369c;
+  color: #fff;
+}
+
+/* REJECTED: красный бейдж */
+.verified-badge--rejected {
+  background: rgba(212, 70, 70, 1);
+  color: #fff;
+  font-family: 'Verdana', sans-serif;
+  font-size: clamp(0.7rem, 0.8vw, 0.7rem)
+}
+
+/* PENDING: жёлтый бейдж */
+.verified-badge--pending {
+  background: #ff9800;
+  color: #fff;
+}
+
+/* Информационный блок верификации */
+.verification-info-block {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.verification-info-text {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #999;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.verification-documents {
+  margin-bottom: 16px;
+}
+
+.verification-documents-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: black;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.verification-documents-title strong {
+  font-weight: 700;
+}
+
+.verification-documents-list {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: black;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.verification-documents-list li {
+  margin-bottom: 2px;
+margin-left: -15px !important;
+}
+
+/* Форма загрузки */
+.verification-upload-form {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-area {
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.upload-area:hover {
+  background: #f5f9ff;
+}
+
+.upload-area-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: rgba(2, 54, 156, 1);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.btn-submit-verification {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 32px;
+  background: #ff8c42;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s;
+}
+
+/* Сообщение о причине отклонения */
+.rejection-reason {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #c62828;
+  line-height: 1.5;
+}
+
+.rejection-reason strong {
+  font-weight: 700;
+}
+
+/* Сообщение о проверке */
+.verification-pending-message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff8e1;
+  border: 1px solid #ffecb3;
+  border-radius: 6px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #f57f17;
+  line-height: 1.5;
+}
+
+/* =========================================
+   STATUS BADGES (для документов)
+   ========================================= */
+.status-approved {
+  color: #108725;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.status-rejected {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-family: "Verdana", sans-serif;
+}
+
+.status-pending {
+  background: #fff8e1;
+  border: 1px solid #ffecb3;
+  color: #f57f17;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-family: "Verdana", sans-serif;
+}
+
+/* =========================================
+   SAVE BUTTON
+   ========================================= */
+.btn-save {
+  padding: 8px 24px;
+  background: #ff8c42;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-save:hover {
+  background: #e87a30;
+}

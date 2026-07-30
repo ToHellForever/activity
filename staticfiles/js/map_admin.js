@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 
-    // API ключ Яндекс Карт
-    const apiKey = 'f4f22e64-c72d-4d41-a5ad-76b4f6367b75';
+    // API ключ Яндекс Карт (получаем из глобальной переменной, установленной в шаблоне)
+    const apiKey = window.YANDEX_MAPS_API_KEY || '';
     
     // Загружаем API Яндекс Карт
     const script = document.createElement('script');
