@@ -409,6 +409,22 @@ class PortfolioItem(models.Model):
         """Возвращает только валидные (не пустые) ссылки."""
         return [link for link in self.links if link and link.strip()]
 
+    def delete(self, *args, **kwargs):
+        """Перед удалением элемента портфолио удаляем файлы изображений по-отдельности.
+
+        Это гарантирует удаление файлов из хранилища даже если удаление выполняется каскадом.
+        """
+        try:
+            for img in list(self.images.all()):
+                try:
+                    img.delete()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return super().delete(*args, **kwargs)
+
 
 class SalesReport(models.Model):
     """
@@ -463,6 +479,20 @@ class SalesReport(models.Model):
         verbose_name = "Отчёт о продажах"
         verbose_name_plural = "Отчёты о продажах"
         ordering = ["-created_at"]
+
+
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+
+@receiver(pre_delete, sender=PortfolioImage)
+def delete_portfolioimage_file(sender, instance, **kwargs):
+    """Signal receiver: удаляем файл изображения при удалении записи даже при bulk-delete."""
+    try:
+        if instance.image:
+            instance.image.delete(save=False)
+    except Exception:
+        pass
 
 
 class ReportSchedule(models.Model):

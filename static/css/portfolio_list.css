@@ -1,0 +1,63 @@
+.portfolio-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
+.portfolio-card {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  width: calc(33.333% - 10px);
+  box-sizing: border-box;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  align-items: flex-start;
+}
+.portfolio-card-image img {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+.portfolio-card-content {
+  flex: 1 1 auto;
+}
+.portfolio-card-title {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+}
+.portfolio-card-meta {
+  color: #6c757d;
+  font-size: 0.85rem;
+  display: flex;
+  gap: 8px;
+}
+.portfolio-card-desc {
+  margin: 8px 0;
+  color: #444;
+}
+.portfolio-card-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .portfolio-card {
+    width: calc(50% - 10px);
+  }
+}
+@media (max-width: 576px) {
+  .portfolio-card {
+    width: 100%;
+  }
+}
+
+.portfolio-empty {
+  padding: 24px;
+  text-align: center;
+}

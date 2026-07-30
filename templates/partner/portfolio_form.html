@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block content %}
-{% load static %}
+{% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<link rel="stylesheet" href="{% static 'css/portfolio_form.css' %}">
+{% endblock %}
+
+{% block content %}
 <h1>{% if is_edit %}Редактирование кейса{% else %}Добавление кейса{% endif %}</h1>
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}

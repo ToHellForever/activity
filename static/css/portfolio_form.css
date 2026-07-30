@@ -1,0 +1,68 @@
+.existing-photos-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.existing-photo-item {
+  position: relative;
+}
+.existing-photo-item .photo-container {
+  width: 120px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #e6e6e6;
+}
+.existing-photo-item .portfolio-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo-delete-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.photo-preview-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.photo-preview-item {
+  width: 120px;
+  height: 80px;
+  position: relative;
+}
+.photo-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Smaller upload area on mobile */
+@media (max-width: 576px) {
+  .existing-photo-item .photo-container,
+  .photo-preview-item {
+    width: 96px;
+    height: 64px;
+  }
+}
