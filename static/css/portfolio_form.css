@@ -58,6 +58,68 @@
   cursor: pointer;
 }
 
+.portfolio-form-main-group {
+  display: grid;
+  gap: 20px;
+}
+
+.portfolio-form-row--inline {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.portfolio-form-section--small {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.portfolio-form-section--compact {
+  display: grid;
+  gap: 12px;
+}
+
+.portfolio-form-section {
+  display: grid;
+  gap: 8px;
+}
+
+.portfolio-form-card {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  display: grid;
+  gap: 20px;
+}
+
+.portfolio-form-row--inline {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.portfolio-form-section--small {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.portfolio-form-section--compact {
+  display: grid;
+  gap: 12px;
+}
+
+.portfolio-form-section {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .portfolio-form-row--inline {
+    flex-direction: column;
+  }
+}
+
 /* Smaller upload area on mobile */
 @media (max-width: 576px) {
   .existing-photo-item .photo-container,

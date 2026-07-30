@@ -15,64 +15,65 @@
         <form method="post" enctype="multipart/form-data" class="portfolio-form" id="portfolioForm">
             {% csrf_token %}
 
-            <!-- Фотографии -->
-            <div class="portfolio-form-section">
-                <label class="portfolio-form-label">ФОТОГРАФИИ</label>
-
-                <!-- Существующие фото (для редактирования) -->
-                {% if is_edit and portfolio_item and portfolio_item.images.exists %}
-                <div class="existing-photos-grid">
-                    {% for photo in portfolio_item.images.all %}
-                    <div class="existing-photo-item" data-image-id="{{ photo.id }}">
-                        <div class="photo-container">
-                            <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
-                        </div>
-                        <button type="button" class="photo-delete-btn" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <!-- Загрузка новых фото -->
-                <div class="photo-upload-area">
-                    <div class="photo-upload-placeholder">
-                        <i class="bi bi-camera"></i>
-                    </div>
-                    <label for="id_images" class="photo-upload-label">
-                        + ЗАГРУЗИТЬ ФОТО
-                    </label>
-                    <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
-                    <div id="photoPreview" class="photo-preview-container"></div>
-                    <small class="text-muted">
-                        {% if is_edit %}
-                            Добавление к существующим (лимит: 5 фото всего)
-                        {% else %}
-                            До 5 фотографий. Максимальный размер файла: 10 МБ.
-                        {% endif %}
-                    </small>
-                </div>
-                <!-- Скрытое поле для передачи ID удаляемых фото -->
-                <input type="hidden" id="deleted_image_ids" name="deleted_image_ids" value="">
-            </div>
-
-            <!-- Название -->
-            <div class="portfolio-form-section">
-                <label class="portfolio-form-label">НАЗВАНИЕ (до 100 символов)</label>
-                <div class="char-counter">
-                    <span id="titleCounter">0/100</span>
-                </div>
-                {{ form.title }}
-                {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
-            </div>
-
-            <!-- Дата и Город -->
-            <div class="portfolio-form-row">
+            <div class="portfolio-form-main-group portfolio-form-card">
+                <!-- Фотографии -->
                 <div class="portfolio-form-section">
-                    <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
-                    <div class="input-with-button date-container" style="position: relative;">
-                        <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" value="{{ form.event_date.value|default_if_none:'' }}" readonly>
+                    <label class="portfolio-form-label">ФОТОГРАФИИ</label>
+
+                    <!-- Существующие фото (для редактирования) -->
+                    {% if is_edit and portfolio_item and portfolio_item.images.exists %}
+                    <div class="existing-photos-grid">
+                        {% for photo in portfolio_item.images.all %}
+                        <div class="existing-photo-item" data-image-id="{{ photo.id }}">
+                            <div class="photo-container">
+                                <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
+                            </div>
+                            <button type="button" class="photo-delete-btn" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Загрузка новых фото -->
+                    <div class="photo-upload-area">
+                        <div class="photo-upload-placeholder">
+                            <i class="bi bi-camera"></i>
+                        </div>
+                        <label for="id_images" class="photo-upload-label">
+                            + ЗАГРУЗИТЬ ФОТО
+                        </label>
+                        <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
+                        <div id="photoPreview" class="photo-preview-container"></div>
+                        <small class="text-muted">
+                            {% if is_edit %}
+                                Добавление к существующим (лимит: 5 фото всего)
+                            {% else %}
+                                До 5 фотографий. Максимальный размер файла: 10 МБ.
+                            {% endif %}
+                        </small>
+                    </div>
+                    <!-- Скрытое поле для передачи ID удаляемых фото -->
+                    <input type="hidden" id="deleted_image_ids" name="deleted_image_ids" value="">
+                </div>
+
+                <!-- Название -->
+                <div class="portfolio-form-section">
+                    <label class="portfolio-form-label">НАЗВАНИЕ (до 100 символов)</label>
+                    <div class="char-counter">
+                        <span id="titleCounter">0/100</span>
+                    </div>
+                    {{ form.title }}
+                    {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
+                </div>
+
+                <!-- Дата и Город -->
+                <div class="portfolio-form-row portfolio-form-row--inline">
+                    <div class="portfolio-form-section portfolio-form-section--small">
+                        <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
+                        <div class="input-with-button date-container" style="position: relative;">
+                            <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" value="{{ form.event_date.value|default_if_none:'' }}" readonly>
                             <div class="calendar-popup" id="eventDateCalendar">
                                 <div class="calendar-header">
                                     <button type="button" class="calendar-prev-month">&lt;</button>
@@ -86,39 +87,39 @@
                                 </div>
                             </div>
                         </div>
+                        {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                     </div>
-                    {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
+                    <div class="portfolio-form-section portfolio-form-section--small">
+                        <label class="portfolio-form-label">ГОРОД</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}<ul class="errorlist">{{ form.city.errors }}</ul>{% endif %}
+                    </div>
                 </div>
+
+                <!-- Описание -->
                 <div class="portfolio-form-section">
-                    <label class="portfolio-form-label">ГОРОД</label>
-                    {{ form.city }}
-                    {% if form.city.errors %}<ul class="errorlist">{{ form.city.errors }}</ul>{% endif %}
+                    <label class="portfolio-form-label">ОПИСАНИЕ</label>
+                    <div class="char-counter">
+                        <span id="descCounter">0/1000</span>
+                    </div>
+                    {{ form.description }}
+                    {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
                 </div>
-            </div>
 
-            <!-- Описание -->
-            <div class="portfolio-form-section">
-                <label class="portfolio-form-label">ОПИСАНИЕ</label>
-                <div class="char-counter">
-                    <span id="descCounter">0/1000</span>
+                <!-- Ссылки -->
+                <div class="portfolio-form-section portfolio-form-section--compact">
+                    <label class="portfolio-form-label">ССЫЛКИ НА СТАТЬИ, СМИ ИЛИ СОЦ СЕТИ</label>
+                    {{ form.link_1 }}
+                    {{ form.link_2 }}
+                    {{ form.link_3 }}
+                    {% if form.link_1.errors %}<ul class="errorlist">{{ form.link_1.errors }}</ul>{% endif %}
+                    {% if form.link_2.errors %}<ul class="errorlist">{{ form.link_2.errors }}</ul>{% endif %}
+                    {% if form.link_3.errors %}<ul class="errorlist">{{ form.link_3.errors }}</ul>{% endif %}
                 </div>
-                {{ form.description }}
-                {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
-            </div>
-
-            <!-- Ссылки -->
-            <div class="portfolio-form-section">
-                <label class="portfolio-form-label">ССЫЛКИ НА СТАТЬИ, СМИ ИЛИ СОЦ СЕТИ</label>
-                {{ form.link_1 }}
-                {{ form.link_2 }}
-                {{ form.link_3 }}
-                {% if form.link_1.errors %}<ul class="errorlist">{{ form.link_1.errors }}</ul>{% endif %}
-                {% if form.link_2.errors %}<ul class="errorlist">{{ form.link_2.errors }}</ul>{% endif %}
-                {% if form.link_3.errors %}<ul class="errorlist">{{ form.link_3.errors }}</ul>{% endif %}
             </div>
 
             <button type="submit" class="btn btn-primary btn-portfolio-submit">
-                {% if is_edit %}СОХРАНИТЬ ИЗМЕНЕНИЯ{% else %}ДОБАВИТЬ{% endif %}
+                {% if is_edit %}СОХРАНИТЬ ИЗМЕНИЯ{% else %}ДОБАВИТЬ{% endif %}
             </button>
         </form>
     </div>
