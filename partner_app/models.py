@@ -372,9 +372,9 @@ class PortfolioItem(models.Model):
         verbose_name="Город",
     )
     description = models.TextField(
-        max_length=1500,
+        max_length=1000,
         verbose_name="Описание",
-        help_text="До 1500 символов",
+        help_text="До 1000 символов",
     )
     links = models.JSONField(
         default=list,

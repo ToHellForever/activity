@@ -2473,6 +2473,7 @@ def portfolio_create(request):
             "form": form,
             "partner_profile": partner_profile,
             "is_edit": False,
+            "portfolio_item": None,
         },
     )
 
@@ -2499,7 +2500,17 @@ def portfolio_edit(request, item_id):
         if form.is_valid():
             form.save(partner=request.user)
 
-            # Обновляем изображения
+            # Обработка удаления фото
+            deleted_image_ids = request.POST.get("deleted_image_ids", "")
+            if deleted_image_ids:
+                for image_id in deleted_image_ids.split(","):
+                    try:
+                        image = PortfolioImage.objects.get(id=image_id, portfolio=item)
+                        image.delete()
+                    except PortfolioImage.DoesNotExist:
+                        pass
+
+            # Обработка замены и добавления новых фото
             images = request.FILES.getlist("images")
             if images:
                 # Проверяем лимит

@@ -2,6 +2,9 @@
 {% load static %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <h1>{% if is_edit %}Редактирование кейса{% else %}Добавление кейса{% endif %}</h1>
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
@@ -12,21 +15,21 @@
             <!-- Фотографии -->
             <div class="portfolio-form-section">
                 <label class="portfolio-form-label">ФОТОГРАФИИ</label>
-                
-                {% if is_edit and portfolio_item %}
-                <!-- Существующие фото -->
-                {% if portfolio_item.images.exists %}
+
+                <!-- Существующие фото (для редактирования) -->
+                {% if is_edit and portfolio_item and portfolio_item.images.exists %}
                 <div class="existing-photos-grid">
                     {% for photo in portfolio_item.images.all %}
                     <div class="existing-photo-item" data-image-id="{{ photo.id }}">
-                        <img src="{{ photo.image.url }}" alt="Фото портфолио">
-                        <button type="button" class="photo-delete-btn" onclick="deletePhoto(this, '{{ photo.id }}')" title="Удалить фото">
+                        <div class="photo-container">
+                            <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
+                        </div>
+                        <button type="button" class="photo-delete-btn" onclick="markForDeletion(this, '{{ photo.id }}')" title="Удалить фото">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
                     {% endfor %}
                 </div>
-                {% endif %}
                 {% endif %}
 
                 <!-- Загрузка новых фото -->
@@ -47,6 +50,8 @@
                         {% endif %}
                     </small>
                 </div>
+                <!-- Скрытое поле для передачи ID удаляемых фото -->
+                <input type="hidden" id="deleted_image_ids" name="deleted_image_ids" value="">
             </div>
 
             <!-- Название -->
@@ -63,7 +68,22 @@
             <div class="portfolio-form-row">
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
-                    {{ form.event_date }}
+                    <div class="input-with-button date-container" style="position: relative;">
+                        <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" value="{{ form.event_date.value|default_if_none:'' }}" readonly>
+                            <div class="calendar-popup" id="eventDateCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                 </div>
                 <div class="portfolio-form-section">
@@ -77,7 +97,7 @@
             <div class="portfolio-form-section">
                 <label class="portfolio-form-label">ОПИСАНИЕ</label>
                 <div class="char-counter">
-                    <span id="descCounter">0/1500</span>
+                    <span id="descCounter">0/1000</span>
                 </div>
                 {{ form.description }}
                 {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
@@ -103,8 +123,20 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{% static 'js/pages/calendar.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    window.portfolioCalendar = new CustomCalendar(
+        'id_event_date',
+        'eventDateCalendar',
+        null,
+        {
+            displayDateFormat: 'dd.mm.yyyy',
+            valueDateFormat: 'yyyy-mm-dd'
+        }
+    );
+
     // Счётчик символов для названия
     var titleInput = document.getElementById('id_title');
     var titleCounter = document.getElementById('titleCounter');
@@ -134,13 +166,13 @@ document.addEventListener('DOMContentLoaded', function() {
             var files = this.files;
             var currentCount = document.querySelectorAll('.existing-photo-item').length;
             var maxAllowed = 5 - currentCount;
-            
+
             if (files.length > maxAllowed) {
                 alert('Нельзя добавить ' + files.length + ' фото. Можно добавить только ' + maxAllowed + ' (лимит 5).');
                 this.value = '';
                 return;
             }
-            
+
             for (var i = 0; i < files.length; i++) {
                 (function(file, index) {
                     var reader = new FileReader();
@@ -148,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         var div = document.createElement('div');
                         div.className = 'photo-preview-item';
                         div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
-                            '<span class="photo-remove" data-index="' + index + '">✕</span>';
+                            '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
                         photoPreview.appendChild(div);
                     };
                     reader.readAsDataURL(file);
@@ -158,32 +190,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Удаление фото
-function deletePhoto(btn, imageId) {
+// Удаление preview фото
+function removePreview(btn) {
+    var index = btn.getAttribute('data-index');
+    var previewContainer = document.getElementById('photoPreview');
+    var previewItems = previewContainer.querySelectorAll('.photo-preview-item');
+    var photoInput = document.getElementById('id_images');
+
+    if (previewItems.length > 0) {
+        var newFiles = Array.from(photoInput.files);
+        newFiles.splice(index, 1);
+
+        // Создаем новый DataTransfer для обновления файлов
+        var dataTransfer = new DataTransfer();
+        newFiles.forEach(function(file) {
+            dataTransfer.items.add(file);
+        });
+        photoInput.files = dataTransfer.files;
+
+        // Обновляем preview
+        previewContainer.innerHTML = '';
+        for (var i = 0; i < newFiles.length; i++) {
+            (function(file, idx) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var div = document.createElement('div');
+                    div.className = 'photo-preview-item';
+                    div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
+                        '<span class="photo-remove" data-index="' + idx + '" onclick="removePreview(this)">✕</span>';
+                    previewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            })(newFiles[i], i);
+        }
+    }
+}
+
+// Пометка фото для удаления
+function markForDeletion(btn, imageId) {
     if (!confirm('Вы уверены, что хотите удалить это фото?')) {
         return;
     }
-    
+
     var photoItem = btn.closest('.existing-photo-item');
-    var formData = new FormData();
-    formData.append('csrfmiddlewaretoken', document.querySelector('[name="csrfmiddlewaretoken"]').value);
-    
-    fetch('/partner/portfolio/image/delete/' + imageId + '/', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            photoItem.remove();
-        } else {
-            alert('Ошибка при удалении фото: ' + data.message);
-        }
-    })
-    .catch(error => {
-        alert('Произошла ошибка при удалении фото');
-        console.error('Error:', error);
-    });
+    var deletedIdsInput = document.getElementById('deleted_image_ids');
+    var currentIds = deletedIdsInput.value.split(',').filter(function(id) { return id; });
+
+    // Добавляем ID в список удаляемых
+    if (!currentIds.includes(imageId)) {
+        currentIds.push(imageId);
+        deletedIdsInput.value = currentIds.join(',');
+
+        // Визуально помечаем фото как удаленное
+        photoItem.style.opacity = '0.5';
+        photoItem.style.position = 'relative';
+        btn.style.display = 'none';
+        var deletedLabel = document.createElement('div');
+        deletedLabel.className = 'photo-deleted-label';
+        deletedLabel.textContent = 'Удалено';
+        photoItem.appendChild(deletedLabel);
+    }
 }
 </script>
 {% endblock %}

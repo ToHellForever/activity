@@ -403,6 +403,15 @@ class PortfolioItemForm(forms.ModelForm):
             for i, link in enumerate(links[:3]):
                 self.fields[f"link_{i+1}"].initial = link
 
+            if self.instance.event_date:
+                value = self.instance.event_date
+                if hasattr(value, "strftime"):
+                    value = value.strftime("%Y-%m-%d")
+                self.initial['event_date'] = value
+                self.fields['event_date'].initial = value
+                self.data = self.data.copy()
+                self.data['event_date'] = value
+
     def clean(self):
         cleaned_data = super().clean()
         # Собираем ссылки в список

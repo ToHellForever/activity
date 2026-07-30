@@ -2,12 +2,15 @@
  * Кастомный календарь для выбора даты
  */
 class CustomCalendar {
-    constructor(inputId, calendarId, hiddenInputName) {
+    constructor(inputId, calendarId, hiddenInputName, options = {}) {
         this.input = document.getElementById(inputId);
         this.calendar = document.getElementById(calendarId);
         this.hiddenInputName = hiddenInputName;
         this.selectedDate = null;
         this.currentMonth = new Date();
+        this.displayDateFormat = options.displayDateFormat || 'dd.mm.yyyy';
+        this.valueDateFormat = options.valueDateFormat || 'yyyy-mm-dd';
+        this.input.dataset.rawValue = '';
         
         if (!this.input || !this.calendar) {
             console.warn('Calendar elements not found on first try, waiting for DOM...');
@@ -16,6 +19,32 @@ class CustomCalendar {
         }
 
         this.init();
+    }
+
+    parseDateValue(value) {
+        if (!value) {
+            return null;
+        }
+
+        const trimmed = String(value).trim();
+        if (!trimmed) {
+            return null;
+        }
+
+        const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const [, year, month, day] = isoMatch;
+            return new Date(Number(year), Number(month) - 1, Number(day));
+        }
+
+        const dotMatch = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+        if (dotMatch) {
+            const [, day, month, year] = dotMatch;
+            return new Date(Number(year), Number(month) - 1, Number(day));
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
     }
 
     retryInit(inputId, calendarId, hiddenInputName) {
@@ -103,6 +132,25 @@ class CustomCalendar {
             }
         });
 
+        const initialValue = this.input.value;
+        if (initialValue) {
+            this.selectedDate = this.parseDateValue(initialValue);
+            if (this.selectedDate) {
+                this.currentMonth = new Date(this.selectedDate.getFullYear(), this.selectedDate.getMonth(), 1);
+            }
+            this.input.dataset.rawValue = this.formatDate(this.selectedDate, this.valueDateFormat);
+            this.input.value = this.formatDate(this.selectedDate, this.displayDateFormat);
+        }
+
+        const form = this.input.closest('form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                if (this.input.dataset.rawValue) {
+                    this.input.value = this.input.dataset.rawValue;
+                }
+            });
+        }
+
         // Первоначальная отрисовка
         this.render();
     }
@@ -141,29 +189,34 @@ class CustomCalendar {
 
     selectDate(date) {
         this.selectedDate = date;
-        // Формируем дату без учёта timezone (используем локальные компоненты)
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}`;
-        this.input.value = this.formatDate(date);
+        const formattedDate = this.formatDate(date, this.valueDateFormat);
+        this.input.dataset.rawValue = formattedDate;
+        this.input.value = this.formatDate(date, this.displayDateFormat);
         this.updateHiddenInput(formattedDate);
         this.render();
         this.close();
     }
 
     updateHiddenInput(value) {
+        if (!this.hiddenInputName) {
+            return;
+        }
+
         const hiddenInput = this.input.parentElement.querySelector(`input[name="${this.hiddenInputName}"]`);
         if (hiddenInput) {
             hiddenInput.value = value;
         }
     }
 
-    formatDate(date) {
+    formatDate(date, format = this.displayDateFormat) {
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
-        return `${day}.${month}.${year}`;
+
+        return format
+            .replace(/yyyy/g, year)
+            .replace(/mm/g, month)
+            .replace(/dd/g, day);
     }
 
     render() {
