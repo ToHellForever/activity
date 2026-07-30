@@ -33,8 +33,8 @@
                 class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
                     <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты
                 </a>
-                <a href="#"
-                class="{% if request.resolver_match.url_name == 'portfolio' %}active{% endif %}">
+                <a href="{% url 'partner:portfolio_list' %}"
+                class="{% if request.resolver_match.url_name == 'portfolio_list' %}active{% endif %}">
                     <img src="/media/icon/portfolio.svg" alt="" class="sidebar-icon"> Портфолио
                 </a>
                 {% comment %} Продажи и отчёты {% endcomment %}

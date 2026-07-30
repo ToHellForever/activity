@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>{% if is_edit %}Редактирование кейса{% else %}Добавление кейса{% endif %}</h1>
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
+        <form method="post" enctype="multipart/form-data" class="portfolio-form" id="portfolioForm">
+            {% csrf_token %}
+
+            <!-- Фотографии -->
+            <div class="portfolio-form-section">
+                <label class="portfolio-form-label">ФОТОГРАФИИ</label>
+                
+                {% if is_edit and portfolio_item %}
+                <!-- Существующие фото -->
+                {% if portfolio_item.images.exists %}
+                <div class="existing-photos-grid">
+                    {% for photo in portfolio_item.images.all %}
+                    <div class="existing-photo-item" data-image-id="{{ photo.id }}">
+                        <img src="{{ photo.image.url }}" alt="Фото портфолио">
+                        <button type="button" class="photo-delete-btn" onclick="deletePhoto(this, '{{ photo.id }}')" title="Удалить фото">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- Загрузка новых фото -->
+                <div class="photo-upload-area">
+                    <div class="photo-upload-placeholder">
+                        <i class="bi bi-camera"></i>
+                    </div>
+                    <label for="id_images" class="photo-upload-label">
+                        + ЗАГРУЗИТЬ ФОТО
+                    </label>
+                    <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
+                    <div id="photoPreview" class="photo-preview-container"></div>
+                    <small class="text-muted">
+                        {% if is_edit %}
+                            Добавление к существующим (лимит: 5 фото всего)
+                        {% else %}
+                            До 5 фотографий. Максимальный размер файла: 10 МБ.
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Название -->
+            <div class="portfolio-form-section">
+                <label class="portfolio-form-label">НАЗВАНИЕ (до 100 символов)</label>
+                <div class="char-counter">
+                    <span id="titleCounter">0/100</span>
+                </div>
+                {{ form.title }}
+                {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
+            </div>
+
+            <!-- Дата и Город -->
+            <div class="portfolio-form-row">
+                <div class="portfolio-form-section">
+                    <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
+                    {{ form.event_date }}
+                    {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
+                </div>
+                <div class="portfolio-form-section">
+                    <label class="portfolio-form-label">ГОРОД</label>
+                    {{ form.city }}
+                    {% if form.city.errors %}<ul class="errorlist">{{ form.city.errors }}</ul>{% endif %}
+                </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="portfolio-form-section">
+                <label class="portfolio-form-label">ОПИСАНИЕ</label>
+                <div class="char-counter">
+                    <span id="descCounter">0/1500</span>
+                </div>
+                {{ form.description }}
+                {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
+            </div>
+
+            <!-- Ссылки -->
+            <div class="portfolio-form-section">
+                <label class="portfolio-form-label">ССЫЛКИ НА СТАТЬИ, СМИ ИЛИ СОЦ СЕТИ</label>
+                {{ form.link_1 }}
+                {{ form.link_2 }}
+                {{ form.link_3 }}
+                {% if form.link_1.errors %}<ul class="errorlist">{{ form.link_1.errors }}</ul>{% endif %}
+                {% if form.link_2.errors %}<ul class="errorlist">{{ form.link_2.errors }}</ul>{% endif %}
+                {% if form.link_3.errors %}<ul class="errorlist">{{ form.link_3.errors }}</ul>{% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-portfolio-submit">
+                {% if is_edit %}СОХРАНИТЬ ИЗМЕНЕНИЯ{% else %}ДОБАВИТЬ{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Счётчик символов для названия
+    var titleInput = document.getElementById('id_title');
+    var titleCounter = document.getElementById('titleCounter');
+    if (titleInput && titleCounter) {
+        titleInput.addEventListener('input', function() {
+            titleCounter.textContent = this.value.length + '/100';
+        });
+        titleCounter.textContent = titleInput.value.length + '/100';
+    }
+
+    // Счётчик символов для описания
+    var descInput = document.getElementById('id_description');
+    var descCounter = document.getElementById('descCounter');
+    if (descInput && descCounter) {
+        descInput.addEventListener('input', function() {
+            descCounter.textContent = this.value.length + '/1500';
+        });
+        descCounter.textContent = descInput.value.length + '/1500';
+    }
+
+    // Предпросмотр фотографий
+    var photoInput = document.getElementById('id_images');
+    var photoPreview = document.getElementById('photoPreview');
+    if (photoInput && photoPreview) {
+        photoInput.addEventListener('change', function() {
+            photoPreview.innerHTML = '';
+            var files = this.files;
+            var currentCount = document.querySelectorAll('.existing-photo-item').length;
+            var maxAllowed = 5 - currentCount;
+            
+            if (files.length > maxAllowed) {
+                alert('Нельзя добавить ' + files.length + ' фото. Можно добавить только ' + maxAllowed + ' (лимит 5).');
+                this.value = '';
+                return;
+            }
+            
+            for (var i = 0; i < files.length; i++) {
+                (function(file, index) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var div = document.createElement('div');
+                        div.className = 'photo-preview-item';
+                        div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
+                            '<span class="photo-remove" data-index="' + index + '">✕</span>';
+                        photoPreview.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                })(files[i], i);
+            }
+        });
+    }
+});
+
+// Удаление фото
+function deletePhoto(btn, imageId) {
+    if (!confirm('Вы уверены, что хотите удалить это фото?')) {
+        return;
+    }
+    
+    var photoItem = btn.closest('.existing-photo-item');
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name="csrfmiddlewaretoken"]').value);
+    
+    fetch('/partner/portfolio/image/delete/' + imageId + '/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            photoItem.remove();
+        } else {
+            alert('Ошибка при удалении фото: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Произошла ошибка при удалении фото');
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

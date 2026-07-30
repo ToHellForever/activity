@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from core.models import Event, PartnerDocument, PayoutDetails, EventPackage, Tag
-from .models import ReportSchedule
+from .models import ReportSchedule, PortfolioItem
 
 User = get_user_model()
 
@@ -362,3 +362,65 @@ class PayoutDetailsForm(forms.ModelForm):
             "account_holder": "ФИО владельца счёта",
             "inn": "ИНН (необязательно)",
         }
+
+
+# === ФОРМЫ ПОРТФОЛИО ===
+
+
+class PortfolioItemForm(forms.ModelForm):
+    """Форма для создания/редактирования элемента портфолио."""
+
+    link_1 = forms.URLField(
+        required=False,
+        label="Ссылка 1",
+        widget=forms.URLInput(attrs={"placeholder": "https://...", "class": "form-control"}),
+    )
+    link_2 = forms.URLField(
+        required=False,
+        label="Ссылка 2",
+        widget=forms.URLInput(attrs={"placeholder": "https://...", "class": "form-control"}),
+    )
+    link_3 = forms.URLField(
+        required=False,
+        label="Ссылка 3",
+        widget=forms.URLInput(attrs={"placeholder": "https://...", "class": "form-control"}),
+    )
+
+    class Meta:
+        model = PortfolioItem
+        fields = ["title", "event_date", "city", "description"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control", "maxlength": "100"}),
+            "event_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "city": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"rows": 6, "maxlength": "1500", "class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            links = self.instance.links or []
+            for i, link in enumerate(links[:3]):
+                self.fields[f"link_{i+1}"].initial = link
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Собираем ссылки в список
+        links = []
+        for i in range(1, 4):
+            link = cleaned_data.get(f"link_{i}")
+            if link and link.strip():
+                links.append(link.strip())
+        cleaned_data["links"] = links
+        return cleaned_data
+
+    def save(self, commit=True, partner=None):
+        # Сначала создаём instance без links
+        instance = super().save(commit=False)
+        if partner:
+            instance.partner = partner
+        # links не входит в Meta.fields, поэтому его нужно установить до save()
+        instance.links = self.cleaned_data.get("links", [])
+        if commit:
+            instance.save()
+        return instance

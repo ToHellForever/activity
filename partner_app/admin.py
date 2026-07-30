@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import PartnerProfile, SalesReport, ReportSchedule
+from .models import PartnerProfile, SalesReport, ReportSchedule, PortfolioItem, PortfolioImage
 
 
 def _file_link(field_name, label):
@@ -70,3 +70,54 @@ class ReportScheduleAdmin(admin.ModelAdmin):
     list_display = ("partner", "frequency", "report_format", "is_active")
     list_filter = ("frequency", "is_active")
     search_fields = ("partner__email",)
+
+
+class PortfolioImageInline(admin.TabularInline):
+    """Вложенное отображение изображений портфолио."""
+    model = PortfolioImage
+    extra = 0
+    readonly_fields = ("preview",)
+    
+    def preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-width: 100px; border-radius: 4px;" />', obj.image.url)
+        return "—"
+    preview.short_description = "Превью"
+
+
+@admin.register(PortfolioItem)
+class PortfolioItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "partner", "event_date", "city", "image_count", "created_at")
+    list_filter = ("event_date",)
+    search_fields = ("title", "description", "partner__email")
+    readonly_fields = ("created_at", "updated_at", "image_count")
+    inlines = [PortfolioImageInline]
+    
+    fieldsets = (
+        ("Основная информация", {
+            "fields": ("partner", "title", "event_date", "city"),
+        }),
+        ("Описание", {
+            "fields": ("description",),
+        }),
+        ("Ссылки", {
+            "fields": ("links",),
+            "classes": ("collapse",),
+        }),
+        ("Метаданные", {
+            "fields": ("image_count", "created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+
+@admin.register(PortfolioImage)
+class PortfolioImageAdmin(admin.ModelAdmin):
+    list_display = ("portfolio", "preview", "order", "created_at")
+    readonly_fields = ("preview", "created_at")
+    
+    def preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-width: 80px; border-radius: 4px;" />', obj.image.url)
+        return "—"
+    preview.short_description = "Превью"

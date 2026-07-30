@@ -348,7 +348,7 @@
   font-size: clamp(0.7rem, 2vw, 1rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
-  margin-top: auto;
+  margin-top: 10px;
   width: 100%;
   display: block;
 }

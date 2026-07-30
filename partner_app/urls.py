@@ -47,4 +47,10 @@ urlpatterns = [
     path("change-password/", views.change_password, name="change_password"),
     path("remove_event_image/<int:image_id>/", views.remove_event_image, name="remove_event_image"),
     path("save_field/", views.save_field, name="save_field"),
+    # Портфолио
+    path("portfolio/", views.portfolio_list, name="portfolio_list"),
+    path("portfolio/create/", views.portfolio_create, name="portfolio_create"),
+    path("portfolio/edit/<int:item_id>/", views.portfolio_edit, name="portfolio_edit"),
+    path("portfolio/delete/<int:item_id>/", views.portfolio_delete, name="portfolio_delete"),
+    path("portfolio/image/delete/<int:image_id>/", views.portfolio_image_delete, name="portfolio_image_delete"),
 ]

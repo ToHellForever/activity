@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Портфолио</h1>
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
+        <div class="portfolio-header">
+            <a href="{% url 'partner:portfolio_create' %}" class="btn btn-primary btn-add-case">+ Добавить кейс</a>
+        </div>
+
+        {% if portfolio_items %}
+        <div class="portfolio-grid">
+            {% for item in portfolio_items %}
+            <div class="portfolio-card">
+                <div class="portfolio-card-image">
+                    {% if item.images.exists %}
+                        <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}">
+                    {% else %}
+                        <div class="portfolio-card-image-placeholder">
+                            <i class="bi bi-image"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="portfolio-card-content">
+                    <h3 class="portfolio-card-title">{{ item.title }}</h3>
+                    <div class="portfolio-card-meta">
+                        <span>{{ item.event_date|date:"d.m.Y" }} г.</span>
+                        <span>{{ item.city }}</span>
+                    </div>
+                    <p class="portfolio-card-desc">
+                        {{ item.description|truncatewords:15 }}
+                    </p>
+                    <div class="portfolio-card-actions">
+                        <a href="{% url 'partner:portfolio_edit' item.id %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                        <a href="{% url 'partner:portfolio_delete' item.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Вы уверены, что хотите удалить этот кейс?')">Удалить</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="portfolio-empty">
+            <p>У вас пока нет элементов портфолио.</p>
+            <a href="{% url 'partner:portfolio_create' %}" class="btn btn-primary">Добавить первый кейс</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -304,6 +304,112 @@ class PartnerProfile(models.Model):
         ordering = ["-created_at"]
 
 
+class PortfolioImage(models.Model):
+    """
+    Изображение в портфолио партнёра.
+    До 5 изображений на один элемент портфолио.
+    """
+    portfolio = models.ForeignKey(
+        "PortfolioItem",
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="Портфолио",
+    )
+    image = models.ImageField(
+        upload_to="portfolio_images/",
+        verbose_name="Изображение",
+        storage=None,  # storage = YandexImageProcessingStorage, устанавливается в apps.py
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+    )
+
+    class Meta:
+        verbose_name = "Изображение портфолио"
+        verbose_name_plural = "Изображения портфолио"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"Фото для '{self.portfolio.title}'"
+
+    def save(self, *args, **kwargs):
+        # Обработка (сжатие, водяной знак) выполняется на уровне хранилища
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Удаляет файл изображения при удалении записи."""
+        if self.image:
+            self.image.delete(save=False)
+        super().delete(*args, **kwargs)
+
+
+class PortfolioItem(models.Model):
+    """
+    Элемент портфолио партнёра (прошедшее мероприятие/кейс).
+    """
+    partner = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="portfolio_items",
+        limit_choices_to={"user_type": "partner"},
+        verbose_name="Партнёр",
+    )
+    title = models.CharField(
+        max_length=100,
+        verbose_name="Название",
+        help_text="До 100 символов",
+    )
+    event_date = models.DateField(
+        verbose_name="Дата проведения",
+    )
+    city = models.CharField(
+        max_length=100,
+        verbose_name="Город",
+    )
+    description = models.TextField(
+        max_length=1500,
+        verbose_name="Описание",
+        help_text="До 1500 символов",
+    )
+    links = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Ссылки",
+        help_text="До 3 ссылок (статьи, СМИ, соцсети)",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления",
+    )
+
+    class Meta:
+        verbose_name = "Элемент портфолио"
+        verbose_name_plural = "Элементы портфолио"
+        ordering = ["-event_date"]
+
+    def __str__(self):
+        return f"{self.title} ({self.event_date})"
+
+    @property
+    def image_count(self):
+        """Количество изображений в элементе портфолио."""
+        return self.images.count()
+
+    @property
+    def valid_links(self):
+        """Возвращает только валидные (не пустые) ссылки."""
+        return [link for link in self.links if link and link.strip()]
+
+
 class SalesReport(models.Model):
     """
     Модель для хранения сгенерированных отчётов о продажах.

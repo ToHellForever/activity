@@ -25,6 +25,10 @@ class PartnerAppConfig(AppConfig):
                 subdirectory='partner_video'
             )
             
+            # Применяем хранилище к полю image модели PortfolioImage
+            from partner_app.models import PortfolioImage
+            PortfolioImage._meta.get_field('image').storage = YandexImageProcessingStorage()
+            
         except ImportError as e:
             import logging
             logger = logging.getLogger(__name__)
