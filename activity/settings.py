@@ -258,6 +258,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.check_and_apply_scheduled_package_changes",
         "schedule": 3600.0,
     },
+    "manage-event-statuses-every-5-minutes": {
+        "task": "core.tasks.manage_event_statuses",
+        "schedule": 300.0,
+    },
 }
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")

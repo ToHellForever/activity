@@ -447,6 +447,20 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         verbose_name="Длительность (ЧЧ:ММ)",
         help_text="Формат: ЧЧ:ММ (например, 02:30 для 2 часов 30 минут)",
     )
+
+    @property
+    def ends_at(self):
+        """Вычисляет время окончания мероприятия на основе даты и длительности."""
+        if not self.duration or not self.date_time:
+            return self.date_time
+        try:
+            parts = self.duration.split(":")
+            hours = int(parts[0])
+            minutes = int(parts[1]) if len(parts) > 1 else 0
+            return self.date_time + timezone.timedelta(hours=hours, minutes=minutes)
+        except (ValueError, IndexError):
+            return self.date_time
+
     commission_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -500,6 +514,15 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         return self.title
 
     def save(self, *args, **kwargs):
+        # Автоматически завершаем прошедшие мероприятия
+        if self.pk and self.status == "active":
+            try:
+                old = Event.objects.get(pk=self.pk)
+                if old.status == "active" and old.date_time < timezone.now():
+                    self.status = "completed"
+            except Event.DoesNotExist:
+                pass
+        
         # Сохраняем старые значения для проверки замены файлов
         old_image = None
         old_video_url = None

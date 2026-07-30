@@ -50,8 +50,9 @@ logger = logging.getLogger(__name__)
 
 def landing_page(request):
     # Получаем все активные мероприятия с фильтрами
+    now = timezone.now()
     base_events = (
-        Event.objects.filter(status="active")
+        Event.objects.filter(status="active", date_time__gte=now)
         .select_related("organizer", "category")
         .prefetch_related("images")
         .order_by("date_time")
@@ -538,8 +539,9 @@ def update_ticket_status(request, ticket_id):
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
 
 def event_list(request):
+    now = timezone.now()
     active_events = (
-        Event.objects.filter(status="active")
+        Event.objects.filter(status="active", date_time__gte=now)
         .select_related("organizer", "category", "format")
         .prefetch_related("images", "tags")
         .order_by("date_time")
@@ -616,9 +618,10 @@ def event_list(request):
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     tickets = event.tickets.all()
+    now = timezone.now()
     
     # Получаем похожие мероприятия (максимально похожие, fallback на случайные)
-    base_events = Event.objects.filter(status='active').exclude(id=event.id)
+    base_events = Event.objects.filter(status='active', date_time__gte=now).exclude(id=event.id)
     similar_events = []  # Используем список для гибкого объединения результатов
 
     # 1. Строгий поиск (совпадение по ВСЕМ доступным параметрам)

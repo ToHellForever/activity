@@ -26,12 +26,19 @@ function closeBuyPackageModal() {
     document.getElementById('buy-package-modal').style.display = 'none';
 }
 
-document.getElementById('payment-method').addEventListener('change', function() {
-    document.getElementById('invoice-admin-field').style.display =
-        this.value === 'invoice' ? 'block' : 'none';
-});
+var paymentMethodSelect = document.getElementById('payment-method');
+if (paymentMethodSelect) {
+    paymentMethodSelect.addEventListener('change', function() {
+        var invoiceField = document.getElementById('invoice-admin-field');
+        if (invoiceField) {
+            invoiceField.style.display = this.value === 'invoice' ? 'block' : 'none';
+        }
+    });
+}
 
-document.getElementById('buy-package-form').addEventListener('submit', function(e) {
+var buyForm = document.getElementById('buy-package-form');
+if (buyForm) {
+    buyForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
     const packageId = formData.get('package_id');
@@ -97,7 +104,8 @@ document.getElementById('buy-package-form').addEventListener('submit', function(
         .catch(err => alert('Ошибка: ' + err))
         .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
     }
-});
+    });
+}
 
 // Глобальные переменные для модального окна смены пакета
 let pendingPackageChange = {
@@ -183,16 +191,22 @@ function removeFile(type) {
 }
 
 // Показываем имя файла при выборе
-document.getElementById('id_logo').addEventListener('change', function() {
-    if (this.files.length > 0) {
-        const btn = this.closest('.form-group').querySelector('.file-upload-btn');
-        btn.textContent = 'Изменить';
-    }
-});
+var logoInput = document.getElementById('id_logo');
+if (logoInput) {
+    logoInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            var btn = this.closest('.form-group').querySelector('.file-upload-btn');
+            if (btn) btn.textContent = 'Изменить';
+        }
+    });
+}
 
-document.getElementById('id_video_business_card').addEventListener('change', function() {
-    if (this.files.length > 0) {
-        const btn = this.closest('.form-group').querySelector('.file-upload-btn');
-        btn.textContent = 'Изменить';
-    }
-});
+var videoInput = document.getElementById('id_video_business_card');
+if (videoInput) {
+    videoInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            var btn = this.closest('.form-group').querySelector('.file-upload-btn');
+            if (btn) btn.textContent = 'Изменить';
+        }
+    });
+}

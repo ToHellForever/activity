@@ -516,6 +516,50 @@ def generate_payment_link(order, request=None):
     return full_url
 
 @shared_task
+def manage_event_statuses():
+    """
+    Задача Celery для автоматического управления статусами мероприятий.
+    1. Если наступило время начала мероприятия → ставим статус "active"
+    2. Если время окончания (дата + длительность) прошло → ставим статус "completed"
+    """
+    from core.models import Event
+    from django.utils import timezone
+
+    now = timezone.now()
+    updated_count = 0
+
+    # 1. Активируем мероприятия, которые должны начаться
+    events_to_activate = Event.objects.filter(
+        status__in=["on_moderation", "active"],
+        date_time__lte=now,
+    )
+    for event in events_to_activate:
+        if event.status != "active":
+            event.status = "active"
+            event.save(update_fields=["status"])
+            logger.info(f"Мероприятие {event.title} активировано (наступило время начала)")
+            updated_count += 1
+
+    # 2. Завершаем прошедшие мероприятия
+    events_to_complete = Event.objects.filter(
+        status="active",
+    )
+    for event in events_to_complete:
+        ends_at = event.ends_at
+        if ends_at and now >= ends_at:
+            event.status = "completed"
+            event.save(update_fields=["status"])
+            logger.info(
+                f"Мероприятие {event.title} завершено "
+                f"(дата: {event.date_time}, окончание: {ends_at})"
+            )
+            updated_count += 1
+
+    logger.info(f"manage_event_statuses: обновлено {updated_count} мероприятий")
+    return f"Updated {updated_count} events"
+
+
+@shared_task
 def check_and_apply_scheduled_package_changes():
     """
     Задача Celery для проверки и применения запланированных изменений пакетов.
