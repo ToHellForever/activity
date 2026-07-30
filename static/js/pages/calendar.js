@@ -10,6 +10,7 @@ class CustomCalendar {
         this.currentMonth = new Date();
         this.displayDateFormat = options.displayDateFormat || 'dd.mm.yyyy';
         this.valueDateFormat = options.valueDateFormat || 'yyyy-mm-dd';
+        this.allowPastDates = options.allowPastDates === true;
         this.input.dataset.rawValue = '';
         
         if (!this.input || !this.calendar) {
@@ -265,10 +266,10 @@ class CustomCalendar {
             let classes = 'calendar-day';
             if (isToday) classes += ' calendar-day-today';
             if (isSelected) classes += ' calendar-day-selected';
-            if (isPast) classes += ' calendar-day-disabled';
+            if (isPast && !this.allowPastDates) classes += ' calendar-day-disabled';
 
-            if (!isPast) {
-                grid.innerHTML += `<div class="${classes}" data-date="${date.getFullYear()}-${date.getMonth()}-${date.day}">${day}</div>`;
+            if (!isPast || this.allowPastDates) {
+                grid.innerHTML += `<div class="${classes}" data-date="${date.getFullYear()}-${date.getMonth()}-${date.getDate()}">${day}</div>`;
             } else {
                 grid.innerHTML += `<div class="${classes}">${day}</div>`;
             }

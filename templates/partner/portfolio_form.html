@@ -27,7 +27,7 @@
                         <div class="photo-container">
                             <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
                         </div>
-                        <button type="button" class="photo-delete-btn" onclick="markForDeletion(this, '{{ photo.id }}')" title="Удалить фото">
+                        <button type="button" class="photo-delete-btn" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -136,7 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
         null,
         {
             displayDateFormat: 'dd.mm.yyyy',
-            valueDateFormat: 'yyyy-mm-dd'
+            valueDateFormat: 'yyyy-mm-dd',
+            allowPastDates: true
         }
     );
 
@@ -230,29 +231,52 @@ function removePreview(btn) {
 }
 
 // Пометка фото для удаления
-function markForDeletion(btn, imageId) {
-    if (!confirm('Вы уверены, что хотите удалить это фото?')) {
-        return;
+
+// Удаление фото сразу через AJAX (без подтверждения)
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
+    return cookieValue;
+}
 
-    var photoItem = btn.closest('.existing-photo-item');
-    var deletedIdsInput = document.getElementById('deleted_image_ids');
-    var currentIds = deletedIdsInput.value.split(',').filter(function(id) { return id; });
+function deletePhotoAjax(btn) {
+    var url = btn.dataset.deleteUrl;
+    if (!url) return;
+    var csrftoken = getCookie('csrftoken');
 
-    // Добавляем ID в список удаляемых
-    if (!currentIds.includes(imageId)) {
-        currentIds.push(imageId);
-        deletedIdsInput.value = currentIds.join(',');
-
-        // Визуально помечаем фото как удаленное
-        photoItem.style.opacity = '0.5';
-        photoItem.style.position = 'relative';
-        btn.style.display = 'none';
-        var deletedLabel = document.createElement('div');
-        deletedLabel.className = 'photo-deleted-label';
-        deletedLabel.textContent = 'Удалено';
-        photoItem.appendChild(deletedLabel);
-    }
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(function(response) {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.status === 'success') {
+            var photoItem = btn.closest('.existing-photo-item');
+            if (photoItem) photoItem.remove();
+        } else {
+            alert(data.message || 'Ошибка при удалении фото');
+        }
+    })
+    .catch(function(err) {
+        console.error('Delete photo error', err);
+        alert('Не удалось удалить фото. Попробуйте ещё раз.');
+    });
 }
 </script>
 {% endblock %}
