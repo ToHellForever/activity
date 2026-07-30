@@ -230,7 +230,7 @@
                          ×
                      </button>
                 </div>
-                {% elif form.instance.video_processing_status in ['pending', 'processing'] %}
+                {% elif form.instance.video_processing_status == 'pending' or form.instance.video_processing_status == 'processing' %}
                 <div class="media-preview video-processing-container">
                     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                         <span class="visually-hidden">Обработка видео...</span>
@@ -886,7 +886,9 @@ function updatePhotosCounterAfterDeletion() {
     });
 
     // Автоматическая проверка статуса обработки видео
-    {% if form.instance.pk and form.instance.video_url and form.instance.video_processing_status in ['pending', 'processing'] %}
+    {% with status=form.instance.video_processing_status %}
+    {% if status == 'pending' or status == 'processing' %}
+    {% if form.instance.pk and form.instance.video_url %}
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const eventId = {{ form.instance.id }};
@@ -926,5 +928,7 @@ function updatePhotosCounterAfterDeletion() {
     });
     </script>
     {% endif %}
+    {% endif %}
+    {% endwith %}
 </script>
 {% endblock %}

@@ -510,6 +510,10 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     longitude = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True, default=None,verbose_name="Широта",
     )
+    requires_strict_moderation = models.BooleanField(
+        default=False,
+        verbose_name="Требует строгой модерации",
+    )
     def __str__(self):
         return self.title
 
