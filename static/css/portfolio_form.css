@@ -2,14 +2,11 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
 }
 .existing-photo-item {
   position: relative;
 }
 .existing-photo-item .photo-container {
-  width: 120px;
-  height: 80px;
   overflow: hidden;
 }
 .existing-photo-item .portfolio-photo {
@@ -17,6 +14,12 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.existing-photo-item {
+  width: 180px;
+  height: 130px;
+  position: relative;
+  border-radius: 20px;
 }
 .raphael_photo {
   background: rgba(217, 217, 217, 1);
