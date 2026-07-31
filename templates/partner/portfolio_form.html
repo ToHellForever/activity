@@ -81,7 +81,6 @@
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">
                         НАЗВАНИЕ (до 100 символов)
-                        <span id="titleCounter" class="char-counter">0/100</span>
                     </label>
                     {{ form.title }}
                     {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
@@ -129,8 +128,7 @@
                 <!-- Описание -->
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">
-                        ОПИСАНИЕ
-                        <span id="descCounter" class="char-counter">0/1500</span>
+                        ОПИСАНИЕ (до 1000 символов)
                     </label>
                     {{ form.description }}
                     {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
@@ -163,13 +161,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
+    var displayInput = document.getElementById('id_event_date_display');
+    var hiddenInput = document.getElementById('id_event_date');
+    var form = document.getElementById('portfolioForm');
+
     // 1. Инициализация вашего родного календаря
-    // Передаем 3 аргумента: ID видимого инпута, ID попапа, ID скрытого инпута
     if (typeof CustomCalendar !== 'undefined') {
         window.portfolioCalendar = new CustomCalendar(
-            'id_event_date_display', // видимый для пользователя (ДД.ММ.ГГГГ)
-            'eventDateCalendar',     // попап календаря
-            'id_event_date',         // скрытый для Django (ГГГГ-ММ-ДД)
+            'id_event_date_display',
+            'eventDateCalendar',
+            'id_event_date', // на случай, если календарь это поддерживает
             {
                 displayDateFormat: 'dd.mm.yyyy',
                 valueDateFormat: 'yyyy-mm-dd',
@@ -180,7 +181,50 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Скрипт CustomCalendar не загружен!");
     }
 
-    // 2. Счётчик символов для названия
+    // Функция конвертации ДД.ММ.ГГГГ -> ГГГГ-ММ-ДД
+    function convertToServerFormat(dateStr) {
+        if (!dateStr) return '';
+        // Убираем лишние пробелы
+        dateStr = dateStr.trim();
+        // Проверяем формат ДД.ММ.ГГГГ
+        var parts = dateStr.split('.');
+        if (parts.length === 3) {
+            var day = parts[0].padStart(2, '0');
+            var month = parts[1].padStart(2, '0');
+            var year = parts[2];
+            return year + '-' + month + '-' + day;
+        }
+        return dateStr; // если формат уже другой
+    }
+
+    // 2. Синхронизация: при любом изменении видимого поля обновляем скрытое
+    if (displayInput && hiddenInput) {
+        // Отслеживаем изменения (календарь меняет value видимого поля)
+        displayInput.addEventListener('change', function() {
+            hiddenInput.value = convertToServerFormat(displayInput.value);
+        });
+        
+        // На всякий случай отслеживаем клики по календарю
+        var calendarPopup = document.getElementById('eventDateCalendar');
+        if (calendarPopup) {
+            calendarPopup.addEventListener('click', function() {
+                setTimeout(function() {
+                    hiddenInput.value = convertToServerFormat(displayInput.value);
+                }, 50);
+            });
+        }
+    }
+
+    // 3. ГЛАВНОЕ: Синхронизация перед отправкой формы
+    if (form && displayInput && hiddenInput) {
+        form.addEventListener('submit', function(e) {
+            hiddenInput.value = convertToServerFormat(displayInput.value);
+        });
+    }
+
+    // ---------- Дальше идёт ваш остальной код без изменений ----------
+
+    // Счётчик символов для названия
     var titleInput = document.getElementById('id_title');
     var titleCounter = document.getElementById('titleCounter');
     if (titleInput && titleCounter) {
@@ -190,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         titleCounter.textContent = titleInput.value.length + '/100';
     }
 
-    // 3. Счётчик символов для описания
+    // Счётчик символов для описания
     var descInput = document.getElementById('id_description');
     var descCounter = document.getElementById('descCounter');
     if (descInput && descCounter) {
@@ -200,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
         descCounter.textContent = descInput.value.length + '/1500';
     }
 
-    // 4. Предпросмотр новых фотографий
+    // Предпросмотр новых фотографий
     var photoInput = document.getElementById('id_images');
     var photoPreview = document.getElementById('photoPreview');
 

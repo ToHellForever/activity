@@ -10,9 +10,6 @@
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-        <div class="portfolio-header">
-            <a href="{% url 'partner:portfolio_create' %}" class="btn btn-primary btn-add-case">+ Добавить кейс</a>
-        </div>
 
         {% if portfolio_items %}
         <div class="portfolio-grid">
@@ -30,25 +27,40 @@
                 <div class="portfolio-card-content">
                     <h3 class="portfolio-card-title">{{ item.title }}</h3>
                     <div class="portfolio-card-meta">
-                        <span>{{ item.event_date|date:"d.m.Y" }} г.</span>
-                        <span>{{ item.city }}</span>
+                        {{ item.event_date|date:"d.m.Y" }} г. {{ item.city }}
                     </div>
                     <p class="portfolio-card-desc">
-                        {{ item.description|truncatewords:15 }}
+                        {{ item.description|truncatewords:30 }}
                     </p>
-                    <div class="portfolio-card-actions">
-                        <a href="{% url 'partner:portfolio_edit' item.id %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
-                        <a href="{% url 'partner:portfolio_delete' item.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Вы уверены, что хотите удалить этот кейс?')">Удалить</a>
-                    </div>
+                </div>
+                <div class="portfolio-card-actions">
+                    <a href="{% url 'partner:portfolio_edit' item.id %}" class="action-btn" title="Редактировать">
+                        <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <a href="{% url 'partner:portfolio_delete' item.id %}" class="action-btn" title="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этот кейс?')">
+                        <i class="bi bi-trash-fill"></i>
+                    </a>
                 </div>
             </div>
             {% endfor %}
+            <div class="portfolio-header" style="display: flex; justify-content: center; width: 100%; padding: 20px 0; box-sizing: border-box;">
+                <a href="{% url 'partner:portfolio_create' %}" class="btn-add-case">+ Добавить кейс</a>
+            </div>
         </div>
         {% else %}
-        <div class="portfolio-empty">
-            <p>У вас пока нет элементов портфолио.</p>
-            <a href="{% url 'partner:portfolio_create' %}" class="btn btn-primary">Добавить первый кейс</a>
-        </div>
+            <div class="portfolio-empty" style="
+                display: flex;
+                flex-direction: column; /* Главное изменение */
+                align-items: center;    /* Центрирует элементы по горизонтали внутри колонки */
+                justify-content: center; 
+                width: 100%; 
+                padding: 40px 20px; /* Увеличим вертикальные паддинги для пустого состояния */
+                box-sizing: border-box;
+                text-align: center;   /* Центрируем сам текст внутри тега <p> */
+            ">
+                <p style="margin-bottom: 20px;">У вас пока нет элементов портфолио.</p>
+                <a href="{% url 'partner:portfolio_create' %}" class="btn-add-case">Добавить первый кейс</a>
+            </div>
         {% endif %}
     </div>
 </div>
