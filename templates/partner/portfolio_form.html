@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <link rel="stylesheet" href="{% static 'css/portfolio_form.css' %}">
 {% endblock %}
@@ -52,9 +51,9 @@
 
                     <!-- Загрузка новых фото -->
                     <div class="photo-upload-area">
-                        <!-- Иконка камеры (скрывается, если есть ХОТЯ БЫ одно фото — новое или старое) -->
+                        <!-- Иконка камеры -->
                         <div class="photo-upload-placeholder" id="photoUploadPlaceholder" onclick="document.getElementById('id_images').click();">
-                            <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo'>
+                            <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo' style="cursor: pointer; width: 48px; height: 48px;">
                         </div>
 
                         <!-- Контейнер для отображения превью новых фото -->
@@ -93,9 +92,29 @@
                     <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 25%; max-width: 25%;">
                         <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
                         <div class="input-with-button date-container" style="position: relative; width: 100%;">
-                            <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" 
-                                   value="{% if form.event_date.value %}{{ form.event_date.value|date:'Y-m-d' }}{% endif %}" 
-                                   placeholder="Выберите дату" style="width: 100%; box-sizing: border-box; background-color: #fff; cursor: pointer;">
+                            
+                            <!-- Видимый инпут (читает дату объекта в формате ДД.ММ.ГГГГ) -->
+                            <input type="text" class="form-control filter-input" id="id_event_date_display" 
+                                   value="{% if portfolio_item and portfolio_item.event_date %}{{ portfolio_item.event_date|date:'d.m.Y' }}{% endif %}" 
+                                   placeholder="ДД.ММ.ГГГГ" readonly style="width: 100%; box-sizing: border-box; background-color: #fff; cursor: pointer;">
+                            
+                            <!-- Скрытый инпут (отправляет данные в Django в формате ГГГГ-ММ-ДД) -->
+                            <input type="hidden" name="event_date" id="id_event_date" 
+                                   value="{% if portfolio_item and portfolio_item.event_date %}{{ portfolio_item.event_date|date:'Y-m-d' }}{% endif %}">
+                            
+                            <!-- Ваш родной календарь -->
+                            <div class="calendar-popup" id="eventDateCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
                         </div>
                         {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                     </div>
@@ -138,21 +157,28 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Подключение Flatpickr и русской локализации -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+<!-- Ваш скрипт календаря (должен быть подключен) -->
+<script src="{% static 'js/pages/calendar.js' %}"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Инициализация календаря Flatpickr
-    flatpickr("#id_event_date", {
-        locale: "ru",
-        altInput: true,               // Красивый формат для пользователя (25.10.2023)
-        altFormat: "d.m.Y",           
-        dateFormat: "Y-m-d",          // Формат для отправки в базу данных Django (2023-10-25)
-        allowInput: false,
-        disableMobile: "true"
-    });
+    
+    // 1. Инициализация вашего родного календаря
+    // Передаем 3 аргумента: ID видимого инпута, ID попапа, ID скрытого инпута
+    if (typeof CustomCalendar !== 'undefined') {
+        window.portfolioCalendar = new CustomCalendar(
+            'id_event_date_display', // видимый для пользователя (ДД.ММ.ГГГГ)
+            'eventDateCalendar',     // попап календаря
+            'id_event_date',         // скрытый для Django (ГГГГ-ММ-ДД)
+            {
+                displayDateFormat: 'dd.mm.yyyy',
+                valueDateFormat: 'yyyy-mm-dd',
+                allowPastDates: true
+            }
+        );
+    } else {
+        console.error("Скрипт CustomCalendar не загружен!");
+    }
 
     // 2. Счётчик символов для названия
     var titleInput = document.getElementById('id_title');
@@ -201,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
                             '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
                         photoPreview.appendChild(div);
-                        updatePlaceholderVisibility(); // Обновляем видимость камеры
+                        updatePlaceholderVisibility();
                     };
                     reader.readAsDataURL(file);
                 })(files[i], i);
@@ -210,7 +236,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Первая инициализация видимости при загрузке страницы
     updatePlaceholderVisibility();
 });
 
@@ -219,18 +244,15 @@ function updatePlaceholderVisibility() {
     var placeholder = document.getElementById('photoUploadPlaceholder');
     var photoInput = document.getElementById('id_images');
     
-    // Считаем новые выбранные файлы
     var newFilesCount = (photoInput && photoInput.files) ? photoInput.files.length : 0;
-    // Считаем уже сохраненные на сервере фото на странице
     var existingPhotosCount = document.querySelectorAll('.existing-photo-item').length;
-    
     var totalPhotos = newFilesCount + existingPhotosCount;
 
     if (placeholder) {
         if (totalPhotos > 0) {
-            placeholder.style.display = 'none'; // Скрываем иконку камеры, если фото есть
+            placeholder.style.display = 'none';
         } else {
-            placeholder.style.display = 'flex'; // Показываем, если всё удалено
+            placeholder.style.display = 'flex';
         }
     }
 }
@@ -252,7 +274,6 @@ function removePreview(btn) {
         }
         photoInput.files = dt.files;
 
-        // Перерисовываем превью новых файлов
         previewContainer.innerHTML = '';
         var newFiles = photoInput.files;
         for (var j = 0; j < newFiles.length; j++) {
@@ -270,7 +291,6 @@ function removePreview(btn) {
         }
     }
     
-    // Проверяем видимость блока с камерой после удаления превью
     setTimeout(updatePlaceholderVisibility, 50);
 }
 
@@ -312,8 +332,8 @@ function deletePhotoAjax(btn) {
         if (data.status === 'success') {
             var photoItem = btn.closest('.existing-photo-item');
             if (photoItem) {
-                photoItem.remove(); // Удаляем элемент из DOM
-                updatePlaceholderVisibility(); // Сразу перепроверяем, нужно ли показать камеру
+                photoItem.remove();
+                updatePlaceholderVisibility();
             }
         } else {
             alert(data.message || 'Ошибка при удалении фото');
@@ -326,4 +346,3 @@ function deletePhotoAjax(btn) {
 }
 </script>
 {% endblock %}
-```
