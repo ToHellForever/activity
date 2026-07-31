@@ -15,10 +15,17 @@
         <form method="post" enctype="multipart/form-data" class="portfolio-form" id="portfolioForm">
             {% csrf_token %}
 
-            <!-- Вывод общих ошибок формы при наличии -->
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {{ form.non_field_errors }}
+            <!-- Вывод ошибок формы -->
+            {% if form.errors or form.non_field_errors %}
+                <div class="alert alert-danger" style="color: red; margin-bottom: 15px;">
+                    {% if form.non_field_errors %}
+                        {{ form.non_field_errors }}
+                    {% endif %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <strong>{{ field.label }}:</strong> {{ field.errors|striptags }}<br>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             {% endif %}
 
@@ -28,32 +35,32 @@
                     <label class="portfolio-form-label">ФОТОГРАФИИ</label>
 
                     <!-- Существующие фото (для редактирования) -->
-                    {% if is_edit and portfolio_item and portfolio_item.images.exists %}
                     <div class="existing-photos-grid" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                        {% for photo in portfolio_item.images.all %}
-                        <div class="existing-photo-item" data-image-id="{{ photo.id }}" style="position: relative; width: 100px; height: 100px;">
-                            <div class="photo-container" style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
-                                <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% if is_edit and portfolio_item and portfolio_item.images.exists %}
+                            {% for photo in portfolio_item.images.all %}
+                            <div class="existing-photo-item" data-image-id="{{ photo.id }}" style="position: relative; width: 100px; height: 100px;">
+                                <div class="photo-container" style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
+                                    <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <button type="button" class="photo-delete-btn photo-remove" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
+                                    ✕
+                                </button>
                             </div>
-                            <button type="button" class="photo-delete-btn photo-remove" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
-                                ✕
-                            </button>
-                        </div>
-                        {% endfor %}
+                            {% endfor %}
+                        {% endif %}
                     </div>
-                    {% endif %}
 
                     <!-- Загрузка новых фото -->
                     <div class="photo-upload-area">
-                        <!-- Иконка камеры (скрывается, когда есть добавленные фото) -->
+                        <!-- Иконка камеры (скрывается, если есть ХОТЯ БЫ одно фото — новое или старое) -->
                         <div class="photo-upload-placeholder" id="photoUploadPlaceholder" onclick="document.getElementById('id_images').click();">
-                            <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo' style="cursor: pointer; width: 48px; height: 48px;">
+                            <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo'>
                         </div>
 
                         <!-- Контейнер для отображения превью новых фото -->
                         <div id="photoPreview" class="photo-preview-container"></div>
 
-                        <label for="id_images" class="photo-upload-label" style="cursor: pointer; display: inline-block; margin-top: 5px;">
+                        <label for="id_images" class="photo-upload-label" style="cursor: pointer; display: inline-block; margin-top: 5px; font-weight: bold;">
                             + ЗАГРУЗИТЬ ФОТО
                         </label>
                         <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
@@ -75,6 +82,7 @@
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">
                         НАЗВАНИЕ (до 100 символов)
+                        <span id="titleCounter" class="char-counter">0/100</span>
                     </label>
                     {{ form.title }}
                     {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
@@ -87,19 +95,7 @@
                         <div class="input-with-button date-container" style="position: relative; width: 100%;">
                             <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" 
                                    value="{% if form.event_date.value %}{{ form.event_date.value|date:'Y-m-d' }}{% endif %}" 
-                                   placeholder="Выберите дату">
-                                                            <div class="calendar-popup" id="eventDateCalendar">
-                                <div class="calendar-header">
-                                    <button type="button" class="calendar-prev-month">&lt;</button>
-                                    <span class="calendar-month-year"></span>
-                                    <button type="button" class="calendar-next-month">&gt;</button>
-                                </div>
-                                <div class="calendar-grid"></div>
-                                <div class="calendar-footer">
-                                    <button type="button" class="calendar-clear">Очистить</button>
-                                    <button type="button" class="calendar-close">Закрыть</button>
-                                </div>
-                            </div>
+                                   placeholder="Выберите дату" style="width: 100%; box-sizing: border-box; background-color: #fff; cursor: pointer;">
                         </div>
                         {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                     </div>
@@ -115,6 +111,7 @@
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">
                         ОПИСАНИЕ
+                        <span id="descCounter" class="char-counter">0/1500</span>
                     </label>
                     {{ form.description }}
                     {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
@@ -150,9 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 1. Инициализация календаря Flatpickr
     flatpickr("#id_event_date", {
         locale: "ru",
-        altInput: true,               // Показывает красивый формат пользователю
-        altFormat: "d.m.Y",           // Формат для отображения (25.10.2023)
-        dateFormat: "Y-m-d",          // Формат, отправляемый в Django (2023-10-25)
+        altInput: true,               // Красивый формат для пользователя (25.10.2023)
+        altFormat: "d.m.Y",           
+        dateFormat: "Y-m-d",          // Формат для отправки в базу данных Django (2023-10-25)
         allowInput: false,
         disableMobile: "true"
     });
@@ -177,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
         descCounter.textContent = descInput.value.length + '/1500';
     }
 
-    // 4. Предпросмотр фотографий и скрытие/показ иконки камеры
+    // 4. Предпросмотр новых фотографий
     var photoInput = document.getElementById('id_images');
     var photoPreview = document.getElementById('photoPreview');
 
@@ -204,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
                             '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
                         photoPreview.appendChild(div);
-                        updatePlaceholderVisibility();
+                        updatePlaceholderVisibility(); // Обновляем видимость камеры
                     };
                     reader.readAsDataURL(file);
                 })(files[i], i);
@@ -213,24 +210,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Первая инициализация видимости при загрузке страницы
     updatePlaceholderVisibility();
 });
 
-// Функция переключения видимости значка камеры
+// Функция скрытия/показа квадрата с камерой
 function updatePlaceholderVisibility() {
     var placeholder = document.getElementById('photoUploadPlaceholder');
     var photoInput = document.getElementById('id_images');
     
-    if (placeholder && photoInput) {
-        if (photoInput.files && photoInput.files.length > 0) {
-            placeholder.style.display = 'none';
+    // Считаем новые выбранные файлы
+    var newFilesCount = (photoInput && photoInput.files) ? photoInput.files.length : 0;
+    // Считаем уже сохраненные на сервере фото на странице
+    var existingPhotosCount = document.querySelectorAll('.existing-photo-item').length;
+    
+    var totalPhotos = newFilesCount + existingPhotosCount;
+
+    if (placeholder) {
+        if (totalPhotos > 0) {
+            placeholder.style.display = 'none'; // Скрываем иконку камеры, если фото есть
         } else {
-            placeholder.style.display = 'flex';
+            placeholder.style.display = 'flex'; // Показываем, если всё удалено
         }
     }
 }
 
-// Удаление выбранного preview фото
+// Удаление выбранного preview (нового) фото
 function removePreview(btn) {
     var index = parseInt(btn.getAttribute('data-index'), 10);
     var photoInput = document.getElementById('id_images');
@@ -247,7 +252,7 @@ function removePreview(btn) {
         }
         photoInput.files = dt.files;
 
-        // Перерисовываем превью
+        // Перерисовываем превью новых файлов
         previewContainer.innerHTML = '';
         var newFiles = photoInput.files;
         for (var j = 0; j < newFiles.length; j++) {
@@ -265,11 +270,11 @@ function removePreview(btn) {
         }
     }
     
-    // Проверяем, нужно ли вернуть иконку камеры
+    // Проверяем видимость блока с камерой после удаления превью
     setTimeout(updatePlaceholderVisibility, 50);
 }
 
-// Вспомогательная функция получения CSRF токена
+// Получение CSRF-токена из cookie
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -285,7 +290,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// AJAX удаление уже сохраненных фото (при редактировании)
+// AJAX-удаление ранее сохраненных фотографий из БД
 function deletePhotoAjax(btn) {
     var url = btn.dataset.deleteUrl;
     if (!url) return;
@@ -300,21 +305,25 @@ function deletePhotoAjax(btn) {
         credentials: 'same-origin'
     })
     .then(function(response) {
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Ошибка сети');
         return response.json();
     })
     .then(function(data) {
         if (data.status === 'success') {
             var photoItem = btn.closest('.existing-photo-item');
-            if (photoItem) photoItem.remove();
+            if (photoItem) {
+                photoItem.remove(); // Удаляем элемент из DOM
+                updatePlaceholderVisibility(); // Сразу перепроверяем, нужно ли показать камеру
+            }
         } else {
             alert(data.message || 'Ошибка при удалении фото');
         }
     })
     .catch(function(err) {
-        console.error('Delete photo error', err);
+        console.error('Ошибка удаления фото:', err);
         alert('Не удалось удалить фото. Попробуйте ещё раз.');
     });
 }
 </script>
 {% endblock %}
+```
