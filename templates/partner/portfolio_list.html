@@ -33,14 +33,14 @@
                         {{ item.description|truncatewords:30 }}
                     </p>
                 </div>
-                <div class="portfolio-card-actions">
-                    <a href="{% url 'partner:portfolio_edit' item.id %}" class="action-btn" title="Редактировать">
-                        <i class="bi bi-pencil-fill"></i>
-                    </a>
-                    <a href="{% url 'partner:portfolio_delete' item.id %}" class="action-btn" title="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этот кейс?')">
-                        <i class="bi bi-trash-fill"></i>
-                    </a>
-                </div>
+                    <div class="portfolio-card-actions">
+                        <a href="{% url 'partner:portfolio_edit' item.id %}" class="action-btn action-btn--edit" title="Редактировать">
+                            <img src="/media/icon/tdesign_edit-filled.svg" alt="Редактировать" class="inner-icon" style='width:40px'>
+                        </a>
+                        <a href="{% url 'partner:portfolio_delete' item.id %}" class="action-btn action-btn--delete" title="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этот кейс?')">
+                            <img src="/media/icon/mdi_delete.svg" alt="Удалить" class="inner-icon" inner-icon style='width:40px'>
+                        </a>
+                    </div>
             </div>
             {% endfor %}
             <div class="portfolio-header" style="display: flex; justify-content: center; width: 100%; padding: 20px 0; box-sizing: border-box;">
