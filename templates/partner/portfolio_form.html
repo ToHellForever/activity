@@ -15,6 +15,13 @@
         <form method="post" enctype="multipart/form-data" class="portfolio-form" id="portfolioForm">
             {% csrf_token %}
 
+            <!-- Вывод общих ошибок формы при наличии -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
             <div class="portfolio-form-main-group portfolio-form-card">
                 <!-- Фотографии -->
                 <div class="portfolio-form-section">
@@ -22,14 +29,14 @@
 
                     <!-- Существующие фото (для редактирования) -->
                     {% if is_edit and portfolio_item and portfolio_item.images.exists %}
-                    <div class="existing-photos-grid">
+                    <div class="existing-photos-grid" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
                         {% for photo in portfolio_item.images.all %}
-                        <div class="existing-photo-item" data-image-id="{{ photo.id }}">
-                            <div class="photo-container">
-                                <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
+                        <div class="existing-photo-item" data-image-id="{{ photo.id }}" style="position: relative; width: 100px; height: 100px;">
+                            <div class="photo-container" style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
+                                <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
-                            <button type="button" class="photo-delete-btn" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
-                                <i class="bi bi-trash"></i>
+                            <button type="button" class="photo-delete-btn photo-remove" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
+                                ✕
                             </button>
                         </div>
                         {% endfor %}
@@ -38,48 +45,66 @@
 
                     <!-- Загрузка новых фото -->
                     <div class="photo-upload-area">
-                        <div class="photo-upload-placeholder">
-    <!-- Вызываем программный клик по инпуту -->
-    <img src="/media/icon/raphael_photo.svg" alt="" class='raphael_photo' onclick="document.getElementById('id_images').click();">
-</div>
-<label for="id_images" class="photo-upload-label">
-    + ЗАГРУЗИТЬ ФОТО
-</label>
-<input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
-<div id="photoPreview" class="photo-preview-container"></div>
-                        <small class="text-muted">
-                            {% if is_edit %}
-                                Добавление к существующим (лимит: 5 фото всего)
-                            {% else %}
-                                До 5 фотографий. Максимальный размер файла: 10 МБ.
-                            {% endif %}
-                        </small>
+                        <!-- Иконка камеры (скрывается, когда есть добавленные фото) -->
+                        <div class="photo-upload-placeholder" id="photoUploadPlaceholder" onclick="document.getElementById('id_images').click();">
+                            <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo' style="cursor: pointer; width: 48px; height: 48px;">
+                        </div>
+
+                        <!-- Контейнер для отображения превью новых фото -->
+                        <div id="photoPreview" class="photo-preview-container"></div>
+
+                        <label for="id_images" class="photo-upload-label" style="cursor: pointer; display: inline-block; margin-top: 5px;">
+                            + ЗАГРУЗИТЬ ФОТО
+                        </label>
+                        <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
+                        
+                        <div>
+                            <small class="text-muted">
+                                {% if is_edit %}
+                                    Добавление к существующим (лимит: 5 фото всего)
+                                {% else %}
+                                    До 5 фотографий. Максимальный размер файла: 10 МБ.
+                                {% endif %}
+                            </small>
+                        </div>
                     </div>
-                    <!-- Скрытое поле для передачи ID удаляемых фото -->
                     <input type="hidden" id="deleted_image_ids" name="deleted_image_ids" value="">
                 </div>
 
                 <!-- Название -->
                 <div class="portfolio-form-section">
-                    <label class="portfolio-form-label">НАЗВАНИЕ (до 100 символов)</label>
+                    <label class="portfolio-form-label">
+                        НАЗВАНИЕ (до 100 символов)
+                    </label>
                     {{ form.title }}
                     {% if form.title.errors %}<ul class="errorlist">{{ form.title.errors }}</ul>{% endif %}
                 </div>
 
                 <!-- Дата и Город -->
                 <div class="portfolio-form-row portfolio-form-row--inline" style="display: flex; gap: 40px;">
-                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 15%; max-width: 15%;">
-                        <!-- Содержимое даты -->
+                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 25%; max-width: 25%;">
                         <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
                         <div class="input-with-button date-container" style="position: relative; width: 100%;">
-                            <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" value="{{ form.event_date.value|default_if_none:'' }}" readonly style="width: 100%; box-sizing: border-box;">
-                            <!-- calendar-popup остается без изменений -->
+                            <input type="text" class="form-control filter-input" name="event_date" id="id_event_date" 
+                                   value="{% if form.event_date.value %}{{ form.event_date.value|date:'Y-m-d' }}{% endif %}" 
+                                   placeholder="Выберите дату">
+                                                            <div class="calendar-popup" id="eventDateCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
                         </div>
                         {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                     </div>
                     
-                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 30%; max-width: 30%;">
-                        <!-- Содержимое города -->
+                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 35%; max-width: 35%;">
                         <label class="portfolio-form-label">ГОРОД</label>
                         {{ form.city }}
                         {% if form.city.errors %}<ul class="errorlist">{{ form.city.errors }}</ul>{% endif %}
@@ -88,7 +113,9 @@
 
                 <!-- Описание -->
                 <div class="portfolio-form-section">
-                    <label class="portfolio-form-label">ОПИСАНИЕ</label>
+                    <label class="portfolio-form-label">
+                        ОПИСАНИЕ
+                    </label>
                     {{ form.description }}
                     {% if form.description.errors %}<ul class="errorlist">{{ form.description.errors }}</ul>{% endif %}
                 </div>
@@ -105,8 +132,8 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-portfolio-submit">
-                {% if is_edit %}СОХРАНИТЬ ИЗМЕНИЯ{% else %}+ ДОБАВИТЬ{% endif %}
+            <button type="submit" class="btn-portfolio-submit" style="margin-top: 20px;">
+                {% if is_edit %}СОХРАНИТЬ ИЗМЕНЕНИЯ{% else %}+ ДОБАВИТЬ{% endif %}
             </button>
         </form>
     </div>
@@ -114,22 +141,23 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Подключение Flatpickr и русской локализации -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="{% static 'js/pages/calendar.js' %}"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    window.portfolioCalendar = new CustomCalendar(
-        'id_event_date',
-        'eventDateCalendar',
-        null,
-        {
-            displayDateFormat: 'dd.mm.yyyy',
-            valueDateFormat: 'yyyy-mm-dd',
-            allowPastDates: true
-        }
-    );
+    // 1. Инициализация календаря Flatpickr
+    flatpickr("#id_event_date", {
+        locale: "ru",
+        altInput: true,               // Показывает красивый формат пользователю
+        altFormat: "d.m.Y",           // Формат для отображения (25.10.2023)
+        dateFormat: "Y-m-d",          // Формат, отправляемый в Django (2023-10-25)
+        allowInput: false,
+        disableMobile: "true"
+    });
 
-    // Счётчик символов для названия
+    // 2. Счётчик символов для названия
     var titleInput = document.getElementById('id_title');
     var titleCounter = document.getElementById('titleCounter');
     if (titleInput && titleCounter) {
@@ -139,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
         titleCounter.textContent = titleInput.value.length + '/100';
     }
 
-    // Счётчик символов для описания
+    // 3. Счётчик символов для описания
     var descInput = document.getElementById('id_description');
     var descCounter = document.getElementById('descCounter');
     if (descInput && descCounter) {
@@ -149,9 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
         descCounter.textContent = descInput.value.length + '/1500';
     }
 
-    // Предпросмотр фотографий
+    // 4. Предпросмотр фотографий и скрытие/показ иконки камеры
     var photoInput = document.getElementById('id_images');
     var photoPreview = document.getElementById('photoPreview');
+
     if (photoInput && photoPreview) {
         photoInput.addEventListener('change', function() {
             photoPreview.innerHTML = '';
@@ -160,8 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var maxAllowed = 5 - currentCount;
 
             if (files.length > maxAllowed) {
-                alert('Нельзя добавить ' + files.length + ' фото. Можно добавить только ' + maxAllowed + ' (лимит 5).');
+                alert('Нельзя добавить ' + files.length + ' фото. Доступно только ' + maxAllowed + ' (лимит 5).');
                 this.value = '';
+                updatePlaceholderVisibility();
                 return;
             }
 
@@ -174,35 +204,53 @@ document.addEventListener('DOMContentLoaded', function() {
                         div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
                             '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
                         photoPreview.appendChild(div);
+                        updatePlaceholderVisibility();
                     };
                     reader.readAsDataURL(file);
                 })(files[i], i);
             }
+            updatePlaceholderVisibility();
         });
     }
+
+    updatePlaceholderVisibility();
 });
 
-// Удаление preview фото
-function removePreview(btn) {
-    var index = btn.getAttribute('data-index');
-    var previewContainer = document.getElementById('photoPreview');
-    var previewItems = previewContainer.querySelectorAll('.photo-preview-item');
+// Функция переключения видимости значка камеры
+function updatePlaceholderVisibility() {
+    var placeholder = document.getElementById('photoUploadPlaceholder');
     var photoInput = document.getElementById('id_images');
+    
+    if (placeholder && photoInput) {
+        if (photoInput.files && photoInput.files.length > 0) {
+            placeholder.style.display = 'none';
+        } else {
+            placeholder.style.display = 'flex';
+        }
+    }
+}
 
-    if (previewItems.length > 0) {
-        var newFiles = Array.from(photoInput.files);
-        newFiles.splice(index, 1);
+// Удаление выбранного preview фото
+function removePreview(btn) {
+    var index = parseInt(btn.getAttribute('data-index'), 10);
+    var photoInput = document.getElementById('id_images');
+    var previewContainer = document.getElementById('photoPreview');
 
-        // Создаем новый DataTransfer для обновления файлов
-        var dataTransfer = new DataTransfer();
-        newFiles.forEach(function(file) {
-            dataTransfer.items.add(file);
-        });
-        photoInput.files = dataTransfer.files;
+    if (photoInput && photoInput.files.length > 0) {
+        var dt = new DataTransfer();
+        var files = photoInput.files;
 
-        // Обновляем preview
+        for (var i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+        photoInput.files = dt.files;
+
+        // Перерисовываем превью
         previewContainer.innerHTML = '';
-        for (var i = 0; i < newFiles.length; i++) {
+        var newFiles = photoInput.files;
+        for (var j = 0; j < newFiles.length; j++) {
             (function(file, idx) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
@@ -213,14 +261,15 @@ function removePreview(btn) {
                     previewContainer.appendChild(div);
                 };
                 reader.readAsDataURL(file);
-            })(newFiles[i], i);
+            })(newFiles[j], j);
         }
     }
+    
+    // Проверяем, нужно ли вернуть иконку камеры
+    setTimeout(updatePlaceholderVisibility, 50);
 }
 
-// Пометка фото для удаления
-
-// Удаление фото сразу через AJAX (без подтверждения)
+// Вспомогательная функция получения CSRF токена
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -236,6 +285,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// AJAX удаление уже сохраненных фото (при редактировании)
 function deletePhotoAjax(btn) {
     var url = btn.dataset.deleteUrl;
     if (!url) return;
