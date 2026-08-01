@@ -506,7 +506,7 @@
             window.eventMap.setCenter(coords, 15);
 
             // Получаем адрес асинхронно
-            ymaps.geocode(coords, { kind: 'house', results: 1 }).then(function(res) {
+            ymaps.geocode(coords, { results: 1 }).then(function(res) {
                 var firstGeoObject = res.geoObjects.get(0);
                 address = firstGeoObject ? firstGeoObject.getAddressLine() : coords.join(', ');
 

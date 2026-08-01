@@ -258,19 +258,90 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// График продаж
-const salesData = JSON.parse('{{ sales_graph_data|escapejs }}');
-const dates = Object.keys(salesData);
-const amounts = Object.values(salesData);
+// ============================================================
+// ИСХОДНЫЕ ДАННЫЕ
+// ============================================================
+const serverSalesData = JSON.parse('{{ sales_graph_data|escapejs }}');
+const trafficSourcesData = {{ traffic_sources_data|default:"{}"|safe }};
 
+// ============================================================
+// УТИЛИТЫ ДАТ
+// ============================================================
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function formatDateLabel(date) {
+    // "18.07"
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}`;
+}
+
+function formatDateISO(date) {
+    // "2026-07-18"
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
+ * Возвращает массив дат [start..end] включительно.
+ */
+function buildDateRange(start, end) {
+    const labels = [];
+    const keys = [];
+    const cur = new Date(start);
+    cur.setHours(0, 0, 0, 0);
+    const stop = new Date(end);
+    stop.setHours(0, 0, 0, 0);
+
+    while (cur <= stop) {
+        labels.push(formatDateLabel(cur));
+        keys.push(formatDateISO(cur));
+        cur.setDate(cur.getDate() + 1);
+    }
+    return { labels, keys };
+}
+
+/**
+ * Данные для графика: даты + суммы (0, если нет продаж в этот день).
+ */
+function buildChartData(start, end) {
+    const { labels, keys } = buildDateRange(start, end);
+    const amounts = keys.map(k => Number(serverSalesData[k] || 0));
+    return { labels, amounts };
+}
+
+/**
+ * Красивая шкала Y: целые деления, «ровный» максимум.
+ * Если продаж нет — 0..1000 с шагом 100.
+ */
+function calcYAxis(amounts) {
+    const max = Math.max(...amounts, 0);
+    if (max === 0) {
+        return { max: 1000, stepSize: 100 };
+    }
+    const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+    const niceMax = Math.ceil(max / magnitude) * magnitude;
+    const stepSize = Math.max(1, Math.round(niceMax / 8));
+    return { max: niceMax, stepSize };
+}
+
+// ============================================================
+// ГРАФИК ПРОДАЖ
+// ============================================================
 const salesCtx = document.getElementById('salesChart').getContext('2d');
+
+// Начальный период: последние 7 дней
+const initEnd = new Date();
+const initStart = new Date();
+initStart.setDate(initEnd.getDate() - 6);
+
+const initData = buildChartData(initStart, initEnd);
+const initY = calcYAxis(initData.amounts);
+
 const salesChart = new Chart(salesCtx, {
     type: 'line',
     data: {
-        labels: dates,
+        labels: initData.labels,
         datasets: [{
             label: 'Продажи по дням (₽)',
-            data: amounts,
+            data: initData.amounts,
             backgroundColor: 'rgba(255, 140, 66, 0.15)',
             borderColor: '#ff8c42',
             borderWidth: 2.5,
@@ -287,80 +358,157 @@ const salesChart = new Chart(salesCtx, {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${Number(ctx.parsed.y).toLocaleString('ru-RU')} ₽`
+                }
+            }
         },
         scales: {
             y: {
                 beginAtZero: true,
+                min: 0,
+                max: initY.max,
                 grid: { color: '#f0f0f0' },
-                ticks: { color: '#999', font: { size: 11 } }
+                ticks: {
+                    stepSize: initY.stepSize,
+                    precision: 0,
+                    color: '#999',
+                    font: { size: 11 },
+                    callback: value => Number.isInteger(value)
+                        ? value.toLocaleString('ru-RU')
+                        : ''
+                }
             },
             x: {
                 grid: { display: false },
-                ticks: { color: '#999', font: { size: 11 } }
-            }
-        }
-    }
-});
-
-// График источников трафика
-const trafficSourcesData = {{ traffic_sources_data|default:"{}"|safe }};
-const sources = Object.keys(trafficSourcesData);
-const sourceAmounts = sources.map(source => trafficSourcesData[source].total);
-const sourceCounts = sources.map(source => trafficSourcesData[source].count);
-
-const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
-const trafficSourcesChart = new Chart(trafficCtx, {
-    type: 'doughnut',
-    data: {
-        labels: sources,
-        datasets: [{
-            label: 'Выручка по источникам трафика (₽)',
-            data: sourceAmounts,
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.7)',
-                'rgba(54, 162, 235, 0.7)',
-                'rgba(255, 206, 86, 0.7)',
-                'rgba(75, 192, 192, 0.7)',
-                'rgba(153, 102, 255, 0.7)',
-                'rgba(255, 159, 64, 0.7)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.raw || 0;
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = Math.round((value / total) * 100);
-                        return `${label}: ${value} ₽ (${percentage}%)`;
-                    }
+                ticks: {
+                    color: '#999',
+                    font: { size: 11 },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 12
                 }
             }
         }
     }
 });
 
+/**
+ * Перестраивает график продаж под новый период.
+ */
+function updateSalesChart(start, end) {
+    const { labels, amounts } = buildChartData(start, end);
+    const y = calcYAxis(amounts);
+
+    salesChart.data.labels = labels;
+    salesChart.data.datasets[0].data = amounts;
+    salesChart.options.scales.y.max = y.max;
+    salesChart.options.scales.y.ticks.stepSize = y.stepSize;
+    salesChart.update();
+}
+
+// ============================================================
+// ГРАФИК ИСТОЧНИКОВ ТРАФИКА
+// ============================================================
+const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+
+const sources = Object.keys(trafficSourcesData);
+const sourceAmounts = sources.map(s => Number(trafficSourcesData[s].total || 0));
+const totalTraffic = sourceAmounts.reduce((a, b) => a + b, 0);
+
+// Плагин: рисует текст в центре пустого пончика
+const emptyDonutTextPlugin = {
+    id: 'emptyDonutText',
+    afterDraw(chart) {
+        if (!chart.$isEmpty) return;
+        const { ctx, chartArea: { left, top, width, height } } = chart;
+        const cx = left + width / 2;
+        const cy = top + height / 2;
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#666';
+        ctx.font = '600 14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+        ctx.fillText('Пока нет данных', cx, cy - 10);
+        ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+        ctx.fillStyle = '#999';
+        ctx.fillText('о трафике', cx, cy + 10);
+        ctx.restore();
+    }
+};
+
+// Настройки для «пустого» состояния (сплошной оранжевый круг)
+const isTrafficEmpty = totalTraffic === 0;
+
+const trafficConfig = isTrafficEmpty
+    ? {
+        labels: ['Нет данных'],
+        data: [1],
+        colors: ['#ff8c42']
+      }
+    : {
+        labels: sources,
+        data: sourceAmounts,
+        colors: [
+            'rgba(255, 140, 66, 0.85)',
+            'rgba(54, 162, 235, 0.75)',
+            'rgba(255, 206, 86, 0.75)',
+            'rgba(75, 192, 192, 0.75)',
+            'rgba(153, 102, 255, 0.75)',
+            'rgba(255, 99, 132, 0.75)'
+        ]
+      };
+
+const trafficSourcesChart = new Chart(trafficCtx, {
+    type: 'doughnut',
+    data: {
+        labels: trafficConfig.labels,
+        datasets: [{
+            data: trafficConfig.data,
+            backgroundColor: trafficConfig.colors,
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: {
+                display: !isTrafficEmpty,
+                position: 'right',
+                labels: { font: { size: 12 }, color: '#333', boxWidth: 14 }
+            },
+            tooltip: {
+                enabled: !isTrafficEmpty,
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = total ? Math.round((value / total) * 100) : 0;
+                        return `${label}: ${Number(value).toLocaleString('ru-RU')} ₽ (${percentage}%)`;
+                    }
+                }
+            }
+        }
+    },
+    plugins: [emptyDonutTextPlugin]
+});
+
+// Флаг «пусто» для плагина
+trafficSourcesChart.$isEmpty = isTrafficEmpty;
+
+// ============================================================
+// ФИЛЬТРЫ ПЕРИОДА И ОБРАБОТЧИКИ
+// ============================================================
 $(document).ready(function() {
-    // Делегирование событий для динамических чекбоксов
-    $(document).on('change', '.report-checkbox', function() {
-        const allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
-        $('#selectAllCheckbox').prop('checked', allChecked);
-    });
+
+    // --- Кнопки периода ---
     $('.period-btn').on('click', function() {
         $('.period-btn').removeClass('active');
         $(this).addClass('active');
@@ -368,31 +516,45 @@ $(document).ready(function() {
         const period = $(this).data('period');
         const end = new Date();
         const start = new Date();
-        if (period === 'week') start.setDate(end.getDate() - 7);
-        if (period === 'month') start.setMonth(end.getMonth() - 1);
-        if (period === '3month') start.setMonth(end.getMonth() - 3);
 
-        const fmt = d => d.toISOString().slice(0, 10);
-        $('#filterStart').val(fmt(start));
-        $('#filterEnd').val(fmt(end));
-        // Здесь можно добавить AJAX-запрос за новыми данными графика
+        if (period === 'week')   start.setDate(end.getDate() - 6);
+        if (period === 'month')  start.setDate(end.getDate() - 29);
+        if (period === '3month') start.setDate(end.getDate() - 89);
+
+        $('#filterStart').val(formatDateISO(start));
+        $('#filterEnd').val(formatDateISO(end));
+
+        updateSalesChart(start, end);
     });
 
-    // Инициализация — установим значения "Неделя"
+    // --- Ручной выбор дат ---
+    $('#filterStart, #filterEnd').on('change', function() {
+        const s = $('#filterStart').val();
+        const e = $('#filterEnd').val();
+        if (!s || !e) return;
+        $('.period-btn').removeClass('active');
+        updateSalesChart(new Date(s), new Date(e));
+    });
+
+    // Инициализация "Неделя"
     $('.period-btn.active').trigger('click');
-    // Выделение всех чекбоксов
-    $('#selectAllCheckbox').change(function() {
-        const isChecked = $(this).prop('checked');
-        $('.report-checkbox').prop('checked', isChecked);
+
+    // --- Чекбоксы отчётов ---
+    $(document).on('change', '.report-checkbox', function() {
+        const allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
+        $('#selectAllCheckbox').prop('checked', allChecked);
     });
 
-    // Кнопка "Выделить все"
+    $('#selectAllCheckbox').change(function() {
+        $('.report-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
     $('#selectAllReports').click(function() {
         $('.report-checkbox').prop('checked', true);
         $('#selectAllCheckbox').prop('checked', true);
     });
 
-    // Удаление выбранных отчётов
+    // --- Удаление выбранных отчётов ---
     $('#deleteSelectedReports').click(function() {
         const selectedReports = [];
         $('.report-checkbox:checked').each(function() {
@@ -414,7 +576,7 @@ $(document).ready(function() {
                 },
                 body: JSON.stringify({ report_ids: selectedReports })
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.status === 'success') {
                     alert(data.message);
@@ -423,23 +585,26 @@ $(document).ready(function() {
                     alert('Ошибка: ' + data.message);
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
+            .catch(err => {
+                console.error('Error:', err);
                 alert('Произошла ошибка при удалении отчётов');
             });
         }
     });
 });
 
-// Генерация отчёта
+// ============================================================
+// ГЕНЕРАЦИЯ ОТЧЁТА
+// ============================================================
 document.getElementById('generateReportForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const periodStart = document.getElementById('periodStart').value;
-    const periodEnd = document.getElementById('periodEnd').value;
-    const reportType = document.getElementById('reportType').value;
-    const sendEmail = document.getElementById('sendEmail').checked;
-    
+    const periodEnd   = document.getElementById('periodEnd').value;
+    const reportType  = document.getElementById('reportType').value;
+    const sendEmailEl = document.getElementById('sendEmail');
+    const sendEmail   = sendEmailEl ? sendEmailEl.checked : false;
+
     fetch('{% url "partner:generate_report" %}', {
         method: 'POST',
         headers: {
@@ -453,7 +618,7 @@ document.getElementById('generateReportForm').addEventListener('submit', functio
             send_email: sendEmail
         })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
             window.location.href = data.download_url;
@@ -464,8 +629,8 @@ document.getElementById('generateReportForm').addEventListener('submit', functio
             alert('Ошибка: ' + data.message);
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch(err => {
+        console.error('Error:', err);
         alert('Произошла ошибка при генерации отчёта');
     });
 });
