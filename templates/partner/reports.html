@@ -5,7 +5,7 @@
 {% block title %}Отчёты о продажах{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/reports.css' %}">
 <style>
     .refund-value {
         color: #fd7e14;
@@ -18,6 +18,17 @@
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
 <div class="container mt-5">
+        <div class="period-filters">
+        <button type="button" class="period-btn active" data-period="week">Неделя</button>
+        <button type="button" class="period-btn" data-period="month">Месяц</button>
+        <button type="button" class="period-btn" data-period="3month">3 месяца</button>
+        <span class="period-label">Период</span>
+        <span class="period-range">
+            <input type="date" id="filterStart">
+            <span>—</span>
+            <input type="date" id="filterEnd">
+        </span>
+    </div>
 <h2 class="mb-4">Отчёты о продажах</h2>
 
 <div class="row mb-4">
@@ -111,27 +122,25 @@
         </div>
     </div>
     
-    <div class="card report-card mb-4">
-        <div class="card-header">
-            График продаж
-        </div>
-        <div class="card-body">
-            <div style="height: 400px; width: 100%;">
-                <canvas id="salesChart"></canvas>
-            </div>
+<div class="card report-card mb-4">
+    <div class="card-header">График продаж</div>
+    <div class="card-body">
+        <div class="card-subtitle-muted">Продажи по дням в ₽</div>
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
         </div>
     </div>
+</div>
 
-    <div class="card report-card mb-4">
-        <div class="card-header">
-            Источники трафика
-        </div>
-        <div class="card-body">
-            <div style="height: 400px; width: 100%;">
-                <canvas id="trafficSourcesChart"></canvas>
-            </div>
+<div class="card report-card mb-4">
+    <div class="card-header">Источники трафика</div>
+    <div class="card-body">
+        <div class="card-subtitle-muted">Распределение выручки по каналам</div>
+        <div class="chart-container">
+            <canvas id="trafficSourcesChart"></canvas>
         </div>
     </div>
+</div>
     
     <div class="card report-card mb-4 report-form">
         <div class="card-header">
@@ -156,14 +165,6 @@
                             <option value="csv">CSV</option>
                             <option value="excel">Excel</option>
                         </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="sendEmail">
-                            <label class="form-check-label" for="sendEmail">
-                                Отправить на email
-                            </label>
-                        </div>
                     </div>
                 </div>
                 
@@ -270,18 +271,33 @@ const salesChart = new Chart(salesCtx, {
         datasets: [{
             label: 'Продажи по дням (₽)',
             data: amounts,
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            tension: 0.1
+            backgroundColor: 'rgba(255, 140, 66, 0.15)',
+            borderColor: '#ff8c42',
+            borderWidth: 2.5,
+            tension: 0.35,
+            pointBackgroundColor: '#ff8c42',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
         scales: {
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                grid: { color: '#f0f0f0' },
+                ticks: { color: '#999', font: { size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#999', font: { size: 11 } }
             }
         }
     }
@@ -345,7 +361,25 @@ $(document).ready(function() {
         const allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
         $('#selectAllCheckbox').prop('checked', allChecked);
     });
+    $('.period-btn').on('click', function() {
+        $('.period-btn').removeClass('active');
+        $(this).addClass('active');
 
+        const period = $(this).data('period');
+        const end = new Date();
+        const start = new Date();
+        if (period === 'week') start.setDate(end.getDate() - 7);
+        if (period === 'month') start.setMonth(end.getMonth() - 1);
+        if (period === '3month') start.setMonth(end.getMonth() - 3);
+
+        const fmt = d => d.toISOString().slice(0, 10);
+        $('#filterStart').val(fmt(start));
+        $('#filterEnd').val(fmt(end));
+        // Здесь можно добавить AJAX-запрос за новыми данными графика
+    });
+
+    // Инициализация — установим значения "Неделя"
+    $('.period-btn.active').trigger('click');
     // Выделение всех чекбоксов
     $('#selectAllCheckbox').change(function() {
         const isChecked = $(this).prop('checked');
