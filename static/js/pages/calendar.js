@@ -11,6 +11,7 @@ class CustomCalendar {
         this.displayDateFormat = options.displayDateFormat || 'dd.mm.yyyy';
         this.valueDateFormat = options.valueDateFormat || 'yyyy-mm-dd';
         this.allowPastDates = options.allowPastDates === true;
+        this.onSelectDate = typeof options.onSelectDate === 'function' ? options.onSelectDate : null;
         this.input.dataset.rawValue = '';
         
         if (!this.input || !this.calendar) {
@@ -205,13 +206,20 @@ class CustomCalendar {
         this.close();
     }
 
-    selectDate(date) {
+    selectDate(date, options = {}) {
+        const { silent = false } = options;
+
         this.selectedDate = date;
         const formattedDate = this.formatDate(date, this.valueDateFormat);
         this.input.dataset.rawValue = formattedDate;
         this.input.value = this.formatDate(date, this.displayDateFormat);
         this.updateHiddenInput(formattedDate);
         this.render();
+
+        if (!silent && typeof this.onSelectDate === 'function') {
+            this.onSelectDate(date);
+        }
+
         this.close();
     }
 

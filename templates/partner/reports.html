@@ -25,7 +25,7 @@
         <button type="button" class="period-btn" data-period="3month">3 месяца</button>
         <span class="period-label">Период</span>
         <span class="period-range">
-            <div class="input-with-button date-container" style="position: relative; width: 100%; min-width: 180px;">
+            <div class="input-with-button date-container">
                 <input type="text" class="form-control filter-input" id="filterStartDisplay" placeholder="ДД.MM.ГГГГ" readonly>
                 <input type="hidden" id="filterStart" name="filterStart">
                 <div class="calendar-popup" id="filterStartCalendar">
@@ -62,7 +62,7 @@
     </div>
 <h2 class="mb-4">Отчёты о продажах</h2>
 
-<div class="row mb-4">
+<div class="row reports-summary-row">
     <div class="col-md-6">
         <div class="card report-card statistics-card">
             <div class="card-header">
@@ -70,21 +70,19 @@
             </div>
             <div class="card-body">
                 <div class="stat-value mb-1">{{ total_sales }} ₽</div>
-                <div class="stat-label mb-2">Итого продаж (без возвратов)</div>
+                <div class="stat-label mb-2">Итого продаж без возвратов</div>
                  
                 <div class="row mt-3">
                     <div class="col-6">
                         <div class="stat-value mb-1">{{ tickets_sold }}</div>
-                        <div class="stat-label">Билетов продано (без возвратов)</div>
+                        <div class="stat-label">Билетов продано</div>
                     </div>
                     <div class="col-6">
                         <div class="stat-value mb-1">{{ avg_check }} ₽</div>
                         <div class="stat-label">Средний чек</div>
                     </div>
                 </div>
-                
-                <hr class="my-3">
-                
+                <hr style='border: 1px solid black'>
                 <div class="row mt-2">
                     <div class="col-6">
                         <div class="stat-value refund-value mb-1">{{ total_refunds }} ₽</div>
@@ -106,7 +104,7 @@
                     Настройки отчётов
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div>
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fw-bold">Текущие настройки</span>
                             <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary btn-sm">
@@ -154,7 +152,7 @@
         </div>
     </div>
     
-<div class="card report-card mb-4">
+<div class="card report-card mb-4" >
     <div class="card-header">График продаж</div>
     <div class="card-body">
         <div class="card-subtitle-muted">Продажи по дням в ₽</div>
@@ -335,16 +333,41 @@ function initReportCalendars() {
         return;
     }
 
-    new CustomCalendar('filterStartDisplay', 'filterStartCalendar', 'filterStart', {
+    let startCalendar = null;
+    let endCalendar = null;
+
+    startCalendar = new CustomCalendar('filterStartDisplay', 'filterStartCalendar', 'filterStart', {
         displayDateFormat: 'dd.mm.yyyy',
         valueDateFormat: 'yyyy-mm-dd',
-        allowPastDates: true
+        allowPastDates: true,
+        onSelectDate: function(date) {
+            const startValue = date.getTime();
+            const endRaw = document.getElementById('filterEnd').value;
+            if (endRaw) {
+                const endDate = new Date(endRaw);
+                if (startValue > endDate.getTime() && endCalendar) {
+                    endCalendar.selectDate(date, { silent: true });
+                    setDisplayFromHidden('filterEnd', 'filterEndDisplay');
+                }
+            }
+        }
     });
 
-    new CustomCalendar('filterEndDisplay', 'filterEndCalendar', 'filterEnd', {
+    endCalendar = new CustomCalendar('filterEndDisplay', 'filterEndCalendar', 'filterEnd', {
         displayDateFormat: 'dd.mm.yyyy',
         valueDateFormat: 'yyyy-mm-dd',
-        allowPastDates: true
+        allowPastDates: true,
+        onSelectDate: function(date) {
+            const endValue = date.getTime();
+            const startRaw = document.getElementById('filterStart').value;
+            if (startRaw) {
+                const startDate = new Date(startRaw);
+                if (endValue < startDate.getTime() && startCalendar) {
+                    startCalendar.selectDate(date, { silent: true });
+                    setDisplayFromHidden('filterStart', 'filterStartDisplay');
+                }
+            }
+        }
     });
 }
 
