@@ -80,7 +80,6 @@ class CustomCalendar {
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Calendar toggle clicked');
                 this.toggle();
             });
         }
@@ -89,7 +88,16 @@ class CustomCalendar {
         this.input.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.toggle();
+            if (!this.calendar.classList.contains('active')) {
+                this.open();
+            }
+        });
+
+        // Открытие календаря по фокусу, только если он ещё закрыт
+        this.input.addEventListener('focus', () => {
+            if (!this.calendar.classList.contains('active')) {
+                this.open();
+            }
         });
 
         // Кнопки навигации
@@ -128,7 +136,10 @@ class CustomCalendar {
 
         // Закрытие при клике вне календаря
         document.addEventListener('click', (e) => {
-            if (!this.calendar.contains(e.target) && !e.target.closest('.calendar-toggle-btn')) {
+            if (!this.calendar.contains(e.target)
+                && !this.input.contains(e.target)
+                && !this.input.isSameNode(e.target)
+                && !e.target.closest('.calendar-toggle-btn')) {
                 this.close();
             }
         });
@@ -156,18 +167,24 @@ class CustomCalendar {
         this.render();
     }
 
-    toggle() {
-        this.calendar.classList.toggle('active');
-        console.log('Calendar toggled, active:', this.calendar.classList.contains('active'));
+    open() {
+        this.calendar.classList.add('active');
+        console.log('Calendar opened');
         
-        // Добавляем/убираем класс open у контейнера
+        // Добавляем класс open у контейнера
         const container = this.input.closest('.date-container');
         if (container) {
-            container.classList.toggle('open');
+            container.classList.add('open');
         }
         
+        this.render();
+    }
+
+    toggle() {
         if (this.calendar.classList.contains('active')) {
-            this.render();
+            this.close();
+        } else {
+            this.open();
         }
     }
 

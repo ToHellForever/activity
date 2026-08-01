@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/reports.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <style>
     .refund-value {
         color: #fd7e14;
@@ -24,9 +25,39 @@
         <button type="button" class="period-btn" data-period="3month">3 месяца</button>
         <span class="period-label">Период</span>
         <span class="period-range">
-            <input type="date" id="filterStart">
+            <div class="input-with-button date-container" style="position: relative; width: 100%; min-width: 180px;">
+                <input type="text" class="form-control filter-input" id="filterStartDisplay" placeholder="ДД.MM.ГГГГ" readonly>
+                <input type="hidden" id="filterStart" name="filterStart">
+                <div class="calendar-popup" id="filterStartCalendar">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-prev-month">&lt;</button>
+                        <span class="calendar-month-year"></span>
+                        <button type="button" class="calendar-next-month">&gt;</button>
+                    </div>
+                    <div class="calendar-grid"></div>
+                    <div class="calendar-footer">
+                        <button type="button" class="calendar-clear">Очистить</button>
+                        <button type="button" class="calendar-close">Закрыть</button>
+                    </div>
+                </div>
+            </div>
             <span>—</span>
-            <input type="date" id="filterEnd">
+            <div class="input-with-button date-container" style="position: relative; width: 100%; min-width: 180px;">
+                <input type="text" class="form-control filter-input" id="filterEndDisplay" placeholder="ДД.MM.ГГГГ" readonly>
+                <input type="hidden" id="filterEnd" name="filterEnd">
+                <div class="calendar-popup" id="filterEndCalendar">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-prev-month">&lt;</button>
+                        <span class="calendar-month-year"></span>
+                        <button type="button" class="calendar-next-month">&gt;</button>
+                    </div>
+                    <div class="calendar-grid"></div>
+                    <div class="calendar-footer">
+                        <button type="button" class="calendar-clear">Очистить</button>
+                        <button type="button" class="calendar-close">Закрыть</button>
+                    </div>
+                </div>
+            </div>
         </span>
     </div>
 <h2 class="mb-4">Отчёты о продажах</h2>
@@ -69,56 +100,57 @@
     </div>
         
         <div class="col-md-6">
+            {% if report_schedule and report_schedule.is_active %}
+            <div class="card report-card schedule-settings schedule-settings--active">
+                <div class="card-header">
+                    Настройки отчётов
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold">Текущие настройки</span>
+                            <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-gear"></i> Редактировать
+                            </a>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <small class="text-muted">Частота:</small>
+                                <div>{{ report_schedule.get_frequency_display }}</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <small class="text-muted">Формат:</small>
+                                <div>{{ report_schedule.get_report_format_display }}</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <small class="text-muted">Период:</small>
+                                <div>{{ report_schedule.get_period_type_display }}</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <small class="text-muted">Email:</small>
+                                <div class="text-truncate">{{ report_schedule.email }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
             <div class="card report-card schedule-settings">
                 <div class="card-header">
                     Настройки отчётов
                 </div>
                 <div class="card-body">
-                    {% if report_schedule %}
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold">Текущие настройки:</span>
-                                <span class="badge {% if report_schedule.is_active %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if report_schedule.is_active %}Активна{% else %}Отключена{% endif %}
-                                </span>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-6 mb-2">
-                                    <small class="text-muted">Частота:</small>
-                                    <div>{{ report_schedule.get_frequency_display }}</div>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <small class="text-muted">Формат:</small>
-                                    <div>{{ report_schedule.get_report_format_display }}</div>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <small class="text-muted">Период:</small>
-                                    <div>{{ report_schedule.get_period_type_display }}</div>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <small class="text-muted">Email:</small>
-                                    <div class="text-truncate">{{ report_schedule.email }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        
+                    <div class="text-center">
+                        <img src="/media/icon/material-symbols-light_table.svg" alt="">
+                        <h5 class="mb-3">{% if report_schedule %}Автоматическая отправка отчётов отключена{% else %}Автоматическая отправка отчётов{% endif %}</h5>
+                        <p class="text-muted mb-4">Настройте расписание и получайте отчёты автоматически на ваш email</p>
                         <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary w-100">
-                            <i class="bi bi-gear"></i> Редактировать настройки
+                            НАСТРОИТЬ РАСПИСАНИЕ
                         </a>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="bi bi-calendar2-event display-6 text-primary mb-3"></i>
-                            <h5 class="mb-3">Автоматическая отправка отчётов</h5>
-                            <p class="text-muted mb-4">Настройте расписание и получайте отчёты автоматически на ваш email</p>
-                            
-                            <a href="{% url 'partner:report_schedule' %}" class="btn btn-primary w-100">
-                                <i class="bi bi-calendar-plus"></i> Настроить расписание
-                            </a>
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
     
@@ -257,6 +289,7 @@
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/pages/calendar.js' %}"></script>
 <script>
 // ============================================================
 // ИСХОДНЫЕ ДАННЫЕ
@@ -277,6 +310,42 @@ function formatDateLabel(date) {
 function formatDateISO(date) {
     // "2026-07-18"
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function setDisplayFromHidden(hiddenId, displayId) {
+    var hidden = document.getElementById(hiddenId);
+    var display = document.getElementById(displayId);
+    if (!hidden || !display) return;
+
+    if (hidden.value) {
+        var parts = hidden.value.split('-');
+        if (parts.length === 3) {
+            display.value = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        } else {
+            display.value = hidden.value;
+        }
+    } else {
+        display.value = '';
+    }
+}
+
+function initReportCalendars() {
+    if (typeof CustomCalendar === 'undefined') {
+        console.error('CustomCalendar не найден. Календарь не инициализирован.');
+        return;
+    }
+
+    new CustomCalendar('filterStartDisplay', 'filterStartCalendar', 'filterStart', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
+    });
+
+    new CustomCalendar('filterEndDisplay', 'filterEndCalendar', 'filterEnd', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
+    });
 }
 
 /**
@@ -523,18 +592,18 @@ $(document).ready(function() {
 
         $('#filterStart').val(formatDateISO(start));
         $('#filterEnd').val(formatDateISO(end));
-
-        updateSalesChart(start, end);
-    });
-
-    // --- Ручной выбор дат ---
-    $('#filterStart, #filterEnd').on('change', function() {
+        setDisplayFromHidden('filterStart', 'filterStartDisplay');
+        setDisplayFromHidden('filterEnd', 'filterEndDisplay');
         const s = $('#filterStart').val();
         const e = $('#filterEnd').val();
         if (!s || !e) return;
-        $('.period-btn').removeClass('active');
         updateSalesChart(new Date(s), new Date(e));
     });
+
+    // Инициализация календарей и даты
+    initReportCalendars();
+    setDisplayFromHidden('filterStart', 'filterStartDisplay');
+    setDisplayFromHidden('filterEnd', 'filterEndDisplay');
 
     // Инициализация "Неделя"
     $('.period-btn.active').trigger('click');
