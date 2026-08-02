@@ -352,17 +352,90 @@ class ReportScheduleForm(forms.ModelForm):
         return instance
 
 class PayoutDetailsForm(forms.ModelForm):
+    """Форма реквизитов для выплат с валидацией."""
+
     class Meta:
         model = PayoutDetails
         fields = ["bank_name", "account_number", "account_holder", "inn"]
 
-        # Добавим более понятные подсказки (лейблы)
         labels = {
             "bank_name": "Банк",
             "account_number": "Номер счёта или карты",
             "account_holder": "ФИО владельца счёта",
             "inn": "ИНН (необязательно)",
         }
+
+    def clean_account_number(self):
+        """Номер счёта РФ — 20 цифр, начинается с 40817, 40702, 42302 и т.д.
+           Номер карты — 16 цифр."""
+        value = self.cleaned_data.get("account_number", "").strip()
+
+        if not value:
+            raise forms.ValidationError("Введите номер счёта или карты.")
+
+        # Убираем пробелы
+        value = value.replace(" ", "")
+
+        if not value.isdigit():
+            raise forms.ValidationError(
+                "Номер счёта или карты должен содержать только цифры."
+            )
+
+        # Расчётный счёт — 20 цифр, типовой префикс 40817 (для физлиц)
+        if len(value) == 20:
+            if not value.startswith("40817"):
+                raise forms.ValidationError(
+                    "Номер расчётного счёта должен начинаться с 40817."
+                )
+        # Карта — 16 цифр
+        elif len(value) == 16:
+            pass  # Допустимые карты (2200, 4276, 4284, 5200, 5213, 5578, 5598, 6841, 9842)
+        else:
+            raise forms.ValidationError(
+                "Номер счёта должен содержать 20 цифр (расчётный счёт) "
+                "или 16 цифр (банковская карта)."
+            )
+
+        return value
+
+    def clean_account_holder(self):
+        """ФИО владельца — кириллица, латиница, дефис, пробел.
+           Минимум 2 слова (имя + фамилия)."""
+        value = self.cleaned_data.get("account_holder", "").strip()
+
+        if not value:
+            raise forms.ValidationError("Введите ФИО владельца счёта.")
+
+        if len(value) < 3:
+            raise forms.ValidationError("ФИО должно содержать минимум 3 символа.")
+
+        # Разрешаем кириллицу, латиницу, дефис, пробел, апостроф
+        import re
+
+        if not re.match(r"^[\w\s\-\'а-яА-ЯёЁ]+$", value):
+            raise forms.ValidationError(
+                "ФИО может содержать только буквы, пробелы и дефис."
+            )
+
+        return value
+
+    def clean_inn(self):
+        """ИНН — 10 цифр (физлицо) или 12 цифр (юрлицо)."""
+        value = self.cleaned_data.get("inn", "").strip()
+
+        if not value:
+            return ""
+
+        if not value.isdigit():
+            raise forms.ValidationError("ИНН должен содержать только цифры.")
+
+        if len(value) not in (10, 12):
+            raise forms.ValidationError(
+                "ИНН должен содержать 10 цифр (для ИП/физлица) "
+                "или 12 цифр (для юрлица)."
+            )
+
+        return value
 
 
 # === ФОРМЫ ПОРТФОЛИО ===

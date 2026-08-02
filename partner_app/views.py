@@ -1889,12 +1889,49 @@ def delete_reports(request):
 @check_partner_status('can_request_payments')
 def payout_details(request):
     """
-    Страница для добавления и просмотра реквизитов для выплат.
+    Страница для добавления, просмотра, редактирования и удаления
+    реквизитов для выплат.
     """
-    # Получаем все реквизиты текущего пользователя
     details = PayoutDetails.objects.filter(partner=request.user)
 
     if request.method == "POST":
+        action = request.POST.get("action")
+
+        # === УДАЛЕНИЕ ===
+        if action == "delete":
+            detail_id = request.POST.get("detail_id")
+            try:
+                detail = PayoutDetails.objects.get(
+                    id=detail_id, partner=request.user
+                )
+                detail.delete()
+                messages.success(request, "Реквизиты успешно удалены!")
+            except PayoutDetails.DoesNotExist:
+                messages.error(request, "Реквизит не найден.")
+            return redirect("partner:payout_details")
+
+        # === РЕДАКТИРОВАНИЕ (AJAX) ===
+        if action == "edit":
+            detail_id = request.POST.get("detail_id")
+            try:
+                detail = PayoutDetails.objects.get(
+                    id=detail_id, partner=request.user
+                )
+                detail.bank_name = request.POST.get("bank_name", detail.bank_name)
+                detail.account_number = request.POST.get("account_number", detail.account_number)
+                detail.account_holder = request.POST.get("account_holder", detail.account_holder)
+                detail.inn = request.POST.get("inn", detail.inn) or None
+                detail.save()
+                return JsonResponse(
+                    {"status": "success", "message": "Реквизиты обновлены"}
+                )
+            except PayoutDetails.DoesNotExist:
+                return JsonResponse(
+                    {"status": "error", "message": "Реквизит не найден."},
+                    status=404,
+                )
+
+        # === СОЗДАНИЕ ===
         form = PayoutDetailsForm(request.POST)
         if form.is_valid():
             payout_detail = form.save(commit=False)
@@ -1905,7 +1942,7 @@ def payout_details(request):
     else:
         form = PayoutDetailsForm()
 
-    partner_profile = getattr(request.user, 'partner_profile', None)
+    partner_profile = getattr(request.user, "partner_profile", None)
     context = {
         "form": form,
         "details": details,
@@ -1913,6 +1950,24 @@ def payout_details(request):
         "partner_profile": partner_profile,
     }
     return render(request, "partner/payout_details.html", context)
+
+
+@login_required
+@require_POST
+def set_default_payout_detail(request):
+    """Установить реквизиты как основные."""
+    detail_id = request.POST.get("detail_id")
+    try:
+        detail = PayoutDetails.objects.get(id=detail_id, partner=request.user)
+        # Сбросим все is_default
+        PayoutDetails.objects.filter(partner=request.user).update(is_default=False)
+        detail.is_default = True
+        detail.save()
+        return JsonResponse({"status": "success"})
+    except PayoutDetails.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Реквизит не найден."}, status=404
+        )
 
 @login_required
 def profile_edit(request):

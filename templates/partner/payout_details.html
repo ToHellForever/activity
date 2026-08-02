@@ -1,67 +1,440 @@
-<!-- templates/partner/payout_details.html -->
 {% extends 'base.html' %}
 {% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/payout_details.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-<h1>Мои реквизиты для выплат</h1>
+        <h1>Мои реквизиты для выплат</h1>
 
-<div class="card mb-4">
-  <div class="card-header">
-    Добавить новые реквизиты
-  </div>
-  <div class="card-body">
-    <form method="post">
-      {% csrf_token %}
-      <div class="mb-3">
-        Банк: {{ form.bank_name }}
-      </div>
-      <div class="mb-3">
-        Номер счёта или карты: {{ form.account_number }}
-      </div>
-      <div class="mb-3">
-        ФИО владельца счёта: {{ form.account_holder }}
-      </div>
-      <div class="mb-3">
-        ИНН (необязательно): {{ form.inn }}
-      </div>
-      <button type="submit" class="btn btn-primary">Сохранить реквизиты</button>
-    </form>
-  </div>
-</div>
+        <!-- Форма добавления -->
+        <div class="payout-details-form-card">
+            <h2 class="payout-details-form-title">Добавить реквизиты</h2>
+            <form id="addPayoutForm" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
 
-<h2>Сохранённые реквизиты</h2>
-{% if details %}
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Банк</th>
-      <th>Номер счёта</th>
-      <th>Владелец</th>
-      <th>Действия</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for detail in details %}
-    <tr>
-      <td>{{ detail.get_bank_name_display }}</td>
-      <td>{{ detail.account_number }}</td>
-      <td>{{ detail.account_holder }}</td>
-      <td>
-          <a href="{% url 'partner:finances' %}?payout_details={{ detail.id }}" class="btn btn-sm btn-outline-primary">
-              Использовать
-          </a>
-          <!-- Здесь можно добавить кнопку удаления -->
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>У вас пока нет сохранённых реквизитов. Добавьте их с помощью формы выше.</p>
-{% endif %}
+                <div class="payout-details-form-row">
+                    <label class="payout-details-form-label" for="bank_name">
+                        Банк <span class="required">*</span>
+                    </label>
+                    <select class="payout-details-input payout-details-select" id="bank_name" name="bank_name" required>
+                        <option value="">Выберите банк</option>
+                        <option value="sberbank">Сбербанк</option>
+                        <option value="tinkoff">Тинькофф</option>
+                        <option value="vtb">ВТБ</option>
+                        <option value="alfabank">Альфа-Банк</option>
+                        <option value="other">Другой банк</option>
+                    </select>
+                    <div class="payout-details-error" id="bank_name_error">Выберите банк</div>
+                </div>
+
+                <div class="payout-details-form-row">
+                    <label class="payout-details-form-label" for="account_number">
+                        Номер счёта или карты <span class="required">*</span>
+                    </label>
+                    <input type="text" class="payout-details-input" id="account_number" name="account_number"
+                           placeholder="Например 40817810000000012345" inputmode="numeric" required>
+                    <div class="payout-details-error" id="account_number_error"></div>
+                </div>
+
+                <div class="payout-details-form-row">
+                    <label class="payout-details-form-label" for="account_holder">
+                        ФИО владельца счёта <span class="required">*</span>
+                    </label>
+                    <input type="text" class="payout-details-input" id="account_holder" name="account_holder"
+                           placeholder="Иванов Иван Иванович" required>
+                    <div class="payout-details-error" id="account_holder_error"></div>
+                </div>
+
+                <div class="payout-details-form-row">
+                    <label class="payout-details-form-label" for="inn">
+                        ИНН <span class="optional">(необязательно)</span>
+                    </label>
+                    <input type="text" class="payout-details-input" id="inn" name="inn"
+                           placeholder="10 или 12 цифр" inputmode="numeric" maxlength="12">
+                    <div class="payout-details-error" id="inn_error"></div>
+                </div>
+
+                <button type="submit" class="payout-details-btn-save" id="addPayoutBtn">
+                    Сохранить реквизиты
+                </button>
+            </form>
+        </div>
+
+        <!-- Сохранённые реквизиты -->
+        <h2 class="payout-details-section-title">Сохранённые реквизиты</h2>
+
+        {% if details %}
+        <div class="payout-details-grid">
+            {% for detail in details %}
+            <div class="payout-detail-card{% if detail.is_default %} is-default{% endif %}" data-detail-id="{{ detail.id }}">
+                <!-- Крестик удаления в правом верхнем углу -->
+                <button type="button" class="payout-detail-delete-x" onclick="openDeleteModal({{ detail.id }})" title="Удалить">
+                    &times;
+                </button>
+
+                <div class="payout-detail-bank">
+                    {{ detail.get_bank_name_display }}
+                </div>
+
+                <div class="payout-detail-fields">
+                    <div class="payout-detail-field">
+                        <span class="payout-detail-field-label">Номер счёта</span>
+                        <span class="payout-detail-field-value account-number">{{ detail.account_number }}</span>
+                    </div>
+                    <div class="payout-detail-field">
+                        <span class="payout-detail-field-label">Владелец</span>
+                        <span class="payout-detail-field-value">{{ detail.account_holder }}</span>
+                    </div>
+                    {% if detail.inn %}
+                    <div class="payout-detail-field">
+                        <span class="payout-detail-field-label">ИНН</span>
+                        <span class="payout-detail-field-value">{{ detail.inn }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="payout-detail-actions">
+                    <button type="button" class="payout-detail-action-btn payout-detail-action-btn--edit"
+                            onclick="openEditModal({{ detail.id }}, '{{ detail.bank_name }}', '{{ detail.account_number|escapejs }}', '{{ detail.account_holder|escapejs }}', '{{ detail.inn|default:''|escapejs }}')">
+                        Изменить
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="payout-details-empty">
+            <div class="payout-details-empty-icon">
+                <i class="bi bi-credit-card"></i>
+            </div>
+            <p class="payout-details-empty-text">У вас пока нет сохранённых реквизитов</p>
+            <a href="#" class="payout-details-empty-link" onclick="document.querySelector('.payout-details-form-card').scrollIntoView({behavior:'smooth'}); return false;">
+                Добавить реквизиты
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- Модальное окно редактирования -->
+<div class="modal fade" id="editPayoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="edit-modal-header">
+                <h5 class="edit-modal-title">Редактировать реквизиты</h5>
+                <button type="button" class="edit-modal-close" data-bs-dismiss="modal">&times;</button>
+            </div>
+            <div class="edit-modal-body">
+                <form id="editPayoutForm" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="detail_id" id="edit_detail_id">
+
+                    <div class="payout-details-form-row">
+                        <label class="payout-details-form-label" for="edit_bank_name">
+                            Банк <span class="required">*</span>
+                        </label>
+                        <select class="payout-details-input payout-details-select" id="edit_bank_name" name="bank_name" required>
+                            <option value="">Выберите банк</option>
+                            <option value="sberbank">Сбербанк</option>
+                            <option value="tinkoff">Тинькофф</option>
+                            <option value="vtb">ВТБ</option>
+                            <option value="alfabank">Альфа-Банк</option>
+                            <option value="other">Другой банк</option>
+                        </select>
+                        <div class="payout-details-error" id="edit_bank_name_error">Выберите банк</div>
+                    </div>
+
+                    <div class="payout-details-form-row">
+                        <label class="payout-details-form-label" for="edit_account_number">
+                            Номер счёта или карты <span class="required">*</span>
+                        </label>
+                        <input type="text" class="payout-details-input" id="edit_account_number" name="account_number"
+                               placeholder="Например 40817810000000012345" inputmode="numeric" required>
+                        <div class="payout-details-error" id="edit_account_number_error"></div>
+                    </div>
+
+                    <div class="payout-details-form-row">
+                        <label class="payout-details-form-label" for="edit_account_holder">
+                            ФИО владельца счёта <span class="required">*</span>
+                        </label>
+                        <input type="text" class="payout-details-input" id="edit_account_holder" name="account_holder"
+                               placeholder="Иванов Иван Иванович" required>
+                        <div class="payout-details-error" id="edit_account_holder_error"></div>
+                    </div>
+
+                    <div class="payout-details-form-row">
+                        <label class="payout-details-form-label" for="edit_inn">
+                            ИНН <span class="optional">(необязательно)</span>
+                        </label>
+                        <input type="text" class="payout-details-input" id="edit_inn" name="inn"
+                               placeholder="10 или 12 цифр" inputmode="numeric" maxlength="12">
+                        <div class="payout-details-error" id="edit_inn_error"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-modal-footer">
+                <button type="button" class="edit-modal-btn-cancel" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="edit-modal-btn-save" id="editPayoutBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="delete-modal-body">
+                <div class="delete-modal-icon">
+                    <i class="bi bi-trash3"></i>
+                </div>
+                <p class="delete-modal-text">Удалить реквизиты?</p>
+                <p class="delete-modal-hint">Это действие нельзя отменить.</p>
+            </div>
+            <div class="delete-modal-footer">
+                <button type="button" class="delete-modal-btn-cancel" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="delete-modal-btn-confirm" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast уведомления -->
+<div class="payout-toast" id="payoutToast">
+    <span class="payout-toast-icon"></span>
+    <span class="payout-toast-text"></span>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// === ГЛОБАЛЬНЫЕ ФУНКЦИИ (доступны из HTML onclick) ===
+let deleteDetailId = null;
+
+window.openDeleteModal = function(id) {
+    deleteDetailId = id;
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+};
+
+function showError(fieldId, msg) {
+    const input = document.getElementById(fieldId);
+    const error = document.getElementById(fieldId + '_error');
+    if (input) input.classList.add('is-invalid');
+    if (input) input.classList.remove('is-valid');
+    if (error) {
+        error.textContent = msg;
+        error.classList.add('show');
+    }
+}
+
+function clearError(fieldId) {
+    const input = document.getElementById(fieldId);
+    const error = document.getElementById(fieldId + '_error');
+    if (input) {
+        input.classList.remove('is-invalid');
+        if (input.value.trim()) input.classList.add('is-valid');
+    }
+    if (error) {
+        error.textContent = '';
+        error.classList.remove('show');
+    }
+}
+
+function validateField(fieldId) {
+    const input = document.getElementById(fieldId);
+    if (!input) return true;
+    const val = input.value;
+    const validators = {
+        account_number: function(v) {
+            const cv = v.replace(/\s/g, '');
+            if (!cv) return 'Введите номер счёта или карты.';
+            if (!/^\d+$/.test(cv)) return 'Номер должен содержать только цифры.';
+            if (cv.length === 20) {
+                if (!cv.startsWith('40817')) return 'Номер расчётного счёта должен начинаться с 40817.';
+            } else if (cv.length === 16) {
+                // Карта OK
+            } else {
+                return 'Номер счёта: 20 цифр или карта: 16 цифр.';
+            }
+            return '';
+        },
+        account_holder: function(v) {
+            if (!v.trim()) return 'Введите ФИО владельца.';
+            if (v.trim().length < 3) return 'ФИО должно содержать минимум 3 символа.';
+            if (!/^[\w\s\-'\u0401\u0451а-яА-ЯёЁ]+$/.test(v.trim())) {
+                return 'ФИО может содержать только буквы и дефис.';
+            }
+            return '';
+        },
+        inn: function(v) {
+            if (!v.trim()) return '';
+            const cv = v.replace(/\s/g, '');
+            if (!/^\d+$/.test(cv)) return 'ИНН должен содержать только цифры.';
+            if (![10, 12].includes(cv.length)) return 'ИНН: 10 или 12 цифр.';
+            return '';
+        }
+    };
+    const validator = validators[fieldId];
+    if (!validator) return true;
+    const msg = validator(val);
+    if (msg) {
+        showError(fieldId, msg);
+        return false;
+    }
+    clearError(fieldId);
+    return true;
+}
+
+window.openEditModal = function(id, bank, account, holder, inn) {
+    // Очистить стили валидации
+    ['edit_bank_name', 'edit_account_number', 'edit_account_holder', 'edit_inn'].forEach(clearError);
+
+    // Установить значения
+    document.getElementById('edit_detail_id').value = id;
+    document.getElementById('edit_bank_name').value = bank;
+    document.getElementById('edit_account_number').value = account;
+    document.getElementById('edit_account_holder').value = holder;
+    document.getElementById('edit_inn').value = inn;
+
+    // Показать модалку
+    const modal = new bootstrap.Modal(document.getElementById('editPayoutModal'));
+    modal.show();
+    setTimeout(function() {
+        document.getElementById('edit_bank_name').focus();
+    }, 200);
+};
+
+// === ИНИЦИАЛИЗАЦИЯ при загрузке ===
+$(document).ready(function() {
+
+    // Live-валидация при потере фокуса
+    ['account_number', 'account_holder', 'inn'].forEach(function(fieldId) {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            input.addEventListener('blur', function() { validateField(fieldId); });
+            input.addEventListener('input', function() {
+                if (input.classList.contains('is-invalid')) validateField(fieldId);
+            });
+        }
+    });
+
+    // Маска для номера счёта — только цифры
+    ['account_number', 'inn'].forEach(function(fieldId) {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                const allowed = [8, 9, 13, 27, 46, 110, 188, 190, 37, 39];
+                if (allowed.includes(e.keyCode)) return;
+                if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
+                if ((e.keyCode >= 48 && e.keyCode <= 57) || e.keyCode >= 96) return;
+                e.preventDefault();
+            });
+        }
+    });
+
+    // === ДОБАВЛЕНИЕ ===
+    $('#addPayoutForm').on('submit', function(e) {
+        e.preventDefault();
+
+        // Валидация
+        let valid = true;
+        if (!$('#bank_name').val()) { showError('bank_name', 'Выберите банк'); valid = false; }
+        else { clearError('bank_name'); }
+        if (!validateField('account_number')) valid = false;
+        if (!validateField('account_holder')) valid = false;
+        if (!validateField('inn')) valid = false;
+        if (!valid) return;
+
+        const $btn = $('#addPayoutBtn');
+        $btn.prop('disabled', true).text('Сохранение...');
+
+        $.ajax({
+            url: '{% url "partner:payout_details" %}',
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function() {
+                showToast('Ошибка при сохранении.', 'error');
+                $btn.prop('disabled', false).text('Сохранить реквизиты');
+            }
+        });
+    });
+
+    // === РЕДАКТИРОВАНИЕ ===
+    $('#editPayoutBtn').on('click', function() {
+        let valid = true;
+        if (!$('#edit_bank_name').val()) { showError('edit_bank_name', 'Выберите банк'); valid = false; }
+        else { clearError('edit_bank_name'); }
+        if (!validateField('edit_account_number')) valid = false;
+        if (!validateField('edit_account_holder')) valid = false;
+        if (!validateField('edit_inn')) valid = false;
+        if (!valid) return;
+
+        const $btn = $('#editPayoutBtn');
+        $btn.prop('disabled', true).text('Сохранение...');
+
+        $.ajax({
+            url: '{% url "partner:payout_details" %}',
+            method: 'POST',
+            data: $('#editPayoutForm').serialize(),
+            success: function() {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editPayoutModal'));
+                modal.hide();
+                showToast('Реквизиты обновлены!', 'success');
+                setTimeout(function() { window.location.reload(); }, 800);
+            },
+            error: function(xhr) {
+                const msg = xhr.responseJSON ? xhr.responseJSON.message : 'Ошибка';
+                showToast(msg, 'error');
+                $btn.prop('disabled', false).text('Сохранить');
+            }
+        });
+    });
+
+    // === УДАЛЕНИЕ ===
+    $('#confirmDeleteBtn').on('click', function() {
+        if (!deleteDetailId) return;
+        $.ajax({
+            url: '{% url "partner:payout_details" %}',
+            method: 'POST',
+            data: {
+                action: 'delete',
+                detail_id: deleteDetailId,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function() {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                modal.hide();
+                showToast('Реквизиты удалены.', 'success');
+                setTimeout(function() { window.location.reload(); }, 800);
+            },
+            error: function() {
+                showToast('Ошибка при удалении.', 'error');
+            }
+        });
+    });
+
+    // === УТИЛИТЫ ===
+    function showToast(text, type) {
+        const $toast = $('#payoutToast');
+        $toast.removeClass('success error').addClass(type);
+        $toast.find('.payout-toast-text').text(text);
+        $toast.find('.payout-toast-icon').text(type === 'success' ? '✓' : '✕');
+        $toast.addClass('show');
+        setTimeout(function() { $toast.removeClass('show'); }, 3000);
+    }
+});
+</script>
 {% endblock %}
