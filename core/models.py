@@ -983,7 +983,6 @@ class PayoutRequest(models.Model):
         ("processing", "В обработке"),
         ("paid", "Выплачено"),
         ("rejected", "Отклонено"),
-        ("cancelled", "Отменено"),
     ]
 
     organizer = models.ForeignKey(
@@ -992,12 +991,19 @@ class PayoutRequest(models.Model):
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Сумма к выплате"
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="processing")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     payment_details = models.ForeignKey(
         PayoutDetails, on_delete=models.SET_NULL, null=True, verbose_name="Реквизиты"
     )
-    comment = models.TextField(blank=True, null=True, verbose_name="Комментарий")
+    comment = models.TextField(blank=True, null=True, verbose_name="Комментарий партнёра")
+    rejection_comment = models.TextField(
+        blank=True, null=True, verbose_name="Комментарий администратора при отклонении"
+    )
+    balance_at_request = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name="Баланс партнёра на момент запроса"
+    )
 
     def __str__(self):
         return f"Запрос #{self.id} - {self.get_status_display()}"

@@ -714,12 +714,38 @@ class PayoutRequestAdmin(admin.ModelAdmin):
         "id",
         "organizer",
         "amount",
+        "balance_at_request",
         "get_status_display",
         "created_at",
     )
     list_filter = ("status", "created_at")
     search_fields = ("id", "payment_details__account_holder", "organizer__email")
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "balance_at_request")
+    actions = ["mark_as_paid", "mark_as_rejected"]
+
+    fieldsets = (
+        ("Информация о заявке", {
+            "fields": ("organizer", "amount", "status", "created_at", "balance_at_request"),
+        }),
+        ("Реквизиты", {
+            "fields": ("payment_details",),
+        }),
+        ("Комментарии", {
+            "fields": ("comment", "rejection_comment"),
+        }),
+    )
+
+    def mark_as_paid(self, request, queryset):
+        """Action: отметить заявки как выплаченные."""
+        updated = queryset.update(status="paid")
+        self.message_user(request, f"Отмечено как выплаченные: {updated} заявок.")
+    mark_as_paid.short_description = "Отметить как выплаченные"
+
+    def mark_as_rejected(self, request, queryset):
+        """Action: отклонить заявки (статус нужно указать в форме)."""
+        updated = queryset.update(status="rejected")
+        self.message_user(request, f"Отклонено заявок: {updated}. Добавьте комментарий в карточку заявки.")
+    mark_as_rejected.short_description = "Отклонить заявки"
 
 @admin.register(EventPackage)
 class EventPackageAdmin(admin.ModelAdmin):

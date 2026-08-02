@@ -1720,8 +1720,15 @@ def finances(request):
         or 0
     )
     commission_amount = commission_sum
-    # Сумма к выплате: выручка минус комиссия
-    payout_amount = total_revenue - commission_sum
+    # Сумма к выплате: выручка минус комиссия минус заявки в обработке (pending/processing)
+    pending_amount = (
+        PayoutRequest.objects.filter(
+            organizer=request.user,
+            status__in=["pending", "processing"]
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
+    payout_amount = total_revenue - commission_sum - pending_amount
 
     payout_history = PayoutRequest.objects.filter(organizer=request.user).order_by(
         "-created_at"
@@ -1733,7 +1740,7 @@ def finances(request):
     context = {
         "total_revenue": total_revenue,
         "commission_amount": commission_amount,
-        "payout_amount": payout_amount,
+        "payout_amount": float(payout_amount),
         "payout_history": payout_history,
         "partner_payout_details": partner_payout_details,
     }
@@ -1749,7 +1756,8 @@ def request_payout(request):
     """
     try:
         data = request.POST
-        amount = float(data.get("amount", 0))
+        amount_str = data.get("amount", "0").replace(",", ".")
+        amount = float(amount_str)
         payout_details_id = data.get("payout_details")
         comment = data.get("comment", "")
 
@@ -1804,52 +1812,21 @@ def request_payout(request):
                 status=400,
             )
 
-        # Создаём запрос на выплату
+        # Сохраняем баланс партнёра на момент запроса
+        balance_at_request = payout_amount
+
+        # Создаём запрос на выплату со статусом "processing"
         payout_request = PayoutRequest.objects.create(
             organizer=request.user,
             amount=amount,
             payment_details=payout_details,
             comment=comment,
-            status="pending",
+            status="processing",
+            balance_at_request=balance_at_request,
         )
 
         return JsonResponse(
             {"status": "success", "message": "Запрос на выплату успешно создан!"}
-        )
-
-    except Exception as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
-        )
-
-@require_POST
-@login_required
-def cancel_payout(request, payout_id):
-    """
-    Отмена заявки на выплату через AJAX.
-    """
-    try:
-        # Ищем заявку, которая принадлежит текущему пользователю
-        payout_request = get_object_or_404(
-            PayoutRequest, id=payout_id, organizer=request.user
-        )
-
-        # Проверяем, можно ли отменить (статус должен быть 'pending')
-        if payout_request.status != "pending":
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": 'Отменить можно только заявку в статусе "Ожидает обработки"',
-                },
-                status=400,
-            )
-
-        # Меняем статус и сохраняем
-        payout_request.status = "cancelled"
-        payout_request.save()
-
-        return JsonResponse(
-            {"status": "success", "message": "Заявка на выплату отменена!"}
         )
 
     except Exception as e:

@@ -20,7 +20,7 @@
                      <div class="mb-3">
                          <label for="payoutAmount" class="form-label">Сумма выплаты</label>
                          <div class="input-group">
-                             <input type="number" step="0.01" class="form-control" id="payoutAmount" name="amount" value="{{ payout_amount|stringformat:".2f" }}" min="0" max="{{ payout_amount }}">
+                             <input type="text" inputmode="decimal" class="form-control" id="payoutAmount" name="amount" value="{{ payout_amount|floatformat:2 }}" placeholder="Например 10.80">
                              <span class="input-group-text">₽</span>
                          </div>
                          <small class="text-muted">Максимальная доступная сумма: {{ payout_amount|floatformat:2 }} ₽</small>
@@ -71,11 +71,9 @@
             <input
                 id="availableAmountInput"
                 class="finance-card__available-input form-control"
-                type="number"
-                step="0.01"
-                min="0"
-                max="{{ payout_amount }}"
-                value="{{ payout_amount|stringformat:"2f" }}"
+                type="text"
+                inputmode="decimal"
+                value="{{ payout_amount|floatformat:2 }}"
                 placeholder="Введите сумму для вывода"
                 aria-label="Сумма выплаты"
             />
@@ -92,7 +90,11 @@
         {% for payout in payout_history %}
         <div class="finance-history-item">
             <div class="finance-history-item__meta">
-                <p class="finance-history-item__title">{{ payout.get_status_display }}</p>
+                <p class="finance-history-item__title">{{ payout.get_status_display }}
+                    {% if payout.rejection_comment %}
+                        <br><small class="text-muted" style="font-size:0.85em;">{{ payout.rejection_comment }}</small>
+                    {% endif %}
+                </p>
                 <p class="finance-history-item__date">{{ payout.created_at|date:"d.m.Y" }}</p>
             </div>
             <div class="finance-history-item__amount {% if payout.amount|floatformat:"0" >= 0 %}positive{% else %}negative{% endif %}">
@@ -111,33 +113,25 @@
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Обработка формы запроса выплаты
 $(document).ready(function() {
-    let isSubmitting = false; // Флаг для защиты от двойного клика
+    let isSubmitting = false;
+    const maxPayoutAmount = parseFloat("{{ payout_amount }}");
 
-    // Клиентская валидация суммы выплаты
-    $('#availableAmountInput').on('input', function() {
-        const maxAmount = parseFloat($(this).attr('max'));
-        const currentValue = parseFloat($(this).val());
-
-        if (currentValue > maxAmount) {
-            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
-            $(this).val(maxAmount.toFixed(2));
-        }
-    });
+    function formatInput(value) {
+        return value.replace(',', '.');
+    }
 
     function openPayoutModal() {
-        const enteredAmount = parseFloat($('#availableAmountInput').val()) || 0;
-        const maxAmount = parseFloat($('#availableAmountInput').attr('max'));
-
-        if (enteredAmount <= 0) {
+        let enteredAmountStr = formatInput($('#availableAmountInput').val());
+        const enteredAmount = parseFloat(enteredAmountStr);
+        
+        if (isNaN(enteredAmount) || enteredAmount <= 0) {
             alert('Введите сумму выплаты больше нуля.');
             return;
         }
 
-        if (enteredAmount > maxAmount) {
-            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
-            $('#availableAmountInput').val(maxAmount.toFixed(2));
+        if (enteredAmount > maxPayoutAmount) {
+            alert('Сумма выплаты не может превышать доступную сумму: ' + maxPayoutAmount.toFixed(2) + ' ₽');
             return;
         }
 
@@ -159,22 +153,29 @@ $(document).ready(function() {
         }
     });
 
+    // Разрешаем ввод только цифр, точки и запятой
+    $('#availableAmountInput, #payoutAmount').on('keydown', function(e) {
+        const allowedKeys = [8, 9, 13, 27, 46, 110, 188, 190];
+        if (allowedKeys.includes(e.keyCode)) return;
+        if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
+        if ((e.keyCode >= 48 && e.keyCode <= 57) || e.keyCode === 190 || e.keyCode === 188) return;
+        e.preventDefault();
+    });
+
     $('#payoutRequestForm').submit(function(e) {
         e.preventDefault();
 
-        // Проверка суммы выплаты
-        const maxAmount = parseFloat($('#payoutAmount').attr('max'));
-        const currentValue = parseFloat($('#payoutAmount').val());
+        let amountVal = formatInput($('input[name="amount"]').val());
+        $('input[name="amount"]').val(amountVal);
 
-        if (currentValue > maxAmount) {
-            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
+        const currentValue = parseFloat($('input[name="amount"]').val());
+
+        if (isNaN(currentValue) || currentValue > maxPayoutAmount) {
+            alert('Сумма выплаты не может превышать доступную сумму: ' + maxPayoutAmount.toFixed(2) + ' ₽');
             return;
         }
 
-        // Защита от повторного нажатия, пока запрос не завершен
-        if (isSubmitting) {
-            return;
-        }
+        if (isSubmitting) return;
 
         const form = $(this);
         const button = form.find('button[type="submit"]');
@@ -184,7 +185,6 @@ $(document).ready(function() {
         spinner.removeClass('d-none');
         button.prop('disabled', true);
         
-        // Отправить запрос
         fetch('{% url "partner:request_payout" %}', {
             method: 'POST',
             headers: {
@@ -201,17 +201,14 @@ $(document).ready(function() {
         })
         .then(response => response.json())
         .then(data => {
-            isSubmitting = false; // Сбрасываем флаг
+            isSubmitting = false;
             spinner.addClass('d-none');
             button.prop('disabled', false);
             
             if (data.status === 'success') {
                 alert('Запрос на выплату успешно отправлен!');
-                
-                // Сброс формы и закрытие модального окна ПЕРЕД перезагрузкой
                 form.trigger('reset'); 
                 $('#payoutModal').modal('hide'); 
-                
                 window.location.reload();
             } else {
                 alert('Ошибка: ' + data.message);
@@ -224,49 +221,6 @@ $(document).ready(function() {
             button.prop('disabled', false);
             alert('Произошла ошибка при отправке запроса на выплату');
         });
-    });
-});
-
-// Обработка кнопки "Отменить" в истории выплат
-$(document).on('click', '.cancel-payout', function() {
-    const button = $(this);
-    const payoutId = button.data('payout-id');
-    
-    if (!confirm("Вы уверены, что хотите отменить эту заявку?")) {
-        return;
-    }
-    
-    button.prop('disabled', true); // Блокируем кнопку, чтобы не кликнуть дважды
-    button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Отмена...'); // Показываем спиннер
-
-    fetch(`{% url "partner:cancel_payout" 0 %}`.replace("0", payoutId), { // Подставляем ID в URL
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({}) // Тело можно оставить пустым или добавить данные
-    }) 
-    .then(response => response.json())
-    .then(data => {
-        button.prop('disabled', false);
-        button.html('Отменить'); // Возвращаем текст кнопки
-        
-        if (data.status === 'success') {
-             alert(data.message);
-             window.location.reload(); // Перезагружаем страницу, чтобы увидеть изменения в таблице
-        } else {
-             alert('Ошибка: ' + data.message);
-             // Здесь можно вернуть кнопку к исходному виду, если отмена не удалась
-             // button.replaceWith(`<button ...>Отменить</button>`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при отмене заявки');
-        button.prop('disabled', false);
-        button.html('Отменить');
     });
 });
 </script>
