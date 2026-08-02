@@ -1193,56 +1193,72 @@ def edit_event(request, event_id):
 @login_required
 def partner_event_list(request):
     """
-    Отображает список всех мероприятий текущего партнера с возможностью фильтрации.
+    Отображает список всех мероприятий текущего партнёра
+    с разделением на актуальные и архивные + фильтрация.
     """
-    # Получаем параметры фильтрации из GET-запроса
+    # ---------- Параметры фильтрации ----------
     title_query = request.GET.get("title", None)
     date_query = request.GET.get("date", None)
+    status_filter = request.GET.getlist("status")  # ['active'], ['archived'] или оба
 
-    # Базовый фильтр: только мероприятия текущего пользователя
+    # ---------- Базовая выборка ----------
     events = Event.objects.filter(organizer=request.user)
 
-    # Применяем фильтры
+    # ---------- Применяем фильтры ----------
     if title_query:
         events = events.filter(title__icontains=title_query)
+
     if date_query:
-        # Преобразуем строку даты в объект date для фильтрации
         try:
             query_date = datetime.fromisoformat(date_query)
             events = events.filter(date_time__date=query_date)
         except (ValueError, TypeError):
-            # Если дата некорректна, игнорируем этот фильтр
             pass
 
-    # Сортируем по дате (новые сверху)
+    # Сортировка (новые сверху)
     events = events.order_by("-date_time")
 
-    event_data = []
-    for event in events:
-        sold_tickets = 0
-        total = 0
-        for ticket in event.tickets.all():
-            # Считаем только оплаченные заказы (без refunded/canceled)
-            sold = sum(
-                order.quantity
-                for order in ticket.orders.exclude(
-                    payment_status__in=("canceled", "refunded")
-                )
-            )
-            sold_tickets += sold
-            # Общее = проданные + доступные
-            total += sold + ticket.available_quantity
+    # ---------- Разделяем на актуальные и архивные ----------
+    now = timezone.now()
 
-        event_data.append(
-            {
+    def build_event_data(event_qs):
+        """Формирует список словарей с продажами по каждому событию."""
+        result = []
+        for event in event_qs:
+            sold_tickets = 0
+            total = 0
+            for ticket in event.tickets.all():
+                sold = sum(
+                    order.quantity
+                    for order in ticket.orders.exclude(
+                        payment_status__in=("canceled", "refunded")
+                    )
+                )
+                sold_tickets += sold
+                total += sold + ticket.available_quantity
+
+            result.append({
                 "event": event,
                 "sold": sold_tickets,
                 "total": total,
-            }
-        )
+            })
+        return result
 
+    active_qs = events.filter(date_time__gte=now)
+    archived_qs = events.filter(date_time__lt=now)
+
+    # ---------- Учитываем чекбоксы "Действующие" / "Истёкшие" ----------
+    # Если ни один не выбран — показываем оба (поведение по умолчанию)
+    show_active = not status_filter or "active" in status_filter
+    show_archived = not status_filter or "archived" in status_filter
+
+    active_events = build_event_data(active_qs) if show_active else []
+    archived_events = build_event_data(archived_qs) if show_archived else []
+
+    # ---------- Контекст ----------
     context = {
-        "events": event_data,
+        "active_events": active_events,
+        "archived_events": archived_events,
         "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/partner_event_list.html", context)

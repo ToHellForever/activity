@@ -2,166 +2,222 @@
 {% load static %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/partner_event_list.css' %}">
+
 <!-- Toast уведомления -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100" id="toastContainer"></div>
 
-<h1>Мои мероприятия</h1>
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+
     <div class="partner-main">
-<form method="post" action="{% url 'partner:bulk_delete_events' %}" id="bulkDeleteForm">
-  {% csrf_token %}
-  <div class="row mb-3">
-    <div class="col-md-12">
-      <form method="get" class="form-inline">
-        <div class="form-group mr-2">
-          <input type="text" name="title" class="form-control" placeholder="Название мероприятия" value="{{ request.GET.title }}">
+        <div class="events-page">
+
+            <!-- Кнопка создания -->
+            <a href="{% url 'partner:create_event' %}" class="btn-create-event">
+                <i class="bi bi-plus"></i> Разместить событие
+            </a>
+
+            <!-- Форма поиска и фильтров -->
+            <form method="get" class="filters-panel">
+                <div class="search-row">
+                    <input type="text" name="title" class="search-input"
+                           placeholder="Поиск по событиям" value="{{ request.GET.title }}">
+                </div>
+
+                <div class="filter-row">
+                    <label class="filter-check">
+                        <input type="checkbox" name="status" value="active"
+                               {% if 'active' in request.GET.status %}checked{% endif %}>
+                        <span>Действующие</span>
+                    </label>
+
+                    <label class="filter-check">
+                        <input type="checkbox" name="status" value="archived"
+                               {% if 'archived' in request.GET.status %}checked{% endif %}>
+                        <span>Истёкшие</span>
+                    </label>
+
+                    <div class="filter-date">
+                        <span class="filter-date-label">ДАТА:</span>
+                        <input type="date" name="date" class="date-input" value="{{ request.GET.date }}">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-find">Найти</button>
+                </div>
+            </form>
+
+            <!-- Форма массового удаления (обёртка вокруг обоих блоков) -->
+            <form method="post" action="{% url 'partner:bulk_delete_events' %}" id="bulkDeleteForm">
+                {% csrf_token %}
+
+                <!-- ==================== АКТУАЛЬНЫЕ ==================== -->
+                <h2 class="section-title">Актуальные события</h2>
+
+                {% if active_events %}
+                    <div class="events-grid">
+                        {% for item in active_events %}
+                            <div class="event-card">
+                                <div class="event-card-image">
+                                    {% if item.event.image %}
+                                        <img src="{{ item.event.image.url }}" alt="{{ item.event.title }}">
+                                    {% else %}
+                                        <img src="{% static 'img/event-placeholder.jpg' %}" alt="Нет изображения">
+                                    {% endif %}
+
+                                    <label class="card-check">
+                                        <input type="checkbox" name="event_ids"
+                                               value="{{ item.event.id }}" class="event-checkbox">
+                                        <span class="card-check-box">
+                                            <i class="bi bi-trash"></i>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="event-card-body">
+                                    <h3 class="event-title">{{ item.event.title }}</h3>
+
+                                    <div class="event-organizer">
+                                        <i class="bi bi-play-fill"></i>
+                                        <span>Проверенный организатор</span>
+                                    </div>
+
+                                    <div class="event-date">
+                                        <i class="bi bi-calendar-event"></i>
+                                        <span>{{ item.event.date_time|date:"j E Y" }}</span>
+                                    </div>
+
+                                    <div class="event-meta">
+                                        <div><span class="meta-label">Категория:</span> {{ item.event.category|default:"—" }}</div>
+                                        <div><span class="meta-label">Формат:</span> {{ item.event.format|default:"—" }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="event-card-actions">
+                                    <a href="{% url 'partner:participant_list' item.event.id %}"
+                                       class="btn-view">Посмотреть</a>
+
+                                    {% if not item.event.has_sold_tickets %}
+                                        <a href="{% url 'partner:edit_event' item.event.id %}"
+                                           class="btn-edit" title="Редактировать">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                    {% else %}
+                                        <button type="button" class="btn-edit"
+                                                onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Обратитесь в поддержку.'); return false;">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-hint">Актуальных событий нет.</p>
+                {% endif %}
+
+                <!-- ==================== АРХИВ ==================== -->
+                <h2 class="section-title mt-4">Архив</h2>
+
+                {% if archived_events %}
+                    <div class="events-grid">
+                        {% for item in archived_events %}
+                            <div class="event-card event-card--archived">
+                                <div class="event-card-image">
+                                    {% if item.event.image %}
+                                        <img src="{{ item.event.image.url }}" alt="{{ item.event.title }}">
+                                    {% else %}
+                                        <img src="{% static 'img/event-placeholder.jpg' %}" alt="Нет изображения">
+                                    {% endif %}
+                                </div>
+
+                                <div class="event-card-body">
+                                    <h3 class="event-title">{{ item.event.title }}</h3>
+
+                                    <div class="event-organizer">
+                                        <i class="bi bi-play-fill"></i>
+                                        <span>Проверенный организатор</span>
+                                    </div>
+
+                                    <div class="event-date">
+                                        <i class="bi bi-calendar-event"></i>
+                                        <span>{{ item.event.date_time|date:"j E Y" }}</span>
+                                    </div>
+
+                                    <div class="event-meta">
+                                        <div><span class="meta-label">Категория:</span> {{ item.event.category|default:"—" }}</div>
+                                        <div><span class="meta-label">Формат:</span> {{ item.event.format|default:"—" }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="event-card-actions">
+                                    <a href="{% url 'partner:participant_list' item.event.id %}"
+                                       class="btn-view">Посмотреть</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-hint">Архив пуст.</p>
+                {% endif %}
+
+                <!-- Кнопка массового удаления (появляется, когда выбраны карточки) -->
+                <div class="bulk-actions mt-3">
+                    <button type="submit" class="btn btn-danger" id="bulkDeleteButton" disabled>
+                        <i class="bi bi-trash"></i> Удалить выбранные
+                    </button>
+                </div>
+            </form>
+
         </div>
-        <div class="form-group mr-2">
-          <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
-        </div>
-        <button type="submit" class="btn btn-primary">Фильтровать</button>
-        <a href="?" class="btn btn-secondary ml-2">Сбросить</a>
-      </form>
-    </div>
-  </div>
-</form>
-
-<p><a href="{% url 'partner:create_event' %}" class="btn btn-primary">Создать новое мероприятие</a></p>
-
-<form method="post" action="{% url 'partner:bulk_delete_events' %}" id="bulkDeleteForm">
-  {% csrf_token %}
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th><input type="checkbox" id="selectAllCheckbox"></th>
-        <th>Название</th>
-        <th>Дата и время</th>
-        <th>Статус</th>
-        <th>Билеты</th>
-        <th>Действия</th>
-        <th>Комиссия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in events %}
-      <tr>
-        <td><input type="checkbox" name="event_ids" value="{{ item.event.id }}" class="event-checkbox"></td>
-        <td>{{ item.event.title }}</td>
-        <td>{{ item.event.date_time|date:"d.m.Y H:i" }}</td>
-        <td>{{ item.event.status|title }}</td>
-        <td>{{ item.sold }} / {{ item.total }}</td>
-<td>
-  {% if not item.event.has_sold_tickets %}
-    <a href="{% url 'partner:edit_event' item.event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
-  {% else %}
-    <button type="button" class="btn btn-sm btn-secondary" onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Для редактирования мероприятия обратитесь в службу поддержки.'); return false;">Редактировать</button>
-  {% endif %}
-  <a href="{% url 'partner:participant_list' item.event.id %}" class="btn btn-sm btn-info">Участники</a>
-  {% if item.event.allow_platform_requests %}
-    <a href="{% url 'support_dashboard' %}?event_id={{ item.event.id }}" class="btn btn-sm btn-primary">Вопросы</a>
-  {% endif %}
-  <a href="{% url 'partner:delete_event' item.event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить это мероприятие?')">Удалить</a>
-</td>
-        <td>{{ item.event.commission_rate }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="7">У вас пока нет созданных мероприятий.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div class="row mt-3">
-    <div class="col-md-12">
-      <button type="submit" class="btn btn-danger" id="bulkDeleteButton" disabled>Удалить выбранные</button>
-    </div>
-  </div>
-</form>
-
     </div>
 </div>
+
 <script>
-    // === Toast-уведомления ===
+    // === Toast ===
     function showToast(message, isError = true) {
         const toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) return;
-        
+
         const toastElement = document.createElement('div');
         toastElement.className = `toast align-items-center text-white ${isError ? 'bg-danger' : 'bg-success'}`;
         toastElement.setAttribute('role', 'alert');
-        toastElement.setAttribute('aria-live', 'assertive');
-        toastElement.setAttribute('aria-atomic', 'true');
-        
-        const toastBody = document.createElement('div');
-        toastBody.className = 'd-flex';
-        
-        const toastMessage = document.createElement('div');
-        toastMessage.className = 'toast-body';
-        toastMessage.textContent = message;
-        
-        const toastClose = document.createElement('button');
-        toastClose.type = 'button';
-        toastClose.className = 'btn-close btn-close-white me-2 m-auto';
-        toastClose.setAttribute('data-bs-dismiss', 'toast');
-        toastClose.setAttribute('aria-label', 'Close');
-        
-        toastBody.appendChild(toastMessage);
-        toastBody.appendChild(toastClose);
-        toastElement.appendChild(toastBody);
-        
+        toastElement.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
         toastContainer.appendChild(toastElement);
-        
-        const toast = new bootstrap.Toast(toastElement, {
-            autohide: true,
-            delay: 5000
-        });
+        const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 5000 });
         toast.show();
-        
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            toastElement.remove();
-        });
+        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
     }
-    
+
     document.addEventListener('DOMContentLoaded', function() {
-    const checkboxes = document.querySelectorAll('.event-checkbox');
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const bulkDeleteButton = document.getElementById('bulkDeleteButton');
-    const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+        const checkboxes = document.querySelectorAll('.event-checkbox');
+        const bulkDeleteButton = document.getElementById('bulkDeleteButton');
+        const bulkDeleteForm = document.getElementById('bulkDeleteForm');
 
-    // Обработка выбора всех чекбоксов
-    selectAllCheckbox.addEventListener('change', function() {
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-      });
-      updateBulkDeleteButtonState();
-    });
-
-    // Обработка изменения состояния отдельных чекбоксов
-    checkboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', function() {
-        updateBulkDeleteButtonState();
-      });
-    });
-
-    // Обновление состояния кнопки "Удалить выбранные"
-    function updateBulkDeleteButtonState() {
-      const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
-      bulkDeleteButton.disabled = checkedBoxes.length === 0;
-    }
-
-    // Обработка отправки формы
-    bulkDeleteForm.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
-      if (checkedBoxes.length > 0) {
-        if (confirm(`Вы уверены, что хотите удалить ${checkedBoxes.length} мероприятий?`)) {
-          this.submit();
+        function updateBulkDeleteButtonState() {
+            const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
+            bulkDeleteButton.disabled = checkedBoxes.length === 0;
         }
-      }
+
+        checkboxes.forEach(cb => cb.addEventListener('change', updateBulkDeleteButtonState));
+
+        bulkDeleteForm.addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                return;
+            }
+            if (!confirm(`Удалить ${checkedBoxes.length} мероприятий?`)) {
+                e.preventDefault();
+            }
+        });
     });
-  });
 </script>
 
 {% endblock %}

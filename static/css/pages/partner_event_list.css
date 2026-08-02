@@ -1,0 +1,428 @@
+/* ============================================================
+   PARTNER EVENTS PAGE
+   ============================================================ */
+
+.partner-main {
+    background: #f5f6f8;
+    min-height: 100vh;
+    padding: 20px 24px;
+}
+
+.events-page {
+    margin: 0 auto;
+}
+
+/* ============================================================
+   Кнопка "+ Разместить событие"
+   ============================================================ */
+.btn-create-event {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ececec;
+    color: #333;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 22px;
+    transition: all 0.2s ease;
+}
+
+.btn-create-event:hover {
+    background: #ff8c42;
+    color: #fff;
+}
+
+.btn-create-event i {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* ============================================================
+   Панель фильтров
+   ============================================================ */
+.filters-panel {
+    background: transparent;
+    margin-bottom: 30px;
+}
+
+.search-input {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: #ff8c42;
+    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+}
+
+.search-input::placeholder {
+    color: #aaa;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.filter-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.filter-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #ff8c42;
+    cursor: pointer;
+}
+
+.filter-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-date-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.date-input {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 13px;
+    color: #333;
+    outline: none;
+    min-width: 130px;
+}
+
+.date-input:focus {
+    border-color: #ff8c42;
+}
+
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.btn-find {
+    background: #ff8c42;
+    color: #fff;
+    border: none;
+    padding: 9px 32px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-find:hover {
+    background: #f07a2f;
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+}
+
+/* ============================================================
+   Заголовки секций
+   ============================================================ */
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #222;
+    letter-spacing: 1px;
+    margin: 30px 0 20px;
+}
+
+.empty-hint {
+    color: #999;
+    font-size: 14px;
+    padding: 10px 0;
+}
+
+/* ============================================================
+   Сетка карточек
+   ============================================================ */
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* ============================================================
+   Карточка события
+   ============================================================ */
+.event-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.event-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Картинка ---------- */
+.event-card-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.event-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ---------- Чекбокс-корзинка на карточке ---------- */
+.card-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.card-check input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.card-check-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    color: #666;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.card-check-box i {
+    font-size: 15px;
+}
+
+.card-check:hover .card-check-box {
+    background: #fff;
+    color: #ff8c42;
+}
+
+.card-check input:checked + .card-check-box {
+    background: #ff8c42;
+    color: #fff;
+}
+
+/* ---------- Тело карточки ---------- */
+.event-card-body {
+    padding: 14px 16px 12px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.event-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #222;
+    line-height: 1.35;
+    margin: 0 0 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 38px;
+}
+
+.event-organizer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+.event-organizer i {
+    font-size: 12px;
+}
+
+.event-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #222;
+    margin-top: 2px;
+}
+
+.event-date i {
+    color: #666;
+    font-size: 13px;
+}
+
+.event-meta {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.event-meta .meta-label {
+    color: #999;
+}
+
+/* ---------- Кнопки действий ---------- */
+.event-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px 14px;
+}
+
+.btn-view {
+    flex-grow: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ff8c42;
+    color: #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 10px 12px;
+    border-radius: 22px;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-view:hover {
+    background: #f07a2f;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.35);
+}
+
+.btn-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.btn-edit:hover {
+    background: #2563eb;
+    color: #fff;
+    transform: rotate(-10deg);
+}
+
+.btn-edit i {
+    font-size: 13px;
+}
+
+/* ---------- Архивные карточки (без иконок действий сверху) ---------- */
+.event-card--archived .card-check {
+    display: none;
+}
+
+/* ============================================================
+   Кнопка массового удаления
+   ============================================================ */
+.bulk-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.bulk-actions .btn-danger {
+    background: #dc3545;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.bulk-actions .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 992px) {
+    .events-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .events-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-row {
+        gap: 14px;
+    }
+
+    .btn-find {
+        width: 100%;
+    }
+
+    .filter-actions {
+        justify-content: stretch;
+    }
+}
