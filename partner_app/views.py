@@ -32,6 +32,7 @@ from core.models import (
     EventPackage,
     UserPackageSubscription,
     OrderTicket,
+    SupportTicket,
 )
 from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDetailsForm, PortfolioItemForm
 from core.forms import PartnerProfileForm
@@ -221,6 +222,34 @@ def partner_dashboard(request):
         "last_rejection_reason": last_rejection_reason,
     }
     return render(request, "partner/dashboard.html", context)
+
+
+@login_required
+def partner_chats(request):
+    """Показ чатов — вопросов участников по мероприятиям партнёра."""
+    if request.user.user_type != "partner":
+        return redirect("visitor:dashboard")
+
+    selected_ticket = None
+    chat_messages = []
+
+    # Получаем список тикетов, связанных с мероприятиями партнёра
+    tickets = SupportTicket.objects.filter(event__organizer=request.user).order_by("-created_at")
+
+    if request.GET.get("ticket_id"):
+        ticket_id = request.GET.get("ticket_id")
+        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, event__organizer=request.user)
+        chat_messages = selected_ticket.messages.all()
+
+    partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+
+    context = {
+        "tickets": tickets,
+        "selected_ticket": selected_ticket,
+        "chat_messages": chat_messages,
+        "partner_profile": partner_profile,
+    }
+    return render(request, "partner/chats.html", context)
 
 @login_required
 @check_partner_status('can_create_events')

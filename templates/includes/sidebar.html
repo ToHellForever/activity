@@ -29,8 +29,8 @@
                 class="{% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <img src="/media/icon/star.svg" alt="" class="sidebar-icon">Мои события
                 </a>
-                <a href="{% url 'support_dashboard' %}"
-                class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
+                <a href="{% url 'partner:chats' %}"
+                class="{% if request.resolver_match.url_name == 'chats' %}active{% endif %}">
                     <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты
                 </a>
                 <a href="{% url 'partner:portfolio_list' %}"

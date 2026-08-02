@@ -53,4 +53,6 @@ urlpatterns = [
     path("portfolio/edit/<int:item_id>/", views.portfolio_edit, name="portfolio_edit"),
     path("portfolio/delete/<int:item_id>/", views.portfolio_delete, name="portfolio_delete"),
     path("portfolio/image/delete/<int:image_id>/", views.portfolio_image_delete, name="portfolio_image_delete"),
+    # Чаты участников по мероприятиям
+    path("chats/", views.partner_chats, name="chats"),
 ]
