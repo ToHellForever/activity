@@ -68,15 +68,17 @@
     </div>
     <div class="finance-card__actions">
         <div class="finance-card__amount-wrapper">
-            <input
-                id="availableAmountInput"
-                class="finance-card__available-input form-control"
-                type="text"
-                inputmode="decimal"
-                value="{{ payout_amount|floatformat:2 }}"
-                placeholder="Введите сумму для вывода"
-                aria-label="Сумма выплаты"
-            />
+            <div class="finance-card__input-wrap">
+                <input
+                    id="availableAmountInput"
+                    class="finance-card__available-input form-control"
+                    type="text"
+                    inputmode="decimal"
+                    value="{{ payout_amount|floatformat:2 }}"
+                    aria-label="Сумма выплаты"
+                />
+                <span class="finance-card__input-currency">₽</span>
+            </div>
         </div>
         <button type="button" id="openPayoutModalButton" class="finance-card__button">
             ПОЛУЧИТЬ ВЫПЛАТУ

@@ -1728,7 +1728,15 @@ def finances(request):
         ).aggregate(total=Sum("amount"))["total"]
         or 0
     )
-    payout_amount = total_revenue - commission_sum - pending_amount
+    # Также вычитаем уже выплаченные суммы (paid) — они уже ушли партнёру
+    paid_amount = (
+        PayoutRequest.objects.filter(
+            organizer=request.user,
+            status="paid"
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
+    payout_amount = total_revenue - commission_sum - pending_amount - paid_amount
 
     payout_history = PayoutRequest.objects.filter(organizer=request.user).order_by(
         "-created_at"

@@ -38,27 +38,45 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  flex-wrap: wrap;
   margin-top: 30px;
 }
 .finance-card__amount-wrapper {
-  flex: 1 1 280px;
-  min-width: 240px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.finance-card__input-wrap {
+  position: relative;
+  width: 100%;
+}
+.finance-card__input-currency {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(154, 154, 154, 1);
+  pointer-events: none;
 }
 .finance-card__available-input {
   width: 100%;
-  border: 1px solid #ececec;
   border-radius: 19.28px;
-  padding: 14px 18px;
-  font-weight: 700;
-  font-size: 1rem;
-  color: #111827;
-  background: #f8f6f6;
+  font-weight: 500;
+  font-family: "Montserrat";
+  font-size: 14px;
+  color: rgba(154, 154, 154, 1);
+  background: rgba(232, 225, 225, 1);
+  padding: 7px 10px 7px 10px;
+  padding-right: 32px;
+}
+.finance-card__available-input:active {
+  background: rgba(232, 225, 225, 1);
 }
 .finance-card__available-input:focus {
   outline: none;
-  border-color: #ff8348;
-  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15);
+  border-color: transparent;
+  box-shadow: none;
+  background: rgba(232, 225, 225, 1) !important;
 }
 .finance-card__button {
   background: #ff8348;
@@ -118,7 +136,10 @@
   color: #16a34a;
 }
 .finance-history-item__amount.negative {
-  color: #dc2626;
+  font-family: 'Verdana';
+  font-size: 15px;
+  color: black;
+  
 }
 .finance-history-item__actions {
   margin-left: 12px;
