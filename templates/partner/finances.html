@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-
+<link rel="stylesheet" href="{% static 'css/pages/finances.css' %}">
 <h1>Финансы и выплаты</h1>
 <div class="row partner-layout" style="display:flex; gap:14px;">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
-<div class="partner-main">
+<div class="partner-main finance-page">
 <!-- Модальное окно для запроса выплаты -->
 <div class="modal fade" id="payoutModal" tabindex="-1" aria-labelledby="payoutModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -37,6 +37,9 @@
                                 <option value="" disabled selected>Нет сохранённых реквизитов</option>
                             {% endif %}
                         </select>
+                        <a href="{% url 'partner:payout_details' %}" class="btn btn-outline-secondary w-100 mt-3">
+                            Добавить или изменить реквизиты
+                        </a>
                     </div>
                     
                      <div class="mb-3">
@@ -56,66 +59,51 @@
     </div>
 </div>
 
-<div style="display: flex; gap: 20px; margin-bottom: 20px;">
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Общая выручка</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ total_revenue|floatformat }} ₽</p>
+<div class="finance-card">
+    <div class="finance-card__header">
+        <div>
+            <p class="finance-card__title">Баланс</p>
+            <p class="finance-card__balance">{{ payout_amount|floatformat:"2" }}₽</p>
+        </div>
     </div>
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>Комиссия платформы</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ commission_amount|floatformat }} ₽</p>
-    </div>
-    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
-        <h3>К выплате</h3>
-        <p style="font-size: 24px; font-weight: bold;">{{ payout_amount|floatformat }} ₽</p>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#payoutModal">
-            Запросить выплату
+    <div class="finance-card__actions">
+        <div class="finance-card__amount-wrapper">
+            <input
+                id="availableAmountInput"
+                class="finance-card__available-input form-control"
+                type="number"
+                step="0.01"
+                min="0"
+                max="{{ payout_amount }}"
+                value="{{ payout_amount|stringformat:"2f" }}"
+                placeholder="Введите сумму для вывода"
+                aria-label="Сумма выплаты"
+            />
+        </div>
+        <button type="button" id="openPayoutModalButton" class="finance-card__button">
+            ПОЛУЧИТЬ ВЫПЛАТУ
         </button>
     </div>
 </div>
-<h2>История выплат</h2>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Сумма</th>
-      <th>Статус</th>
-      <th>Дата запроса</th>
-      <th>Реквизиты</th>
-      <th>Действия</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for payout in payout_history %}
-    <tr>
-      <td>{{ payout.id }}</td>
-      <td>{{ payout.amount }} ₽</td>
-      <td>{{ payout.get_status_display }}</td>
-      <td>{{ payout.created_at|date:"d.m.Y" }}</td>
-      <td>{{ payout.payment_details.bank_name }} ({{ payout.payment_details.account_number }})</td>
-      <td>
-          {% if payout.status == 'pending' %}
-              <button class="btn btn-sm btn-outline-danger cancel-payout" data-payout-id="{{ payout.id }}">
-                  Отменить
-              </button>
-          {% elif payout.status == 'paid' %}
-              <span class="badge bg-success">Выполнено</span>
-          {% elif payout.status == 'processing' %}
-              <span class="badge bg-warning">В обработке</span>
-          {% elif payout.status == 'rejected' %}
-              <span class="badge bg-danger">Отклонено</span>
-          {% elif payout.status == 'cancelled' %}
-              <span class="badge bg-danger">Отменено</span>
-          {% endif %}
-      </td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="6">История выплат пуста.</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="finance-history">
+    <h2>История операций</h2>
+    {% if payout_history %}
+        {% for payout in payout_history %}
+        <div class="finance-history-item">
+            <div class="finance-history-item__meta">
+                <p class="finance-history-item__title">{{ payout.get_status_display }}</p>
+                <p class="finance-history-item__date">{{ payout.created_at|date:"d.m.Y" }}</p>
+            </div>
+            <div class="finance-history-item__amount {% if payout.amount|floatformat:"0" >= 0 %}positive{% else %}negative{% endif %}">
+                {% if payout.amount|floatformat:"0" >= 0 %}+{% endif %}{{ payout.amount }} ₽
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">История выплат пуста.</p>
+    {% endif %}
+</div>
 </div>
 </div>
 {% endblock %}
@@ -128,13 +116,46 @@ $(document).ready(function() {
     let isSubmitting = false; // Флаг для защиты от двойного клика
 
     // Клиентская валидация суммы выплаты
-    $('#payoutAmount').on('input', function() {
+    $('#availableAmountInput').on('input', function() {
         const maxAmount = parseFloat($(this).attr('max'));
         const currentValue = parseFloat($(this).val());
 
         if (currentValue > maxAmount) {
             alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
             $(this).val(maxAmount.toFixed(2));
+        }
+    });
+
+    function openPayoutModal() {
+        const enteredAmount = parseFloat($('#availableAmountInput').val()) || 0;
+        const maxAmount = parseFloat($('#availableAmountInput').attr('max'));
+
+        if (enteredAmount <= 0) {
+            alert('Введите сумму выплаты больше нуля.');
+            return;
+        }
+
+        if (enteredAmount > maxAmount) {
+            alert('Сумма выплаты не может превышать доступную сумму: ' + maxAmount.toFixed(2) + ' ₽');
+            $('#availableAmountInput').val(maxAmount.toFixed(2));
+            return;
+        }
+
+        $('#payoutAmount').val(enteredAmount.toFixed(2));
+        $('#payoutModal').modal('show');
+        setTimeout(function() {
+            $('#payoutAmount').trigger('focus');
+        }, 200);
+    }
+
+    $('#openPayoutModalButton').on('click', function() {
+        openPayoutModal();
+    });
+
+    $('#availableAmountInput').on('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            openPayoutModal();
         }
     });
 
