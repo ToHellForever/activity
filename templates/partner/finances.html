@@ -9,47 +9,47 @@
 <div class="partner-main finance-page">
 <!-- Модальное окно для запроса выплаты -->
 <div class="modal fade" id="payoutModal" tabindex="-1" aria-labelledby="payoutModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="payoutModalLabel">Запрос выплаты</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content payout-modal">
+            <div class="modal-header payout-modal-header">
+                <h5 class="modal-title payout-modal-title" id="payoutModalLabel">Запрос выплаты</h5>
+                <button type="button" class="payout-modal-close" data-bs-dismiss="modal" aria-label="Close">×</button>
             </div>
             <form id="payoutRequestForm">
-                <div class="modal-body">
-                     <div class="mb-3">
-                         <label for="payoutAmount" class="form-label">Сумма выплаты</label>
-                         <div class="input-group">
-                             <input type="text" inputmode="decimal" class="form-control" id="payoutAmount" name="amount" value="{{ payout_amount|floatformat:2 }}" placeholder="Например 10.80">
-                             <span class="input-group-text">₽</span>
-                         </div>
-                         <small class="text-muted">Максимальная доступная сумма: {{ payout_amount|floatformat:2 }} ₽</small>
+                <div class="modal-body payout-modal-body">
+                     <div class="payout-form-group">
+                          <label for="payoutAmount" class="payout-form-label">Сумма выплаты</label>
+                          <div class="payout-input-wrap">
+                              <input type="text" inputmode="decimal" class="payout-form-input" id="payoutAmount" name="amount" value="{{ payout_amount|floatformat:2 }}" placeholder="Например 10.80">
+                              <span class="payout-input-currency">₽</span>
+                          </div>
+                          <small class="payout-hint">Максимальная доступная сумма: {{ payout_amount|floatformat:2 }} ₽</small>
                      </div>
                     
-                    <div class="mb-3">
-                        <label for="payoutDetails" class="form-label">Реквизиты для выплаты</label>
-                        <select class="form-select" id="payoutDetails" name="payout_details" required>
+                     <div class="payout-form-group">
+                        <label for="payoutDetails" class="payout-form-label">Реквизиты для выплаты</label>
+                        <select class="payout-form-input payout-form-select" id="payoutDetails" name="payout_details" required>
                             {% if partner_payout_details %}
                                 {% for detail in partner_payout_details %}
-                                    <option value="{{ detail.id }}">{{ detail.bank_name }} ({{ detail.account_number }})</option>
+                                    <option value="{{ detail.id }}">{{ detail.get_bank_name_display }} ({{ detail.account_number }})</option>
                                 {% endfor %}
                             {% else %}
                                 <option value="" disabled selected>Нет сохранённых реквизитов</option>
                             {% endif %}
                         </select>
-                        <a href="{% url 'partner:payout_details' %}" class="btn btn-outline-secondary w-100 mt-3">
+                        <a href="{% url 'partner:payout_details' %}" class="payout-link">
                             Добавить или изменить реквизиты
                         </a>
                     </div>
                     
-                     <div class="mb-3">
-                         <label for="payoutComment" class="form-label">Комментарий (необязательно)</label>
-                         <textarea class="form-textarea form-control" id="payoutComment" name="comment" rows="2"></textarea>
+                     <div class="payout-form-group">
+                          <label for="payoutComment" class="payout-form-label">Комментарий (необязательно)</label>
+                          <textarea class="payout-form-input payout-form-textarea" id="payoutComment" name="comment" rows="2" placeholder="Любой комментарий к выплате"></textarea>
                      </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">
+                <div class="modal-footer payout-modal-footer">
+                    <button type="button" class="btn payout-modal-btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn payout-modal-btn-primary">
                         <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         Запросить выплату
                     </button>
@@ -117,7 +117,7 @@
 <script>
 $(document).ready(function() {
     let isSubmitting = false;
-    const maxPayoutAmount = parseFloat("{{ payout_amount }}");
+    const maxPayoutAmount = parseFloat("{{ payout_amount|floatformat:2 }}".replace(',', '.'));
 
     function formatInput(value) {
         return value.replace(',', '.');
