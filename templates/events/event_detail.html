@@ -237,13 +237,20 @@
     <div class="sticky-top" style="top: 2rem;">
     <div class='row'>
     <div class='col-6'>
-            <!-- Карта (интеграция с Яндекс.Картами) -->
-            <div id="map-canvas" 
-                    style="height: 250px; border-radius: 8px; margin: 15px 0;"
-                    data-lat="{{ event.latitude|floatformat:"6" }}"
-                    data-lon="{{ event.longitude|floatformat:"6" }}"
-                    data-event-title="{{ event.title|escapejs }}"
-                    data-event-address="{{ event.address|escapejs }}">
+            <!-- Статическая карта Яндекс -->
+            <div class="map-fallback-wrapper" style="margin: 15px 0;">
+                <img src="https://static-maps.yandex.ru/1.x/?ll={{ event.longitude|format_coordinate }},{{ event.latitude|format_coordinate }}&z=14&l=map&pt={{ event.longitude|format_coordinate }},{{ event.latitude|format_coordinate }},pm2rdm"
+                        style="height: 250px; border-radius: 8px; width: 100%; object-fit: cover; display: block;"
+                        alt="Карта"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.parentElement.querySelector('.map-fallback').style.display='flex';">
+                <div class="map-fallback" style="display: none; height: 250px; border-radius: 8px; width: 100%; background: #f5f5f5; border: 1px solid #e0e0e0; align-items: center; justify-content: center; text-align: center; padding: 20px; color: #666;">
+                    <div>
+                        <div style="font-size: 1rem; font-weight: 600; margin-bottom: 8px;">Карта временно недоступна</div>
+                        <div style="font-size: 0.95rem;">{{ event.address }}</div>
+                    </div>
+                </div>
             </div>
     </div>
         <div class='col-6'>

@@ -238,7 +238,6 @@ class VenueAdmin(admin.ModelAdmin):
 
     class Media:
         js = (
-            "/static/js/map_admin.js",
             "/static/js/venue_admin.js",
             "/static/js/equipment_admin.js",
         )

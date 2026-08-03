@@ -549,7 +549,6 @@ class EventAdmin(admin.ModelAdmin):
             )
     class Media:
         js = (
-            "/static/js/map_admin.js",
             "/static/js/event_admin.js",
         )
         

@@ -80,6 +80,24 @@ def format_number(value):
         return value
 
 
+@register.filter(name='format_coordinate')
+def format_coordinate(value):
+    """
+    Форматирует координату для использования в URL карт и API,
+    используя точку как десятичный разделитель.
+    """
+    if value is None:
+        return ''
+
+    try:
+        text = str(value).strip()
+        if ',' in text and '.' not in text:
+            text = text.replace(',', '.')
+        return f"{float(text):.6f}".replace(',', '.')
+    except (ValueError, TypeError):
+        return value
+
+
 @register.filter(name='format_duration')
 def format_duration(value):
     """
