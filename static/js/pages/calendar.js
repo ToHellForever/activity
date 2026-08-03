@@ -3,6 +3,7 @@
  */
 class CustomCalendar {
     constructor(inputId, calendarId, hiddenInputName, options = {}) {
+        console.log('[CustomCalendar] Constructor called for:', inputId);
         this.input = document.getElementById(inputId);
         this.calendar = document.getElementById(calendarId);
         this.hiddenInputName = hiddenInputName;
@@ -12,7 +13,6 @@ class CustomCalendar {
         this.valueDateFormat = options.valueDateFormat || 'yyyy-mm-dd';
         this.allowPastDates = options.allowPastDates === true;
         this.onSelectDate = typeof options.onSelectDate === 'function' ? options.onSelectDate : null;
-        this.input.dataset.rawValue = '';
         
         if (!this.input || !this.calendar) {
             console.warn('Calendar elements not found on first try, waiting for DOM...');
@@ -20,6 +20,9 @@ class CustomCalendar {
             return;
         }
 
+        this.input.dataset.rawValue = '';
+        
+        console.log('[CustomCalendar] Elements found, calling init()');
         this.init();
     }
 
@@ -74,7 +77,7 @@ class CustomCalendar {
 
     init() {
         // Кнопка открытия календаря - ищем внутри родителя input
-        const inputContainer = this.input.closest('.input-with-button');
+        const inputContainer = this.input.closest('.input-with-button, .date-container');
         const toggleBtn = inputContainer ? inputContainer.querySelector('.calendar-toggle-btn') : null;
         
         if (toggleBtn) {
@@ -86,7 +89,7 @@ class CustomCalendar {
         }
 
         // Открытие календаря по клику на инпут
-        this.input.addEventListener('click', (e) => {
+        this.input.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             if (!this.calendar.classList.contains('active')) {
@@ -228,9 +231,17 @@ class CustomCalendar {
             return;
         }
 
-        const hiddenInput = this.input.parentElement.querySelector(`input[name="${this.hiddenInputName}"]`);
+        // Ищем по ID (это основной способ, так как hiddenInputName — это ID)
+        const hiddenInput = document.getElementById(this.hiddenInputName);
         if (hiddenInput) {
             hiddenInput.value = value;
+            return;
+        }
+
+        // Fallback: ищем по name в пределах того же parent
+        const fallback = this.input.parentElement.querySelector(`input[name="${this.hiddenInputName}"]`);
+        if (fallback) {
+            fallback.value = value;
         }
     }
 
@@ -449,12 +460,16 @@ class PriceSlider {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Calendar JS loaded and initializing...');
     
-    // Инициализация календаря для даты
-    window.calendar = new CustomCalendar(
-        'dateFromInput',
-        'dateFromCalendar',
-        'date_from'
-    );
+    // Инициализация календаря для даты (только если элемент существует)
+    if (document.getElementById('dateFromInput')) {
+        window.calendar = new CustomCalendar(
+            'dateFromInput',
+            'dateFromCalendar',
+            'date_from'
+        );
+    } else {
+        console.log('No dateFromInput found on this page, skipping...');
+    }
 
     // Инициализация dropdown для категории
     const categoryInput = document.getElementById('categoryInput');

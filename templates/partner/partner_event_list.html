@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+{% endblock %}
+
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/partner_event_list.css' %}">
 
@@ -29,18 +33,41 @@
                     <label class="filter-check">
                         <input type="checkbox" name="status" value="active"
                                {% if 'active' in request.GET.status %}checked{% endif %}>
-                        <span>Действующие</span>
+                        <span class="filter-check-text">Действующие</span>
                     </label>
 
                     <label class="filter-check">
                         <input type="checkbox" name="status" value="archived"
                                {% if 'archived' in request.GET.status %}checked{% endif %}>
-                        <span>Истёкшие</span>
+                        <span class="filter-check-text">Истёкшие</span>
                     </label>
 
                     <div class="filter-date">
                         <span class="filter-date-label">ДАТА:</span>
-                        <input type="date" name="date" class="date-input" value="{{ request.GET.date }}">
+                        <div class="date-container">
+                            <!-- Видимый инпут (читает дату объекта в формате ДД.ММ.ГГГГ) -->
+                            <input type="text" class="date-input filter-input" id="id_date_display" 
+                                   value="{{ request.GET.date|date:'d.m.Y'|default:'' }}" 
+                                   placeholder="__:__  __:__" readonly>
+                            
+                            <!-- Скрытый инпут (отправляет данные в Django в формате ГГГГ-ММ-ДД) -->
+                            <input type="hidden" name="date" id="id_date" 
+                                   value="{{ request.GET.date }}">
+                            
+                            <!-- Кастомный календарь -->
+                            <div class="calendar-popup" id="dateCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -218,6 +245,70 @@
             }
         });
     });
+</script>
+
+<!-- Скрипт календаря -->
+<script src="{% static 'js/pages/calendar.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var displayInput = document.getElementById('id_date_display');
+    var hiddenInput = document.getElementById('id_date');
+    var filtersForm = document.querySelector('.filters-panel');
+
+    // 1. Инициализация календаря
+    if (typeof CustomCalendar !== 'undefined') {
+        window.filterDateCalendar = new CustomCalendar(
+            'id_date_display',
+            'dateCalendar',
+            'id_date',
+            {
+                displayDateFormat: 'dd.mm.yyyy',
+                valueDateFormat: 'yyyy-mm-dd',
+                allowPastDates: true
+            }
+        );
+    } else {
+        console.error("Скрипт CustomCalendar не загружен!");
+    }
+
+    // 2. Функция конвертации ДД.ММ.ГГГГ -> ГГГГ-ММ-ДД
+    function convertToServerFormat(dateStr) {
+        if (!dateStr) return '';
+        dateStr = dateStr.trim();
+        var parts = dateStr.split('.');
+        if (parts.length === 3) {
+            var day = parts[0].padStart(2, '0');
+            var month = parts[1].padStart(2, '0');
+            var year = parts[2];
+            return year + '-' + month + '-' + day;
+        }
+        return dateStr;
+    }
+
+    // 3. Синхронизация: при любом изменении видимого поля обновляем скрытое
+    if (displayInput && hiddenInput) {
+        displayInput.addEventListener('change', function() {
+            hiddenInput.value = convertToServerFormat(displayInput.value);
+        });
+
+        var calendarPopup = document.getElementById('dateCalendar');
+        if (calendarPopup) {
+            calendarPopup.addEventListener('click', function() {
+                setTimeout(function() {
+                    hiddenInput.value = convertToServerFormat(displayInput.value);
+                }, 50);
+            });
+        }
+    }
+
+    // 4. Синхронизация перед отправкой формы
+    if (filtersForm && displayInput && hiddenInput) {
+        filtersForm.addEventListener('submit', function(e) {
+            hiddenInput.value = convertToServerFormat(displayInput.value);
+        });
+    }
+});
 </script>
 
 {% endblock %}

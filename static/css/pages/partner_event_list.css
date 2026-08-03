@@ -3,426 +3,502 @@
    ============================================================ */
 
 .partner-main {
-    background: #f5f6f8;
-    min-height: 100vh;
-    padding: 20px 24px;
+  background: #f5f6f8;
+  min-height: 100vh;
+  padding: 20px 24px;
 }
 
 .events-page {
-    margin: 0 auto;
+  margin: 0 auto;
 }
 
 /* ============================================================
    Кнопка "+ Разместить событие"
    ============================================================ */
 .btn-create-event {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #ececec;
-    color: #333;
-    text-decoration: none;
-    font-size: 15px;
-    font-weight: 500;
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: none;
-    margin-bottom: 22px;
-    transition: all 0.2s ease;
-}
-
-.btn-create-event:hover {
-    background: #ff8c42;
-    color: #fff;
+  display: inline-flex;
+  align-items: center;
+  font-family: Verdana;
+  font-weight: 400;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: rgba(0, 0, 0, 1);
+  background: rgba(238, 238, 238, 1);
+  border-radius: 37.58px;
+  padding: 10px 20px 10px 20px;
+  margin-bottom: 10px;
+  text-decoration: none;
 }
 
 .btn-create-event i {
-    font-size: 18px;
-    font-weight: bold;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 /* ============================================================
    Панель фильтров
    ============================================================ */
 .filters-panel {
-    background: transparent;
-    margin-bottom: 30px;
+  background: transparent;
+  margin-bottom: 30px;
 }
 
 .search-input {
-    width: 100%;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 24px;
-    padding: 12px 20px;
-    font-size: 14px;
-    color: #333;
-    outline: none;
-    transition: border-color 0.2s;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 24px;
+  height: 39px;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
 .search-input:focus {
-    border-color: #ff8c42;
-    box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+  border-color: #ff8c42;
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
 .search-input::placeholder {
-    color: #aaa;
+  color: #aaa;
 }
 
 .filter-row {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    margin-top: 14px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 14px;
+  flex-wrap: wrap;
 }
-
+/* 1. Базовая настройка контейнера label */
 .filter-check {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #555;
-    cursor: pointer;
-    user-select: none;
-    margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
 }
 
+/* 2. Скрываем стандартный браузерного чекбокс в безопасном режиме */
 .filter-check input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #ff8c42;
-    cursor: pointer;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+/* 3. Рисуем внешний вид квадратика ::before */
+.filter-check input[type="checkbox"] + span::before {
+  content: "";
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(0, 0, 0, 1); /* Цвет рамки по умолчанию (#ccc тоже подойдет) */
+  background-color: #ffffff;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+/* 4. Состояние при наведении мыши (необязательно, но улучшает UX) */
+.filter-check:hover input[type="checkbox"] + span::before {
+  border-color: #9ca3af;
+}
+
+/* 5. Фокус-ринг для доступности (клавиатурная навигация) */
+.filter-check input[type="checkbox"]:focus-visible + span::before {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* 6. Стили для активного состояния (выбранный чекбокс) */
+.filter-check input[type="checkbox"]:checked + span::before {
+  background-color: #ff8c42; /* Ваш цвет из accent-color */
+  border-color: #ff8c42;
+}
+
+/* 7. Рисуем свою галочку внутри ::after */
+.filter-check input[type="checkbox"]:checked + span::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(45deg);
+  transition: opacity 0.2s ease;
+}
+
+/* Чтобы псевдоэлементы знали свои границы, задаем относительное позиционирование тексту */
+.filter-check input[type="checkbox"] + span {
+  position: relative;
+  padding-left: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .filter-date {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 20px;
+}
+
+.date-container {
+  position: relative;
 }
 
 .filter-date-label {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    color: #666;
-    text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #666;
+  text-transform: uppercase;
 }
 
 .date-input {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 13px;
-    color: #333;
-    outline: none;
-    min-width: 130px;
+  background: #f5f6f8 !important;
+  border: 1px solid rgba(119, 122, 141, 1) !important;
+  border-radius: 30px !important;
+  padding: 7px;
+  font-size: 14px !important;
+  color: #333 !important;
+  outline: none !important;
+  text-align: center;
+  width: 110px;
+  cursor: pointer !important;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .date-input:focus {
-    border-color: #ff8c42;
+  border-color: #ff8c42 !important;
+  background: #fff !important;
+}
+
+.date-input:focus {
+  border-color: #ff8c42;
+  background: #fff;
 }
 
 .filter-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
 }
 
 .btn-find {
-    background: #ff8c42;
-    color: #fff;
-    border: none;
-    padding: 9px 32px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
+  background: #ff8c42;
+  color: #fff;
+  border: none;
+  padding: 9px 32px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-find:hover {
-    background: #f07a2f;
-    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+  background: #f07a2f;
+  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
 }
 
 /* ============================================================
    Заголовки секций
    ============================================================ */
 .section-title {
-    font-size: 20px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #222;
-    letter-spacing: 1px;
-    margin: 30px 0 20px;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #222;
+  letter-spacing: 1px;
+  margin: 30px 0 20px;
 }
 
 .empty-hint {
-    color: #999;
-    font-size: 14px;
-    padding: 10px 0;
+  color: #999;
+  font-size: 14px;
+  padding: 10px 0;
 }
 
 /* ============================================================
    Сетка карточек
    ============================================================ */
 .events-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 /* ============================================================
    Карточка события
    ============================================================ */
 .event-card {
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s, box-shadow 0.2s;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .event-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* ---------- Картинка ---------- */
 .event-card-image {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    background: #f0f0f0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f0f0f0;
 }
 
 .event-card-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* ---------- Чекбокс-корзинка на карточке ---------- */
 .card-check {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    cursor: pointer;
-    margin: 0;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  margin: 0;
 }
 
 .card-check input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .card-check-box {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.85);
-    color: #666;
-    transition: all 0.2s;
-    backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #666;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
 }
 
 .card-check-box i {
-    font-size: 15px;
+  font-size: 15px;
 }
 
 .card-check:hover .card-check-box {
-    background: #fff;
-    color: #ff8c42;
+  background: #fff;
+  color: #ff8c42;
 }
 
 .card-check input:checked + .card-check-box {
-    background: #ff8c42;
-    color: #fff;
+  background: #ff8c42;
+  color: #fff;
 }
 
 /* ---------- Тело карточки ---------- */
 .event-card-body {
-    padding: 14px 16px 12px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  padding: 14px 16px 12px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .event-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #222;
-    line-height: 1.35;
-    margin: 0 0 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.35;
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 38px;
 }
 
 .event-organizer {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #3b82f6;
-    font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 500;
 }
 
 .event-organizer i {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .event-date {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #222;
-    margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  margin-top: 2px;
 }
 
 .event-date i {
-    color: #666;
-    font-size: 13px;
+  color: #666;
+  font-size: 13px;
 }
 
 .event-meta {
-    font-size: 11px;
-    color: #666;
-    line-height: 1.5;
-    margin-top: 4px;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  margin-top: 4px;
 }
 
 .event-meta .meta-label {
-    color: #999;
+  color: #999;
 }
 
 /* ---------- Кнопки действий ---------- */
 .event-card-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 14px;
 }
 
 .btn-view {
-    flex-grow: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #ff8c42;
-    color: #fff;
-    text-decoration: none;
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    padding: 10px 12px;
-    border-radius: 22px;
-    border: none;
-    transition: all 0.2s;
+  flex-grow: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff8c42;
+  color: #fff;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 10px 12px;
+  border-radius: 22px;
+  border: none;
+  transition: all 0.2s;
 }
 
 .btn-view:hover {
-    background: #f07a2f;
-    color: #fff;
-    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.35);
+  background: #f07a2f;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(255, 140, 66, 0.35);
 }
 
 .btn-edit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #3b82f6;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    flex-shrink: 0;
-    transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: all 0.2s;
 }
 
 .btn-edit:hover {
-    background: #2563eb;
-    color: #fff;
-    transform: rotate(-10deg);
+  background: #2563eb;
+  color: #fff;
+  transform: rotate(-10deg);
 }
 
 .btn-edit i {
-    font-size: 13px;
+  font-size: 13px;
 }
 
 /* ---------- Архивные карточки (без иконок действий сверху) ---------- */
 .event-card--archived .card-check {
-    display: none;
+  display: none;
 }
 
 /* ============================================================
    Кнопка массового удаления
    ============================================================ */
 .bulk-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .bulk-actions .btn-danger {
-    background: #dc3545;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
+  background: #dc3545;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .bulk-actions .btn-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 992px) {
-    .events-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  .events-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-    .events-grid {
-        grid-template-columns: 1fr;
-    }
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .filter-row {
-        gap: 14px;
-    }
+  .filter-row {
+    gap: 14px;
+  }
 
-    .btn-find {
-        width: 100%;
-    }
+  .btn-find {
+    width: 100%;
+  }
 
-    .filter-actions {
-        justify-content: stretch;
-    }
+  .filter-actions {
+    justify-content: stretch;
+  }
 }
