@@ -252,21 +252,24 @@ document.addEventListener('DOMContentLoaded', function() {
         let newQty;
         
         if (isPerPerson && minQty > 1) {
-            // Для групповых билетов шаг = minQty
-            if (currentQty === 0) {
-                // Если 0, устанавливаем minQty
-                newQty = minQty;
+            if (delta > 0) {
+                if (currentQty === 0) {
+                    newQty = minQty;
+                } else {
+                    newQty = currentQty + 1;
+                }
             } else {
-                // Прибавляем/убавляем minQty
-                newQty = currentQty + (delta * minQty);
+                if (currentQty <= minQty) {
+                    newQty = 0;
+                } else {
+                    newQty = currentQty - 1;
+                }
             }
         } else {
-            // Обычные билеты — шаг 1
             newQty = currentQty + delta;
         }
         
-        // Ограничиваем диапазон
-        const effectiveMin = isPerPerson && minQty > 1 ? minQty : 0;
+        const effectiveMin = isPerPerson && minQty > 1 ? 0 : 0;
         newQty = Math.max(effectiveMin, Math.min(newQty, maxQty));
         input.value = newQty;
         
@@ -295,9 +298,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const isPerPerson = card.dataset.isPerPerson === 'true';
             let val = parseInt(this.value) || 0;
             
-            // Для групповых билетов — округляем до minQty
             if (isPerPerson && minQty > 1 && val > 0) {
-                val = Math.max(minQty, Math.ceil(val / minQty) * minQty);
+                const rounded = Math.round(val / minQty) * minQty;
+                val = Math.max(minQty, rounded);
             }
             
             val = Math.max(0, Math.min(val, maxQty));
