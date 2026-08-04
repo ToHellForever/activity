@@ -3,129 +3,132 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
-<style>
-  .support-layout { display: flex; height: calc(100vh - 100px); }
-  .support-sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
-  .chat-window { width: 70%; padding: 20px; display: flex; flex-direction: column; }
-  .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; }
-  .message { margin: 10px 0; padding: 8px 12px; border-radius: 15px; max-width: 70%; line-height: 1.4;}
-  .user { background-color: #dcf8c6; margin-left: auto; }
-  .moderator { background-color: #ffffff; border: 1px solid #ddd; margin-right: auto; }
-</style>
+<link rel="stylesheet" href="{% static 'css/pages/support_dashboard.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-<div class="support-layout">
-  
-  <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
-  <div class="support-sidebar">
-    <h2>Мои обращения</h2>
-    
-    <!-- НОВЫЙ БЛОК: Кнопка для добавления формы -->
-   <button id="new-ticket-btn" class="btn btn-block btn-primary mb-3">Новое обращение</button>
-   
-    <!-- НОВАЯ ФОРМА (спрятана по умолчанию) -->
-    <form id="new-ticket-form" method="post" style="display: none; margin-bottom: 20px;" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="form-group">
-        <input type="text" name="new_subject" class="form-control" placeholder="Тема обращения" required>
-      </div>
-      <div class="form-group">
-        <textarea name="new_message" class="form-control" rows="3" placeholder="Ваше сообщение..." required></textarea>
-      </div>
-      <div class="form-group">
-        <input type="file" name="attachment" multiple style="margin-right: 5px;">
-      </div>
-      {% if request.user.user_type == "partner" %}
-      <div class="form-group">
-        <select name="event_id" class="form-control" id="event-select">
-          <option value="">-- Выберите мероприятие (если обращение связано с мероприятием) --</option>
-          {% for event in events %}
-            <option value="{{ event.id }}">{{ event.title }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endif %}
-      <button type="submit" class="btn btn-success">Создать обращение</button>
-      <button type="button" id="cancel-ticket-btn" class="btn btn-secondary">Отмена</button>
-    </form>
-    <!-- КОНЕЦ НОВОЙ ФОРМЫ -->
-
-    <!-- Список существующих тикетов -->
-    {% for ticket in tickets %}
-      <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
-        <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
-          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:30 }}
-          <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
-        </a>
-      </div>
-    {% empty %}
-      <div>У вас пока нет обращений в поддержку.</div>
-    {% endfor %}
-    
-  </div>
-
-  <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
-  <div class="chat-window">
-    
-    <!-- Заголовок чата -->
-    {% if selected_ticket %}
-      <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
-      <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
-      {% if selected_ticket.event %}
-        <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
-      {% endif %}
-      <hr>
-    {% else %}
-      <h3>Выберите обращение слева или создайте новое.</h3>
-      <div style="flex: 1"></div> <!-- Отступ, чтобы форма не поднимался вверх -->
-    {% endif %}
-
-    <!-- История сообщений -->
-    <div class="chat-history">
-      {% if selected_ticket %}
-        {% for message in chat_messages %}
-          <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-            <strong>{{ message.user.get_full_name|default:message.user.email }} ({{ message.created_at|date:"H:i" }})</strong><br>
-              {{ message.text }}
-
-            <!-- Вложения -->
-            {% if message.attachments.all %}
-              <div class="attachments" style="margin-top: 8px;">
-                {% for attachment in message.attachments.all %}
-                  <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-block; margin-right: 10px; font-size: 0.9em; color: #1890ff;">
-                    📎 {{ attachment.file.name|cut:"/" }}
-                  </a>
-                {% endfor %}
-              </div>
-            {% endif %}
+      <div class="support-page">
+        <div class="support-sidebar">
+          <div class="support-section">
+            <div>
+              <h2>Создать обращение</h2>
+              <p class="section-description">Опишите проблему или вопрос, и служба поддержки ответит вам в ближайшее время.</p>
             </div>
-          {% empty %}
-            <div>Сообщений в этом чате пока нет. Начните диалог!</div>
-          {% endfor %}
-        {% endif %}
+            <button id="new-ticket-btn" class="btn btn-primary">Новое обращение</button>
+            <form id="new-ticket-form" method="post" enctype="multipart/form-data" class="support-form" style="display: none;">
+              {% csrf_token %}
+              <label for="new_subject">Тема обращения</label>
+              <input type="text" id="new_subject" name="new_subject" placeholder="Тема обращения" required>
+
+              <label for="new_message">Ваше сообщение</label>
+              <textarea id="new_message" name="new_message" placeholder="Опишите суть обращения..." required></textarea>
+
+              <label for="attachment">Файлы</label>
+              <input type="file" id="attachment" name="attachment" multiple>
+
+              {% if request.user.user_type == "partner" %}
+              <label for="event-select">Мероприятие</label>
+              <select name="event_id" id="event-select">
+                <option value="">-- Выберите мероприятие --</option>
+                {% for event in events %}
+                  <option value="{{ event.id }}">{{ event.title }}</option>
+                {% endfor %}
+              </select>
+              {% endif %}
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Создать обращение</button>
+                <button type="button" id="cancel-ticket-btn" class="btn btn-secondary">Отмена</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="support-section">
+            <h2>Мои обращения</h2>
+            {% if tickets %}
+              {% for ticket in tickets %}
+                <a href="?ticket_id={{ ticket.id }}" class="support-ticket-card {% if selected_ticket and ticket.id == selected_ticket.id %}active{% endif %}">
+                  <div>
+                    <strong>#{{ ticket.id }} {{ ticket.subject|truncatechars:40 }}</strong>
+                    <div class="ticket-meta">
+                      {{ ticket.created_at|date:"d.m.Y H:i" }}{% if ticket.event %} · {{ ticket.event.title }}{% endif %}
+                    </div>
+                  </div>
+                  <span class="ticket-status">{{ ticket.get_status_display }}</span>
+                </a>
+              {% endfor %}
+            {% else %}
+              <div class="ticket-meta">У вас пока нет обращений в поддержку.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="support-chat-column">
+          <div class="support-chat-header">
+            {% if selected_ticket %}
+              <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
+              <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
+              {% if selected_ticket.event %}
+                <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
+              {% endif %}
+            {% else %}
+              <h3>Здесь будет чат с поддержкой</h3>
+              <p>Выберите обращение слева или создайте новое, чтобы начать диалог.</p>
+            {% endif %}
+          </div>
+
+          {% if selected_ticket %}
+            <div class="support-chat-history">
+              {% for message in chat_messages %}
+                <div class="support-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
+                  <div class="sender-label">
+                    <div class="sender-icon">
+                      {% if message.is_from_user %}
+                        {% if message.user.user_type == "partner" and message.user.partner_profile.logo %}
+                          <img src="{{ message.user.partner_profile.logo.url }}" alt="logo" class="sender-logo">
+                        {% else %}
+                          <span class="sender-initials">ВЫ</span>
+                        {% endif %}
+                      {% else %}
+                        <img src="/media/icon/fluent_person-support-20-filled.svg" alt="">
+                      {% endif %}
+                    </div>
+                    <span class="sender-time">{{ message.created_at|date:"d.m.Y H:i" }}</span>
+                  </div>
+                  <div>{{ message.text }}</div>
+                  {% if message.attachments.all %}
+                    <div class="attachments">
+                      {% for attachment in message.attachments.all %}
+                        <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">📎 {{ attachment.file.name|cut:"/" }}</a>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% empty %}
+                <div class="support-placeholder">Сообщений в этом чате пока нет. Напишите первое сообщение.</div>
+              {% endfor %}
+            </div>
+
+            <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" class="support-chat-form">
+              {% csrf_token %}
+              <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+              <div class="support-chat-input-row">
+                <input type="text" name="text" placeholder="Введите ваше сообщение..." required>
+                <div class="support-attachment-wrap">
+                  <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
+                  <label for="chat-attachment" class="support-attachment-button" title="Прикрепить файл">+</label>
+                </div>
+                <button type="submit" class="support-send-button">Отправить</button>
+              </div>
+            </form>
+          {% else %}
+            <div class="support-placeholder">Выберите обращение слева или создайте новое, чтобы начать чат с поддержкой.</div>
+          {% endif %}
+        </div>
       </div>
-
-      <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
-      {% if selected_ticket %}
-        <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex;">
-          {% csrf_token %}
-          <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-         
-          <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
-          
-          <!-- Поле для загрузки файлов -->
-          <input type="file" name="attachment" multiple id="file-upload" style="margin-right: 5px;">
-          
-          <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
-        </form>
-      {% endif %}
-    </div>
-  </div>
-
     </div>
 </div>
 {% endblock %}
@@ -137,19 +140,20 @@
     const form = document.getElementById('new-ticket-form');
     const cancelBtn = document.getElementById('cancel-ticket-btn');
 
-    newBtn.onclick = function() {
-      form.style.display = 'block';
-      newBtn.style.display = 'none';
-    };
+    if (newBtn && form && cancelBtn) {
+      newBtn.addEventListener('click', function() {
+        form.style.display = 'flex';
+        newBtn.style.display = 'none';
+      });
 
-    cancelBtn.onclick = function() {
-      form.style.display = 'none';
-      newBtn.style.display = 'block';
-      form.reset();
-    };
+      cancelBtn.addEventListener('click', function() {
+        form.style.display = 'none';
+        newBtn.style.display = 'block';
+        form.reset();
+      });
+    }
   });
 
-  // Решение для обработки вставки файлов
   const chatInput = document.querySelector('input[name="text"]');
   if (chatInput) {
     chatInput.addEventListener('paste', function(e) {
