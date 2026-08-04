@@ -70,7 +70,7 @@
 }
 .btn-close-question {
     width: 100%;
-    background: rgb(181, 184, 199);
+    background: #ccc;
     border: none;
     border-radius: 20px;
     padding: 10px;
