@@ -17,7 +17,7 @@
               <h2>Создать обращение</h2>
               <p class="section-description">Опишите проблему или вопрос, и служба поддержки ответит вам в ближайшее время.</p>
             </div>
-            <button id="new-ticket-btn" class="btn btn-primary">Новое обращение</button>
+            <button id="new-ticket-btn" class="btn btn-new-ticket">Новое обращение</button>
             <form id="new-ticket-form" method="post" enctype="multipart/form-data" class="support-form" style="display: none;">
               {% csrf_token %}
               <label for="new_subject">Тема обращения</label>
@@ -27,16 +27,28 @@
               <textarea id="new_message" name="new_message" placeholder="Опишите суть обращения..." required></textarea>
 
               <label for="attachment">Файлы</label>
-              <input type="file" id="attachment" name="attachment" multiple>
+              <label for="attachment" class="custom-file-label">
+                <span class="file-icon">📁</span>
+                <span class="file-text" id="file-text">Выберите файлы</span>
+                <span class="file-count" id="file-count" style="display:none;"></span>
+              </label>
+              <input type="file" id="attachment" name="attachment" multiple style="display:none;">
 
               {% if request.user.user_type == "partner" %}
-              <label for="event-select">Мероприятие</label>
-              <select name="event_id" id="event-select">
-                <option value="">-- Выберите мероприятие --</option>
-                {% for event in events %}
-                  <option value="{{ event.id }}">{{ event.title }}</option>
-                {% endfor %}
-              </select>
+              <label>Мероприятие</label>
+              <div class="custom-select" id="event-select-wrapper">
+                <div class="custom-select-trigger" id="event-select-trigger">
+                  <span class="custom-select-text">-- Выберите мероприятие --</span>
+                  <span class="custom-select-arrow">▾</span>
+                </div>
+                <div class="custom-select-dropdown" id="event-select-dropdown" style="display:none;">
+                  <div class="custom-select-option" data-value="">-- Выберите мероприятие --</div>
+                  {% for event in events %}
+                    <div class="custom-select-option {% if selected_event and selected_event.id == event.id %}selected{% endif %}" data-value="{{ event.id }}">{{ event.title }}</div>
+                  {% endfor %}
+                </div>
+                <input type="hidden" name="event_id" id="event-select-value" value="">
+              </div>
               {% endif %}
 
               <div class="form-actions">
@@ -51,11 +63,8 @@
             {% if tickets %}
               {% for ticket in tickets %}
                 <a href="?ticket_id={{ ticket.id }}" class="support-ticket-card {% if selected_ticket and ticket.id == selected_ticket.id %}active{% endif %}">
-                  <div>
-                    <strong>#{{ ticket.id }} {{ ticket.subject|truncatechars:40 }}</strong>
-                    <div class="ticket-meta">
-                      {{ ticket.created_at|date:"d.m.Y H:i" }}{% if ticket.event %} · {{ ticket.event.title }}{% endif %}
-                    </div>
+                  <div style='color: #817b7b;'>
+                    {{ ticket.subject|truncatechars:40 }}
                   </div>
                   <span class="ticket-status">{{ ticket.get_status_display }}</span>
                 </a>
@@ -69,10 +78,9 @@
         <div class="support-chat-column">
           <div class="support-chat-header">
             {% if selected_ticket %}
-              <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
-              <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
+              <h3>{{ selected_ticket.subject }}</h3>
               {% if selected_ticket.event %}
-                <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
+                <p><a href="{% url 'partner:edit_event' selected_ticket.event.id %}">✦ {{ selected_ticket.event.title }}</a></p>
               {% endif %}
             {% else %}
               <h3>Здесь будет чат с поддержкой</h3>
@@ -84,28 +92,30 @@
             <div class="support-chat-history">
               {% for message in chat_messages %}
                 <div class="support-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
-                  <div class="sender-label">
-                    <div class="sender-icon">
-                      {% if message.is_from_user %}
-                        {% if message.user.user_type == "partner" and message.user.partner_profile.logo %}
-                          <img src="{{ message.user.partner_profile.logo.url }}" alt="logo" class="sender-logo">
-                        {% else %}
-                          <span class="sender-initials">ВЫ</span>
-                        {% endif %}
+                  <div class="support-avatar">
+                    {% if message.is_from_user %}
+                      {% if message.user.user_type == "partner" and message.user.partner_profile.logo %}
+                        <img src="{{ message.user.partner_profile.logo.url }}" alt="logo" class="sender-logo">
                       {% else %}
-                        <img src="/media/icon/fluent_person-support-20-filled.svg" alt="">
+                        <span class="sender-initials">ВЫ</span>
+                      {% endif %}
+                    {% else %}
+                      <img src="/media/icon/fluent_person-support-20-filled.svg" alt="">
+                    {% endif %}
+                  </div>
+                  <div class="support-message-body">
+                    <div class="support-bubble">
+                      <div>{{ message.text }}</div>
+                      {% if message.attachments.all %}
+                        <div class="attachments">
+                          {% for attachment in message.attachments.all %}
+                            <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link" title="{{ attachment.file.name }}">📄 Файл</a>
+                          {% endfor %}
+                        </div>
                       {% endif %}
                     </div>
-                    <span class="sender-time">{{ message.created_at|date:"d.m.Y H:i" }}</span>
+                    <div class="support-message-time">{{ message.created_at|date:"d.m.Y H:i" }}</div>
                   </div>
-                  <div>{{ message.text }}</div>
-                  {% if message.attachments.all %}
-                    <div class="attachments">
-                      {% for attachment in message.attachments.all %}
-                        <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">📎 {{ attachment.file.name|cut:"/" }}</a>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
                 </div>
               {% empty %}
                 <div class="support-placeholder">Сообщений в этом чате пока нет. Напишите первое сообщение.</div>
@@ -139,6 +149,18 @@
     const newBtn = document.getElementById('new-ticket-btn');
     const form = document.getElementById('new-ticket-form');
     const cancelBtn = document.getElementById('cancel-ticket-btn');
+    const attachmentInput = document.getElementById('attachment');
+    const fileText = document.getElementById('file-text');
+    const fileCount = document.getElementById('file-count');
+
+    const selectWrapper = document.getElementById('event-select-wrapper');
+    let selectText, hiddenInput, dropdown;
+    if (selectWrapper) {
+      const trigger = document.getElementById('event-select-trigger');
+      dropdown = document.getElementById('event-select-dropdown');
+      hiddenInput = document.getElementById('event-select-value');
+      selectText = trigger.querySelector('.custom-select-text');
+    }
 
     if (newBtn && form && cancelBtn) {
       newBtn.addEventListener('click', function() {
@@ -150,6 +172,62 @@
         form.style.display = 'none';
         newBtn.style.display = 'block';
         form.reset();
+        fileText.textContent = 'Выберите файлы';
+        fileCount.style.display = 'none';
+        if (selectText) {
+          selectText.textContent = '-- Выберите мероприятие --';
+          hiddenInput.value = '';
+          const selectedOpt = dropdown.querySelector('.custom-select-option.selected');
+          if (selectedOpt) selectedOpt.classList.remove('selected');
+        }
+      });
+    }
+
+    if (attachmentInput) {
+      attachmentInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          fileText.textContent = this.files[0].name;
+          if (this.files.length > 1) {
+            fileCount.textContent = `+${this.files.length - 1}`;
+            fileCount.style.display = 'inline';
+          } else {
+            fileCount.style.display = 'none';
+          }
+        } else {
+          fileText.textContent = 'Выберите файлы';
+          fileCount.style.display = 'none';
+        }
+      });
+    }
+
+    if (selectWrapper) {
+      const trigger = document.getElementById('event-select-trigger');
+      const options = dropdown.querySelectorAll('.custom-select-option');
+
+      trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectWrapper.classList.toggle('open');
+        dropdown.style.display = selectWrapper.classList.contains('open') ? 'block' : 'none';
+      });
+
+      options.forEach(function(option) {
+        option.addEventListener('click', function() {
+          const value = this.getAttribute('data-value');
+          const text = this.textContent;
+          selectText.textContent = text;
+          hiddenInput.value = value;
+
+          options.forEach(function(o) { o.classList.remove('selected'); });
+          this.classList.add('selected');
+
+          selectWrapper.classList.remove('open');
+          dropdown.style.display = 'none';
+        });
+      });
+
+      document.addEventListener('click', function() {
+        selectWrapper.classList.remove('open');
+        dropdown.style.display = 'none';
       });
     }
   });
