@@ -113,20 +113,36 @@
                                         <span class="badge">{{ item.event.format.name }}</span>
                                     </p>
                                     {% endif %}
-                                    <div class="partner-card-footer">
-                                        <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-2">УЧАСТНИКИ</a>
-                                        {% if not item.event.has_sold_tickets %}
-                                            <a href="{% url 'partner:edit_event' item.event.id %}"
-                                               class="btn-edit" title="Редактировать">
-                                                <img src="/media/icon/tdesign_edit-filled.svg" alt="">
-                                            </a>
-                                        {% else %}
-                                            <button type="button" class="btn-edit"
-                                                    onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Обратитесь в поддержку.'); return false;">
-                                                <img src="/media/icon/tdesign_edit-filled.svg" alt="">
-                                            </button>
-                                        {% endif %}
-                                    </div>
+<div class="partner-card-footer">
+    <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-2">УЧАСТНИКИ</a>
+    {% if not item.event.has_sold_tickets %}
+        <a href="{% url 'partner:edit_event' item.event.id %}"
+           class="btn-edit" title="Редактировать">
+            <img src="/media/icon/tdesign_edit-filled.svg" alt="">
+        </a>
+        <label class="card-check">
+            <input type="checkbox" name="event_ids"
+                   value="{{ item.event.id }}" class="event-checkbox"
+                   onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
+            <span class="card-check-box">
+                <img src="/media/icon/trash.svg" alt="">
+            </span>
+        </label>
+    {% else %}
+        <button type="button" class="btn-edit"
+                onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Обратитесь в поддержку.'); return false;">
+            <img src="/media/icon/tdesign_edit-filled.svg" alt="">
+        </button>
+        <label class="card-check">
+            <input type="checkbox" name="event_ids"
+                   value="{{ item.event.id }}" class="event-checkbox"
+                   onclick="showToast('Удаление невозможно, так как на мероприятие продан хотя бы 1 билет.'); event.stopPropagation(); return false;">
+            <span class="card-check-box">
+                <img src="/media/icon/trash.svg" alt="">
+            </span>
+        </label>
+    {% endif %}
+</div>
                                 </div>
                             </div>
                         </div>
@@ -181,12 +197,7 @@
                     <p class="empty-hint">Архив пуст.</p>
                 {% endif %}
 
-                <!-- Кнопка массового удаления (появляется, когда выбраны карточки) -->
-                <div class="bulk-actions mt-3">
-                    <button type="submit" class="btn btn-danger" id="bulkDeleteButton" disabled>
-                        <i class="bi bi-trash"></i> Удалить выбранные
-                    </button>
-                </div>
+<!-- Кнопка массового удаления удалена -->
             </form>
 
         </div>
@@ -215,25 +226,11 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll('.event-checkbox');
-        const bulkDeleteButton = document.getElementById('bulkDeleteButton');
-        const bulkDeleteForm = document.getElementById('bulkDeleteForm');
 
-        function updateBulkDeleteButtonState() {
-            const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
-            bulkDeleteButton.disabled = checkedBoxes.length === 0;
-        }
-
-        checkboxes.forEach(cb => cb.addEventListener('change', updateBulkDeleteButtonState));
-
-        bulkDeleteForm.addEventListener('submit', function(e) {
-            const checkedBoxes = document.querySelectorAll('.event-checkbox:checked');
-            if (checkedBoxes.length === 0) {
-                e.preventDefault();
-                return;
-            }
-            if (!confirm(`Удалить ${checkedBoxes.length} мероприятий?`)) {
-                e.preventDefault();
-            }
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                this.checked = false;
+            });
         });
     });
 </script>
