@@ -233,12 +233,20 @@ def partner_chats(request):
     selected_ticket = None
     chat_messages = []
 
-    # Получаем список тикетов, связанных с мероприятиями партнёра
-    tickets = SupportTicket.objects.filter(event__organizer=request.user).order_by("-created_at")
+    # Получаем только тикеты с участниками (ticket_type='participant')
+    tickets = SupportTicket.objects.filter(
+        event__organizer=request.user,
+        ticket_type='participant'
+    ).order_by("-created_at")
 
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, event__organizer=request.user)
+        selected_ticket = get_object_or_404(
+            SupportTicket,
+            id=ticket_id,
+            event__organizer=request.user,
+            ticket_type='participant'
+        )
         chat_messages = selected_ticket.messages.all()
 
     partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)

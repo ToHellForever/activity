@@ -20,23 +20,23 @@
     <div class="partner-main">
 <div class="support-layout">
   
-  <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
-  <div class="support-sidebar">
-    <h2>Чаты по мероприятиям</h2>
+   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
+   <div class="support-sidebar">
+     <h2>Чаты с участниками</h2>
 
-    <!-- Список существующих тикетов -->
-    {% for ticket in tickets %}
-      <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
-        <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
-          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:60 }}
-          <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
-        </a>
-      </div>
-    {% empty %}
-      <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
-    {% endfor %}
-    
-  </div>
+     <!-- Список существующих тикетов -->
+     {% for ticket in tickets %}
+       <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
+         <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
+           <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:60 }}
+           <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
+         </a>
+       </div>
+     {% empty %}
+       <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
+     {% endfor %}
+
+   </div>
 
   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
   <div class="chat-window">

@@ -1013,6 +1013,11 @@ class PayoutRequest(models.Model):
         verbose_name_plural = "Запросы на выплату"
 
 class SupportTicket(models.Model):
+    TICKET_TYPE_CHOICES = [
+        ("participant", "Чат с участниками"),
+        ("support", "Техническая поддержка"),
+    ]
+
     STATUS_CHOICES = [
         ("new", "Новое"),
         ("in_progress", "В работе"),
@@ -1021,6 +1026,12 @@ class SupportTicket(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     subject = models.CharField(max_length=255, verbose_name="Тема")
+    ticket_type = models.CharField(
+        max_length=20,
+        choices=TICKET_TYPE_CHOICES,
+        default="support",
+        verbose_name="Тип тикета"
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     created_at = models.DateTimeField(auto_now_add=True)
     event = models.ForeignKey(

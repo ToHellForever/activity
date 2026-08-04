@@ -386,10 +386,14 @@ def support_dashboard(request):
         event_id = request.POST.get("event_id")
 
         if new_subject and new_message:
+            # Определяем тип тикета: если связано с мероприятием - это чат с участниками, иначе - техподдержка
+            ticket_type = 'participant' if event_id else 'support'
+
             # Создаем новый тикет
             ticket = SupportTicket.objects.create(
                 subject=new_subject,
                 user=request.user,
+                ticket_type=ticket_type,
                 status="new",
                 event_id=event_id if event_id else None,
             )
@@ -690,6 +694,7 @@ def handle_platform_request(request, event, user, ticket, quantity):
     ticket_request = SupportTicket.objects.create(
         user=user,
         subject=f"Заявка на участие в мероприятии: {event.title}",
+        ticket_type='participant',
         event=event,
     )
 
@@ -757,6 +762,7 @@ def send_event_request(request, event_id, question=""):
             ticket = SupportTicket.objects.create(
                 user=user,
                 subject=f"Заявка на участие в мероприятии: {event.title}",
+                ticket_type='participant',
                 event=event,
             )
 
