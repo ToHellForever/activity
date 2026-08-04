@@ -17,6 +17,7 @@
                 </div>
                 {% else %}
                 <form id="questionForm">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="questionText" class="form-label">Ваш вопрос</label>
                         <textarea class="form-control" id="questionText" rows="5" maxlength="1000" required></textarea>
@@ -83,19 +84,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Здесь можно добавить AJAX-запрос для отправки вопроса на сервер
-            console.log('Вопрос отправлен:', {question, email});
+            // Отключаем кнопку на время отправки
+            sendQuestionBtn.disabled = true;
+            sendQuestionBtn.textContent = 'Отправка...';
 
-            // Показываем уведомление об успешной отправке
-            alert('Ваш вопрос успешно отправлен организатору!');
+            // Собираем данные формы
+            const formData = new FormData();
+            formData.append('question', question);
+            formData.append('email', email);
 
-            // Закрываем модальное окно
-            const modal = bootstrap.Modal.getInstance(document.getElementById('questionModal'));
-            modal.hide();
+            // Получаем event_id из data-атрибута кнопки "Задать вопрос"
+            const questionLink = document.querySelector('.question-organizator');
+            const eventId = questionLink ? questionLink.getAttribute('data-event-id') : null;
 
-            // Очищаем форму
-            document.getElementById('questionForm').reset();
-            charCount.textContent = '0';
+            if (!eventId) {
+                alert('Ошибка: не удалось определить мероприятие');
+                sendQuestionBtn.disabled = false;
+                sendQuestionBtn.textContent = 'ОТПРАВИТЬ ЗАПРОС';
+                return;
+            }
+
+            // Отправляем AJAX-запрос
+            fetch('/send-event-request/' + eventId + '/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Ваш вопрос успешно отправлен организатору!');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('questionModal'));
+                    modal.hide();
+                    document.getElementById('questionForm').reset();
+                    charCount.textContent = '0';
+                } else {
+                    alert(data.message || 'Произошла ошибка при отправке заявки.');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.');
+            })
+            .finally(() => {
+                sendQuestionBtn.disabled = false;
+                sendQuestionBtn.textContent = 'ОТПРАВИТЬ ЗАПРОС';
+            });
         });
     }
 });

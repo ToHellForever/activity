@@ -3,99 +3,160 @@
 
 {% block extra_css %}
 <style>
-  .container { display: flex; height: calc(100vh - 100px); }
-  .sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; }
-  .chat-window { width: 70%; padding: 20px; display: flex; flex-direction: column; }
-  .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; }
-  .message { margin: 10px 0; padding: 8px 12px; border-radius: 5px; max-width: 70%; line-height: 1.4;}
-  .user { background-color: #dcf8c6; margin-left: auto; }
-  .moderator { background-color: #ffffff; border: 1px solid #ddd; margin-right: auto; }
+  .moderator-layout { display: flex; height: calc(100vh - 100px); }
+  .moderator-sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; background: #fafafa; }
+  .moderator-chat { width: 70%; padding: 20px; display: flex; flex-direction: column; }
+  .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
+  .message { margin: 10px 0; padding: 12px 16px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
+  .message.user { background-color: #dcf8c6; margin-left: auto; }
+  .message.moderator { background-color: #ffffff; border: 1px solid #ddd; margin-right: auto; }
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.9em; text-decoration: none; color: #333; }
+  .tab-btn.active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.85em; text-decoration: none; color: #555; }
+  .filter-btn.active { background: #2c7be5; color: #fff; border-color: #2c7be5; }
+  .ticket-item { padding: 10px; border-radius: 6px; margin-bottom: 6px; background: #fff; border: 1px solid #e8e8e8; }
+  .ticket-item:hover { background: #f0f4ff; }
+  .ticket-item.active { background: #e3ecff; border-color: #4a90d9; }
+  .ticket-item a { text-decoration: none; color: #333; display: block; }
+  .ticket-item .badge { font-size: 0.75em; padding: 2px 8px; }
+  .status-new { background: #ffc107; color: #333; }
+  .status-in_progress { background: #17a2b8; color: #fff; }
+  .status-closed { background: #6c757d; color: #fff; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-
+<div class="moderator-layout">
   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
-  <div class="sidebar">
-    <h2>Обращения в поддержке</h2>
-    
-    <!-- Фильтры по статусу -->
-    <div class="filters">
-      <a href="?status=new" class="btn btn-outline-primary mb-3">Новые</a>
-      <a href="?status=in_progress" class="btn btn-outline-primary mb-3">В работе</a>
-      <a href="?status=closed" class="btn btn-outline-primary mb-3">Закрытые</a>
+  <div class="moderator-sidebar">
+    <h2 style="margin-bottom: 16px;">Управление обращениями</h2>
+
+    <!-- Табы: Организаторы / Участники -->
+    <div class="tab-bar">
+      <a href="?tab=organizers&status={{ filter_status }}" class="tab-btn {% if tab == 'organizers' %}active{% endif %}">
+        🏢 Вопросы от организаторов
+      </a>
+      <a href="?tab=participants&status={{ filter_status }}" class="tab-btn {% if tab == 'participants' %}active{% endif %}">
+        👥 Вопросы от участников
+      </a>
     </div>
-    
+
+    <!-- Фильтры по статусу -->
+    <div class="filter-bar">
+      <a href="?tab={{ tab }}&status=new" class="filter-btn {% if filter_status == 'new' %}active{% endif %}">Новые</a>
+      <a href="?tab={{ tab }}&status=in_progress" class="filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">В работе</a>
+      <a href="?tab={{ tab }}&status=closed" class="filter-btn {% if filter_status == 'closed' %}active{% endif %}">Закрытые</a>
+    </div>
+
     <!-- Список тикетов -->
     {% for ticket in tickets %}
-      <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
-        <a href="?ticket_id={{ ticket.id }}">
-          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:30 }}
-          <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
+      <div class="ticket-item {% if selected_ticket and selected_ticket.id == ticket.id %}active{% endif %}">
+        <a href="?tab={{ tab }}&ticket_id={{ ticket.id }}&status={{ filter_status }}">
+          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:50 }}
+          <span class="badge status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
         </a>
+        {% if ticket.event %}
+          <div style="font-size: 0.8em; color: #888; margin-top: 4px;">📅 {{ ticket.event.title }}</div>
+        {% endif %}
+        <div style="font-size: 0.75em; color: #aaa; margin-top: 2px;">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
       </div>
     {% empty %}
-      <div>Нет тикетов с таким статусом.</div>
+      <div style="color: #888; padding: 20px; text-align: center;">Нет обращений в этой категории.</div>
     {% endfor %}
-    
   </div>
-{% if selected_ticket %}
-  <form method="post" action="{% url 'update_ticket_status' ticket_id=selected_ticket.id %}">
-    {% csrf_token %}
-    <select name="status">
-      <option value="new" {% if selected_ticket.status == 'new' %}selected{% endif %}>Новое</option>
-      <option value="in_progress" {% if selected_ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
-      <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>Закрыто</option>
-    </select>
-    <button type="submit">Сменить статус</button>
-  </form>
-{% endif %}
+
   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
-  <div class="chat-window">
-    
-    <!-- Заголовок чата -->
+  <div class="moderator-chat">
     {% if selected_ticket %}
-      <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
-      <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
-      <hr>
-    {% else %}
-      <h3>Выберите тикет слева или выберите фильтр.</h3>
-      <div style="flex: 1"></div> <!-- Отступ, чтобы форма не поднималась вверх -->
-    {% endif %}
-
-    <!-- История сообщений -->
-    <div class="chat-history">
-      {% for message in chat_messages %}
-        <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-          <strong>{{ message.user.get_full_name|default:message.user.email }} ({{ message.created_at|date:"H:i" }}):</strong><br>
-          {{ message.text }}
-
-          <!-- Вложения -->
-          {% if message.attachments.all %}
-            <div class="attachments" style="margin-top: 8px;">
-              {% for attachment in message.attachments.all %}
-                <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-block; margin-right: 10px; font-size: 0.9em; color: #1890ff;">
-                  📎 {{ attachment.file.name|cut:"/" }}
-                </a>
-              {% endfor %}
-            </div>
+      <!-- Информация о тикете -->
+      <div style="margin-bottom: 16px;">
+        <h3 style="margin: 0;">Обращение #{{ selected_ticket.id }}</h3>
+        <p style="margin: 4px 0 0 0; color: #666;"><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
+        <p style="margin: 4px 0 0 0; color: #666;">
+          <strong>От:</strong> {{ selected_ticket.user.get_full_name|default:selected_ticket.user.email }}
+          {% if selected_ticket.user.user_type == "partner" %}
+            (Партнёр)
+          {% elif selected_ticket.user.user_type == "visitor" %}
+            (Участник)
+          {% else %}
+            (Гость)
           {% endif %}
-        </div>
-      {% empty %}
-        <div>Сообщений в этом чате пока нет.</div>
-      {% endfor %}
-    </div>
+        </p>
+        {% if selected_ticket.event %}
+          <p style="margin: 4px 0 0 0; color: #666;">
+            <strong>Мероприятие:</strong> 
+            {% if selected_ticket.user.user_type == "partner" %}
+              {{ selected_ticket.event.title }}
+            {% else %}
+              <a href="{{ selected_ticket.event.get_absolute_url|default:'#' }}" target="_blank">{{ selected_ticket.event.title }}</a>
+            {% endif %}
+          </p>
+        {% endif %}
+        <p style="margin: 4px 0 0 0; color: #666;">
+          <strong>Тип:</strong>
+          {% if selected_ticket.ticket_type == 'support' %}
+            🏢 Техподдержка платформы
+          {% else %}
+            👥 Заявка на мероприятие
+          {% endif %}
+        </p>
 
-    <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
-    {% if selected_ticket %}
-      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex;">
+        <!-- Смена статуса -->
+        <form method="post" action="{% url 'update_ticket_status' ticket_id=selected_ticket.id %}" style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+          {% csrf_token %}
+          <select name="status" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #ddd;">
+            <option value="new" {% if selected_ticket.status == 'new' %}selected{% endif %}>Новое</option>
+            <option value="in_progress" {% if selected_ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
+            <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>Закрыто</option>
+          </select>
+          <button type="submit" style="padding: 6px 16px; background: #4a90d9; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Сменить статус</button>
+        </form>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;">
+
+      <!-- История сообщений -->
+      <div class="chat-history">
+        {% for message in chat_messages %}
+          <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <strong>{{ message.user.get_full_name|default:message.user.email }}</strong>
+              <span style="font-size: 0.8em; color: #888;">{{ message.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <div>{{ message.text|linebreaks }}</div>
+
+            <!-- Вложения -->
+            {% if message.attachments.all %}
+              <div style="margin-top: 8px;">
+                {% for attachment in message.attachments.all %}
+                  <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 0.9em; color: #1890ff; text-decoration: none;">
+                    📎 {{ attachment.file.name|cut:"support_attachments/" }}
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div style="color: #888; text-align: center; padding: 40px;">Сообщений в этом чате пока нет.</div>
+        {% endfor %}
+      </div>
+
+      <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
+      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center;">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-        <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
-        <input type="file" name="attachment" multiple id="file-upload" style="margin-right: 5px;">
-        <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
+        <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        <input type="file" name="attachment" multiple style="font-size: 0.9em;">
+        <button type="submit" style="padding: 10px 20px; background: #4a90d9; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Отправить</button>
       </form>
+
+    {% else %}
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888;">
+        <p style="font-size: 1.2em;">Выберите обращение слева</p>
+        <p>или выберите фильтр для отображения обращений.</p>
+      </div>
     {% endif %}
   </div>
 </div>

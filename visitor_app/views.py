@@ -104,3 +104,39 @@ def buy_ticket(request, ticket_id=None):
     }
 
     return render(request, 'buy_ticket.html', context)
+
+@login_required
+def visitor_event_chats(request):
+    """
+    Страница участника — показывает чаты по мероприятиям (ticket_type='participant').
+    Здесь участник видит вопросы, которые он задавал организаторам через кнопку «Задать вопрос».
+    """
+    if request.user.user_type != "visitor" and request.user.user_type != "guest":
+        return redirect("visitor:dashboard")
+
+    selected_ticket = None
+    chat_messages = []
+
+    # Фильтр по статусу
+    ticket_filter = request.GET.get("ticket_filter", "all")
+
+    # Показываем ТОЛЬКО participant-тикеты текущего пользователя
+    tickets = SupportTicket.objects.filter(
+        user=request.user,
+        ticket_type='participant'
+    ).order_by("-created_at")
+
+    if ticket_filter != "all":
+        tickets = tickets.filter(status=ticket_filter)
+
+    if request.GET.get("ticket_id"):
+        ticket_id = request.GET.get("ticket_id")
+        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        chat_messages = selected_ticket.messages.all()
+
+    context = {
+        "tickets": tickets,
+        "selected_ticket": selected_ticket,
+        "chat_messages": chat_messages,
+    }
+    return render(request, "visitor/event_chats.html", context)

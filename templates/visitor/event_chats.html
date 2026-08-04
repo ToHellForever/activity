@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/support_dashboard.css' %}">
+<style>
+  .event-chats-page { padding: 20px; }
+  .event-chats-sidebar { width: 320px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+  .event-chats-main { flex: 1; display: flex; flex-direction: column; }
+  .event-chats-ticket-card { display: block; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
+  .event-chats-ticket-card:hover { background: #f5f7ff; }
+  .event-chats-ticket-card.active { background: #e8eeff; border-left: 3px solid #4a90d9; }
+  .event-chats-ticket-card .ticket-subject { font-weight: 500; margin-bottom: 4px; }
+  .event-chats-ticket-card .ticket-meta { font-size: 0.8em; color: #888; display: flex; justify-content: space-between; }
+  .event-chats-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888; text-align: center; }
+  .event-chats-chat-history { flex: 1; overflow-y: auto; padding: 16px; }
+  .event-chats-message { display: flex; margin-bottom: 16px; }
+  .event-chats-message.user { flex-direction: row-reverse; }
+  .event-chats-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 0 10px; }
+  .event-chats-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .event-chats-avatar .sender-initials { font-size: 0.8em; font-weight: bold; color: #555; }
+  .event-chats-bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; background: #f0f0f0; }
+  .event-chats-message.user .event-chats-bubble { background: #dcf8c6; }
+  .event-chats-bubble .attachment-link { display: inline-block; margin-top: 8px; font-size: 0.9em; color: #1890ff; text-decoration: none; }
+  .event-chats-time { font-size: 0.75em; color: #aaa; margin-top: 4px; }
+  .event-chats-form { padding: 16px; border-top: 1px solid #eee; }
+  .event-chats-form input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95em; }
+  .event-chats-form .form-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .event-chats-form button { padding: 10px 20px; background: #4a90d9; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  .event-chats-filter-btn { padding: 6px 14px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.85em; text-decoration: none; color: #555; margin-right: 4px; }
+  .event-chats-filter-btn.active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="event-chats-page" style="display: flex; gap: 14px;">
+  <!-- ЛЕВАЯ КОЛОНКА: Список чатов -->
+  <div class="event-chats-sidebar">
+    <div style="padding: 16px; border-bottom: 1px solid #eee;">
+      <h2 style="margin: 0 0 12px 0;">Мои вопросы организаторам</h2>
+      <p style="font-size: 0.9em; color: #888; margin: 0;">Здесь вы видите вопросы, которые задавали организаторам мероприятий.</p>
+    </div>
+
+    <!-- Фильтры -->
+    <div style="padding: 12px 16px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid #eee;">
+      <a href="?ticket_filter=all" class="event-chats-filter-btn {% if not request.GET.ticket_filter or request.GET.ticket_filter == 'all' %}active{% endif %}">Все</a>
+      <a href="?ticket_filter=new" class="event-chats-filter-btn {% if request.GET.ticket_filter == 'new' %}active{% endif %}">Новые</a>
+      <a href="?ticket_filter=in_progress" class="event-chats-filter-btn {% if request.GET.ticket_filter == 'in_progress' %}active{% endif %}">В работе</a>
+      <a href="?ticket_filter=closed" class="event-chats-filter-btn {% if request.GET.ticket_filter == 'closed' %}active{% endif %}">Закрытые</a>
+    </div>
+
+    <!-- Список -->
+    {% for ticket in tickets %}
+      <a href="?ticket_id={{ ticket.id }}" class="event-chats-ticket-card {% if selected_ticket and selected_ticket.id == ticket.id %}active{% endif %}">
+        <div class="ticket-subject">{{ ticket.subject|truncatechars:40 }}</div>
+        <div class="ticket-meta">
+          <span>{{ ticket.event.title|default:"Мероприятие не указано" }}</span>
+          <span>{% if ticket.status == 'new' %}🟢{% elif ticket.status == 'in_progress' %}🔵{% else %}⚫{% endif %} {{ ticket.get_status_display }}</span>
+        </div>
+      </a>
+    {% empty %}
+      <div style="padding: 20px; text-align: center; color: #888;">
+        У вас пока нет вопросов к организаторам.<br>
+        <small>Найдите мероприятие и нажмите «Задать вопрос организатору».</small>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- ПРАВАЯ КОЛОНКА: Чат -->
+  <div class="event-chats-main">
+    {% if selected_ticket %}
+      <!-- Заголовок -->
+      <div style="padding: 16px; border-bottom: 1px solid #eee;">
+        <h3 style="margin: 0 0 4px 0;">{{ selected_ticket.subject }}</h3>
+        {% if selected_ticket.event %}
+          <p style="margin: 0; color: #666; font-size: 0.9em;">📅 <a href="{{ selected_ticket.event.get_absolute_url|default:'#' }}">{{ selected_ticket.event.title }}</a></p>
+        {% endif %}
+        <p style="margin: 4px 0 0 0; color: #888; font-size: 0.85em;">
+          Организатор: {{ selected_ticket.event.organizer.get_full_name|default:selected_ticket.event.organizer.email }}
+        </p>
+      </div>
+
+      <!-- История сообщений -->
+      <div class="event-chats-chat-history">
+        {% for message in chat_messages %}
+          <div class="event-chats-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
+            <div class="event-chats-avatar">
+              {% if message.is_from_user %}
+                <span class="sender-initials">ВЫ</span>
+              {% else %}
+                {% if message.user.partner_profile and message.user.partner_profile.logo %}
+                  <img src="{{ message.user.partner_profile.logo.url }}" alt="">
+                {% else %}
+                  <span class="sender-initials" style="font-size: 0.7em;">{{ message.user.first_name|default:"О" }}</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            <div>
+              <div class="event-chats-bubble">
+                <div>{{ message.text|linebreaks }}</div>
+                {% if message.attachments.all %}
+                  <div style="margin-top: 8px;">
+                    {% for attachment in message.attachments.all %}
+                      <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">📎 Файл</a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="event-chats-time">{{ message.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
+          </div>
+        {% empty %}
+          <div style="text-align: center; color: #888; padding: 40px;">Сообщений в этом чате пока нет.</div>
+        {% endfor %}
+      </div>
+
+      <!-- Форма ответа (только если тикет не закрыт) -->
+      {% if selected_ticket.status != 'closed' %}
+      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" class="event-chats-form">
+        {% csrf_token %}
+        <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+        <input type="text" name="text" placeholder="Введите ваше сообщение..." required>
+        <div class="form-row">
+          <input type="file" name="attachment" multiple style="font-size: 0.9em;">
+          <button type="submit">Отправить</button>
+        </div>
+      </form>
+      {% else %}
+      <div style="padding: 16px; text-align: center; color: #888; border-top: 1px solid #eee;">
+        💬 Это обращение закрыто. Написать ответ невозможно.
+      </div>
+      {% endif %}
+
+    {% else %}
+      <div class="event-chats-placeholder">
+        <p style="font-size: 1.1em;">Выберите обращение слева</p>
+        <p>или задайте вопрос организатору на странице мероприятия.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.querySelector('input[name="text"]');
+    if (chatInput) {
+      chatInput.addEventListener('paste', function(e) {
+        if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+          e.preventDefault();
+          alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -14,8 +14,8 @@
         <div class="support-sidebar">
            <div class="support-section">
              <div>
-               <h2>Создать обращение в поддержку</h2>
-               <p class="section-description">Опишите проблему или вопрос, и служба поддержки ответит вам в ближайшее время.</p>
+               <h2>Техподдержка платформы</h2>
+               <p class="section-description">Опишите проблему или вопрос, и служба поддержки ответит вам в ближайшее время. Здесь вы можете обратиться к администраторам платформы с техническими вопросами.</p>
              </div>
             <button id="new-ticket-btn" class="btn btn-new-ticket">Новое обращение</button>
             <form id="new-ticket-form" method="post" enctype="multipart/form-data" class="support-form" style="display: none;">
@@ -33,23 +33,6 @@
                 <span class="file-count" id="file-count" style="display:none;"></span>
               </label>
               <input type="file" id="attachment" name="attachment" multiple style="display:none;">
-
-              {% if request.user.user_type == "partner" %}
-              <label>Мероприятие</label>
-              <div class="custom-select" id="event-select-wrapper">
-                <div class="custom-select-trigger" id="event-select-trigger">
-                  <span class="custom-select-text">-- Выберите мероприятие --</span>
-                  <span class="custom-select-arrow">▾</span>
-                </div>
-                <div class="custom-select-dropdown" id="event-select-dropdown" style="display:none;">
-                  <div class="custom-select-option" data-value="">-- Выберите мероприятие --</div>
-                  {% for event in events %}
-                    <div class="custom-select-option {% if selected_event and selected_event.id == event.id %}selected{% endif %}" data-value="{{ event.id }}">{{ event.title }}</div>
-                  {% endfor %}
-                </div>
-                <input type="hidden" name="event_id" id="event-select-value" value="">
-              </div>
-              {% endif %}
 
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Создать обращение</button>
@@ -159,15 +142,6 @@
     const fileText = document.getElementById('file-text');
     const fileCount = document.getElementById('file-count');
 
-    const selectWrapper = document.getElementById('event-select-wrapper');
-    let selectText, hiddenInput, dropdown;
-    if (selectWrapper) {
-      const trigger = document.getElementById('event-select-trigger');
-      dropdown = document.getElementById('event-select-dropdown');
-      hiddenInput = document.getElementById('event-select-value');
-      selectText = trigger.querySelector('.custom-select-text');
-    }
-
     if (newBtn && form && cancelBtn) {
       newBtn.addEventListener('click', function() {
         form.style.display = 'flex';
@@ -180,12 +154,6 @@
         form.reset();
         fileText.textContent = 'Выберите файлы';
         fileCount.style.display = 'none';
-        if (selectText) {
-          selectText.textContent = '-- Выберите мероприятие --';
-          hiddenInput.value = '';
-          const selectedOpt = dropdown.querySelector('.custom-select-option.selected');
-          if (selectedOpt) selectedOpt.classList.remove('selected');
-        }
       });
     }
 
@@ -203,37 +171,6 @@
           fileText.textContent = 'Выберите файлы';
           fileCount.style.display = 'none';
         }
-      });
-    }
-
-    if (selectWrapper) {
-      const trigger = document.getElementById('event-select-trigger');
-      const options = dropdown.querySelectorAll('.custom-select-option');
-
-      trigger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        selectWrapper.classList.toggle('open');
-        dropdown.style.display = selectWrapper.classList.contains('open') ? 'block' : 'none';
-      });
-
-      options.forEach(function(option) {
-        option.addEventListener('click', function() {
-          const value = this.getAttribute('data-value');
-          const text = this.textContent;
-          selectText.textContent = text;
-          hiddenInput.value = value;
-
-          options.forEach(function(o) { o.classList.remove('selected'); });
-          this.classList.add('selected');
-
-          selectWrapper.classList.remove('open');
-          dropdown.style.display = 'none';
-        });
-      });
-
-      document.addEventListener('click', function() {
-        selectWrapper.classList.remove('open');
-        dropdown.style.display = 'none';
       });
     }
 

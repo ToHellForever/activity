@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
-from .proxy_models import EventRequestProxy, VisitorUser
+from .proxy_models import VisitorUser
 from .forms import EventAdminForm, PartnerAdminForm
 from django import forms
 from django.contrib import messages
@@ -609,104 +609,60 @@ class SupportTicketAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
+        "user_type_label",
         "subject",
+        "ticket_type_label",
         "status",
+        "event_label",
         "created_at",
-        "get_ticket_type",
     )
-    list_filter = ("status", "created_at")
-    readonly_fields = ("user", "subject", "created_at", "event")
+    list_filter = ("ticket_type", "status", "created_at")
+    readonly_fields = ("user", "subject", "created_at", "event", "ticket_type")
     fieldsets = (
-        (None, {"fields": ("user", "status")}),
-        ("Тикет", {"fields": ("subject", "created_at")}),
+        (None, {"fields": ("user", "user_type_label", "ticket_type", "status")}),
+        ("Тикет", {"fields": ("subject", "event_label", "created_at")}),
     )
 
-    def get_ticket_type(self, obj):
+    def user_type_label(self, obj):
+        types = {
+            "partner": "🏢 Партнёр",
+            "visitor": "👤 Участник",
+            "guest": "👤 Гость",
+        }
+        return types.get(obj.user.user_type, obj.user.user_type)
+
+    user_type_label.short_description = "Тип пользователя"
+
+    def ticket_type_label(self, obj):
+        types = {
+            "support": "🔧 Техподдержка",
+            "participant": "📋 Заявка",
+        }
+        return types.get(obj.ticket_type, obj.ticket_type)
+
+    ticket_type_label.short_description = "Тип тикета"
+    ticket_type_label.admin_order_field = "ticket_type"
+
+    def event_label(self, obj):
         if obj.event:
-            return "Заявка на мероприятие"
-        return "Обычный тикет"
+            return obj.event.title
+        return "—"
 
-    get_ticket_type.short_description = "Тип тикета"
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(event__isnull=True)
-
-@admin.register(EventRequestProxy)
-class EventRequestAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "event",
-        "status",
-        "created_at",
-        "get_event_title",
-        "get_user_question",
-    )
-    list_filter = ("status", "created_at", "event")
-    readonly_fields = (
-        "user",
-        "subject",
-        "created_at",
-        "event",
-        "get_user_question_display",
-    )
-
-    def get_event_title(self, obj):
-        return obj.event.title if obj.event else "-"
-
-    get_event_title.short_description = "Мероприятие"
-
-    def get_user_question(self, obj):
-        first_message = obj.messages.first()
-        if first_message and first_message.text:
-            return first_message.text.replace("Вопрос от участника:\n", "").strip()
-        return "-"
-
-    get_user_question.short_description = "Вопрос участника"
-
-    def get_user_question_display(self, obj):
-        return self.get_user_question(obj)
-
-    get_user_question_display.short_description = "Вопрос участника"
+    event_label.short_description = "Мероприятие"
+    event_label.admin_order_field = "event__title"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return (
-            qs.filter(event__isnull=False)
-            .select_related("event")
-            .prefetch_related("messages")
-        )
+        return qs.filter(ticket_type='support').select_related("user", "event").prefetch_related("messages")
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
     def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request, obj=None):
         return False
-
-class EventRequestAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "event", "status", "created_at", "get_event_title")
-    list_filter = ("status", "created_at", "event")
-    readonly_fields = ("user", "subject", "created_at", "event")
-
-    def get_event_title(self, obj):
-        return obj.event.title if obj.event else "-"
-
-    get_event_title.short_description = "Мероприятие"
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(event__isnull=False).select_related("event")
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def get_model_perms(self, request):
-        return {}
-
 @admin.register(PayoutRequest)
 class PayoutRequestAdmin(admin.ModelAdmin):
     list_display = (

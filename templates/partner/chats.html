@@ -14,37 +14,48 @@
   
    <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
    <div class="support-sidebar">
-     <h2>Чаты с участниками</h2>
+      <h2>Чаты с участниками</h2>
+      <p style="font-size: 0.85em; color: #888; margin-bottom: 12px;">Вопросы от участников к вашим мероприятиям.</p>
 
-     <!-- Список существующих тикетов -->
-     {% for ticket in tickets %}
-       <div class="p-2 mb-2 {% if selected_ticket and selected_ticket.id == ticket.id %}bg-light{% endif %}">
-         <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
-           <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:60 }}
-           <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
-         </a>
-       </div>
-     {% empty %}
-       <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
-     {% endfor %}
+      <!-- Список существующих тикетов -->
+      {% for ticket in tickets %}
+        <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit; display: block; padding: 8px; border-radius: 4px; margin-bottom: 4px; {% if selected_ticket and selected_ticket.id == ticket.id %}background: #e8eeff;{% endif %}">
+          <div>
+            <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:50 }}
+            <span class="badge badge-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+          </div>
+          {% if ticket.user.user_type == "guest" %}
+            <div style="font-size: 0.8em; color: #ff9800;">📧 {{ ticket.user.email }} (неавторизован)</div>
+          {% else %}
+            <div style="font-size: 0.8em; color: #888;">👤 {{ ticket.user.get_full_name|default:ticket.user.email }}</div>
+          {% endif %}
+        </a>
+      {% empty %}
+        <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
+      {% endfor %}
 
-   </div>
+    </div>
 
-  <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
-  <div class="chat-window">
-    
-    <!-- Заголовок чата -->
-    {% if selected_ticket %}
-      <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
-      <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
-      {% if selected_ticket.event %}
-        <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
-      {% endif %}
-      <hr>
-    {% else %}
-      <h3>Выберите обращение слева.</h3>
-      <div style="flex: 1"></div>
-    {% endif %}
+   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
+   <div class="chat-window">
+     
+     <!-- Заголовок чата -->
+     {% if selected_ticket %}
+       <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
+       <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
+       <p><strong>От:</strong> {{ selected_ticket.user.get_full_name|default:selected_ticket.user.email }}
+         {% if selected_ticket.user.user_type == "guest" %}
+           <span class="badge" style="background: #ff9800; color: #fff; font-size: 0.8em;">Неавторизован — ответьте на почту</span>
+         {% endif %}
+       </p>
+       {% if selected_ticket.event %}
+         <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
+       {% endif %}
+       <hr>
+     {% else %}
+       <h3>Выберите обращение слева.</h3>
+       <div style="flex: 1"></div>
+     {% endif %}
 
     <!-- История сообщений -->
     <div class="chat-history">
@@ -64,12 +75,14 @@
                 {% endfor %}
               </div>
             {% endif %}
-            </div>
-          {% empty %}
+          </div>
+        {% empty %}
             <div>Сообщений в этом чате пока нет.</div>
-          {% endfor %}
-        {% endif %}
-      </div>
+        {% endfor %}
+      {% else %}
+        <div style="color: #888; text-align: center; padding: 40px;">Выберите обращение слева.</div>
+      {% endif %}
+    </div>
 
       <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
       {% if selected_ticket %}

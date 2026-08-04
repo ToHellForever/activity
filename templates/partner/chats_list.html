@@ -3,25 +3,57 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/chats_list.css' %}">
+<style>
+  .chats-list-container { display: flex; gap: 14px; }
+  .chats-list-sidebar { width: 100%; }
+  .chats-list-ticket { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-decoration: none; color: inherit; display: block; transition: background 0.2s; }
+  .chats-list-ticket:hover { background: #f5f7ff; }
+  .chats-list-ticket .ticket-title { font-weight: 500; margin-bottom: 4px; }
+  .chats-list-ticket .ticket-meta { font-size: 0.8em; color: #888; display: flex; justify-content: space-between; }
+  .chats-list-ticket .badge { font-size: 0.75em; padding: 2px 8px; }
+  .status-new { background: #ffc107; color: #333; }
+  .status-in_progress { background: #17a2b8; color: #fff; }
+  .status-closed { background: #6c757d; color: #fff; }
+  .guest-badge { background: #ff9800; color: #fff; font-size: 0.7em; padding: 1px 6px; border-radius: 3px; margin-left: 4px; }
+</style>
 {% endblock %}
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;">
+<div class="chats-list-container">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-        <div class="support-layout">
-            <div class="support-sidebar">
-                <h2>Чаты с участниками</h2>
-                {% for ticket in tickets %}
-                    <div class="p-2 mb-2">
-                        <a href="{% url 'partner:chats' %}?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
-                            <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:60 }}
-                            <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
-                        </a>
+        <div class="chats-list-sidebar">
+            <h2 style="margin-bottom: 16px;">Чаты с участниками</h2>
+            <p style="font-size: 0.9em; color: #888; margin-bottom: 20px;">
+                Вопросы от участников, которые задавали через кнопку «Задать вопрос» на страницах ваших мероприятий.
+            </p>
+
+            {% for ticket in tickets %}
+                <a href="{% url 'partner:chats' %}?ticket_id={{ ticket.id }}" class="chats-list-ticket">
+                    <div class="ticket-title">
+                        #{{ ticket.id }}: {{ ticket.subject|truncatechars:50 }}
+                        {% if ticket.user.user_type == "guest" %}
+                            <span class="guest-badge">Неавторизован</span>
+                        {% endif %}
                     </div>
-                {% empty %}
-                    <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
-                {% endfor %}
-            </div>
+                    <div class="ticket-meta">
+                        <span>
+                            {% if ticket.user.user_type == "guest" %}
+                                📧 {{ ticket.user.email }} (ответьте на почту)
+                            {% else %}
+                                👤 {{ ticket.user.get_full_name|default:ticket.user.email }}
+                            {% endif %}
+                        </span>
+                        <span class="badge status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+                    </div>
+                    {% if ticket.event %}
+                        <div style="font-size: 0.8em; color: #aaa; margin-top: 2px;">📅 {{ ticket.event.title }}</div>
+                    {% endif %}
+                </a>
+            {% empty %}
+                <div style="padding: 20px; text-align: center; color: #888;">
+                    Пока нет вопросов от участников по вашим мероприятиям.
+                </div>
+            {% endfor %}
         </div>
     </div>
 </div>

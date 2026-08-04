@@ -375,92 +375,59 @@ def custom_logout(request):
 @login_required
 def support_dashboard(request):
     """
-    Главная страница поддержки. Слева список тикетов, справа чат.
+    Техподдержка платформы. Слева список тикетов, справа чат.
+    Здесь партнёры и участники общаются с модераторами платформы (не с организаторами мероприятий).
     """
-    # --- НОВАЯ ЛОГИКА: Создание тикета на этой же странице ---
+    # --- ЛОГИКА: Создание тикета техподдержки ---
     if request.method == "POST":
-        # Проверяем, пришли ли данные для создания НОВОГО тикета
         new_subject = request.POST.get("new_subject")
         new_message = request.POST.get("new_message")
         files = request.FILES.getlist("attachment")
-        event_id = request.POST.get("event_id")
 
         if new_subject and new_message:
-            # Определяем тип тикета: если связано с мероприятием - это чат с участниками, иначе - техподдержка
-            ticket_type = 'participant' if event_id else 'support'
-
-            # Создаем новый тикет
+            # Техподдержка платформы — всегда ticket_type='support'
             ticket = SupportTicket.objects.create(
                 subject=new_subject,
                 user=request.user,
-                ticket_type=ticket_type,
+                ticket_type='support',
                 status="new",
-                event_id=event_id if event_id else None,
+                event=None,
             )
-            # Создаем первое сообщение в чате
             message = SupportMessage.objects.create(
                 ticket=ticket, user=request.user, is_from_user=True, text=new_message
             )
 
-            # Сохраняем вложения, если они есть
             for file in files:
                 SupportAttachment.objects.create(message=message, file=file)
 
-            # Перенаправляем на эту же страницу, но с выбранным новым тикетом
             return redirect(f"/support/?ticket_id={ticket.id}")
 
-    # --- СТАРАЯ ЛОГИКА: Отображение страницы ---
+    # --- Отображение страницы ---
     selected_ticket = None
     chat_messages = []
 
-    # Получаем фильтры из GET-запроса
-    ticket_filter = request.GET.get("ticket_filter", "all")  # all, new, in_progress, closed
-    event_id = request.GET.get("event_id")
+    # Фильтр по статусу
+    ticket_filter = request.GET.get("ticket_filter", "all")
 
-    # Если пользователь - партнёр, показываем тикеты, связанные с его мероприятиями
-    if request.user.user_type == "partner":
-        tickets = SupportTicket.objects.filter(
-            Q(user=request.user) | Q(event__organizer=request.user)
-        ).order_by("-created_at")
-    else:
-        # Для обычных пользователей показываем тикеты, связанные с их email
-        tickets = SupportTicket.objects.filter(
-            Q(user=request.user) | Q(user__email=request.user.email)
-        ).order_by("-created_at")
+    # Показываем ТОЛЬКО support-тикеты текущего пользователя
+    tickets = SupportTicket.objects.filter(
+        user=request.user,
+        ticket_type='support'
+    ).order_by("-created_at")
 
-    # Фильтруем тикеты по статусу
     if ticket_filter != "all":
         tickets = tickets.filter(status=ticket_filter)
 
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
+        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
         chat_messages = selected_ticket.messages.all()
-    # Если указан event_id, фильтруем тикеты по мероприятию
-    elif event_id:
-        tickets = tickets.filter(event_id=event_id)
-
-    # Получаем мероприятия пользователя для формы создания тикета
-    if request.user.user_type == "partner":
-        # Для партнёров показываем только активные мероприятия
-        user_events = Event.objects.filter(
-            organizer=request.user,
-            status="active"
-        )
-    else:
-        # Для обычных пользователей показываем только мероприятия с проданными билетами
-        user_events = (
-            Event.objects.filter(organizer=request.user, has_sold_tickets=True)
-            if request.user.user_type != "visitor"
-            else []
-        )
 
     partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
-        "events": user_events,
         "partner_profile": partner_profile,
     }
     return render(request, "support_dashboard.html", context)
@@ -480,7 +447,7 @@ def send_support_message(request):
         message = SupportMessage.objects.create(
             ticket=ticket,
             user=request.user,
-            is_from_user=(not request.user.is_staff),  # Если staff — это модератор
+            is_from_user=request.user == ticket.user,  # True только если сообщение от создателя тикета (участника)
             text=text,
         )
 
@@ -491,8 +458,11 @@ def send_support_message(request):
         # Логика редиректа
         if request.user.is_staff:  # Если модератор — не редиректим
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
-        else:  # Если пользователь — редиректим на страницу тикета
-            return redirect(f"/support/?ticket_id={ticket_id}")
+        else:  # Если пользователь — редиректим на нужную страницу
+            if ticket.ticket_type == 'support':
+                return redirect(f"/support/?ticket_id={ticket_id}")
+            else:
+                return redirect(f"/visitor/event-chats/?ticket_id={ticket_id}")
 
     messages.error(request, "Ошибка отправки сообщения.")
     return redirect("support_dashboard")
@@ -517,13 +487,30 @@ def is_moderator(user):
 @login_required
 def moderator_dashboard(request):
     """
-    Главная страница модератора. Слева список тикетов, справа чат.
+    Главная страница модератора. Разделение на:
+    - Вопросы от организаторов (партнёры) — партнёры пишут в техподдержку платформы
+    - Вопросы от участников (посетители/гости) — заявки от участников к организаторам
     """
-    # Определяем фильтр по статусу (новые, в работе, закрытые)
+    # Определяем табы: organizers (партнёры) или participants (не партнёры)
+    tab = request.GET.get("tab", "organizers")
+
+    # Фильтр по статусу (новые, в работе, закрытые)
     filter_status = request.GET.get("status", "new")
 
-    # Получаем тикеты по фильтру
-    tickets = SupportTicket.objects.filter(status=filter_status).order_by("-created_at")
+    # Получаем тикеты по табу и статусу
+    if tab == "participants":
+        # Не партнёры (участники и гости) — только техподдержка платформы
+        tickets = SupportTicket.objects.filter(
+            status=filter_status,
+            ticket_type="support",
+            user__user_type__in=["visitor", "guest"]
+        ).order_by("-created_at")
+    else:
+        # Партнёры — любой тип тикета
+        tickets = SupportTicket.objects.filter(
+            status=filter_status,
+            user__user_type="partner"
+        ).order_by("-created_at")
 
     # По умолчанию чат пустой
     selected_ticket = None
@@ -539,7 +526,8 @@ def moderator_dashboard(request):
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
-        "filter_status": filter_status,  # Передаем статус для фильтров
+        "filter_status": filter_status,
+        "tab": tab,
     }
     return render(request, "moderator_dashboard.html", context)
 

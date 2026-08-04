@@ -199,7 +199,7 @@
                 {% endfor %}
         </div>
             <div class="mt-4 d-flex flex-column">
-                <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+                <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
                 <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
                 <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
