@@ -306,27 +306,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 40px;
+  height: auto;
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
   background: rgba(255, 255, 255, 0.85);
-  color: #666;
-  transition: all 0.2s;
-  backdrop-filter: blur(4px);
-}
-
-.card-check-box i {
-  font-size: 15px;
-}
-
-.card-check:hover .card-check-box {
-  background: #fff;
-  color: #ff8c42;
-}
-
-.card-check input:checked + .card-check-box {
-  background: #ff8c42;
-  color: #fff;
+  color: #b8b4b4;
 }
 
 /* ---------- Тело карточки ---------- */
@@ -429,23 +415,13 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: rgba(2, 54, 156, 1);
   color: #fff;
   border: none;
   cursor: pointer;
   text-decoration: none;
   flex-shrink: 0;
   transition: all 0.2s;
-}
-
-.btn-edit:hover {
-  background: #2563eb;
-  color: #fff;
-  transform: rotate(-10deg);
-}
-
-.btn-edit i {
-  font-size: 13px;
 }
 
 /* ---------- Архивные карточки (без иконок действий сверху) ---------- */

@@ -98,7 +98,7 @@
                                         <input type="checkbox" name="event_ids"
                                                value="{{ item.event.id }}" class="event-checkbox">
                                         <span class="card-check-box">
-                                            <i class="bi bi-trash"></i>
+                                            <img src="/media/icon/trash.svg" alt="">
                                         </span>
                                     </label>
                                 </div>
@@ -129,12 +129,12 @@
                                     {% if not item.event.has_sold_tickets %}
                                         <a href="{% url 'partner:edit_event' item.event.id %}"
                                            class="btn-edit" title="Редактировать">
-                                            <i class="bi bi-pencil-fill"></i>
+                                            <img src="/media/icon/tdesign_edit-filled.svg" alt="">
                                         </a>
                                     {% else %}
                                         <button type="button" class="btn-edit"
                                                 onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Обратитесь в поддержку.'); return false;">
-                                            <i class="bi bi-pencil-fill"></i>
+                                            <img src="/media/icon/tdesign_edit-filled.svg" alt="">
                                         </button>
                                     {% endif %}
                                 </div>
