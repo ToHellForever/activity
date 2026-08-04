@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/chats_list.css' %}">
+{% endblock %}
+{% block content %}
+<div class="row partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
+        <div class="support-layout">
+            <div class="support-sidebar">
+                <h2>Чаты с участниками</h2>
+                {% for ticket in tickets %}
+                    <div class="p-2 mb-2">
+                        <a href="{% url 'partner:chats' %}?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit;">
+                            <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:60 }}
+                            <span class="float-right badge badge-secondary">{{ ticket.get_status_display }}</span>
+                        </a>
+                    </div>
+                {% empty %}
+                    <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -260,6 +260,26 @@ def partner_chats(request):
     return render(request, "partner/chats.html", context)
 
 @login_required
+def partner_chats_list(request):
+    """Отображение списка чатов с участниками для партнёра."""
+    if request.user.user_type != "partner":
+        return redirect("visitor:dashboard")
+
+    # Получаем только тикеты с участниками (ticket_type='participant')
+    tickets = SupportTicket.objects.filter(
+        event__organizer=request.user,
+        ticket_type='participant'
+    ).order_by("-created_at")
+
+    partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+
+    context = {
+        "tickets": tickets,
+        "partner_profile": partner_profile,
+    }
+    return render(request, "partner/chats_list.html", context)
+
+@login_required
 @check_partner_status('can_create_events')
 def create_event(request):
     """
