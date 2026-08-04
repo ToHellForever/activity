@@ -272,8 +272,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: rgba(2, 54, 156, 1);
   color: #fff;
@@ -282,14 +282,85 @@
   text-decoration: none;
   flex-shrink: 0;
   transition: all 0.2s;
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
+  margin-top: 5px;
 }
 
 .btn-edit img {
+  width: 23px;
+  height: 23px;
+}
+
+/* ============================================================
+    Карточка партнёра (с корзиной и footer)
+    ============================================================ */
+.partner-event-card {
+  position: relative;
+  overflow: visible;
+}
+
+.partner-card-image {
+  position: relative;
+}
+
+.partner-card-image img.card-img-top {
+  border-top-left-radius: 23.14px;
+  border-top-right-radius: 23.14px;
+}
+
+/* ---------- Корзина-чекбокс ---------- */
+.card-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  margin: 0;
+  z-index: 2;
+}
+
+.card-check input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.85);
+  color: #b8b4b4;
+  transition: background 0.2s;
+}
+
+.card-check-box img {
   width: 16px;
-  height: 16px;
+  height: auto;
+}
+
+.card-check input[type="checkbox"]:checked + .card-check-box {
+  background: rgba(255, 255, 255, 1);
+  color: #fff;
+}
+
+/* ---------- Footer карточки партнёра ---------- */
+.partner-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+}
+
+/* ---------- Уменьшенная кнопка "УЧАСТНИКИ" ---------- */
+.buy-button-sm {
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  width: 85% !important;
 }
 
 /* ============================================================
