@@ -243,195 +243,8 @@
 }
 
 /* ============================================================
-   Сетка карточек
-   ============================================================ */
-.events-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-/* ============================================================
-   Карточка события
-   ============================================================ */
-.event-card {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
-.event-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-/* ---------- Картинка ---------- */
-.event-card-image {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  background: #f0f0f0;
-}
-
-.event-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* ---------- Чекбокс-корзинка на карточке ---------- */
-.card-check {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  margin: 0;
-}
-
-.card-check input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.card-check-box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: auto;
-  padding: 10px;
-  border-radius: 50%;
-  box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
-  background: rgba(255, 255, 255, 0.85);
-  color: #b8b4b4;
-}
-
-/* ---------- Тело карточки ---------- */
-.event-card-body {
-  padding: 14px 16px 12px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.event-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #222;
-  line-height: 1.35;
-  margin: 0 0 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 38px;
-}
-
-.event-organizer {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: #3b82f6;
-  font-weight: 500;
-}
-
-.event-organizer i {
-  font-size: 12px;
-}
-
-.event-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #222;
-  margin-top: 2px;
-}
-
-.event-date i {
-  color: #666;
-  font-size: 13px;
-}
-
-.event-meta {
-  font-size: 11px;
-  color: #666;
-  line-height: 1.5;
-  margin-top: 4px;
-}
-
-.event-meta .meta-label {
-  color: #999;
-}
-
-/* ---------- Кнопки действий ---------- */
-.event-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px 14px;
-}
-
-.btn-view {
-  flex-grow: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ff8c42;
-  color: #fff;
-  text-decoration: none;
-  text-transform: uppercase;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  padding: 10px 12px;
-  border-radius: 22px;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-view:hover {
-  background: #f07a2f;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(255, 140, 66, 0.35);
-}
-
-.btn-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(2, 54, 156, 1);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-/* ---------- Архивные карточки (без иконок действий сверху) ---------- */
-.event-card--archived .card-check {
-  display: none;
-}
-
-/* ============================================================
-   Кнопка массового удаления
-   ============================================================ */
+    Кнопка массового удаления
+    ============================================================ */
 .bulk-actions {
   display: flex;
   justify-content: flex-end;
@@ -453,19 +266,36 @@
 }
 
 /* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 992px) {
-  .events-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    Кнопка редактирования на карточке
+    ============================================================ */
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(2, 54, 156, 1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
 }
 
-@media (max-width: 600px) {
-  .events-grid {
-    grid-template-columns: 1fr;
-  }
+.btn-edit img {
+  width: 16px;
+  height: 16px;
+}
 
+/* ============================================================
+    RESPONSIVE
+    ============================================================ */
+@media (max-width: 600px) {
   .filter-row {
     gap: 14px;
   }

@@ -287,6 +287,8 @@
 .card {
   border-radius: 23.14px;
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
 }
 
 .card-title {
