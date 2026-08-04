@@ -1,165 +1,189 @@
-
 .question-modal {
-    font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 .question-modal .modal-content {
-    border-radius: 12px;
-    border: none;
+  border-radius: 12px;
+  border: none;
 }
 
 .question-modal .modal-header {
-    background-color: #f8f9fa;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+  background-color: #f8f9fa;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .question-modal .modal-title {
-    font-family: "Verdana";
-    color: #000;
-    font-weight: 400;
-    font-size: 1.1rem;
-    line-height: 1.2;
+  font-family: "Verdana";
+  color: #000;
+  font-weight: 400;
+  font-size: 1.1rem;
+  line-height: 1.2;
 }
 
 .question-modal .modal-body {
-    padding: 0px;
-    color: #333;
+  padding: 0px;
+  color: #333;
 }
 .question-modal .form-label {
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 8px;
-    margin-top: 10px;
-    font-family: 'Montserrat';
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  margin-top: 10px;
+  font-family: "Montserrat";
 }
 
 .question-modal .form-control {
-    border-radius: 8px;
-    border: 1px solid #ced4da;
-    padding: 10px 12px;
-    font-size: 0.95rem;
-    transition: border-color 0.3s ease;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
 }
 
 .question-modal .form-control:focus {
-    border-color: none;
-    box-shadow: 0px -1px 5.2px 0px rgba(0, 0, 0, 0.29);
+  border-color: none;
+  box-shadow: 0px -1px 5.2px 0px rgba(0, 0, 0, 0.29);
 }
 
 .question-modal textarea.form-control {
-    min-height: 120px;
-    resize: vertical;
+  min-height: 120px;
+  resize: vertical;
 }
 
 .question-modal .form-text {
-    font-size: 0.85rem;
-    color: #6c757d;
+  font-size: 0.85rem;
+  color: #6c757d;
 }
 
 .question-modal #charCount {
-    font-weight: 500;
-    color: #000000;
+  font-weight: 500;
+  color: #000000;
 }
 
 .question-modal .modal-footer {
-    padding: 0px;
-    background-color: #f8f9fa;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+  padding: 0px;
+  background-color: #f8f9fa;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 .btn-close-question {
-    width: 100%;
-    background: #ccc;
-    border: none;
-    border-radius: 20px;
-    padding: 10px;
-    color: black;
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 15.42px;
+  width: 100%;
+  background: #ccc;
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+  color: black;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 15.42px;
 }
 .btn-question {
-    width: 100%;
-    color: white;
-    background: rgba(255, 131, 72, 1);
-    border: none;
-    border-radius: 20px;
-    padding: 10px;
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 15.42px;
-
+  width: 100%;
+  color: white;
+  background: rgba(255, 131, 72, 1);
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 15.42px;
 }
 .question-modal .btn-secondary {
-    background-color: #e0e0e0;
-    color: #333;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
 }
 
 .question-modal .btn-secondary:hover {
-    background-color: #d0d0d0;
-    color: #333;
+  background-color: #d0d0d0;
+  color: #333;
 }
 
 .question-modal .btn-primary {
-    background-color: #02369c;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
+  background-color: #02369c;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
 }
 
 .question-modal .btn-primary:hover {
-    background-color: #012a7a;
+  background-color: #012a7a;
 }
 
 .question-modal .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #6c757d;
-    opacity: 1;
-    transition: color 0.3s ease;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  opacity: 1;
+  transition: color 0.3s ease;
 }
 
 .question-modal .btn-close:hover {
-    color: #02369c;
+  color: #02369c;
 }
 
 /* Анимация появления */
 .question-modal .modal-dialog {
-    transform: translateY(20px);
-    opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translateY(20px);
+  opacity: 0;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .question-modal.show .modal-dialog {
-    transform: translateY(0);
-    opacity: 1;
+  transform: translateY(0);
+  opacity: 1;
 }
 
 /* Адаптивность */
 @media (max-width: 576px) {
-    .question-modal .modal-content {
-        margin: 10px;
-    }
+  .question-modal .modal-content {
+    margin: 10px;
+  }
 
-    .question-modal .modal-header,
-    .question-modal .modal-footer {
-        padding: 16px 20px;
-    }
+  .question-modal .modal-header,
+  .question-modal .modal-footer {
+    padding: 16px 20px;
+  }
 
-    .question-modal .modal-body {
-        padding: 20px;
-    }
+  .question-modal .modal-body {
+    padding: 20px;
+  }
 
-    .question-modal .modal-title {
-        font-size: 1.1rem;
-    }
+  .question-modal .modal-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Стили для кнопок в футере модального окна */
+.question-modal .modal-footer {
+    display: flex;
+}
+
+.question-modal .modal-footer .btn-close-question,
+.question-modal .modal-footer .btn-question {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    width: auto;
+    border-radius: 20px;
+}
+
+/* Для партнеров - одна кнопка на всю ширину */
+.question-modal .modal-footer .btn-close-question:only-child {
+    flex: 1;
+    width: 100%;
 }
