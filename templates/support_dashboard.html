@@ -60,6 +60,12 @@
 
           <div class="support-section">
             <h2>Мои обращения</h2>
+            <div class="ticket-filters mb-2">
+              <button class="ticket-filter-btn {% if not request.GET.ticket_filter or request.GET.ticket_filter == 'all' %}active{% endif %}" data-filter="all">Все</button>
+              <button class="ticket-filter-btn {% if request.GET.ticket_filter == 'new' %}active{% endif %}" data-filter="new">Новые</button>
+              <button class="ticket-filter-btn {% if request.GET.ticket_filter == 'in_progress' %}active{% endif %}" data-filter="in_progress">В работе</button>
+              <button class="ticket-filter-btn {% if request.GET.ticket_filter == 'closed' %}active{% endif %}" data-filter="closed">Закрытые</button>
+            </div>
             {% if tickets %}
               {% for ticket in tickets %}
                 <a href="?ticket_id={{ ticket.id }}" class="support-ticket-card {% if selected_ticket and ticket.id == selected_ticket.id %}active{% endif %}">
@@ -129,9 +135,9 @@
                 <input type="text" name="text" placeholder="Введите ваше сообщение..." required>
                 <div class="support-attachment-wrap">
                   <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
-                  <label for="chat-attachment" class="support-attachment-button" title="Прикрепить файл">+</label>
+                  <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
                 </div>
-                <button type="submit" class="support-send-button">Отправить</button>
+                <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
               </div>
             </form>
           {% else %}
@@ -230,6 +236,21 @@
         dropdown.style.display = 'none';
       });
     }
+
+    // Фильтры обращений
+    const filterBtns = document.querySelectorAll('.ticket-filter-btn');
+    filterBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const filter = this.getAttribute('data-filter');
+        const url = new URL(window.location.href);
+        if (filter === 'all') {
+          url.searchParams.delete('ticket_filter');
+        } else {
+          url.searchParams.set('ticket_filter', filter);
+        }
+        window.location.href = url.toString();
+      });
+    });
   });
 
   const chatInput = document.querySelector('input[name="text"]');

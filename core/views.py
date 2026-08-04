@@ -409,7 +409,8 @@ def support_dashboard(request):
     selected_ticket = None
     chat_messages = []
 
-    # Получаем event_id из GET-запроса
+    # Получаем фильтры из GET-запроса
+    ticket_filter = request.GET.get("ticket_filter", "all")  # all, new, in_progress, closed
     event_id = request.GET.get("event_id")
 
     # Если пользователь - партнёр, показываем тикеты, связанные с его мероприятиями
@@ -423,6 +424,10 @@ def support_dashboard(request):
             Q(user=request.user) | Q(user__email=request.user.email)
         ).order_by("-created_at")
 
+    # Фильтруем тикеты по статусу
+    if ticket_filter != "all":
+        tickets = tickets.filter(status=ticket_filter)
+
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
         selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
@@ -433,8 +438,11 @@ def support_dashboard(request):
 
     # Получаем мероприятия пользователя для формы создания тикета
     if request.user.user_type == "partner":
-        # Для партнёров показываем все их мероприятия
-        user_events = Event.objects.filter(organizer=request.user)
+        # Для партнёров показываем только активные мероприятия
+        user_events = Event.objects.filter(
+            organizer=request.user,
+            status="active"
+        )
     else:
         # Для обычных пользователей показываем только мероприятия с проданными билетами
         user_events = (

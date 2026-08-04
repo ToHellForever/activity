@@ -81,11 +81,36 @@
   justify-content: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #fff2e6c0;
+  background: #fff2e6;
   color: #f56e24;
   font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
+}
+.ticket-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ticket-filter-btn {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ticket-filter-btn:hover {
+  border-color: #ff8348;
+  color: #ff8348;
+}
+.ticket-filter-btn.active {
+  background: #ff8348;
+  color: #fff;
+  border-color: #ff8348;
 }
 .support-form {
   display: flex;
@@ -176,7 +201,7 @@
 }
 .support-form .btn-secondary {
   width: 100%;
-  background: #f1f5f9;
+  background: rgba(238, 238, 238, 1);
   color: #334155;
 }
 .custom-select {
@@ -416,7 +441,7 @@
   align-items: center;
   gap: 10px;
   flex: 1;
-  border: 1px solid #d2dbe4;
+  box-shadow: 0px -1px 5.2px 0px rgba(0, 0, 0, 0.29);
   border-radius: 18px;
   background: #ffffff;
   padding: 10px 14px;
@@ -463,16 +488,10 @@
   transform: translateY(-1px);
 }
 .support-send-button {
-  border-radius: 16px;
-  background: #ff8348;
-  color: #ffffff;
   border: none;
-  padding: 12px 20px;
   cursor: pointer;
   white-space: nowrap;
-}
-.support-send-button:hover {
-  background: #f56e24;
+  background: transparent;
 }
 .support-placeholder {
   flex: 1;
