@@ -1,0 +1,85 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/modal_question.css' %}">
+<!-- Модальное окно для вопроса организатору -->
+<div class="modal fade" id="questionModal" tabindex="-1" aria-labelledby="questionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="questionModalLabel">Задать вопрос организатору</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="questionForm">
+                    <div class="mb-3">
+                        <label for="questionText" class="form-label">Ваш вопрос</label>
+                        <textarea class="form-control" id="questionText" rows="5" maxlength="1000" required></textarea>
+                        <div class="form-text text-end">
+                            <span id="charCount">0</span>/1000 символов
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">Ваш email для ответа</label>
+                        <input type="email" class="form-control" id="userEmail" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="sendQuestionBtn">Отправить вопрос</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Счётчик символов
+    const questionText = document.getElementById('questionText');
+    const charCount = document.getElementById('charCount');
+
+    if (questionText && charCount) {
+        questionText.addEventListener('input', function() {
+            charCount.textContent = questionText.value.length;
+        });
+    }
+
+    // Обработка отправки вопроса
+    const sendQuestionBtn = document.getElementById('sendQuestionBtn');
+    if (sendQuestionBtn) {
+        sendQuestionBtn.addEventListener('click', function() {
+            const question = questionText.value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+
+            if (!question) {
+                alert('Пожалуйста, введите ваш вопрос');
+                return;
+            }
+
+            if (!email) {
+                alert('Пожалуйста, введите ваш email');
+                return;
+            }
+
+            if (question.length > 1000) {
+                alert('Вопрос не должен превышать 1000 символов');
+                return;
+            }
+
+            // Здесь можно добавить AJAX-запрос для отправки вопроса на сервер
+            console.log('Вопрос отправлен:', {question, email});
+
+            // Показываем уведомление об успешной отправке
+            alert('Ваш вопрос успешно отправлен организатору!');
+
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('questionModal'));
+            modal.hide();
+
+            // Очищаем форму
+            document.getElementById('questionForm').reset();
+            charCount.textContent = '0';
+        });
+    }
+});
+</script>
+

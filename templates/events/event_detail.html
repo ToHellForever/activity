@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/event_detail.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% include "includes/modal_buy_ticket.html" %}
+{% include "includes/modal_question.html" %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
 <script>
     window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
@@ -197,9 +198,9 @@
                 </div>
                 {% endfor %}
         </div>
-        <div class="mt-4 d-flex flex-column">
-            <a class='question-organizator'>Задать вопрос организатору</a>
-            <div class="d-flex align-items-center">
+            <div class="mt-4 d-flex flex-column">
+                <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+                <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
                 <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
             </div>
