@@ -80,7 +80,13 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
+
+.card-body .buy-button {
+  margin-top: auto;
+}
+
 .btn-primary {
   margin-top: auto;
 }
@@ -280,6 +286,8 @@
 .card {
   border-radius: 23.14px;
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
 }
 
 .card-title {
@@ -347,9 +355,9 @@
   font-size: clamp(0.7rem, 2vw, 1rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
-  margin-top: 10px;
   width: 100%;
   display: block;
+  margin-top: auto;
 }
 
 .button-others {
@@ -458,8 +466,9 @@
   font-size: 0.9rem;
   padding: 10px 20px;
   text-decoration: none;
-  margin-top: 15px;
-  display: inline-block;
+  margin-top: auto;
+  display: block;
+  width: 100%;
 }
 
 .book-button:hover {
@@ -491,7 +500,7 @@
 }
 
 @media (max-width: 1399px) {
-    .active-event-info {
+  .active-event-info {
     display: none;
   }
 }
@@ -499,7 +508,7 @@
   .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4 {
     padding: 0 5px !important;
     box-sizing: border-box;
-}
+  }
   .venue-col {
     padding: 0 5px;
   }
@@ -534,22 +543,22 @@
   }
 }
 @media (max-width: 1300px) {
-    .landing-title {
+  .landing-title {
     width: 100%;
   }
-    .filter-label,
-    .filter-col-price {
+  .filter-label,
+  .filter-col-price {
     margin-top: 10px;
     margin-bottom: 5px;
     margin-left: 5px !important;
   }
-    .filter-button-container-landing {
-      margin-left: 0px;
-    }
+  .filter-button-container-landing {
+    margin-left: 0px;
+  }
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
-    .landing-text {
+  .landing-text {
     margin-top: 0px;
     margin-bottom: 0px;
     line-height: 1.2;
@@ -666,42 +675,41 @@
     padding: 12px 0;
   }
 
-   /* Карточки событий и площадок - 2 в ряд на мобильной */
-   .landing-block > .row.d-900-none,
-   .landing-block > .row.d-none.d-900-flex.d-1300-none,
-   .landing-block > .row.d-none.d-1300-flex {
-     flex-direction: row !important;
-   }
+  /* Карточки событий и площадок - 2 в ряд на мобильной */
+  .landing-block > .row.d-900-none,
+  .landing-block > .row.d-none.d-900-flex.d-1300-none,
+  .landing-block > .row.d-none.d-1300-flex {
+    flex-direction: row !important;
+  }
 
-   .landing-block > .row.d-900-none .col-6,
-   .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4,
-   .landing-block > .row.d-none.d-1300-flex .col-md-3 {
-     width: 50% !important;
-     max-width: 50% !important;
-     padding: 0 5px;
-     box-sizing: border-box;
-   }
-   .landing-block > .row {
-     display: flex;
-     flex-wrap: wrap;
-     
-   }
-   .landing-block > .row > [class*="col-"] {
-     margin-bottom: 10px;
-   }
+  .landing-block > .row.d-900-none .col-6,
+  .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4,
+  .landing-block > .row.d-none.d-1300-flex .col-md-3 {
+    width: 50% !important;
+    max-width: 50% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+  .landing-block > .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .landing-block > .row > [class*="col-"] {
+    margin-bottom: 10px;
+  }
 
-   /* Карточки в списках — 2 в строке на мобильной */
-   .landing-block > .row.row-cards-list {
-     flex-direction: row !important;
-   }
+  /* Карточки в списках — 2 в строке на мобильной */
+  .landing-block > .row.row-cards-list {
+    flex-direction: row !important;
+  }
 
-   .landing-block > .row.row-cards-list > .event-list-col,
-   .landing-block > .row.row-cards-list > .venue-list-col {
-     width: 50% !important;
-     max-width: 50% !important;
-     padding: 0 5px;
-     box-sizing: border-box;
-   }
+  .landing-block > .row.row-cards-list > .event-list-col,
+  .landing-block > .row.row-cards-list > .venue-list-col {
+    width: 50% !important;
+    max-width: 50% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
 
   .card {
     border-radius: 15px;

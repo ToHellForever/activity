@@ -30,7 +30,7 @@
 
 .status-value {
   font-weight: 700;
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-size: clamp(0.9rem, 1vw, 0.9rem);
 }
 
@@ -409,7 +409,6 @@
 .play-icon {
   width: 72px;
   height: 72px;
-  background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -494,8 +493,8 @@
 .verified-badge--rejected {
   background: rgba(212, 70, 70, 1);
   color: #fff;
-  font-family: 'Verdana', sans-serif;
-  font-size: clamp(0.7rem, 0.8vw, 0.7rem)
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.7rem, 0.8vw, 0.7rem);
 }
 
 /* PENDING: жёлтый бейдж */
@@ -544,7 +543,7 @@
 
 .verification-documents-list li {
   margin-bottom: 2px;
-margin-left: -15px !important;
+  margin-left: -15px !important;
 }
 
 /* Форма загрузки */
@@ -660,21 +659,7 @@ margin-left: -15px !important;
   font-family: "Verdana", sans-serif;
 }
 
-/* =========================================
-   SAVE BUTTON
-   ========================================= */
-.btn-save {
-  padding: 8px 24px;
-  background: #ff8c42;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
 
-.btn-save:hover {
-  background: #e87a30;
-}
+
+
+
