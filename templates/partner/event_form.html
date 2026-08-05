@@ -3,8 +3,58 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/event_form.css' %}">
+<style>
+    .text-danger {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+    .ticket-table-container {
+        margin-bottom: 20px;
+    }
+    #map {
+        width: 100%;
+        height: 400px;
+        margin: 20px 0;
+        min-height: 400px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .map-container {
+        margin: 20px 0;
+    }
+    .place-input-container {
+        margin-bottom: 15px;
+    }
+    .place-additional-info {
+        margin-top: 10px;
+    }
+    .map-loading {
+        text-align: center;
+        padding: 20px;
+    }
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .tag-selection-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .main-tag {
+        margin-right: 15px;
+    }
+    .subtags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    .form-check {
+        margin-right: 10px;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -25,45 +75,12 @@
     {% endfor %}
 {% endif %}
 <div class="partner-main">
-
-<!-- ===== Package cards (тарифы) ===== -->
-<p class="tariff-heading">Текущий тариф размещения</p>
-<div class="package-cards">
-    {% for package in packages %}
-    <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% else %}inactive{% endif %}">
-        <h3 class="package-name">{{ package.name }}</h3>
-        <div class="package-subtitle">{{ package.subtitle }}</div>
-        <div class="package-features">
-            <div class="feature-item"><span class="feature-label">Описание:</span> {{ package.description }}</div>
-            <div class="feature-item"><span class="feature-label">Фото:</span> до {{ package.max_photos }} шт.</div>
-            <div class="feature-item"><span class="feature-label">Видео:</span> {% if package.has_video %}Да{% else %}Нет{% endif %}</div>
-            <div class="feature-item"><span class="feature-label">Программа мероприятия:</span> {% if package.has_program_and_speakers %}Да{% else %}Нет{% endif %}</div>
-            <div class="feature-item"><span class="feature-label">Приоритет:</span> {{ package.priority_description }}</div>
-        </div>
-        <div class="package-price">Цена: {{ package.price|floatformat:0 }} руб.</div>
-        {% if user_subscription and user_subscription.package.id == package.id %}
-        <button class="btn-buy btn-buy--active" disabled>Сменить тариф</button>
-        {% elif has_active_subscription %}
-        <button class="btn-buy"
-                onclick="openBuyPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
-            Сменить тариф
-        </button>
-        {% else %}
-        <button class="btn-buy {% if user.verification_status != 'approved' %}disabled{% endif %}"
-                onclick="openBuyNewPackageModal({{ package.id }}, '{{ package.name }}', {{ package.price }})">
-            КУПИТЬ
-        </button>
-        {% endif %}
-    </div>
-    {% endfor %}
-</div>
-<h1 class='event-form-title'>Основная информация</h1>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
 
     {% for field in form %}
-        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'photos' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' and field.name != 'package' %}
+        {% if field.name != 'ticket_types' and field.name != 'place_data' and field.name != 'image' and field.name != 'video_url' and field.name != 'program_file' and field.name != 'tags' and field.name != 'package' %}
         <div class="form-group">
             {{ field.label_tag }}
             {% if field.required %}
@@ -140,24 +157,43 @@
         </div>
     <!-- Кастомные поля для медиафайлов -->
 
-    <!-- Единый блок загрузки фотографий мероприятия -->
-    {% if form.current_package %}
+    <!-- Основное фото мероприятия (Event.image) -->
     <div class="form-group">
-        <label>Фотографии мероприятия</label>
+        <label>Основное фото мероприятия</label>
+        <div id="main-image-preview-container" class="media-preview-container mb-2">
+            {% if form.instance.pk and form.instance.image %}
+                <div class="media-preview">
+                    <img src="{{ form.instance.image.url }}" alt="Preview" style="max-width: 200px; max-height: 200px;" class="mr-2">
+                </div>
+            {% endif %}
+        </div>
+        <div id="image-error-container"></div>
+
+        <input type="file" name="image" id="id_image" class="custom-media-input" data-media-type="image" style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="image">
+            {% if form.instance.image %}Изменить основное фото{% else %}Добавить основное фото{% endif %}
+        </button>
+        <small class="form-text text-muted">Разрешены форматы: JPG, PNG, GIF, WEBP</small>
+    </div>
+
+    <!-- Дополнительные фото мероприятия (EventImage) -->
+    {% if form.current_package and form.current_package.max_photos > 1 %}
+    <div class="form-group">
+        <label for="id_images">Фотографии мероприятия</label>
 
         <!-- Информация о лимитах пакета -->
         <div class="alert alert-info mb-3">
             Ваш пакет позволяет загрузить:
             <strong>{{ form.current_package.max_photos }} фотографий</strong>
-            (первое фото станет основным, остальные — дополнительные)
+            (1 основное + {{ form.current_package.max_photos|add:-1 }} дополнительных)
             <div class="photo-counter mt-2">
                 Загружено: <span id="photos-uploaded-count">0</span> /
                 <span id="photos-max-count">{{ form.current_package.max_photos }}</span>
             </div>
         </div>
-        <div id="photos-error-container"></div>
+        <div id="images-error-container"></div>
 
-        <div id="photos-preview-container" class="media-preview-container mb-2 d-flex flex-wrap gap-2">
+        <div id="images-preview-container" class="media-preview-container mb-2 d-flex flex-wrap gap-2">
             {% if form.instance.pk %}
                 {% for image in form.instance.images.all %}
                 <div class="media-preview position-relative">
@@ -168,19 +204,13 @@
                     </button>
                 </div>
                 {% endfor %}
-                {% if form.instance.image %}
-                <div class="media-preview position-relative" style="border: 2px solid #ff8c42;">
-                    <img src="{{ form.instance.image.url }}" alt="Main" style="max-width: 150px; max-height: 150px; border-radius: 4px;">
-                    <span class="badge bg-warning text-dark position-absolute bottom-0 start-0 m-1">Основное</span>
-                </div>
-                {% endif %}
             {% endif %}
         </div>
-        <input type="file" name="photos" id="id_photos" class="custom-media-input" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
-        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="photos">
+        <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;">
+        <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="images">
             Добавить фотографии
         </button>
-        <small class="form-text text-muted">Разрешены форматы: JPG, PNG, GIF, WEBP. Первое фото станет основным.</small>
+        <small class="form-text text-muted">Разрешены форматы: JPG, PNG, GIF, WEBP</small>
     </div>
     {% endif %}
 
@@ -601,110 +631,154 @@
             // Проверяем количество загруженных фото перед отправкой
             const uploadedCountElement = document.getElementById('photos-uploaded-count');
             const maxCountElement = document.getElementById('photos-max-count');
-            const container = document.getElementById('photos-preview-container');
 
-            if (uploadedCountElement && maxCountElement && container) {
-                // Считаем все превью (существующие + новые)
-                const allPreviews = container.querySelectorAll('.media-preview').length;
+            if (uploadedCountElement && maxCountElement) {
+                const uploadedCount = parseInt(uploadedCountElement.textContent);
                 const maxCount = parseInt(maxCountElement.textContent);
 
-                if (allPreviews > maxCount) {
+                if (uploadedCount > maxCount) {
                     e.preventDefault(); // Отменяем отправку формы
-                    showToast(`Превышен лимит фотографий. Ваш пакет позволяет загрузить не более ${maxCount} фотографий`, true);
+                    showToast(`Превышен лимит фотографий. Ваш пакет позволяет загрузить не более ${maxCount} фотографий (1 основное + ${maxCount - 1} дополнительных)`, true);
                     return false;
                 }
             }
         });
     });
 
-    // Обработчик загрузки и превью фотографий (единый блок)
+    // Обработчик загрузки и превью фотографий
     document.addEventListener('DOMContentLoaded', function() {
         // Инициализация счетчика загруженных фото
         updatePhotosCounter();
 
-        // Обработчик загрузки фотографий (единый блок)
-        document.getElementById('id_photos').addEventListener('change', function(e) {
-            previewPhotos(e, 'photos-preview-container');
+        // Обработчик загрузки основного фото
+        document.getElementById('id_image').addEventListener('change', function(e) {
+            previewImage(e, 'main-image-preview-container', true);
             updatePhotosCounter();
         });
 
-        // Обработчик удаления фотографий (существующих с сервера)
-        document.querySelectorAll('.remove-image-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const imageId = this.dataset.imageId;
-                const container = this.closest('.media-preview');
-
-                console.log('Нажата кнопка удаления для фото с ID:', imageId);
-
-                // Удаляем фотографию через AJAX
-                fetch(`/partner/remove_event_image/${imageId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Фото успешно удалено с сервера');
-
-                        // Добавляем ID удалённого фото в скрытое поле
-                        const deletedImageIdsInput = document.getElementById('deleted_image_ids');
-                        const currentValue = deletedImageIdsInput.value;
-                        deletedImageIdsInput.value = currentValue ? currentValue + ',' + imageId : imageId;
-
-                        container.remove();
-                        updatePhotosCounterAfterDeletion();
-                        console.log('Счётчик обновлён после удаления фото');
-                    } else {
-                        showToast('Ошибка при удалении фотографии: ' + data.message, true);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                    showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
-                });
-            });
+        // Обработчик загрузки дополнительных фото
+        document.getElementById('id_images').addEventListener('change', function(e) {
+            previewMultipleImages(e, 'images-preview-container');
+            updatePhotosCounter();
         });
 
-        // Обработчик удаления фотографий из превью (до загрузки) — делегирование
-        document.getElementById('photos-preview-container').addEventListener('click', function(e) {
-            if (e.target && (e.target.dataset.preview === 'true' || e.target.closest('[data-preview="true"]'))) {
-                const container = e.target.closest('.media-preview');
-                if (container) {
-                    container.remove();
-                    updatePhotosCounterAfterDeletion();
-                }
+// Обработчик удаления фотографий
+document.querySelectorAll('.remove-image-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const imageId = this.dataset.imageId;
+        const container = this.closest('.media-preview');
+
+        console.log('Нажата кнопка удаления для фото с ID:', imageId);
+
+        // Удаляем фотографию через AJAX
+        fetch(`/partner/remove_event_image/${imageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            // Также обрабатываем клик по кнопке удаления
-            const removeBtn = e.target.closest('.btn-danger');
-            if (removeBtn && removeBtn.dataset.preview === 'true') {
-                const container = removeBtn.closest('.media-preview');
-                if (container) {
-                    container.remove();
-                    updatePhotosCounterAfterDeletion();
-                }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Фото успешно удалено с сервера');
+
+                // Добавляем ID удалённого фото в скрытое поле
+                const deletedImageIdsInput = document.getElementById('deleted_image_ids');
+                const currentValue = deletedImageIdsInput.value;
+                deletedImageIdsInput.value = currentValue ? currentValue + ',' + imageId : imageId;
+
+                container.remove();
+                updatePhotosCounterAfterDeletion();
+                console.log('Счётчик обновлён после удаления фото');
+            } else {
+                showToast('Ошибка при удалении фотографии: ' + data.message, true);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении фотографии: ' + error.message, true);
+        });
+    });
+});
+
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.querySelectorAll('#images-preview-container .media-preview button').forEach(button => {
+    button.addEventListener('click', function() {
+        const container = this.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    });
+});
+
+// Обработчик удаления фотографий из превью (до загрузки)
+document.getElementById('images-preview-container').addEventListener('click', function(e) {
+    if (e.target && e.target.dataset.preview === 'true') {
+        const container = e.target.closest('.media-preview');
+        console.log('Нажата кнопка удаления для превью фото');
+        container.remove();
+        updatePhotosCounterAfterDeletion();
+        console.log('Счётчик обновлён после удаления превью фото');
+    }
+});
+
+        // Делегирование событий для динамически созданных кнопок удаления
+        document.getElementById('images-preview-container').addEventListener('click', function(e) {
+            if (e.target && e.target.dataset.preview === 'true') {
+                const container = e.target.closest('.media-preview');
+                container.remove();
+                updatePhotosCounter();
             }
         });
     });
 
-    // Функция для отображения превью фотографий (единый блок)
-    function previewPhotos(event, containerId) {
+    // Функция для отображения превью основного фото
+    function previewImage(event, containerId, isMain) {
         const container = document.getElementById(containerId);
-        const files = event.target.files;
+        container.innerHTML = '';
+
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'media-preview position-relative';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = isMain ? '200px' : '150px';
+                img.style.maxHeight = isMain ? '200px' : '150px';
+                img.style.borderRadius = '4px';
+
+                previewDiv.appendChild(img);
+                container.appendChild(previewDiv);
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Функция для отображения превью нескольких фото
+    function previewMultipleImages(event, containerId) {
+        const container = document.getElementById(containerId);
 
         // Удаляем все превью новых фотографий, чтобы избежать дублирования
         const existingPreviews = container.querySelectorAll('.media-preview[data-preview="true"]');
         existingPreviews.forEach(preview => preview.remove());
+
+        const files = event.target.files;
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -713,7 +787,7 @@
             reader.onload = function(e) {
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'media-preview position-relative';
-                previewDiv.dataset.preview = 'true';
+                previewDiv.dataset.preview = 'true'; // Маркер для новых превью
 
                 const img = document.createElement('img');
                 img.src = e.target.result;
@@ -730,7 +804,7 @@
                 removeBtn.style.padding = '0';
                 removeBtn.style.lineHeight = '1';
                 removeBtn.textContent = '×';
-                removeBtn.dataset.preview = 'true';
+                removeBtn.dataset.preview = 'true'; // Маркер для динамических кнопок
 
                 previewDiv.appendChild(img);
                 previewDiv.appendChild(removeBtn);
@@ -745,26 +819,30 @@
     }
 
 
-// Функция для обновления счетчика загруженных фото (единый блок)
+// Функция для обновления счетчика загруженных фото
 function updatePhotosCounter() {
-    const photosInput = document.getElementById('id_photos');
+    const mainImageInput = document.getElementById('id_image');
+    const imagesInput = document.getElementById('id_images');
     const uploadedCountElement = document.getElementById('photos-uploaded-count');
     const maxCountElement = document.getElementById('photos-max-count');
-    const container = document.getElementById('photos-preview-container');
 
     if (!uploadedCountElement || !maxCountElement) return;
 
     const maxPhotos = parseInt(maxCountElement.textContent);
     let uploadedCount = 0;
 
-    // Считаем существующие фото с сервера (без[data-preview="true"])
-    const existingImages = container ? container.querySelectorAll('.media-preview:not([data-preview="true"])') : [];
-    uploadedCount += existingImages.length;
-
-    // Считаем новые загруженные файлы
-    if (photosInput && photosInput.files) {
-        uploadedCount += photosInput.files.length;
+    // Считаем основное фото
+    if (mainImageInput.files.length > 0) {
+        uploadedCount += 1;
+    } else if (document.querySelector('#main-image-preview-container img')) {
+        uploadedCount += 1;
     }
+
+    // Считаем дополнительные фото
+    const existingImagesCount = document.querySelectorAll('#images-preview-container .media-preview').length;
+    const newImagesCount = imagesInput.files.length;
+
+    uploadedCount += existingImagesCount + newImagesCount;
 
     // Обновляем счетчик
     uploadedCountElement.textContent = uploadedCount;
@@ -781,9 +859,9 @@ function updatePhotosCounter() {
 
 // Функция для обновления счетчика после удаления фотографий
 function updatePhotosCounterAfterDeletion() {
-    const photosInput = document.getElementById('id_photos');
-    if (photosInput) {
-        photosInput.value = ''; // Сбрасываем значение input
+    const imagesInput = document.getElementById('id_images');
+    if (imagesInput) {
+        imagesInput.value = ''; // Сбрасываем значение input
     }
     updatePhotosCounter();
 }

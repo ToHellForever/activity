@@ -383,18 +383,6 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         blank=True,
         null=True
     )
-    IMAGE_PROCESSING_STATUS_CHOICES = (
-        ("pending", "Ожидает обработки"),
-        ("processing", "Обрабатывается"),
-        ("completed", "Обработка завершена"),
-        ("failed", "Ошибка обработки"),
-    )
-    image_processing_status = models.CharField(
-        max_length=20,
-        choices=IMAGE_PROCESSING_STATUS_CHOICES,
-        default="pending",
-        verbose_name="Статус обработки изображения",
-    )
 
     category = models.ForeignKey(
         Category,
