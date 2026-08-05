@@ -192,7 +192,7 @@ function initMediaHandlers() {
                         errorMessage = 'Неверный формат файла. Разрешены только PDF файлы';
                     }
                 }
-                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'logo') {
+                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'photos' || mediaType === 'logo') {
                     // Изображения: разрешены только изображения
                     const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                     const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -365,7 +365,7 @@ async function validateMediaFilesBeforeSubmit() {
                         errorMessage = 'Неверный формат файла. Разрешены только PDF файлы';
                     }
                 }
-                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'logo') {
+                else if (mediaType === 'image' || mediaType === 'images' || mediaType === 'photos' || mediaType === 'logo') {
                     // Изображения: разрешены только изображения
                     const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                     const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
