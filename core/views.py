@@ -2,7 +2,6 @@ from django.shortcuts import (
     render,
     redirect,
     get_object_or_404,
-    HttpResponseRedirect,
     reverse,
 )
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
@@ -435,39 +434,43 @@ def support_dashboard(request):
 @require_POST
 @login_required
 def send_support_message(request):
-    """Обрабатывает отправку нового сообщения в рамках существующего тикета поддержки."""
+    """Обрабатывает отправку нового сообщения в рамках существующего тикета (AJAX)."""
     ticket_id = request.POST.get("ticket_id")
     text = request.POST.get("text")
-    files = request.FILES.getlist("attachment")  # Получаем список файлов
+    files = request.FILES.getlist("attachment")
 
-    if ticket_id and (text or files):
-        ticket = get_object_or_404(SupportTicket, id=ticket_id)
+    if not ticket_id or not (text or files):
+        return JsonResponse({"success": False, "message": "Не указан тикет или текст сообщения."}, status=400)
 
-        # Создаем новое сообщение
-        message = SupportMessage.objects.create(
-            ticket=ticket,
-            user=request.user,
-            is_from_user=request.user == ticket.user,  # True только если сообщение от создателя тикета (участника)
-            text=text,
-        )
+    ticket = get_object_or_404(SupportTicket, id=ticket_id)
 
-        # Сохраняем вложения, если они есть
-        for file in files:
-            SupportAttachment.objects.create(message=message, file=file)
+    # Создаем новое сообщение
+    message = SupportMessage.objects.create(
+        ticket=ticket,
+        user=request.user,
+        is_from_user=request.user == ticket.user,
+        text=text or "(вложение)",
+    )
 
-        # Логика редиректа
-        if request.user.is_staff:  # Если модератор — не редиректим
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
-        elif request.user.user_type == "partner":  # Если партнёр — обратно в чат
-            return redirect(f"/partner/chats/?ticket_id={ticket_id}")
-        else:  # Если пользователь — редиректим на нужную страницу
-            if ticket.ticket_type == 'support':
-                return redirect(f"/support/?ticket_id={ticket_id}")
-            else:
-                return redirect(f"/visitor/event-chats/?ticket_id={ticket_id}")
+    # Сохраняем вложения
+    attachments = []
+    for file in files:
+        att = SupportAttachment.objects.create(message=message, file=file)
+        attachments.append({"name": att.file.name.split("/")[-1], "url": att.file.url})
 
-    messages.error(request, "Ошибка отправки сообщения.")
-    return redirect("support_dashboard")
+    return JsonResponse({
+        "success": True,
+        "message": {
+            "id": message.id,
+            "text": message.text,
+            "is_from_user": message.is_from_user,
+            "created_at": message.created_at.strftime("%H:%M"),
+            "user_first_name": message.user.first_name or "",
+            "user_email": message.user.email,
+            "user_type": message.user.user_type,
+            "attachments": attachments,
+        },
+    })
 
 def upload_image(request):
     if request.method == "POST":

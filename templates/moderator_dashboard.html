@@ -144,11 +144,11 @@
       </div>
 
       <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
-      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center;">
+      <form id="chatSendForm" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center;">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-        <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-        <input type="file" name="attachment" multiple style="font-size: 0.9em;">
+        <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        <input type="file" name="attachment" multiple id="chatFileInput" style="font-size: 0.9em;">
         <button type="submit" style="padding: 10px 20px; background: #4a90d9; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Отправить</button>
       </form>
 
@@ -176,6 +176,79 @@
         }
       });
     }
+
+    // ============================================================
+    // ОТПРАВКА СООБЩЕНИЯ ЧЕРЕЗ AJAX (без перезагрузки страницы)
+    // ============================================================
+    const form = document.getElementById('chatSendForm');
+    const textInput = document.getElementById('chatTextInput');
+    const fileInput = document.getElementById('chatFileInput');
+    const history = document.querySelector('.chat-history');
+
+    if (!form || !history) return;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const text = textInput.value.trim();
+      const files = fileInput.files;
+
+      if (!text && files.length === 0) return;
+
+      const formData = new FormData();
+      formData.append('ticket_id', form.querySelector('[name="ticket_id"]').value);
+      formData.append('text', text);
+      formData.append('csrfmiddlewaretoken', form.querySelector('[name="csrfmiddlewaretoken"]').value);
+      for (let i = 0; i < files.length; i++) {
+        formData.append('attachment', files[i]);
+      }
+
+      fetch('{% url "send_support_message" %}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          alert(data.message || 'Ошибка отправки сообщения');
+          return;
+        }
+
+        const m = data.message;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message ' + (m.is_from_user ? 'user' : 'moderator');
+
+        let bubbleContent = escapeHtml(m.text);
+        if (m.attachments && m.attachments.length) {
+          m.attachments.forEach(function(att) {
+            bubbleContent += '<div style="margin-top: 8px;"><a href="' + att.url + '" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.9em; color: #1890ff; text-decoration: none;">📎 ' + att.name + '</a></div>';
+          });
+        }
+
+        wrapper.innerHTML =
+          '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+            '<strong>' + escapeHtml(m.user_first_name || m.user_email) + '</strong>' +
+            '<span style="font-size: 0.8em; color: #888;">' + m.created_at + '</span>' +
+          '</div>' +
+          '<div>' + bubbleContent + '</div>';
+
+        history.appendChild(wrapper);
+        history.scrollTop = history.scrollHeight;
+
+        textInput.value = '';
+        fileInput.value = '';
+      })
+      .catch(err => {
+        console.error('Ошибка:', err);
+        alert('Произошла ошибка при отправке сообщения');
+      });
+    });
   });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
 </script>
 {% endblock %}

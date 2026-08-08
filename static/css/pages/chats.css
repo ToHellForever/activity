@@ -13,7 +13,8 @@
   background: #fff;
   border-radius: 16px;
   overflow: hidden;
-  height: calc(100vh - 400px);
+  height: calc(100vh - 220px);
+  max-height: 800px;
   display: flex;
   flex-direction: column;
 }

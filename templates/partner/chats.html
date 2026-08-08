@@ -4,6 +4,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/chats.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/support_dashboard.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -108,23 +109,17 @@
 
     <!-- ========== ПОЛЕ ВВОДА ========== -->
     <div class="chat-input-area">
-      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" class="chat-input-form">
+      <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-        <input type="text" name="text" placeholder="Сообщение" required>
-        <input type="file" name="attachment" multiple class="chat-input-file" id="chatFileUpload">
-        <button type="button" class="chat-input-btn chat-input-btn--attach" onclick="document.getElementById('chatFileUpload').click()" title="Прикрепить файл">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-        <button type="submit" class="chat-input-btn chat-input-btn--send" title="Отправить">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
+        <div class="support-chat-input-row">
+          <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+          <div class="support-attachment-wrap">
+            <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
+            <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+          </div>
+          <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
+        </div>
       </form>
     </div>
 
@@ -149,5 +144,79 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
   });
+
+  // ============================================================
+  // ОТПРАВКА СООБЩЕНИЯ ЧЕРЕЗ AJAX (без перезагрузки страницы)
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('chatSendForm');
+    const textInput = document.getElementById('chatTextInput');
+    const fileInput = document.getElementById('chat-attachment');
+    const messagesContainer = document.querySelector('.chat-messages');
+
+    if (!form || !messagesContainer) return;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const text = textInput.value.trim();
+      const files = fileInput.files;
+
+      if (!text && files.length === 0) return;
+
+      const formData = new FormData();
+      formData.append('ticket_id', form.querySelector('[name="ticket_id"]').value);
+      formData.append('text', text);
+      formData.append('csrfmiddlewaretoken', form.querySelector('[name="csrfmiddlewaretoken"]').value);
+      for (let i = 0; i < files.length; i++) {
+        formData.append('attachment', files[i]);
+      }
+
+      fetch('{% url "send_support_message" %}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          alert(data.message || 'Ошибка отправки сообщения');
+          return;
+        }
+
+        const m = data.message;
+
+        // Строим HTML исходящего сообщения (от партнёра)
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chat-message chat-message--outgoing';
+        let bubbleContent = escapeHtml(m.text);
+        if (m.attachments && m.attachments.length) {
+          m.attachments.forEach(function(att) {
+            bubbleContent += '<br><a href="' + att.url + '" target="_blank" style="color:#fff;text-decoration:underline;">📎 ' + att.name + '</a>';
+          });
+        }
+        wrapper.innerHTML =
+          '<div class="chat-message-bubble-row">' +
+            '<div class="chat-message-bubble">' + bubbleContent + '</div>' +
+            '<div class="chat-message-time">' + m.created_at + '</div>' +
+          '</div>';
+
+        messagesContainer.appendChild(wrapper);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        textInput.value = '';
+        fileInput.value = '';
+      })
+      .catch(err => {
+        console.error('Ошибка:', err);
+        alert('Произошла ошибка при отправке сообщения');
+      });
+    });
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
 </script>
 {% endblock %}

@@ -77,7 +77,7 @@
             {% endif %}
           </div>
 
-          {% if selected_ticket %}
+{% if selected_ticket %}
             <div class="support-chat-history">
               {% for message in chat_messages %}
                 <div class="support-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
@@ -111,11 +111,11 @@
               {% endfor %}
             </div>
 
-            <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" class="support-chat-form">
+            <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form">
               {% csrf_token %}
               <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
               <div class="support-chat-input-row">
-                <input type="text" name="text" placeholder="Введите ваше сообщение..." required>
+                <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
                 <div class="support-attachment-wrap">
                   <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
                   <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
@@ -198,6 +198,90 @@
         alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
       }
     });
+  }
+
+  // ============================================================
+  // ОТПРАВКА СООБЩЕНИЯ ЧЕРЕЗ AJAX (без перезагрузки страницы)
+  // ============================================================
+
+  // Автопрокрутка вниз при загрузке страницы
+  const supportHistoryInit = document.querySelector('.support-chat-history');
+  if (supportHistoryInit) {
+    supportHistoryInit.scrollTop = supportHistoryInit.scrollHeight;
+  }
+
+  const supportForm = document.getElementById('chatSendForm');
+  const supportTextInput = document.getElementById('chatTextInput');
+  const supportFileInput = document.getElementById('chat-attachment');
+  const supportHistory = document.querySelector('.support-chat-history');
+
+  if (supportForm && supportHistory) {
+    supportForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const text = supportTextInput.value.trim();
+      const files = supportFileInput.files;
+
+      if (!text && files.length === 0) return;
+
+      const formData = new FormData();
+      formData.append('ticket_id', supportForm.querySelector('[name="ticket_id"]').value);
+      formData.append('text', text);
+      formData.append('csrfmiddlewaretoken', supportForm.querySelector('[name="csrfmiddlewaretoken"]').value);
+      for (let i = 0; i < files.length; i++) {
+        formData.append('attachment', files[i]);
+      }
+
+      fetch('{% url "send_support_message" %}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          alert(data.message || 'Ошибка отправки сообщения');
+          return;
+        }
+
+        const m = data.message;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'support-message ' + (m.is_from_user ? 'user' : 'agent');
+
+        let bubbleContent = escapeHtml(m.text);
+        if (m.attachments && m.attachments.length) {
+          m.attachments.forEach(function(att) {
+            bubbleContent += '<div class="attachments"><a href="' + att.url + '" target="_blank" class="attachment-link" title="' + att.name + '">📄 Файл</a></div>';
+          });
+        }
+
+        const avatarHtml = m.is_from_user
+          ? '<span class="sender-initials">ВЫ</span>'
+          : '<img src="/media/icon/fluent_person-support-20-filled.svg" alt="">';
+
+        wrapper.innerHTML =
+          '<div class="support-avatar">' + avatarHtml + '</div>' +
+          '<div class="support-message-body">' +
+            '<div class="support-bubble">' + bubbleContent + '</div>' +
+            '<div class="support-message-time">' + m.created_at + '</div>' +
+          '</div>';
+
+        supportHistory.appendChild(wrapper);
+        supportHistory.scrollTop = supportHistory.scrollHeight;
+
+        supportTextInput.value = '';
+        supportFileInput.value = '';
+      })
+      .catch(err => {
+        console.error('Ошибка:', err);
+        alert('Произошла ошибка при отправке сообщения');
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 </script>
 {% endblock %}
