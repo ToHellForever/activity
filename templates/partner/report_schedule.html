@@ -1,45 +1,45 @@
-
 {% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Настройка расписания отчётов{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/report_schedule.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-<div class="container mt-5">
+<div class="container-fluid report-schedule-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Настройка расписания отчётов</h2>
-        <a href="{% url 'partner:reports' %}" class="btn btn-outline-secondary">
+        <h2 class="report-page-heading">Настройка расписания отчётов</h2>
+        <a href="{% url 'partner:reports' %}" class="report-back-link">
             <i class="bi bi-arrow-left"></i> Назад к отчётам
         </a>
     </div>
-    
-    <div class="card report-card mb-4">
-        <div class="card-body">
-            <div class="row">
+
+    <!-- Hero / Info card -->
+    <div class="card report-hero-card mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
                 <div class="col-md-10">
                     <h5 class="card-title mb-3">Автоматическая отправка отчётов</h5>
                     <p class="card-text">На этой странице вы можете настроить автоматическую отправку отчётов о продажах на ваш email. Выберите частоту отправки, формат отчёта и период, за который нужно формировать отчёт.</p>
                 </div>
                 <div class="col-md-2 text-center">
-                    <i class="bi bi-calendar2-check display-4 text-primary"></i>
+                    <i class="bi bi-calendar2-check display-4"></i>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <form method="post" id="reportScheduleForm" enctype="multipart/form-data">
         {% csrf_token %}
-        
-        <!-- Отладочная информация -->
+
+        <!-- Ошибки формы -->
         {% if form.errors %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
             <strong><i class="bi bi-exclamation-triangle-fill"></i> Ошибки в форме:</strong>
             <ul class="mb-0 mt-2">
             {% for field, errors in form.errors.items %}
@@ -51,24 +51,26 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endif %}
-        
+
+        <!-- Сообщения об успехе -->
         {% if messages %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
             {% for message in messages %}
             <i class="bi bi-check-circle-fill"></i> {{ message }}
             {% endfor %}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endif %}
-        
-        <div class="card report-card mb-4">
+
+        <!-- Основные настройки -->
+        <div class="card report-settings-card mb-4">
             <div class="card-header">
                 Основные настройки
             </div>
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-check form-switch">
+                        <div class="form-control" style='padding-left: 0;'>
                             {{ form.is_active }}
                             <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
                                 {{ form.is_active.label }}
@@ -76,7 +78,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="{{ form.frequency.id_for_label }}" class="form-label">
@@ -85,7 +87,7 @@
                         {{ form.frequency }}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="{{ form.report_format.id_for_label }}" class="form-label">
@@ -94,7 +96,7 @@
                         {{ form.report_format }}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="{{ form.period_type.id_for_label }}" class="form-label">
@@ -103,7 +105,7 @@
                         {{ form.period_type }}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="{{ form.email.id_for_label }}" class="form-label">
@@ -114,8 +116,9 @@
                 </div>
             </div>
         </div>
-        
-        <div class="card report-card mb-4" id="dayOfWeekCard" style="display: none;">
+
+        <!-- Еженедельная рассылка -->
+        <div class="card report-settings-card mb-4" id="dayOfWeekCard" style="display: none;">
             <div class="card-header">
                 Настройки для еженедельной рассылки
             </div>
@@ -131,8 +134,9 @@
                 </div>
             </div>
         </div>
-        
-        <div class="card report-card mb-4" id="dayOfMonthCard" style="display: none;">
+
+        <!-- Ежемесячная рассылка -->
+        <div class="card report-settings-card mb-4" id="dayOfMonthCard" style="display: none;">
             <div class="card-header">
                 Настройки для ежемесячной рассылки
             </div>
@@ -148,8 +152,9 @@
                 </div>
             </div>
         </div>
-        
-        <div class="card report-card mb-4" id="customPeriodCard" style="display: none;">
+
+        <!-- Произвольный период -->
+        <div class="card report-settings-card mb-4" id="customPeriodCard" style="display: none;">
             <div class="card-header">
                 Настройки для произвольного периода
             </div>
@@ -165,12 +170,13 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Кнопки -->
         <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-            <button type="submit" class="btn btn-primary me-md-2" id="saveButton">
+            <button type="submit" class="btn report-btn-save me-md-2" id="saveButton">
                 <i class="bi bi-save"></i> Сохранить настройки
             </button>
-            <a href="{% url 'partner:reports' %}" class="btn btn-outline-secondary">
+            <a href="{% url 'partner:reports' %}" class="btn report-btn-cancel">
                 <i class="bi bi-x"></i> Отмена
             </a>
         </div>
