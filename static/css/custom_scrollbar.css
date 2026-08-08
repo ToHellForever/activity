@@ -1,0 +1,134 @@
+/* ============================================
+   КАСТОМНЫЙ СКРОЛЛЕР ДЛЯ ЧАТОВ
+   Серый в покое → оранжевый при наведении/нажатии
+   Класс .custom-scroll — для любых новых элементов
+   ============================================ */
+
+/* --- Firefox --- */
+.custom-scroll,
+.chat-messages,
+.support-chat-history,
+.event-chats-chat-history,
+.chat-history {
+  scrollbar-width: thin;
+  scrollbar-color: #c5c5c5 #f0f0f0;
+}
+
+/* --- WebKit (Chrome, Safari, Edge) --- */
+
+/* Ширина скроллбара */
+.custom-scroll::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.support-chat-history::-webkit-scrollbar,
+.event-chats-chat-history::-webkit-scrollbar,
+.chat-history::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Трек (фон под ползунком) */
+.custom-scroll::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track,
+.support-chat-history::-webkit-scrollbar-track,
+.event-chats-chat-history::-webkit-scrollbar-track,
+.chat-history::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 10px;
+  margin: 6px 0;
+}
+
+/* Ползунок — серый, скруглённый */
+.custom-scroll::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb,
+.support-chat-history::-webkit-scrollbar-thumb,
+.event-chats-chat-history::-webkit-scrollbar-thumb,
+.chat-history::-webkit-scrollbar-thumb {
+  background: #c5c5c5;
+  border-radius: 10px;
+  border: 2px solid #f0f0f0;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Ползунок при наведении — оранжевый */
+.custom-scroll::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.support-chat-history::-webkit-scrollbar-thumb:hover,
+.event-chats-chat-history::-webkit-scrollbar-thumb:hover,
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: #ff8348;
+  border-color: #fff0e6;
+}
+
+/* Ползунок при нажатии — насыщенный оранжевый */
+.custom-scroll::-webkit-scrollbar-thumb:active,
+.chat-messages::-webkit-scrollbar-thumb:active,
+.support-chat-history::-webkit-scrollbar-thumb:active,
+.event-chats-chat-history::-webkit-scrollbar-thumb:active,
+.chat-history::-webkit-scrollbar-thumb:active {
+  background: #f56e24;
+  border-color: #fff0e6;
+}
+
+/* --- Стрелки вверх/вниз --- */
+
+/* Верхняя стрелка */
+.custom-scroll::-webkit-scrollbar-button:vertical:start,
+.chat-messages::-webkit-scrollbar-button:vertical:start,
+.support-chat-history::-webkit-scrollbar-button:vertical:start,
+.event-chats-chat-history::-webkit-scrollbar-button:vertical:start,
+.chat-history::-webkit-scrollbar-button:vertical:start {
+  display: block;
+  height: 22px;
+  width: 10px;
+  background: #e8e8e8 no-repeat center;
+  border-radius: 10px 10px 0 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'/%3E%3C/svg%3E");
+  background-size: 10px 10px;
+}
+
+/* Нижняя стрелка */
+.custom-scroll::-webkit-scrollbar-button:vertical:end,
+.chat-messages::-webkit-scrollbar-button:vertical:end,
+.support-chat-history::-webkit-scrollbar-button:vertical:end,
+.event-chats-chat-history::-webkit-scrollbar-button:vertical:end,
+.chat-history::-webkit-scrollbar-button:vertical:end {
+  display: block;
+  height: 22px;
+  width: 10px;
+  background: #e8e8e8 no-repeat center;
+  border-radius: 0 0 10px 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-size: 10px 10px;
+}
+
+/* Стрелки при наведении — оранжевые */
+.custom-scroll::-webkit-scrollbar-button:vertical:start:hover,
+.chat-messages::-webkit-scrollbar-button:vertical:start:hover,
+.support-chat-history::-webkit-scrollbar-button:vertical:start:hover,
+.event-chats-chat-history::-webkit-scrollbar-button:vertical:start:hover,
+.chat-history::-webkit-scrollbar-button:vertical:start:hover {
+  background-color: #fff0e6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23ff8348' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'/%3E%3C/svg%3E");
+  background-size: 10px 10px;
+}
+
+.custom-scroll::-webkit-scrollbar-button:vertical:end:hover,
+.chat-messages::-webkit-scrollbar-button:vertical:end:hover,
+.support-chat-history::-webkit-scrollbar-button:vertical:end:hover,
+.event-chats-chat-history::-webkit-scrollbar-button:vertical:end:hover,
+.chat-history::-webkit-scrollbar-button:vertical:end:hover {
+  background-color: #fff0e6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23ff8348' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-size: 10px 10px;
+}
+
+/* Горизонтальные стрелки — скрыты */
+.custom-scroll::-webkit-scrollbar-button:horizontal,
+.chat-messages::-webkit-scrollbar-button:horizontal,
+.support-chat-history::-webkit-scrollbar-button:horizontal,
+.event-chats-chat-history::-webkit-scrollbar-button:horizontal,
+.chat-history::-webkit-scrollbar-button:horizontal {
+  display: none;
+}
