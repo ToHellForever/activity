@@ -10,112 +10,144 @@
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-<div class="support-layout">
-  
-   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
-   <div class="support-sidebar">
-      <h2>Чаты с участниками</h2>
-      <p style="font-size: 0.85em; color: #888; margin-bottom: 12px;">Вопросы от участников к вашим мероприятиям.</p>
+<div class="chat-container">
 
-      <!-- Список существующих тикетов -->
-      {% for ticket in tickets %}
-        <a href="?ticket_id={{ ticket.id }}" style="text-decoration: none; color: inherit; display: block; padding: 8px; border-radius: 4px; margin-bottom: 4px; {% if selected_ticket and selected_ticket.id == ticket.id %}background: #e8eeff;{% endif %}">
-          <div>
-            <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:50 }}
-            <span class="badge badge-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
-          </div>
-          {% if ticket.user.user_type == "guest" %}
-            <div style="font-size: 0.8em; color: #ff9800;">📧 {{ ticket.user.email }} (неавторизован)</div>
-          {% else %}
-            <div style="font-size: 0.8em; color: #888;">👤 {{ ticket.user.get_full_name|default:ticket.user.email }}</div>
+  {% if selected_ticket %}
+    <!-- ========== ЗАГОЛОВОК ЧАТА ========== -->
+    <div class="chat-header">
+      <a href="{% url 'partner:chats_list' %}" class="chat-header-back" title="Назад к списку">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      {% if selected_ticket.user.user_type == "guest" %}
+        <div class="chat-header-avatar chat-header-avatar--guest">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">Неавторизованный пользователь</div>
+          {% if selected_ticket.event %}
+            <div class="chat-header-event">{{ selected_ticket.event.title }}</div>
           {% endif %}
-        </a>
-      {% empty %}
-        <div>Пока нет вопросов от участников по вашим мероприятиям.</div>
-      {% endfor %}
-
-    </div>
-
-   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
-   <div class="chat-window">
-     
-     <!-- Заголовок чата -->
-     {% if selected_ticket %}
-       <h3>Чат по обращению #{{ selected_ticket.id }}</h3>
-       <p><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
-       <p><strong>От:</strong> {{ selected_ticket.user.get_full_name|default:selected_ticket.user.email }}
-         {% if selected_ticket.user.user_type == "guest" %}
-           <span class="badge" style="background: #ff9800; color: #fff; font-size: 0.8em;">Неавторизован — ответьте на почту</span>
-         {% endif %}
-       </p>
-       {% if selected_ticket.event %}
-         <p><strong>Мероприятие:</strong> <a href="{% url 'partner:edit_event' selected_ticket.event.id %}">{{ selected_ticket.event.title }}</a></p>
-       {% endif %}
-       <hr>
-     {% else %}
-       <h3>Выберите обращение слева.</h3>
-       <div style="flex: 1"></div>
-     {% endif %}
-
-    <!-- История сообщений -->
-    <div class="chat-history">
-      {% if selected_ticket %}
-        {% for message in chat_messages %}
-          <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-            <strong>{{ message.user.get_full_name|default:message.user.email }} ({{ message.created_at|date:"H:i" }})</strong><br>
-              {{ message.text }}
-
-            <!-- Вложения -->
-            {% if message.attachments.all %}
-              <div class="attachments" style="margin-top: 8px;">
-                {% for attachment in message.attachments.all %}
-                  <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-block; margin-right: 10px; font-size: 0.9em; color: #1890ff;">
-                    📎 {{ attachment.file.name|cut:"/" }}
-                  </a>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        {% empty %}
-            <div>Сообщений в этом чате пока нет.</div>
-        {% endfor %}
+        </div>
       {% else %}
-        <div style="color: #888; text-align: center; padding: 40px;">Выберите обращение слева.</div>
+        <div class="chat-header-avatar chat-header-avatar--authorized">
+          {{ selected_ticket.user.get_first_name|default:selected_ticket.user.email|slice:":1"|upper }}
+        </div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">{{ selected_ticket.user.get_first_name|default:selected_ticket.user.get_username }}</div>
+          {% if selected_ticket.event %}
+            <div class="chat-header-event">{{ selected_ticket.event.title }}</div>
+          {% endif %}
+        </div>
       {% endif %}
     </div>
 
-      <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
-      {% if selected_ticket %}
-        <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" style="display: flex;">
-          {% csrf_token %}
-          <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-         
-          <input type="text" name="text" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px;">
-          
-          <!-- Поле для загрузки файлов -->
-          <input type="file" name="attachment" multiple id="file-upload" style="margin-right: 5px;">
-          
-          <button type="submit" style="padding: 10px 20px; margin-left: 5px;">Отправить</button>
-        </form>
-      {% endif %}
+    <!-- ========== ИСТОРИЯ СООБЩЕНИЙ ========== -->
+    <div class="chat-messages">
+      {% for message in chat_messages %}
+        {% if message.is_from_user %}
+          <!-- Сообщение от участника (входящее) -->
+          {% if selected_ticket.user.user_type == "guest" %}
+            <!-- Неавторизованный пользователь -->
+            <div class="chat-message chat-message--incoming">
+              <div class="chat-message-avatar chat-message-avatar--guest">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="chat-message-content">
+                <div class="chat-message-bubble-row">
+                  <div class="chat-message-bubble">
+                    <div class="chat-message-guest-info">
+                      <strong>Имя:</strong> {{ message.user.get_first_name|default:"—" }}<br>
+                      <strong>e-mail:</strong> {{ message.user.email }}<br>
+                      <strong>Вопрос:</strong> {{ message.text }}
+                    </div>
+                  </div>
+                  <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
+                </div>
+                <div class="chat-message-guest-note">Пользователь не авторизован на платформе, направьте ответ на электронную почту</div>
+              </div>
+            </div>
+          {% else %}
+            <!-- Авторизованный пользователь -->
+            <div class="chat-message chat-message--incoming">
+              <div class="chat-message-avatar chat-message-avatar--user">
+                {{ message.user.get_first_name|default:message.user.email|slice:":1"|upper }}
+              </div>
+              <div class="chat-message-bubble-row">
+                <div class="chat-message-bubble">
+                  {{ message.text }}
+                </div>
+                <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Сообщение от партнёра (исходящее) -->
+          <div class="chat-message chat-message--outgoing">
+            <div class="chat-message-bubble-row">
+              <div class="chat-message-bubble">
+                {{ message.text }}
+              </div>
+              <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
+            </div>
+          </div>
+        {% endif %}
+      {% empty %}
+        <div style="text-align: center; color: #9a9a9a; padding: 40px 0;">
+          Сообщений пока нет.
+        </div>
+      {% endfor %}
     </div>
-  </div>
 
+    <!-- ========== ПОЛЕ ВВОДА ========== -->
+    <div class="chat-input-area">
+      <form method="post" action="{% url 'send_support_message' %}" enctype="multipart/form-data" class="chat-input-form">
+        {% csrf_token %}
+        <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+        <input type="text" name="text" placeholder="Сообщение" required>
+        <input type="file" name="attachment" multiple class="chat-input-file" id="chatFileUpload">
+        <button type="button" class="chat-input-btn chat-input-btn--attach" onclick="document.getElementById('chatFileUpload').click()" title="Прикрепить файл">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button type="submit" class="chat-input-btn chat-input-btn--send" title="Отправить">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+  {% else %}
+    <!-- ========== ПУСТОЕ СОСТОЯНИЕ ========== -->
+    <div class="chat-empty">
+      Выберите обращение из списка слева.
+    </div>
+  {% endif %}
+
+</div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Решение для обработки вставки файлов
-  const chatInput = document.querySelector('input[name="text"]');
-  if (chatInput) {
-    chatInput.addEventListener('paste', function(e) {
-      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-        e.preventDefault();
-        alert('Чтобы загрузить файлы, пожалуйста, используйте кнопку выбора файлов рядом с полем ввода');
-      }
-    });
-  }
+  // Автопрокрутка вниз при загрузке
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.querySelector('.chat-messages');
+    if (chatMessages) {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  });
 </script>
 {% endblock %}

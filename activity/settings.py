@@ -92,7 +92,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = "core.CustomUser"
 
-LOGIN_URL = "login/"
+LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 
 AUTH_PASSWORD_VALIDATORS = [

@@ -697,14 +697,26 @@ def create_payment(request, ticket_id):
                 )
 
             # Создаём или получаем пользователя
-            user, created = User.objects.get_or_create(
-                username=participant_data["email"],
-                defaults={
-                    "email": participant_data["email"],
-                    "first_name": participant_data["name"].split()[0] if participant_data["name"] else "",
-                    "last_name": " ".join(participant_data["name"].split()[1:]) if len(participant_data["name"].split()) > 1 else "",
-                }
-            )
+            # Проверяем, не принадлежит ли email зарегистрированному пользователю
+            existing_user = User.objects.filter(email=participant_data["email"]).first()
+            if existing_user and existing_user.user_type != "guest":
+                # Email принадлежит зарегистрированному пользователю —
+                # используем его аккаунт (пользователь авторизован при покупке)
+                user = existing_user
+            else:
+                # Email новый или принадлежит гостю — создаём/получаем guest-аккаунт
+                user, created = User.objects.get_or_create(
+                    username=participant_data["email"],
+                    defaults={
+                        "email": participant_data["email"],
+                        "first_name": participant_data["name"].split()[0] if participant_data["name"] else "",
+                        "last_name": " ".join(participant_data["name"].split()[1:]) if len(participant_data["name"].split()) > 1 else "",
+                        "user_type": "guest",
+                    },
+                )
+                if created:
+                    user.set_unusable_password()
+                    user.save()
 
             # Создаём тикет
             support_ticket = SupportTicket.objects.create(

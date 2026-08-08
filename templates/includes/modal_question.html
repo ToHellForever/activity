@@ -26,6 +26,10 @@
                         </div>
                     </div>
                     {% if not user.is_authenticated %}
+                    <div class="mb-3" id="nameFieldContainer">
+                        <label for="userName" class="form-label">Ваше имя</label>
+                        <input type="text" class="form-control" id="userName" required>
+                    </div>
                     <div class="mb-3" id="emailFieldContainer">
                         <label for="userEmail" class="form-label">Ваш email для ответа</label>
                         <input type="email" class="form-control" id="userEmail" required>
@@ -59,13 +63,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Обработка отправки вопроса
+// Обработка отправки вопроса
     const sendQuestionBtn = document.getElementById('sendQuestionBtn');
     if (sendQuestionBtn) {
         sendQuestionBtn.addEventListener('click', function() {
             const question = questionText.value.trim();
             const emailInput = document.getElementById('userEmail');
             const email = emailInput ? emailInput.value.trim() : '';
+            const nameInput = document.getElementById('userName');
+            const name = nameInput ? nameInput.value.trim() : '';
 
             if (!question) {
                 alert('Пожалуйста, введите ваш вопрос');
@@ -92,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('question', question);
             formData.append('email', email);
+            formData.append('first_name', name);
 
             // Получаем event_id из data-атрибута кнопки "Задать вопрос"
             const questionLink = document.querySelector('.question-organizator');

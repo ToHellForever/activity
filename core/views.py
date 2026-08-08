@@ -458,6 +458,8 @@ def send_support_message(request):
         # Логика редиректа
         if request.user.is_staff:  # Если модератор — не редиректим
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+        elif request.user.user_type == "partner":  # Если партнёр — обратно в чат
+            return redirect(f"/partner/chats/?ticket_id={ticket_id}")
         else:  # Если пользователь — редиректим на нужную страницу
             if ticket.ticket_type == 'support':
                 return redirect(f"/support/?ticket_id={ticket_id}")
@@ -712,35 +714,61 @@ def send_event_request(request, event_id, question=""):
     if request.method == "GET":
         return redirect("event_detail", event_id=event_id)
 
-    # Получаем данные из формы
-    email = (request.POST.get("email") or "").strip()
-    first_name = (request.POST.get("first_name") or "").strip()
-    last_name = (request.POST.get("last_name") or "").strip()
-    phone = (request.POST.get("phone") or "").strip()
-
     # Используем переданный вопрос или берем из POST
     question = question or request.POST.get("question", "")
 
-    # Создаём или получаем пользователя по email
-    user, created = CustomUser.objects.get_or_create(
-        email=email,
-        defaults={
-            "first_name": first_name,
-            "last_name": last_name,
-            "user_type": "guest",
-            "username": email,
-        },
-    )
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    # Обновляем данные пользователя, если он уже существовал
-    if not created:
-        user.first_name = first_name
-        user.last_name = last_name
-        user.save()
+    # ============================================================
+    # ОПРЕДЕЛЕНИЕ ПОЛЬЗОВАТЕЛЯ ДЛЯ ТИКЕТА
+    # ============================================================
+    if request.user.is_authenticated:
+        # Авторизованный пользователь — используем его аккаунт напрямую
+        user = request.user
+    else:
+        # Неавторизованный пользователь — работаем по email
+        email = (request.POST.get("email") or "").strip()
+        first_name = (request.POST.get("first_name") or "").strip()
 
-    if created:
-        user.set_unusable_password()
-        user.save()
+        if not email:
+            msg = "Укажите email для ответа."
+            if is_ajax:
+                return JsonResponse({"success": False, "message": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("event_detail", event_id=event_id)
+
+        # Проверяем, не принадлежит ли email зарегистрированному пользователю
+        existing_user = CustomUser.objects.filter(email=email).first()
+        if existing_user and existing_user.user_type != "guest":
+            # Email принадлежит зарегистрированному пользователю —
+            # НЕ разрешаем создавать тикет от его имени без авторизации
+            msg = (
+                "Пользователь с таким email уже зарегистрирован. "
+                "Пожалуйста, войдите в аккаунт, чтобы задать вопрос."
+            )
+            if is_ajax:
+                return JsonResponse({"success": False, "message": msg})
+            messages.error(request, msg)
+            return redirect("event_detail", event_id=event_id)
+
+        # Email новый или принадлежит гостю — создаём/получаем guest-аккаунт
+        user, created = CustomUser.objects.get_or_create(
+            email=email,
+            defaults={
+                "first_name": first_name,
+                "user_type": "guest",
+                "username": email,
+            },
+        )
+
+        # Не перезаписываем данные существующего гостя пустыми значениями
+        if not created and first_name and not user.first_name:
+            user.first_name = first_name
+            user.save()
+
+        if created:
+            user.set_unusable_password()
+            user.save()
 
     try:
         with transaction.atomic():
@@ -763,7 +791,6 @@ def send_event_request(request, event_id, question=""):
             )
 
             # Проверяем, является ли запрос AJAX
-            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
             if is_ajax:
                 return JsonResponse(
                     {

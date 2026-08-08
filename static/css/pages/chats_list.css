@@ -1,0 +1,169 @@
+/* ============================================
+   СПИСОК ЧАТОВ (список обращений участников)
+   ============================================ */
+
+.chats-page-layout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.chats-list-wrapper {
+  flex: 1;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.chats-list-header {
+  padding: 18px 22px 4px 22px;
+}
+
+.chats-list-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 4px !important;
+}
+
+.chats-list-header p {
+  font-size: 12px;
+  color: #9a9a9a;
+  margin-bottom: 0;
+}
+
+.chats-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Элемент списка чатов */
+.chat-list-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px 22px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(154, 154, 154, 1);
+  cursor: pointer;
+}
+
+.chat-list-item:hover {
+  background: #f8f9fa;
+}
+
+.chat-list-item.chat-list-item--active {
+  background: #fff3e8;
+}
+
+.chat-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Аватарка с инициалом */
+.chat-list-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  font-family: "Montserrat", sans-serif;
+}
+
+.chat-list-avatar--guest {
+  background: #ccc;
+}
+
+.chat-list-avatar--authorized {
+  background: #ff8c42;
+}
+
+.chat-list-avatar--green {
+  background: #28a745;
+}
+
+.chat-list-avatar--blue {
+  background: #007bff;
+}
+
+.chat-list-avatar--purple {
+  background: #6f42c1;
+}
+
+.chat-list-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-list-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.chat-list-event {
+  font-size: 12px;
+  color: #9a9a9a;
+  font-style: italic;
+  margin-bottom: 4px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.chat-list-preview {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "Montserrat", sans-serif;
+}
+
+.chat-list-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #9a9a9a;
+  margin-top: 4px;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Пустое состояние */
+.chats-list-empty {
+  padding: 40px 22px;
+  text-align: center;
+  color: #9a9a9a;
+  font-size: 13px;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ============================================
+   АДАПТИВ
+   ============================================ */
+@media (max-width: 768px) {
+  .chats-list-wrapper {
+    height: calc(100vh - 80px);
+  }
+
+  .chat-list-item {
+    padding: 14px 16px;
+  }
+
+  .chat-list-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+}
