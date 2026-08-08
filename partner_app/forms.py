@@ -268,7 +268,8 @@ class ReportScheduleForm(forms.ModelForm):
             self.fields["day_of_week"].widget = forms.HiddenInput()
             self.fields["day_of_month"].widget = forms.HiddenInput()
         elif frequency == "weekly":
-            self.fields["day_of_month"].widget = forms.HiddenInput()
+            # day_of_month показываем (не скрываем)
+            pass
         elif frequency == "monthly":
             self.fields["day_of_week"].widget = forms.HiddenInput()
 

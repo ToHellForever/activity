@@ -41,20 +41,22 @@
 }
 
 /* ---------- Settings cards ---------- */
-.report-schedule-page .report-settings-card {
+.report-schedule-page .report-settings-card.card {
   background: #ffffff !important;
-  border: 1px solid #ececec !important;
+  border: none !important;
   border-radius: 24px !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
   overflow: hidden !important;
+  margin-bottom: 20px !important;
 }
 
-.report-schedule-page .report-settings-card .card-header {
+.report-schedule-page .report-settings-card.card .card-header {
   background: #fff !important;
   border-bottom: 1px solid #f0f0f0 !important;
   border-top: none !important;
   border-right: none !important;
   border-left: none !important;
+  border-radius: 0 !important;
   font-family: "Montserrat", sans-serif !important;
   font-weight: 600 !important;
   font-size: 1rem !important;
@@ -63,7 +65,148 @@
   margin-bottom: 0 !important;
 }
 
-.report-schedule-page .report-settings-card .card-body {
+.report-schedule-page .report-settings-card.card .card-body {
+  padding: 24px !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  color: #1a1a2e !important;
+  padding: 18px 24px !important;
+  margin-bottom: 0 !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-body {
+  padding: 24px !important;
+}
+
+/* ---------- Form labels ---------- */
+.report-schedule-page .report-settings-card .form-label {
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  color: #777a8d !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  margin-bottom: 8px !important;
+}
+
+/* ---------- Form inputs & selects ---------- */
+.report-schedule-page .report-settings-card .form-control,
+.report-schedule-page .report-settings-card .form-select,
+.report-schedule-page .report-settings-card select,
+.report-schedule-page .report-settings-card input[type="text"],
+.report-schedule-page .report-settings-card input[type="email"],
+.report-schedule-page .report-settings-card input[type="number"] {
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 0.9rem !important;
+  color: #1a1a2e !important;
+  background-color: #fafafa !important;
+  border: 1.5px solid #e8e8e8 !important;
+  border-radius: 16px !important;
+  padding: 10px 16px !important;
+  transition: all 0.25s ease !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.report-schedule-page .report-settings-card .form-control:hover,
+.report-schedule-page .report-settings-card .form-select:hover {
+  border-color: #ddd !important;
+  background-color: #fff !important;
+}
+
+.report-schedule-page .report-settings-card .form-control:focus,
+.report-schedule-page .report-settings-card .form-select:focus {
+  background-color: #fff !important;
+  border-color: #ff8348 !important;
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.12) !important;
+  outline: none !important;
+}
+
+.report-schedule-page .report-settings-card .form-control::placeholder {
+  color: #bbb !important;
+  font-weight: 400 !important;
+}
+
+/* ---------- Custom select dropdown arrow ---------- */
+.report-schedule-page .report-settings-card .form-select,
+.report-schedule-page .report-settings-card select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23777a8d'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  background-size: 12px 8px !important;
+  padding-right: 40px !important;
+}
+
+.report-schedule-page .report-settings-card .form-select:hover,
+.report-schedule-page .report-settings-card select:hover {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23555555'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E") !important;
+}
+
+.report-schedule-page .report-settings-card .form-select:focus,
+.report-schedule-page .report-settings-card select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23ff8348'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E") !important;
+}
+
+/* Remove default browser style for <select> options */
+.report-schedule-page .report-settings-card .form-select option,
+.report-schedule-page .report-settings-card select option {
+  font-family: "Montserrat", sans-serif !important;
+  font-size: 0.9rem !important;
+  color: #1a1a2e !important;
+  background-color: #fff !important;
+  padding: 8px 16px !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  color: #1a1a2e !important;
+  padding: 18px 24px !important;
+  margin-bottom: 0 !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-body {
+  padding: 24px !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  color: #1a1a2e !important;
+  padding: 18px 24px !important;
+  margin-bottom: 0 !important;
+}
+
+.report-schedule-page .report-settings-card.card .card-body {
   padding: 24px !important;
 }
 
@@ -111,15 +254,74 @@
   font-weight: 400 !important;
 }
 
-.report-schedule-page .report-settings-card .form-check-input {
-  width: 3em !important;
-  height: 1.5em !important;
-  margin-left: -2.5em !important;
-  border-radius: 50px !important;
-  border: 1.5px solid #e0e0e0 !important;
-  background-color: #e0e0e0 !important;
+/* ---------- Custom checkbox with orange checkmark ---------- */
+.report-schedule-page form .card.report-settings-card .form-check {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 16px !important;
+  background: #fafafa !important;
+  border: 1.5px solid #e8e8e8 !important;
+  border-radius: 16px !important;
+  margin: 0 !important;
+}
+
+.report-schedule-page form .card.report-settings-card .form-check-input {
+  width: 24px !important;
+  height: 24px !important;
+  margin: 0 !important;
+  border: 2px solid #ccc !important;
+  border-radius: 6px !important;
+  background-color: #fff !important;
   cursor: pointer !important;
   transition: all 0.25s ease !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
+}
+
+.report-schedule-page
+  form
+  .card.report-settings-card
+  .form-check-input:checked {
+  background-color: #ff8348 !important;
+  border-color: #ff8348 !important;
+}
+
+.report-schedule-page
+  form
+  .card.report-settings-card
+  .form-check-input:checked::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 6px !important;
+  top: 2px !important;
+  width: 6px !important;
+  height: 12px !important;
+  border: solid #fff !important;
+  border-width: 0 2.5px 2.5px 0 !important;
+  transform: rotate(45deg) !important;
+  display: block !important;
+}
+
+.report-schedule-page form .card.report-settings-card .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15) !important;
+}
+
+.report-schedule-page form .card.report-settings-card .form-check-label {
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.9rem !important;
+  color: #1a1a2e !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  display: inline !important;
+  line-height: 24px !important;
 }
 
 .report-schedule-page .report-settings-card .form-check-input:checked {
@@ -127,8 +329,20 @@
   border-color: #ff8348 !important;
 }
 
+.report-schedule-page .report-settings-card .form-check-input:checked::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 7px !important;
+  top: 3px !important;
+  width: 6px !important;
+  height: 12px !important;
+  border: solid #fff !important;
+  border-width: 0 2.5px 2.5px 0 !important;
+  transform: rotate(45deg) !important;
+}
+
 .report-schedule-page .report-settings-card .form-check-input:focus {
-  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15) !important;
 }
 
 .report-schedule-page .report-settings-card .form-check-label {
@@ -137,6 +351,9 @@
   font-size: 0.9rem !important;
   color: #1a1a2e !important;
   cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
 
 /* ---------- Help text ---------- */

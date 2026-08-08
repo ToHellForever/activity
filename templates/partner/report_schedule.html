@@ -5,6 +5,54 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/report_schedule.css' %}">
+<style>
+/* Override Bootstrap checkbox */
+.report-settings-card input[type="checkbox"].form-check-input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 24px !important;
+  height: 24px !important;
+  border: 2px solid #ccc !important;
+  border-radius: 6px !important;
+  background-color: #fff !important;
+  cursor: pointer !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: top !important;
+  flex-shrink: 0 !important;
+}
+
+.report-settings-card input[type="checkbox"].form-check-input:checked {
+  background-color: #ff8348 !important;
+  border-color: #ff8348 !important;
+}
+
+.report-settings-card input[type="checkbox"].form-check-input:checked::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 6px !important;
+  top: 2px !important;
+  width: 6px !important;
+  height: 12px !important;
+  border: solid #fff !important;
+  border-width: 0 2.5px 2.5px 0 !important;
+  transform: rotate(45deg) !important;
+  display: block !important;
+}
+
+.report-settings-card .form-check {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.report-settings-card .form-check-label {
+  margin: 0 !important;
+  font-family: "Montserrat", sans-serif !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -70,7 +118,7 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-control" style='padding-left: 0;'>
+                        <div class="form-check">
                             {{ form.is_active }}
                             <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
                                 {{ form.is_active.label }}
