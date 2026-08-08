@@ -11,6 +11,9 @@
     .refund-value {
         color: #fd7e14;
     }
+    .report-form {
+        overflow: visible;
+    }
 </style>
 {% endblock %}
 
@@ -181,12 +184,42 @@
                 {% csrf_token %}
                 <div class="row mb-3 g-3">
                     <div class="col-md-3">
-                        <label for="periodStart" class="form-label">Начало периода</label>
-                        <input type="date" class="form-control" id="periodStart" required>
+                        <label class="form-label">Начало периода</label>
+                        <div class="input-with-button date-container" style="position: relative;">
+                            <input type="text" class="form-control filter-input" id="reportStartDisplay" placeholder="ДД.MM.ГГГГ" readonly>
+                            <input type="hidden" id="reportStart" name="reportStart">
+                            <div class="calendar-popup calendar-popup-up" id="reportStartCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <label for="periodEnd" class="form-label">Конец периода</label>
-                        <input type="date" class="form-control" id="periodEnd" required>
+                        <label class="form-label">Конец периода</label>
+                        <div class="input-with-button date-container" style="position: relative;">
+                            <input type="text" class="form-control filter-input" id="reportEndDisplay" placeholder="ДД.MM.ГГГГ" readonly>
+                            <input type="hidden" id="reportEnd" name="reportEnd">
+                            <div class="calendar-popup calendar-popup-up" id="reportEndCalendar">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-prev-month">&lt;</button>
+                                    <span class="calendar-month-year"></span>
+                                    <button type="button" class="calendar-next-month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid"></div>
+                                <div class="calendar-footer">
+                                    <button type="button" class="calendar-clear">Очистить</button>
+                                    <button type="button" class="calendar-close">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label for="reportType" class="form-label">Формат отчёта</label>
@@ -368,6 +401,19 @@ function initReportCalendars() {
                 }
             }
         }
+    });
+
+    // Календари для формы генерации отчёта
+    new CustomCalendar('reportStartDisplay', 'reportStartCalendar', 'reportStart', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
+    });
+
+    new CustomCalendar('reportEndDisplay', 'reportEndCalendar', 'reportEnd', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
     });
 }
 
@@ -691,8 +737,8 @@ $(document).ready(function() {
 document.getElementById('generateReportForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const periodStart = document.getElementById('periodStart').value;
-    const periodEnd   = document.getElementById('periodEnd').value;
+    const periodStart = document.getElementById('reportStart').value;
+    const periodEnd   = document.getElementById('reportEnd').value;
     const reportType  = document.getElementById('reportType').value;
     const sendEmailEl = document.getElementById('sendEmail');
     const sendEmail   = sendEmailEl ? sendEmailEl.checked : false;
