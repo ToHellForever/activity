@@ -40,7 +40,7 @@
     {% endif %}
 
     <!-- ===== Package cards ===== -->
-    <p class="tariff-heading">Для размещения события и доступа ко всем сервисам выберите тариф на размещение</p>
+    <p class="tariff-heading">Текущий тариф размещения</p>
     <div class="package-cards">
         {% for package in packages %}
         <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% else %}inactive{% endif %}">
@@ -79,10 +79,10 @@
         <label>Текущий тариф размещения: {{ form.instance.package.name }}</label>
     </div>
     {% endif %}
-
+    <p class="tariff-heading">Основная информация</p>
     <!-- Название -->
     <div class="form-group">
-        <label for="id_title">Название <span class="text-danger">*</span></label>
+        <label for="id_title">Название (до 100 символов)</label>
         <input type="text" id="id_title" name="title" value="{{ form.instance.title|default:'' }}" maxlength="100" class="form-control" required>
         {% if form.title.errors %}{% for error in form.title.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
     </div>
@@ -111,23 +111,22 @@
 
     <!-- Дата, длительность, закрыть продажи, возврат билетов — в одну строку -->
     <div class="form-group">
-        <label>Дата и время <span class="text-danger">*</span></label>
         <div class="form-row">
             <div>
+                <label>Дата</label>
                 <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" required>
-                <small class="form-text text-muted" style="font-size: 11px;">Дата и время</small>
             </div>
             <div>
+                <label>Длительность</label>
                 <input type="text" id="id_duration" name="duration" value="{{ form.instance.duration|default:'' }}" placeholder="ЧЧ:ММ" class="form-control" pattern="[0-9]{2}:[0-9]{2}">
-                <small class="form-text text-muted" style="font-size: 11px;">Длительность (ЧЧ:ММ)</small>
             </div>
             <div>
+                <label>закрыть продажи за</label>
                 <input type="number" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24" class="form-control">
-                <small class="form-text text-muted" style="font-size: 11px;">Закрыть продажи за (часов)</small>
             </div>
             <div>
+                <label>срок возврата билетов</label>
                 <input type="number" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1" class="form-control">
-                <small class="form-text text-muted" style="font-size: 11px;">Возврат билетов (часов)</small>
             </div>
         </div>
     </div>
@@ -138,22 +137,6 @@
         <textarea id="id_description" name="description" rows="4" maxlength="1500" class="form-control">{{ form.instance.description }}</textarea>
         {% if form.description.errors %}{% for error in form.description.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
     </div>
-
-    <!-- Адрес -->
-    <div class="form-group">
-        <label for="id_place_address">Адрес</label>
-        <input type="text" id="id_place_address" class="form-control" readonly placeholder="Адрес будет отображаться здесь">
-        <div class="place-additional-info mt-2">
-            <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}" placeholder="Дополнительная информация о местоположении">
-        </div>
-        <div class="map-container">
-            <div id="map" class="map-loading">
-                <div class="spinner-border text-primary" role="status"></div>
-            </div>
-            <input type="hidden" id="id_place_data" name="place_data">
-        </div>
-    </div>
-
     <!-- Фото мероприятия -->
     <div class="form-group">
         <label>Фото (не более {{ form.current_package.max_photos|default:10 }})</label>
@@ -179,19 +162,18 @@
                 {% endfor %}
             {% endif %}
             <div class="photo-upload-area" id="photo-upload-area" title="Добавить фото">
-                <span>+</span>
+                <img src="/media/icon/raphael_photo.svg" alt="" class="photo-upload-area-icon">
             </div>
         </div>
         <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;" accept="image/*">
         <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
-        <small class="form-text text-muted">Нажмите на фото чтобы сделать его основным. Разрешены форматы: JPG, PNG, GIF, WEBP</small>
     </div>
 
     <!-- Видео -->
     {% if form.current_package and form.current_package.has_video %}
     <div class="form-group">
         <label>Видео</label>
-        <div style="display: flex; align-items: center; gap: 12px; padding: 20px; border: 1px dashed #ddd; border-radius: 8px;">
+        <div>
             {% if form.instance.video_url %}
                 {% if form.instance.video_processing_status == 'completed' %}
                     <video controls style="max-width: 200px; border-radius: 8px;">
@@ -209,7 +191,6 @@
             </button>
         </div>
         <input type="file" name="video_url" id="id_video_url" class="custom-media-input" data-media-type="video_url" style="display: none;" accept="video/mp4,video/mov,video/avi">
-        <small class="form-text text-muted">Загрузите видео в формате MP4, MOV, AVI</small>
     </div>
     {% endif %}
 
@@ -229,12 +210,11 @@
             </button>
         </div>
         <input type="file" name="program_file" id="id_program_file" class="custom-media-input" data-media-type="program_file" style="display: none;" accept=".pdf">
-        <small class="form-text text-muted">Загрузите программу в формате PDF</small>
     </div>
 
-    <!-- Заявки через платформу -->
+        <!-- Заявки через платформу -->
     <div class="form-group">
-        <label>Заявки через платформу</label>
+        <label style='color: #000; text-transform: none; margin-left: 0;'>Заявки через платформу (может ли пользователь оставить завку с вопросом?)</label>
         <div class="toggle-switch">
             <span class="toggle-status toggle-status--no">НЕТ</span>
             <label>
@@ -242,13 +222,12 @@
                 <span class="toggle-slider"></span>
             </label>
             <span class="toggle-status toggle-status--yes" style="display: none;">ДА</span>
-            <span class="toggle-label">(может ли пользователь оставить заявку с вопросом?)</span>
         </div>
     </div>
 
     <!-- Разрешить бронирование без оплаты -->
     <div class="form-group">
-        <label>Разрешить бронирование без оплаты</label>
+        <label style='color: #000; text-transform: none; margin-left: 0;'>Разрешить бронирование без оплаты</label>
         <div class="toggle-switch">
             <span class="toggle-status toggle-status--no">НЕТ</span>
             <label>
@@ -261,36 +240,20 @@
         <small class="form-text text-muted">Все билеты бесплатные - опция недоступна.</small>
         {% endif %}
     </div>
-
-    <!-- Теги -->
+    <!-- Адрес -->
     <div class="form-group">
-        <label>Теги</label>
-        <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Вы можете выбрать ключевые слова, что бы пользователю легче было вас найти</p>
-        <div class="tag-input-wrapper">
-            <input type="text" id="tag-search" placeholder="Введите тег или выберите из предложенных">
+        <label for="id_place_address">Адрес</label>
+        <input type="text" id="id_place_address" class="form-control" readonly placeholder="Адрес будет отображаться здесь">
+        <div class="map-container">
+            <div id="map" class="map-loading">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+            <input type="hidden" id="id_place_data" name="place_data">
         </div>
-        <div class="tags-container" id="tags-container">
-            {% if form.instance.pk %}
-                {% for tag in form.instance.tags.all %}
-                <div class="tag-chip selected" data-tag-id="{{ tag.id }}">
-                    {{ tag.name }}
-                    <input type="hidden" name="tags" value="{{ tag.id }}" class="tag-selected-input">
-                </div>
-                {% endfor %}
-            {% endif %}
+        <div class="place-additional-info mt-2">
+            <label>дополнительно к адресу</label>
+            <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}">
         </div>
-        <!-- Скрытый dropdown для выбора тегов -->
-        <div id="tag-dropdown" style="display: none; margin-top: 8px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;">
-            {% for main_tag in main_tags %}
-                {% for subtag in main_tag.subtags.all %}
-                <div class="form-check ms-2" style="padding: 4px 0;">
-                    <input class="form-check-input" type="checkbox" name="tags" value="{{ subtag.id }}" id="tag-{{ subtag.id }}" style="margin-right: 8px;">
-                    <label class="form-check-label" for="tag-{{ subtag.id }}" style="font-size: 13px;">{{ subtag.name }}</label>
-                </div>
-                {% endfor %}
-            {% endfor %}
-        </div>
-        <small class="form-text text-muted">Выберите до 5 тегов (необязательно)</small>
     </div>
 
     <!-- Билеты -->
@@ -343,8 +306,39 @@
         </table>
         <button type="button" id="addTicketRow" class="add-ticket-btn">+ ДОБАВИТЬ</button>
     </div>
-
+    <!-- Теги -->
+    <div class="form-group">
+        <label style='color: #000; text-transform: none; margin-left: 0;  margin-bottom: 0px;'>Теги</label>
+        <p style='color: #000; text-transform: none; margin-left: 0; font-style: Italic;'>Вы можете выбрать ключевые слова, что бы пользователю легче было вас найти</p>
+        <div class="tag-input-wrapper">
+            <input type="text" id="tag-search" placeholder="Введите тег или выберите из предложенных">
+        </div>
+        <div class="tags-container" id="tags-container">
+            {% if form.instance.pk %}
+                {% for tag in form.instance.tags.all %}
+                <div class="tag-chip selected" data-tag-id="{{ tag.id }}">
+                    {{ tag.name }}
+                    <input type="hidden" name="tags" value="{{ tag.id }}" class="tag-selected-input">
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <!-- Скрытый dropdown для выбора тегов -->
+        <div id="tag-dropdown" style="display: none; margin-top: 8px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;">
+            {% for main_tag in main_tags %}
+                {% for subtag in main_tag.subtags.all %}
+                <div class="form-check ms-2" style="padding: 4px 0;">
+                    <input class="form-check-input" type="checkbox" name="tags" value="{{ subtag.id }}" id="tag-{{ subtag.id }}" style="margin-right: 8px;">
+                    <label class="form-check-label" for="tag-{{ subtag.id }}" style="font-size: 13px;">{{ subtag.name }}</label>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        <small class="form-text text-muted">Выберите до 5 тегов (необязательно)</small>
+    </div>
+    <div style="display: flex; justify-content: center;">
     <button type="submit" class="submit-btn">ОТПРАВИТЬ НА МОДЕРАЦИЮ</button>
+</div>
 </form>
 </div>
 </div>
