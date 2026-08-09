@@ -17,18 +17,28 @@
                 {% for ticket in tickets %}
                     {% with last_message=ticket.messages.last %}
                     <a href="{% url 'partner:chats' %}?ticket_id={{ ticket.id }}" class="chat-list-item">
-                        {% if ticket.user.user_type == "guest" %}
-                            <div class="chat-list-avatar chat-list-avatar--guest">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                    <circle cx="12" cy="7" r="4"/>
-                                </svg>
-                            </div>
-                        {% else %}
-                            <div class="chat-list-avatar chat-list-avatar--authorized">
-                                {{ ticket.user.get_first_name|default:ticket.user.email|slice:":1"|upper }}
-                            </div>
-                        {% endif %}
+                        <div class="chat-list-event-card">
+                            {% if ticket.event and ticket.event.image %}
+                                <img src="{{ ticket.event.image.url }}" alt="{{ ticket.event.title }}" class="chat-list-event-photo">
+                            {% else %}
+                                <div class="chat-list-event-photo chat-list-event-photo--placeholder">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                            {% if ticket.user.user_type == "guest" %}
+                                <div class="chat-list-user-badge chat-list-user-badge--guest" title="Неавторизованный пользователь">
+                                    <img src="/media/icon/ix_user-profile-filled.svg" alt="">
+                                </div>
+                            {% else %}
+                                <div class="chat-list-user-badge chat-list-user-badge--authorized" title="{{ ticket.user.get_first_name|default:ticket.user.get_username }}">
+                                    {{ ticket.user.get_first_name|default:ticket.user.email|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                        </div>
                         <div class="chat-list-info">
                             <div class="chat-list-name">
                                 {% if ticket.user.user_type == "guest" %}
