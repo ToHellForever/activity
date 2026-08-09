@@ -16,6 +16,8 @@ from core.models import (
     SupportAttachment,
     CustomUser,
     Order,
+    EventPackage,
+    UserPackageSubscription,
 )
 from django.db import models, transaction, IntegrityError
 import logging
@@ -64,8 +66,29 @@ def visitor_dashboard(request):
 
     logger.info('[dashboard] Заказы для пользователя %s: %d', request.user.email, user_orders.count())
 
+    # Получаем активную подписку пользователя
+    user_subscription = (
+        UserPackageSubscription.objects.filter(user=request.user, is_active=True)
+        .select_related("package")
+        .first()
+    )
+
+    # Сортируем пакеты от «крутого» к «обычному»
+    package_order = {"priority": 0, "extended": 1, "basic": 2}
+    packages = sorted(
+        EventPackage.objects.all(),
+        key=lambda p: package_order.get(p.event_card_type, 99),
+    )
+
     # Логика для посетителя
-    context = {"user": request.user, "user_orders": user_orders, "now": timezone.now()}
+    context = {
+        "user": request.user,
+        "user_orders": user_orders,
+        "now": timezone.now(),
+        "packages": packages,
+        "user_subscription": user_subscription,
+        "has_active_subscription": user_subscription is not None,
+    }
     return render(request, "visitor/dashboard.html", context)
 
 @login_required

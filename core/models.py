@@ -692,6 +692,19 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 class Ticket(models.Model):
     """Модель для типа билета (VIP, Стандарт)."""
 
+    TICKET_COLORS = [
+        ("#4A7CF7", "Синий"),
+        ("#FF6B6B", "Красный"),
+        ("#51CF66", "Зелёный"),
+        ("#FFD43B", "Жёлтый"),
+        ("#FF8C42", "Оранжевый"),
+        ("#845EF7", "Фиолетовый"),
+        ("#20C997", "Бирюзовый"),
+        ("#F06595", "Розовый"),
+        ("#339AF0", "Голубой"),
+        ("#F783AC", "Малиновый"),
+    ]
+
     event = models.ForeignKey(
         Event,
         on_delete=models.CASCADE,
@@ -699,6 +712,12 @@ class Ticket(models.Model):
         verbose_name="Мероприятие",
     )
     name = models.CharField(max_length=50, verbose_name="Название билета")
+    color = models.CharField(
+        max_length=7,
+        default="",
+        verbose_name="Цвет билета",
+        help_text="Цвет отображается на странице покупки билета",
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     available_quantity = models.PositiveIntegerField(verbose_name="Количество мест")
     ticket_description = models.TextField(blank=True, verbose_name="Описание билета", default="", help_text="Описание билета", max_length=100,)
@@ -714,6 +733,11 @@ class Ticket(models.Model):
     )
     def __str__(self):
         return f"{self.name} ({self.event.title})"
+
+    def get_random_color(self):
+        """Возвращает случайный цвет из палитры."""
+        import random
+        return random.choice(self.TICKET_COLORS)[0]
 
     def is_available(self, quantity=1):
         """Проверяет, доступно ли указанное количество билетов для покупки."""
@@ -1115,6 +1139,12 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     image = models.ImageField(
         upload_to="event_images/", 
         verbose_name="Фото мероприятия"
+    )
+
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="Основное фото",
+        help_text="Отметьте, если это главное фото мероприятия",
     )
 
     def __str__(self):

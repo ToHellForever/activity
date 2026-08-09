@@ -157,7 +157,7 @@
                     <div class="package-price">Цена: {{ package.price|floatformat:0 }} руб.</div>
                     {% if user_subscription and user_subscription.package.id == package.id %}
                     <button class="btn-buy btn-buy--active" disabled>
-                        Сменить тариф
+                        Текущий тариф
                     </button>
                     {% elif has_active_subscription %}
                     <button class="btn-buy"

@@ -29,6 +29,8 @@ from core.models import (
     PayoutDetails,
     Tag,
     MainTag,
+    Category,
+    Format,
     EventPackage,
     UserPackageSubscription,
     OrderTicket,
@@ -344,6 +346,10 @@ def create_event(request):
                             "ticket_data": [],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -379,6 +385,10 @@ def create_event(request):
                                     "ticket_data": [],
                                     "rejection_messages": get_rejection_messages(request),
                                     "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                                     "has_free_tickets": False,
                                     "packages": EventPackage.objects.all(),
                                 },
@@ -411,6 +421,10 @@ def create_event(request):
                             "ticket_data": [],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -433,6 +447,10 @@ def create_event(request):
                             "ticket_data": [],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -468,6 +486,10 @@ def create_event(request):
                             ],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -499,6 +521,10 @@ def create_event(request):
                                 ],
                                 "rejection_messages": get_rejection_messages(request),
                                 "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                                 "has_free_tickets": False,
                                 "packages": EventPackage.objects.all(),
                             },
@@ -529,6 +555,10 @@ def create_event(request):
                         "ticket_data": [],
                         "rejection_messages": get_rejection_messages(request),
                         "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                         "has_free_tickets": False,
                         "packages": EventPackage.objects.all(),
                     },
@@ -586,6 +616,10 @@ def create_event(request):
                     "ticket_data": ticket_data,
                     "rejection_messages": get_rejection_messages(request),
                     "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                     "has_free_tickets": False,
                     "packages": EventPackage.objects.all(),
                 },
@@ -647,28 +681,29 @@ def create_event(request):
                 },
             )
 
-        for i, (name, price, quantity, description) in enumerate(
-            zip(ticket_names, ticket_prices, ticket_quantities, ticket_descriptions)
-        ):
-            if name and price and quantity:
-                try:
-                    min_quantity = int(ticket_min_quantities[i]) if i < len(ticket_min_quantities) and ticket_min_quantities[i] else 1
-                    event.tickets.create(
-                        name=name,
-                        price=(
-                            float(price.replace(",", "."))
-                            if "," in price
-                            else float(price)
-                        ),
-                        available_quantity=int(quantity),
-                        ticket_description=description,
-                        is_per_person=(
-                            i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
-                        ),
-                        min_quantity=min_quantity,
-                    )
-                except (ValueError, TypeError):
-                    continue
+            for i, (name, price, quantity, description) in enumerate(
+                zip(ticket_names, ticket_prices, ticket_quantities, ticket_descriptions)
+            ):
+                if name and price and quantity:
+                    try:
+                        min_quantity = int(ticket_min_quantities[i]) if i < len(ticket_min_quantities) and ticket_min_quantities[i] else 1
+                        event.tickets.create(
+                            name=name,
+                            color=Ticket().get_random_color(),
+                            price=(
+                                float(price.replace(",", "."))
+                                if "," in price
+                                else float(price)
+                            ),
+                            available_quantity=int(quantity),
+                            ticket_description=description,
+                            is_per_person=(
+                                i < len(ticket_is_per_person) and ticket_is_per_person[i] == "on"
+                            ),
+                            min_quantity=min_quantity,
+                        )
+                    except (ValueError, TypeError):
+                        continue
 
         # РЕДИРЕКТИМ пользователя.
         # Обработка видео начнется автоматически через сигнал post_save.
@@ -709,6 +744,10 @@ def create_event(request):
             "ticket_data": ticket_data,
             "rejection_messages": get_rejection_messages(request),
             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
             "has_free_tickets": False,  # По умолчанию False, будет обновляться через JavaScript
             "packages": EventPackage.objects.all(),
         },
@@ -802,6 +841,10 @@ def edit_event(request, event_id):
                             ],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -845,6 +888,10 @@ def edit_event(request, event_id):
                                     ],
                                     "rejection_messages": get_rejection_messages(request),
                                     "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                                     "has_free_tickets": False,
                                     "packages": EventPackage.objects.all(),
                                 },
@@ -886,6 +933,10 @@ def edit_event(request, event_id):
                             ],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -917,6 +968,10 @@ def edit_event(request, event_id):
                             ],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -952,6 +1007,10 @@ def edit_event(request, event_id):
                             ],
                             "rejection_messages": get_rejection_messages(request),
                             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                             "has_free_tickets": False,
                             "packages": EventPackage.objects.all(),
                         },
@@ -983,6 +1042,10 @@ def edit_event(request, event_id):
                                 ],
                                 "rejection_messages": get_rejection_messages(request),
                                 "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                                 "has_free_tickets": False,
                                 "packages": EventPackage.objects.all(),
                             },
@@ -1036,6 +1099,10 @@ def edit_event(request, event_id):
                         ],
                         "rejection_messages": get_rejection_messages(request),
                         "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
                         "has_free_tickets": False,
                         "packages": EventPackage.objects.all(),
                     },
@@ -1068,6 +1135,19 @@ def edit_event(request, event_id):
                 from core.models import EventImage
                 for image in images:
                     EventImage.objects.create(event=event, image=image)
+
+            # Обработка is_primary: если передан primary_image_id, снимаем is_primary у всех и ставим у выбранного
+            primary_image_id = request.POST.get("primary_image_id", "")
+            if primary_image_id:
+                from core.models import EventImage
+                # Снимаем is_primary у всех фото мероприятия
+                EventImage.objects.filter(event=event).update(is_primary=False)
+                try:
+                    img = EventImage.objects.get(id=int(primary_image_id), event=event)
+                    img.is_primary = True
+                    img.save(update_fields=["is_primary"])
+                except (EventImage.DoesNotExist, ValueError):
+                    pass
 
             # Теги
             tags_ids = request.POST.getlist("tags")
@@ -1213,6 +1293,10 @@ def edit_event(request, event_id):
             "is_edit": True,
             "rejection_messages": get_rejection_messages(request),
             "main_tags": MainTag.objects.prefetch_related("subtags").all(),
+"categories": Category.objects.all(),
+            "formats": Format.objects.all(),
+            "user_subscription": active_subscription if 'active_subscription' in locals() else None,
+            "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
             "has_free_tickets": False,
             "packages": EventPackage.objects.all(),
         },
@@ -2407,6 +2491,37 @@ def remove_event_image(request, image_id):
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
         image.delete_file_field("image")  # Корректное удаление из S3
         image.delete()  # Удаляем запись из БД
+        return JsonResponse({"status": "success"})
+    except EventImage.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Image not found"}, status=404
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required
+def set_primary_image(request, image_id):
+    """Установка основного фото мероприятия через AJAX."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"status": "error", "message": "Method not allowed"}, status=405
+        )
+
+    try:
+        from core.models import EventImage
+
+        image = EventImage.objects.get(id=image_id, event__organizer=request.user)
+        # Снимаем is_primary у всех фото этого мероприятия
+        EventImage.objects.filter(event=image.event).update(is_primary=False)
+        image.is_primary = True
+        image.save(update_fields=["is_primary"])
+
+        # Также обновляем основное фото в модели Event
+        event = image.event
+        event.image = image.image
+        event.save(update_fields=["image"])
+
         return JsonResponse({"status": "success"})
     except EventImage.DoesNotExist:
         return JsonResponse(
