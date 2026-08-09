@@ -4,372 +4,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">
-<style>
-    .text-danger {
-        color: #dc3545;
-        margin-left: 3px;
-    }
-    .ticket-table-container {
-        margin-bottom: 20px;
-    }
-    #map {
-        width: 100%;
-        height: 400px;
-        margin: 20px 0;
-        min-height: 400px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    .map-container {
-        margin: 20px 0;
-    }
-    .place-input-container {
-        margin-bottom: 15px;
-    }
-    .place-additional-info {
-        margin-top: 10px;
-    }
-    .map-loading {
-        text-align: center;
-        padding: 20px;
-    }
-    .dropdown-menu {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    .tag-selection-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .main-tag {
-        margin-right: 15px;
-    }
-    .subtags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 5px;
-    }
-    .form-check {
-        margin-right: 10px;
-    }
-
-    /* Toggle switch */
-    .toggle-switch {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 8px;
-    }
-    .toggle-switch .toggle-label {
-        font-size: 14px;
-        color: #666;
-    }
-    .toggle-switch input[type="checkbox"] {
-        display: none;
-    }
-    .toggle-switch .toggle-slider {
-        width: 48px;
-        height: 26px;
-        background: #ddd;
-        border-radius: 13px;
-        position: relative;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-    .toggle-switch .toggle-slider::after {
-        content: '';
-        position: absolute;
-        width: 22px;
-        height: 22px;
-        background: #fff;
-        border-radius: 50%;
-        top: 2px;
-        left: 2px;
-        transition: transform 0.3s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
-        background: #ff8c42;
-    }
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider::after {
-        transform: translateX(22px);
-    }
-    .toggle-switch .toggle-status {
-        font-size: 13px;
-        font-weight: 600;
-        min-width: 24px;
-    }
-    .toggle-switch .toggle-status--yes {
-        color: #ff8c42;
-    }
-    .toggle-switch .toggle-status--no {
-        color: #999;
-    }
-
-    /* Photo gallery */
-    .photo-gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 12px;
-    }
-    .photo-gallery-item {
-        position: relative;
-        width: 120px;
-        height: 120px;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 2px solid #e0e0e0;
-        cursor: pointer;
-    }
-    .photo-gallery-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .photo-gallery-item.is-primary {
-        border-color: #ff8c42;
-        box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.3);
-    }
-    .photo-gallery-item .primary-badge {
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        background: #ff8c42;
-        color: #fff;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
-    }
-    .photo-gallery-item .remove-btn {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        width: 22px;
-        height: 22px;
-        background: rgba(0,0,0,0.5);
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 14px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .photo-gallery-item .set-primary-btn {
-        position: absolute;
-        bottom: 4px;
-        left: 4px;
-        right: 4px;
-        background: rgba(255, 140, 66, 0.9);
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 10px;
-        font-weight: 600;
-        padding: 3px;
-    }
-    .photo-upload-area {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 120px;
-        height: 120px;
-        border: 2px dashed #ccc;
-        border-radius: 8px;
-        cursor: pointer;
-        color: #999;
-        font-size: 24px;
-        transition: border-color 0.2s, color 0.2s;
-    }
-    .photo-upload-area:hover {
-        border-color: #ff8c42;
-        color: #ff8c42;
-    }
-
-    /* Ticket color picker */
-    .ticket-color-preview {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 6px;
-        border: 1px solid rgba(0,0,0,0.1);
-    }
-
-    /* Form groups */
-    .form-group {
-        margin-bottom: 24px;
-    }
-    .form-group label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
-        display: block;
-    }
-    .form-group input[type="text"],
-    .form-group input[type="number"],
-    .form-group input[type="datetime-local"],
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.2s;
-    }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #ff8c42;
-    }
-    .form-group .form-row {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .form-group .form-row > * {
-        flex: 1;
-        min-width: 150px;
-    }
-
-    /* Submit button */
-    .submit-btn {
-        background: #ff8c42;
-        color: #fff;
-        border: none;
-        padding: 12px 40px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-top: 20px;
-    }
-    .submit-btn:hover {
-        background: #e67a35;
-    }
-
-    /* Ticket table */
-    #ticketTable {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-    }
-    #ticketTable th {
-        font-size: 12px;
-        font-weight: 600;
-        color: #666;
-        padding: 8px 6px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-    }
-    #ticketTable td {
-        padding: 6px;
-        vertical-align: middle;
-    }
-    #ticketTable input[type="text"],
-    #ticketTable input[type="number"] {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 13px;
-    }
-    #ticketTable .color-cell {
-        width: 40px;
-    }
-    #ticketTable .actions-cell {
-        width: 60px;
-    }
-    #ticketTable .per-person-cell {
-        width: 50px;
-        text-align: center;
-    }
-
-    /* Add ticket button */
-    .add-ticket-btn {
-        background: #f0f0f0;
-        color: #333;
-        border: none;
-        padding: 8px 20px;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: background 0.2s;
-    }
-    .add-ticket-btn:hover {
-        background: #e0e0e0;
-    }
-
-    /* Remove button */
-    .remove-ticket-btn {
-        background: none;
-        border: 1px solid #dc3545;
-        color: #dc3545;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 12px;
-        cursor: pointer;
-    }
-    .remove-ticket-btn:hover {
-        background: #dc3545;
-        color: #fff;
-    }
-
-    /* Tags */
-    .tags-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-    }
-    .tag-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        font-size: 13px;
-        color: #666;
-        background: #fff;
-    }
-    .tag-chip.selected {
-        border-color: #ff8c42;
-        background: rgba(255, 140, 66, 0.08);
-        color: #ff8c42;
-        font-weight: 600;
-    }
-    .tag-input-wrapper {
-        position: relative;
-        margin-bottom: 10px;
-    }
-    .tag-input-wrapper input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-    }
-    .tag-input-wrapper input:focus {
-        outline: none;
-        border-color: #ff8c42;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/pages/event_form.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -474,26 +109,21 @@
         </select>
     </div>
 
-    <!-- Дата и длительность -->
+    <!-- Дата, длительность, закрыть продажи, возврат билетов — в одну строку -->
     <div class="form-group">
         <label>Дата и время <span class="text-danger">*</span></label>
         <div class="form-row">
             <div>
                 <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" required>
+                <small class="form-text text-muted" style="font-size: 11px;">Дата и время</small>
             </div>
             <div>
                 <input type="text" id="id_duration" name="duration" value="{{ form.instance.duration|default:'' }}" placeholder="ЧЧ:ММ" class="form-control" pattern="[0-9]{2}:[0-9]{2}">
                 <small class="form-text text-muted" style="font-size: 11px;">Длительность (ЧЧ:ММ)</small>
             </div>
-        </div>
-    </div>
-
-    <!-- Закрыть продажи за -->
-    <div class="form-group">
-        <label for="id_auto_close_sales_hours">Закрыть продажи за (часов)</label>
-        <div class="form-row">
             <div>
                 <input type="number" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24" class="form-control">
+                <small class="form-text text-muted" style="font-size: 11px;">Закрыть продажи за (часов)</small>
             </div>
             <div>
                 <input type="number" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1" class="form-control">
@@ -674,7 +304,8 @@
                     <th>Цена</th>
                     <th>Кол-во билетов</th>
                     <th>Описание</th>
-                    <th class="per-person-cell">За человека</th>
+                    <!-- Здесь заголовок для колонки, но сам инпут будет в строке -->
+                    <th class="min-qty-cell">Мин. кол-во</th>
                     <th class="actions-cell">Действия</th>
                 </tr>
             </thead>
@@ -687,9 +318,10 @@
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="0" class="form-control" required></td>
                         <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control"></td>
-                        <td class="per-person-cell"><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check"></td>
+                        <!-- Исправлено: добавлено поле min_quantity для существующих билетов -->
+                        <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
+                        <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
                         <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
-                        <input type="hidden" name="ticket_min_quantity[]" value="1">
                     </tr>
                     {% endfor %}
                 {% elif form.instance.pk and form.instance.tickets.exists %}
@@ -700,9 +332,10 @@
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="0" class="form-control" required></td>
                         <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control"></td>
-                        <td class="per-person-cell"><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check" {% if ticket.is_per_person %}checked{% endif %}></td>
+                        <!-- Исправлено: добавлено поле min_quantity -->
+                        <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
+                        <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
                         <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
-                        <input type="hidden" name="ticket_min_quantity[]" value="{{ ticket.min_quantity }}">
                     </tr>
                     {% endfor %}
                 {% endif %}
@@ -762,7 +395,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="/static/js/custom_media.js"></script>
-<script src="{% static 'js/pages/dashboard.js' %}"></script>
+<script src='/static/js/pages/dashboard.js'></script>
 <script>
     // ============================================================
     // TOGGLE SWITCHES
@@ -971,17 +604,18 @@
             '<td><input type="text" name="ticket_price[]" class="form-control" required></td>' +
             '<td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>' +
             '<td><input type="text" name="ticket_description[]" class="form-control"></td>' +
-            '<td class="per-person-cell"><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check"></td>' +
+            '<td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>' +
+            '<input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">' +
             '<td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>';
 
-        // hidden min_quantity
-        const minQ = document.createElement('input');
-        minQ.type = 'hidden';
-        minQ.name = 'ticket_min_quantity[]';
-        minQ.value = '1';
-        tr.appendChild(minQ);
-
         tbody.appendChild(tr);
+        
+        // Принудительно обновляем состояние чекбокса для новой строки
+        const minInput = tr.querySelector('.min-qty-input');
+        const perPersonCb = tr.querySelector('.per-person-hidden');
+        if (minInput && perPersonCb) {
+            perPersonCb.checked = (parseInt(minInput.value, 10) > 1);
+        }
     }
 
     // ============================================================
@@ -1157,6 +791,29 @@
         document.getElementById('ticket-tbody').addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-ticket-btn')) {
                 e.target.closest('tr').remove();
+            }
+        });
+
+        // Min quantity → auto-toggle per-person checkbox (delegation)
+        document.getElementById('ticket-tbody').addEventListener('input', function(e) {
+            if (e.target.classList.contains('min-qty-input')) {
+                const tr = e.target.closest('tr');
+                const perPersonCb = tr.querySelector('.per-person-hidden');
+                if (perPersonCb) {
+                    const val = parseInt(e.target.value, 10);
+                    // Если больше 1, ставим скрытую галочку, иначе снимаем
+                    perPersonCb.checked = (val > 1);
+                }
+            }
+        });
+
+        // Sync existing rows on load
+        document.querySelectorAll('.min-qty-input').forEach(function(input) {
+            const tr = input.closest('tr');
+            const perPersonCb = tr.querySelector('.per-person-hidden');
+            if (perPersonCb) {
+                const val = parseInt(input.value, 10);
+                perPersonCb.checked = (val > 1);
             }
         });
 
