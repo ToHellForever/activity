@@ -42,7 +42,7 @@
 
 .period-btn:hover {
   background: #f8f9fa;
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
 }
 
 .period-btn.active {
@@ -239,7 +239,7 @@
 .schedule-settings .bi-calendar2-event,
 .schedule-settings .bi-calendar-plus {
   font-size: 40px !important;
-  color: #ff8c42;
+  color: rgba(255, 131, 72, 1);
   display: block;
   margin-bottom: 12px;
 }
@@ -261,8 +261,8 @@
 
 .schedule-settings .btn-primary,
 .report-form .btn-primary {
-  background: #ff8c42;
-  border-color: #ff8c42;
+  background: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -330,14 +330,14 @@
 
 .report-form .form-control:focus,
 .report-form .form-select:focus {
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
   box-shadow: 0 0 0 0.15rem rgba(255, 140, 66, 0.15);
   background-color: #fff;
 }
 
 .report-form .form-check-input:checked {
-  background-color: #ff8c42;
-  border-color: #ff8c42;
+  background-color: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
 }
 
 .report-form .form-check-label {
@@ -379,7 +379,7 @@
 }
 
 .report-table .btn-outline-primary {
-  color: #ff8c42;
+  color: rgba(255, 131, 72, 1);
   border-color: #ffcfa8;
   font-size: 12px;
   padding: 5px 12px;
@@ -387,9 +387,9 @@
 }
 
 .report-table .btn-outline-primary:hover {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
   color: #fff;
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
 }
 
 .report-table .btn-outline-secondary,
@@ -400,8 +400,8 @@
 }
 
 .report-table .form-check-input:checked {
-  background-color: #ff8c42;
-  border-color: #ff8c42;
+  background-color: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
 }
 
 /* Бейджи в таблице */

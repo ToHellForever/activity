@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/event_form.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -114,7 +116,30 @@
         <div class="form-row">
             <div>
                 <label>Дата</label>
-                <input type="datetime-local" id="id_date_time" name="date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i' }}" required>
+                <div class="input-with-button date-container" style="position:relative;">
+                    <input type="text" class="form-control filter-input" 
+                           placeholder="ДД:ММ:ГГГГ" 
+                           value="{{ form.instance.date_time|date:'d.m.Y'|default:'' }}"
+                           id="dateFromInput"
+                           readonly
+                           style="cursor:pointer; border-radius:20px; border:1px solid rgba(119,122,141,0.3); padding:7px 16px; font-size:14px; width:100%; box-sizing:border-box;">
+                    <input type="hidden" name="date_time" id="id_date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i'|default:'' }}">
+                    <button type="button" class="input-button" style="width:40px;height:34px;background:#ff8348;border:none;border-radius:20px;cursor:pointer;position:absolute;right:2px;top:50%;transform:translateY(-50%);">
+                        <span class="triangle-down" style="border-top:10px solid white;"></span>
+                    </button>
+                    <div class="calendar-popup" id="formCalendar">
+                        <div class="calendar-header">
+                            <button type="button" class="calendar-prev-month">&lt;</button>
+                            <span class="calendar-month-year"></span>
+                            <button type="button" class="calendar-next-month">&gt;</button>
+                        </div>
+                        <div class="calendar-grid"></div>
+                        <div class="calendar-footer">
+                            <button type="button" class="calendar-clear">Очистить</button>
+                            <button type="button" class="calendar-close">Закрыть</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div>
                 <label>Длительность</label>
@@ -134,36 +159,54 @@
     <!-- Описание -->
     <div class="form-group">
         <label for="id_description">Описание</label>
-        <textarea id="id_description" name="description" rows="4" maxlength="1500" class="form-control">{{ form.instance.description }}</textarea>
+        <textarea id="id_description" name="description" rows="4" maxlength="1500" class="form-control" style='padding: 15px'>{{ form.instance.description }}</textarea>
         {% if form.description.errors %}{% for error in form.description.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
     </div>
     <!-- Фото мероприятия -->
     <div class="form-group">
         <label>Фото (не более {{ form.current_package.max_photos|default:10 }})</label>
-        <div class="photo-gallery" id="photo-gallery">
+        <div class="media-upload-container" id="photo-upload-container">
             {% if form.instance.pk %}
-                {% if form.instance.image %}
-                <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
-                    <img src="{{ form.instance.image.url }}" alt="Основное фото">
-                    <span class="primary-badge">ОСН</span>
-                    <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
-                </div>
+                {% if form.instance.image or form.instance.images.exists %}
+                    <!-- Существующие фото -->
+                    <div class="photo-gallery" id="photo-gallery">
+                        {% if form.instance.image %}
+                        <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
+                            <img src="{{ form.instance.image.url }}" alt="Основное фото">
+                            <span class="primary-badge">ОСН</span>
+                            <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
+                        </div>
+                        {% endif %}
+                        {% for image in form.instance.images.all %}
+                        <div class="photo-gallery-item" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
+                            <img src="{{ image.image.url }}" alt="Фото">
+                            {% if image.is_primary %}
+                            <span class="primary-badge">ОСН</span>
+                            {% else %}
+                            <button type="button" class="set-primary-btn" data-image-id="{{ image.id }}">Сделать основным</button>
+                            {% endif %}
+                            <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">×</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Зона загрузки (иконка + текст кликабельны) -->
+                    <div class="media-upload-placeholder" id="photo-upload-placeholder">
+                        <div class="media-upload-icon">
+                            <img src="/media/icon/raphael_photo.svg" alt="" class='inner-icon'>
+                        </div>
+                        <div class="media-upload-text">+ ваш пакет позволяет загрузить до {{ form.current_package.max_photos|default:10 }} фото (1 основное и {{ form.current_package.max_photos|default:10|add:-1 }} дополнительных)</div>
+                    </div>
                 {% endif %}
-                {% for image in form.instance.images.all %}
-                <div class="photo-gallery-item" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
-                    <img src="{{ image.image.url }}" alt="Фото">
-                    {% if image.is_primary %}
-                    <span class="primary-badge">ОСН</span>
-                    {% else %}
-                    <button type="button" class="set-primary-btn" data-image-id="{{ image.id }}">Сделать основным</button>
-                    {% endif %}
-                    <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">×</button>
+            {% else %}
+                <!-- Зона загрузки для создания -->
+                <div class="media-upload-placeholder" id="photo-upload-placeholder">
+                    <div class="media-upload-icon">
+                        <img src="/media/icon/raphael_photo.svg" alt="" class='inner-icon'>
+                    </div>
+                    <div class="media-upload-text">+ ваш пакет позволяет загрузить до {{ form.current_package.max_photos|default:10 }} фото (1 основное и {{ form.current_package.max_photos|default:10|add:-1 }} дополнительных)</div>
                 </div>
-                {% endfor %}
             {% endif %}
-            <div class="photo-upload-area" id="photo-upload-area" title="Добавить фото">
-                <img src="/media/icon/raphael_photo.svg" alt="" class="photo-upload-area-icon">
-            </div>
         </div>
         <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;" accept="image/*">
         <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
@@ -173,22 +216,28 @@
     {% if form.current_package and form.current_package.has_video %}
     <div class="form-group">
         <label>Видео</label>
-        <div>
-            {% if form.instance.video_url %}
-                {% if form.instance.video_processing_status == 'completed' %}
-                    <video controls style="max-width: 200px; border-radius: 8px;">
-                        <source src="{{ form.instance.video_url.url }}" type="video/mp4">
-                    </video>
+        <div class="media-upload-container" id="video-upload-container">
+            {% if form.instance.video_url and form.instance.video_processing_status == 'completed' %}
+                <video controls style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                    <source src="{{ form.instance.video_url.url }}" type="video/mp4">
+                </video>
+                <div class="media-upload-actions">
                     <button type="button" class="remove-media-btn" data-media-type="video_url" data-media-id="{{ form.instance.id }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Удалить</button>
-                {% else %}
-                    <div class="text-muted">Видео обрабатывается...</div>
-                {% endif %}
+                    <button type="button" class="media-upload-btn" data-media-type="video_url">
+                        <span style="font-size: 14px;">+</span> Заменить видео
+                    </button>
+                </div>
             {% else %}
-                <span style="font-size: 32px;">▶</span>
+                <div class="media-upload-placeholder" id="video-upload-placeholder" onclick="document.getElementById('id_video_url').click()">
+                    <div class="media-upload-icon">
+                        <img src="/media/icon/carbon_play-filled.svg" alt="" class='inner-icon'>
+                    </div>
+                    <div class="media-upload-text">+ ваш пакет позволяет загрузить видео. Загрузите видео в формате MP4, AVI, MOV</div>
+                    {% if form.instance.video_url %}
+                        <div class="text-muted" style="font-size: 13px;">Видео обрабатывается...</div>
+                    {% endif %}
+                </div>
             {% endif %}
-            <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="video_url" style="background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                {% if form.instance.video_url %}Заменить{% else %}Загрузить{% endif %} видео
-            </button>
         </div>
         <input type="file" name="video_url" id="id_video_url" class="custom-media-input" data-media-type="video_url" style="display: none;" accept="video/mp4,video/mov,video/avi">
     </div>
@@ -197,44 +246,53 @@
     <!-- Программа -->
     <div class="form-group">
         <label>Программа</label>
-        <div style="display: flex; align-items: center; gap: 12px; padding: 20px; border: 1px dashed #ddd; border-radius: 8px;">
+        <div class="media-upload-container" id="program-upload-container">
             {% if form.instance.program_file %}
-                <span style="font-size: 32px;">📄</span>
-                <span class="text-muted">{{ form.instance.program_file.name }}</span>
-                <button type="button" class="remove-media-btn" data-media-type="program_file" data-media-id="{{ form.instance.id }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Удалить</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="/media/icon/mingcute_pdf-fill.svg" alt="" class='inner-icon'>
+                    <span class="text-muted" style="font-size: 13px;">{{ form.instance.program_file.name }}</span>
+                </div>
+                <div class="media-upload-actions">
+                    <button type="button" class="remove-media-btn" data-media-type="program_file" data-media-id="{{ form.instance.id }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Удалить</button>
+                    <button type="button" class="media-upload-btn" data-media-type="program_file">
+                        <span style="font-size: 14px;">+</span> Заменить программу
+                    </button>
+                </div>
             {% else %}
-                <span style="font-size: 32px;">📄</span>
+                <div class="media-upload-placeholder" id="program-upload-placeholder" onclick="document.getElementById('id_program_file').click()">
+                    <div class="media-upload-icon">
+                        <img src="/media/icon/mingcute_pdf-fill.svg" alt="" style='margin-bottom: 10px;'>
+                    </div>
+                    <div class="media-upload-text">+ загрузите программу в формате PDF</div>
+                </div>
             {% endif %}
-            <button type="button" class="btn btn-secondary custom-media-upload-btn" data-media-type="program_file" style="background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                {% if form.instance.program_file %}Заменить{% else %}Загрузить{% endif %} программу
-            </button>
         </div>
         <input type="file" name="program_file" id="id_program_file" class="custom-media-input" data-media-type="program_file" style="display: none;" accept=".pdf">
     </div>
 
-        <!-- Заявки через платформу -->
+    <!-- Заявки через платформу -->
     <div class="form-group">
-        <label style='color: #000; text-transform: none; margin-left: 0;'>Заявки через платформу (может ли пользователь оставить завку с вопросом?)</label>
+        <label>Заявки через платформу (может ли пользователь оставить заявку с вопросом?)</label>
         <div class="toggle-switch">
-            <span class="toggle-status toggle-status--no">НЕТ</span>
             <label>
                 <input type="checkbox" name="allow_platform_requests" id="id_allow_platform_requests" {% if form.instance.allow_platform_requests %}checked{% endif %}>
                 <span class="toggle-slider"></span>
             </label>
-            <span class="toggle-status toggle-status--yes" style="display: none;">ДА</span>
+            <span class="toggle-status toggle-status--no" onclick="document.getElementById('id_allow_platform_requests').click()">НЕТ</span>
+            <span class="toggle-status toggle-status--yes" onclick="document.getElementById('id_allow_platform_requests').click()">ДА</span>
         </div>
     </div>
 
     <!-- Разрешить бронирование без оплаты -->
     <div class="form-group">
-        <label style='color: #000; text-transform: none; margin-left: 0;'>Разрешить бронирование без оплаты</label>
+        <label>Разрешить бронирование без оплаты</label>
         <div class="toggle-switch">
-            <span class="toggle-status toggle-status--no">НЕТ</span>
             <label>
                 <input type="checkbox" name="allow_booking_without_payment" id="id_allow_booking_without_payment" {% if form.instance.allow_booking_without_payment %}checked{% endif %} {% if has_free_tickets %}disabled{% endif %}>
                 <span class="toggle-slider"></span>
             </label>
-            <span class="toggle-status toggle-status--yes" style="display: none;">ДА</span>
+            <span class="toggle-status toggle-status--no" onclick="if(!document.getElementById('id_allow_booking_without_payment').disabled) document.getElementById('id_allow_booking_without_payment').click()">НЕТ</span>
+            <span class="toggle-status toggle-status--yes" onclick="if(!document.getElementById('id_allow_booking_without_payment').disabled) document.getElementById('id_allow_booking_without_payment').click()">ДА</span>
         </div>
         {% if has_free_tickets %}
         <small class="form-text text-muted">Все билеты бесплатные - опция недоступна.</small>
@@ -255,7 +313,13 @@
             <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}">
         </div>
     </div>
-
+    {% comment %} блок с ссылкой на список площадок {% endcomment %}
+    <div class="form-group">
+        <p class='text-muted'>Если площадка еще не выбрана, выберете её из каталога</p>
+        <div>
+            <a href="{% url 'venues:venue_list' %}" class="btn-venue-list">ВЫБРАТЬ ПЛОЩАДКУ</a>
+        </div>
+    </div>
     <!-- Билеты -->
     <div class="form-group">
         <label>Билеты</label>
@@ -301,6 +365,18 @@
                         <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
                     </tr>
                     {% endfor %}
+                {% else %}
+                    <!-- Пустая строка по умолчанию -->
+                    <tr>
+                        <td class="color-cell"><div class="ticket-color-preview" style="background: #4A7CF7;"></div></td>
+                        <td><input type="text" name="ticket_name[]" class="form-control" required></td>
+                        <td><input type="text" name="ticket_price[]" class="form-control" required></td>
+                        <td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" class="form-control"></td>
+                        <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>
+                        <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">
+                        <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
+                    </tr>
                 {% endif %}
             </tbody>
         </table>
@@ -308,32 +384,17 @@
     </div>
     <!-- Теги -->
     <div class="form-group">
-        <label style='color: #000; text-transform: none; margin-left: 0;  margin-bottom: 0px;'>Теги</label>
-        <p style='color: #000; text-transform: none; margin-left: 0; font-style: Italic;'>Вы можете выбрать ключевые слова, что бы пользователю легче было вас найти</p>
-        <div class="tag-input-wrapper">
-            <input type="text" id="tag-search" placeholder="Введите тег или выберите из предложенных">
-        </div>
-        <div class="tags-container" id="tags-container">
-            {% if form.instance.pk %}
-                {% for tag in form.instance.tags.all %}
-                <div class="tag-chip selected" data-tag-id="{{ tag.id }}">
-                    {{ tag.name }}
-                    <input type="hidden" name="tags" value="{{ tag.id }}" class="tag-selected-input">
-                </div>
-                {% endfor %}
-            {% endif %}
-        </div>
-        <!-- Скрытый dropdown для выбора тегов -->
-        <div id="tag-dropdown" style="display: none; margin-top: 8px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;">
+        <label>Теги</label>
+        <input type="text" id="tag-search" placeholder="Введите тег или выберите из предложенных" class="tag-search-input">
+        <div class="tags-suggestions" id="tags-suggestions">
             {% for main_tag in main_tags %}
                 {% for subtag in main_tag.subtags.all %}
-                <div class="form-check ms-2" style="padding: 4px 0;">
-                    <input class="form-check-input" type="checkbox" name="tags" value="{{ subtag.id }}" id="tag-{{ subtag.id }}" style="margin-right: 8px;">
-                    <label class="form-check-label" for="tag-{{ subtag.id }}" style="font-size: 13px;">{{ subtag.name }}</label>
-                </div>
+                <div class="tag-suggestion-chip{% if subtag.id in selected_tag_ids %} selected{% endif %}" data-tag-id="{{ subtag.id }}">{{ subtag.name }}</div>
                 {% endfor %}
             {% endfor %}
         </div>
+        <!-- Скрытые поля для отправки выбранных тегов -->
+        <div id="tags-hidden-container"></div>
         <small class="form-text text-muted">Выберите до 5 тегов (необязательно)</small>
     </div>
     <div style="display: flex; justify-content: center;">
@@ -363,7 +424,7 @@
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
                 <button type="button" onclick="closeBuyPackageModal()" style="padding:8px 20px; background:#f44336; color:#fff; border:none; border-radius:8px; cursor:pointer;">Отмена</button>
-                <button type="submit" style="padding:8px 20px; background:#ff8c42; color:#fff; border:none; border-radius:8px; cursor:pointer;">Купить</button>
+                <button type="submit" style="padding:8px 20px; background:rgba(255, 131, 72, 1); color:#fff; border:none; border-radius:8px; cursor:pointer;">Купить</button>
             </div>
         </form>
     </div>
@@ -380,19 +441,19 @@
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
             <button type="button" onclick="closePackageChangeModal()" style="padding:8px 20px; background:#f44336; color:#fff; border:none; border-radius:8px; cursor:pointer;">Отмена</button>
             <button type="button" onclick="changePackageScheduled()" style="padding:8px 20px; background:#2196f3; color:#fff; border:none; border-radius:8px; cursor:pointer;">Запланировать на конец подписки</button>
-            <button type="button" onclick="changePackageImmediate()" style="padding:8px 20px; background:#ff8c42; color:#fff; border:none; border-radius:8px; cursor:pointer;">Поменять сейчас</button>
+            <button type="button" onclick="changePackageImmediate()" style="padding:8px 20px; background:rgba(255, 131, 72, 1); color:#fff; border:none; border-radius:8px; cursor:pointer;">Поменять сейчас</button>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="/static/js/custom_media.js"></script>
 <script src='/static/js/pages/dashboard.js'></script>
+<script src="/static/js/pages/calendar.js"></script>
 <script>
     // ============================================================
-    // TOGGLE SWITCHES
+    // TOGGLE SWITCHES — pill style
     // ============================================================
     function initToggleSwitch(inputId) {
         const input = document.getElementById(inputId);
@@ -403,11 +464,11 @@
 
         function updateStatus() {
             if (input.checked) {
-                if (noStatus) noStatus.style.display = 'none';
-                if (yesStatus) yesStatus.style.display = '';
+                yesStatus.classList.add('active');
+                noStatus.classList.remove('active');
             } else {
-                if (noStatus) noStatus.style.display = '';
-                if (yesStatus) yesStatus.style.display = 'none';
+                noStatus.classList.add('active');
+                yesStatus.classList.remove('active');
             }
         }
 
@@ -454,22 +515,37 @@
     // ============================================================
     // PHOTO GALLERY
     // ============================================================
-    const TICKET_PALETTE = ['#4A7CF7','#FF6B6B','#51CF66','#FFD43B','#FF8C42','#845EF7','#20C997','#F06595','#339AF0','#F783AC'];
+    const TICKET_PALETTE = ['#4A7CF7','#FF6B6B','#51CF66','#FFD43B','rgba(255, 131, 72, 1)','#845EF7','#20C997','#F06595','#339AF0','#F783AC'];
     let photoMaxCount = {{ form.current_package.max_photos|default:10 }};
 
     function updatePhotoGalleryState() {
         const gallery = document.getElementById('photo-gallery');
+        const container = document.getElementById('photo-upload-container');
+        const placeholder = document.getElementById('photo-upload-placeholder');
+        if (!gallery || !container) return;
         const items = gallery.querySelectorAll('.photo-gallery-item');
-        const uploadArea = document.getElementById('photo-upload-area');
-        if (items.length >= photoMaxCount) {
-            uploadArea.style.display = 'none';
+        
+        // Если есть хотя бы одно фото — показываем кнопку добавления
+        if (items.length > 0 && items.length < photoMaxCount) {
+            if (!container.querySelector('.add-photo-btn')) {
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'media-upload-btn add-photo-btn';
+                addBtn.innerHTML = '<span style="font-size: 14px;">+</span> Добавить ещё';
+                addBtn.addEventListener('click', function() {
+                    document.getElementById('id_images').click();
+                });
+                container.appendChild(addBtn);
+            }
         } else {
-            uploadArea.style.display = '';
+            const existingBtn = container.querySelector('.add-photo-btn');
+            if (existingBtn) existingBtn.remove();
         }
     }
 
     function setPrimaryPhoto(item) {
         const gallery = document.getElementById('photo-gallery');
+        if (!gallery) return;
         // Снимаем primary со всех
         gallery.querySelectorAll('.photo-gallery-item').forEach(el => {
             el.classList.remove('is-primary');
@@ -506,7 +582,21 @@
     }
 
     function addNewPhotoPreview(file) {
-        const gallery = document.getElementById('photo-gallery');
+        let gallery = document.getElementById('photo-gallery');
+        
+        // Если галереи нет — создаём её
+        if (!gallery) {
+            const container = document.getElementById('photo-upload-container');
+            gallery = document.createElement('div');
+            gallery.className = 'photo-gallery';
+            gallery.id = 'photo-gallery';
+            container.insertBefore(gallery, container.querySelector('.media-upload-placeholder'));
+        }
+
+        // Скрываем placeholder
+        const placeholder = document.getElementById('photo-upload-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
+
         const reader = new FileReader();
         reader.onload = function(e) {
             const item = document.createElement('div');
@@ -538,6 +628,12 @@
                 ev.stopPropagation();
                 item.remove();
                 updatePhotoGalleryState();
+                // Если фото не осталось — показываем placeholder
+                const items = gallery.querySelectorAll('.photo-gallery-item');
+                if (items.length === 0) {
+                    const ph = document.getElementById('photo-upload-placeholder');
+                    if (ph) ph.style.display = '';
+                }
             });
             item.appendChild(removeBtn);
 
@@ -546,8 +642,7 @@
                 setPrimaryPhoto(item);
             });
 
-            // Вставляем перед upload-area
-            gallery.insertBefore(item, document.getElementById('photo-upload-area'));
+            gallery.appendChild(item);
             updatePhotoGalleryState();
         };
         reader.readAsDataURL(file);
@@ -617,65 +712,61 @@
     // ============================================================
     function initTags() {
         const searchInput = document.getElementById('tag-search');
-        const dropdown = document.getElementById('tag-dropdown');
-        const container = document.getElementById('tags-container');
+        const suggestionsContainer = document.getElementById('tags-suggestions');
         const maxTags = 5;
 
-        // Показ/скрытие dropdown
-        searchInput.addEventListener('focus', function() {
-            dropdown.style.display = '';
-        });
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#tag-search') && !e.target.closest('#tag-dropdown')) {
-                dropdown.style.display = 'none';
-            }
-        });
+        // Создаём контейнер для hidden inputs
+        const hiddenContainer = document.getElementById('tags-hidden-container');
+        if (hiddenContainer) hiddenContainer.innerHTML = '';
 
-        // Фильтр
+        // Фильтр по поиску
         searchInput.addEventListener('input', function() {
             const query = this.value.toLowerCase();
-            dropdown.querySelectorAll('label').forEach(function(label) {
-                const text = label.textContent.toLowerCase();
-                const wrapper = label.closest('.form-check');
-                wrapper.style.display = text.includes(query) ? '' : 'none';
+            suggestionsContainer.querySelectorAll('.tag-suggestion-chip').forEach(function(chip) {
+                const text = chip.textContent.toLowerCase();
+                chip.style.display = text.includes(query) ? '' : 'none';
             });
         });
 
-        // Выбор тега из dropdown
-        dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
-            cb.addEventListener('change', function() {
-                const label = this.nextElementSibling;
-                const tagId = this.value;
-                const tagName = label.textContent;
+        // Клик по чипсу — переключение selected
+        suggestionsContainer.querySelectorAll('.tag-suggestion-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
+                const tagId = this.dataset.tagId;
 
-                if (this.checked) {
-                    const selectedCount = container.querySelectorAll('.tag-chip.selected').length;
-                    if (selectedCount >= maxTags) {
-                        this.checked = false;
-                        alert('Можно выбрать не больше ' + maxTags + ' тегов.');
-                        return;
-                    }
-                    addTagChip(tagId, tagName);
-                } else {
-                    const chip = container.querySelector('.tag-chip[data-tag-id="' + tagId + '"]');
-                    if (chip) chip.remove();
+                // Если уже выбран — ничего не делаем (защита от дублирования)
+                if (this.classList.contains('selected')) {
+                    return;
                 }
+
+                // Проверяем лимит
+                const selectedCount = document.querySelectorAll('.tag-suggestion-chip.selected').length;
+                if (selectedCount >= maxTags) {
+                    alert('Можно выбрать не больше ' + maxTags + ' тегов.');
+                    return;
+                }
+
+                // Переключаем selected
+                this.classList.add('selected');
+
+                // Обновляем hidden inputs
+                updateTagsInputs();
             });
         });
 
-        function addTagChip(tagId, tagName) {
-            const chip = document.createElement('div');
-            chip.className = 'tag-chip selected';
-            chip.dataset.tagId = tagId;
-            chip.innerHTML = tagName + ' <span style="cursor:pointer;margin-left:4px;font-weight:bold;">×</span>' +
-                '<input type="hidden" name="tags" value="' + tagId + '" class="tag-selected-input">';
-            chip.querySelector('span').addEventListener('click', function() {
-                chip.remove();
-                const cb = dropdown.querySelector('input[value="' + tagId + '"]');
-                if (cb) cb.checked = false;
+        function updateTagsInputs() {
+            if (!hiddenContainer) return;
+            hiddenContainer.innerHTML = '';
+            document.querySelectorAll('.tag-suggestion-chip.selected').forEach(function(chip) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'tags';
+                input.value = chip.dataset.tagId;
+                hiddenContainer.appendChild(input);
             });
-            container.appendChild(chip);
         }
+
+        // Инициализируем при загрузке
+        updateTagsInputs();
     }
 
     // ============================================================
@@ -704,16 +795,19 @@
         // Tags
         initTags();
 
-        // Photo gallery — upload area
-        const photoUploadArea = document.getElementById('photo-upload-area');
+        // Photo gallery — click on placeholder to upload
+        const photoPlaceholder = document.getElementById('photo-upload-placeholder');
         const imagesInput = document.getElementById('id_images');
-        if (photoUploadArea && imagesInput) {
-            photoUploadArea.addEventListener('click', function() {
+        if (photoPlaceholder && imagesInput) {
+            photoPlaceholder.addEventListener('click', function() {
                 imagesInput.click();
             });
+        }
+        if (imagesInput) {
             imagesInput.addEventListener('change', function(e) {
                 const files = e.target.files;
-                const currentCount = document.querySelectorAll('.photo-gallery-item').length;
+                const gallery = document.getElementById('photo-gallery');
+                const currentCount = gallery ? gallery.querySelectorAll('.photo-gallery-item').length : 0;
                 const remaining = photoMaxCount - currentCount;
                 if (files.length > remaining) {
                     alert('Можно загрузить ещё не более ' + remaining + ' фото.');

@@ -465,10 +465,21 @@ document.addEventListener('DOMContentLoaded', () => {
         window.calendar = new CustomCalendar(
             'dateFromInput',
             'dateFromCalendar',
-            'date_from'
+            'date_from',
+            { allowPastDates: false }
         );
     } else {
         console.log('No dateFromInput found on this page, skipping...');
+    }
+
+    // Инициализация календаря для формы создания/редактирования мероприятия
+    if (document.getElementById('formCalendar')) {
+        new CustomCalendar(
+            'dateFromInput',
+            'formCalendar',
+            'date_time',
+            { allowPastDates: false, displayDateFormat: 'dd.mm.yyyy', valueDateFormat: 'Y-m-d' }
+        );
     }
 
     // Инициализация dropdown для категории

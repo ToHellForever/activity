@@ -10,6 +10,7 @@
             <h1 class='landing-title'>ПОИСК МЕРОПРИЯТИЯ</h1>
 
             <form method="get" action="{% url 'event_list' %}" class="filters-form">
+            <input type="hidden" name="tags" id="tags-hidden-input" value="">
             <div class='row filters-row'>
                 <div class='filter-col filter-col-category'>
                     <div class="filter-item">
@@ -117,29 +118,14 @@
             <div class='row filers-row mt-2'>
                 <div class="col-12 filers-col ">
                     <div class="filter-item">
-                        <div class="d-flex flex-wrap">
+                        <div class="d-flex flex-wrap" id="tags-filters">
                             {% for main_tag in main_tags %}
-                                <div class="dropdown">
-                                    <button class="dropdown-toggle"
-                                            type="button" id="mainTagDropdown-{{ forloop.counter }}" data-bs-toggle="dropdown"
-                                            aria-expanded="false">
-                                        {{ main_tag.name }}
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="mainTagDropdown-{{ forloop.counter }}">
-                                        {% for subtag in main_tag.subtags.all %}
-                                            <li>
-                                                <div class="form-check ms-2" onclick="event.stopPropagation()">
-                                                    <input class="form-check-input" type="checkbox" name="tags"
-                                                           value="{{ subtag.name }}" id="subtag-{{ subtag.id }}"
-                                                           {% if subtag.name in selected_tags %}checked{% endif %}>
-                                                    <label class="form-check-label" for="subtag-{{ subtag.id }}">
-                                                        {{ subtag.name }}
-                                                    </label>
-                                                </div>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
+                                {% for subtag in main_tag.subtags.all %}
+                                    <div class="tag-filter-chip{% if subtag.name in selected_tags %} active{% endif %}" 
+                                         data-tag-id="{{ subtag.id }}" data-tag-name="{{ subtag.name }}">
+                                        {{ subtag.name }}
+                                    </div>
+                                {% endfor %}
                             {% endfor %}
                         </div>
                     </div>
@@ -182,4 +168,41 @@
     </div>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tagsContainer = document.getElementById('tags-filters');
+    const hiddenInput = document.getElementById('tags-hidden-input');
+    if (!tagsContainer || !hiddenInput) return;
+
+    // Парсим уже выбранные теги из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedTags = urlParams.getAll('tags');
+
+    tagsContainer.querySelectorAll('.tag-filter-chip').forEach(function(chip) {
+        const tagId = chip.dataset.tagId;
+        const tagName = chip.dataset.tagName;
+
+        // Устанавливаем начальные состояния
+        if (selectedTags.includes(tagId)) {
+            chip.classList.add('active');
+        }
+
+        chip.addEventListener('click', function() {
+            const isActive = chip.classList.toggle('active');
+            updateHiddenInput();
+        });
+    });
+
+    function updateHiddenInput() {
+        const selected = [];
+        tagsContainer.querySelectorAll('.tag-filter-chip.active').forEach(function(chip) {
+            selected.push(chip.dataset.tagId);
+        });
+        hiddenInput.value = selected.join(',');
+    }
+});
+</script>
 {% endblock %}

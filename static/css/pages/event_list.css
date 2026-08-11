@@ -79,7 +79,6 @@
   color: #777a8d;
 }
 
-
 .filters-row {
   display: flex;
   flex-wrap: wrap;
@@ -111,7 +110,7 @@
 .filter-col-button {
   width: 10%;
   min-width: 100px;
-  align-self: flex-end; 
+  align-self: flex-end;
 }
 
 /* Кнопка сброса фильтров */
@@ -119,18 +118,46 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 0.9rem;
-  color: #FFFFFF;
+  color: #ffffff;
   text-decoration: none;
-  position: absolute; 
-  right: 3rem;         
-  bottom: 0;    
-  margin-bottom: 1rem; 
+  position: absolute;
+  right: 3rem;
+  bottom: 0;
+  margin-bottom: 1rem;
 }
 
 /* Инпут даты — скрываем курсор */
 #dateFromInput {
-    cursor: pointer;
-    caret-color: transparent;
+  cursor: pointer;
+  caret-color: transparent;
+}
+
+/* === Стили для тегов-чипсов === */
+.tag-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border: 1px solid rgba(119, 122, 141, 0.4);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #777;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  margin: 3px 4px;
+}
+
+.tag-filter-chip:hover {
+  border-color: #ff8348;
+  color: #ff8348;
+}
+
+.tag-filter-chip.active {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+  font-weight: 600;
 }
 
 /* === Карточки в списках: 2/3/4 в строке === */

@@ -57,7 +57,7 @@
 }
 
 .chat-header-user-badge--authorized {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
 }
 
 .chat-container {
@@ -115,7 +115,7 @@
 }
 
 .chat-header-avatar--authorized {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
 }
 
 .chat-header-info {
@@ -250,11 +250,11 @@
 }
 
 .chat-message-avatar--partner {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
 }
 
 .chat-message-avatar--user {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
 }
 
 /* Контент сообщения (пузырь + время/примечания) */
@@ -392,7 +392,7 @@
 }
 
 .chat-input-btn--attach:hover {
-  color: #ff8c42;
+  color: rgba(255, 131, 72, 1);
   background: #f0f0f0;
 }
 

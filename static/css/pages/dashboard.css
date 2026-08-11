@@ -177,7 +177,7 @@
   padding: 8px;
   border: none;
   border-radius: 20px;
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
   color: #fff;
   font-family: "Montserrat", sans-serif;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
@@ -282,7 +282,7 @@
 .editable-field input:focus,
 .editable-field textarea:focus {
   outline: none;
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
   box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.15);
 }
 
@@ -587,7 +587,7 @@
   display: block;
   margin: 0 auto;
   padding: 10px 32px;
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -662,8 +662,3 @@
   margin-bottom: 8px;
   font-family: "Verdana", sans-serif;
 }
-
-
-
-
-

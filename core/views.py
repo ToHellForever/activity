@@ -554,12 +554,12 @@ def event_list(request):
     # Получаем все основные теги с их подтегами
     main_tags = MainTag.objects.prefetch_related('subtags').all()
 
-    # Получаем выбранные теги из GET-запроса
+    # Получаем выбранные теги из GET-запроса (теперь по ID)
     selected_tags = request.GET.getlist("tags")
 
     # Фильтруем мероприятия по выбранным тегам, если они есть
     if selected_tags:
-        active_events = active_events.filter(tags__name__in=selected_tags).distinct()
+        active_events = active_events.filter(tags__id__in=selected_tags).distinct()
 
     # Получаем значения фильтров из GET-запроса
     selected_category = request.GET.get("category", "")

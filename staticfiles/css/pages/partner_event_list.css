@@ -58,7 +58,7 @@
 }
 
 .search-input:focus {
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
   box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
 }
 
@@ -128,8 +128,8 @@
 
 /* 6. Стили для активного состояния (выбранный чекбокс) */
 .filter-check input[type="checkbox"]:checked + span::before {
-  background-color: #ff8c42; /* Ваш цвет из accent-color */
-  border-color: #ff8c42;
+  background-color: rgba(255, 131, 72, 1); /* Ваш цвет из accent-color */
+  border-color: rgba(255, 131, 72, 1);
 }
 
 /* 7. Рисуем свою галочку внутри ::after */
@@ -190,12 +190,12 @@
 }
 
 .date-input:focus {
-  border-color: #ff8c42 !important;
+  border-color: rgba(255, 131, 72, 1) !important;
   background: #fff !important;
 }
 
 .date-input:focus {
-  border-color: #ff8c42;
+  border-color: rgba(255, 131, 72, 1);
   background: #fff;
 }
 
@@ -206,7 +206,7 @@
 }
 
 .btn-find {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
   color: #fff;
   border: none;
   padding: 9px 32px;

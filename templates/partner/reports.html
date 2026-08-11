@@ -481,10 +481,10 @@ const salesChart = new Chart(salesCtx, {
             label: 'Продажи по дням (₽)',
             data: initData.amounts,
             backgroundColor: 'rgba(255, 140, 66, 0.15)',
-            borderColor: '#ff8c42',
+            borderColor: 'rgba(255, 131, 72, 1)',
             borderWidth: 2.5,
             tension: 0.35,
-            pointBackgroundColor: '#ff8c42',
+            pointBackgroundColor: 'rgba(255, 131, 72, 1)',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointRadius: 4,
@@ -585,7 +585,7 @@ const trafficConfig = isTrafficEmpty
     ? {
         labels: ['Нет данных'],
         data: [1],
-        colors: ['#ff8c42']
+        colors: ['rgba(255, 131, 72, 1)']
       }
     : {
         labels: sources,

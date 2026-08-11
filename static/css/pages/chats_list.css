@@ -117,7 +117,7 @@
 }
 
 .chat-list-user-badge--authorized {
-  background: #ff8c42;
+  background: rgba(255, 131, 72, 1);
 }
 
 .chat-list-info {
