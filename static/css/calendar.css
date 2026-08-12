@@ -235,6 +235,16 @@
   transform: rotate(180deg);
 }
 
+/* Стили input-button при открытом календаре */
+.date-container.open .input-button {
+  background: transparent;
+}
+
+.date-container.open .input-button .triangle-down {
+  border-top: 12px solid #ff8348;
+  transform: rotate(180deg);
+}
+
 /* Плавная анимация для кнопок */
 .dropdown-toggle-btn,
 .calendar-toggle-btn {

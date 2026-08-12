@@ -30,6 +30,85 @@
   max-height: 300px;
   overflow-y: auto;
 }
+
+/* ===== Dropdown selects — unified element (как в event_list) ===== */
+.partner-main .input-with-button {
+  position: relative;
+  width: 100%;
+}
+
+.partner-main .filter-input {
+  border-radius: 20px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  padding: 7px 48px 7px 16px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.partner-main .filter-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+.partner-main .input-button {
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 49px;
+  height: 37px;
+  background: #ff8348;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.partner-main .dropdown-container {
+  position: relative;
+}
+
+/* ===== Event form date + time ===== */
+.event-form-date-container .filter-input {
+  cursor: pointer;
+}
+
+.event-form-time-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-form-time-input {
+  width: 60px;
+  text-align: center;
+  border-radius: 20px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  padding: 7px 8px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.event-form-time-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+.event-form-time-sep {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* ===== Tags ===== */
 .tag-selection-container {
   display: flex;
   flex-wrap: wrap;
@@ -49,46 +128,60 @@
   margin-right: 10px;
 }
 
-/* Toggle switch — pill style */
+/* Toggle switch — единая pill */
 .toggle-switch {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0;
-  margin-top: 8px;
   background: #e8e8e8;
-  border-radius: 20px;
+  border-radius: 25px;
   padding: 3px;
-  width: fit-content;
   position: relative;
 }
 .toggle-switch input[type="checkbox"] {
   display: none;
 }
 .toggle-switch .toggle-slider {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  z-index: 1;
 }
 .toggle-switch .toggle-status {
   font-size: 13px;
   font-weight: 600;
-  padding: 6px 18px;
-  border-radius: 18px;
+  padding: 5px 18px;
+  border-radius: 22px;
   cursor: pointer;
   transition: all 0.3s;
   user-select: none;
-  z-index: 1;
-  position: relative;
   color: #888;
 }
-/* Активное состояние — белая pill */
-.toggle-switch .toggle-status.active {
+/* НЕТ — по умолчанию активен (белый) */
+.toggle-switch .toggle-status--no {
   background: #fff;
   color: #333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
-/* Активное ДА — оранжевая pill */
-.toggle-switch .toggle-status--yes.active {
+.toggle-switch .toggle-status--yes {
+  color: #888;
+}
+/* Когда чекбокс checked — ДА активен (оранжевый) */
+.toggle-switch
+  input[type="checkbox"]:checked
+  ~ .toggle-slider
+  .toggle-status--yes {
   background: rgba(255, 131, 72, 1);
   color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.toggle-switch
+  input[type="checkbox"]:checked
+  ~ .toggle-slider
+  .toggle-status--no {
+  color: #888;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Photo gallery — compact container style */

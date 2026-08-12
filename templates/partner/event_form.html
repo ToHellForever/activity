@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/event_form.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
@@ -91,24 +90,48 @@
 
     <!-- Категория -->
     <div class="form-group">
-        <label for="id_category">Категория</label>
-        <select id="id_category" name="category" class="form-control">
-            <option value="">Выберите категорию</option>
-            {% for cat in categories %}
-                <option value="{{ cat.id }}"{% if form.instance.category_id == cat.id %} selected{% endif %}>{{ cat.name }}</option>
-            {% endfor %}
-        </select>
+        <label>Категория</label>
+        <div class="input-with-button dropdown-container">
+            <input type="text" class="form-control filter-input filter-input-dropdown" 
+                   placeholder="Выберите категорию" 
+                   value="{{ form.instance.category.name|default:'' }}"
+                   readonly 
+                   id="categoryInput"
+                   data-placeholder="Выберите категорию">
+            <button class="input-button dropdown-toggle-btn" type="button" data-target="categoryDropdown">
+                <span class="triangle-down"></span>
+            </button>
+            <div class="dropdown-menu-custom" id="categoryDropdown">
+                <div class="dropdown-option" data-value="">Все</div>
+                {% for cat in categories %}
+                    <div class="dropdown-option {% if form.instance.category_id == cat.id %}active{% endif %}" data-value="{{ cat.id }}">{{ cat.name }}</div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="category" id="id_category_hidden" value="{{ form.instance.category_id|default:'' }}">
+        </div>
     </div>
 
     <!-- Формат -->
     <div class="form-group">
-        <label for="id_format">Формат</label>
-        <select id="id_format" name="format" class="form-control">
-            <option value="">Выберите формат</option>
-            {% for fmt in formats %}
-                <option value="{{ fmt.id }}"{% if form.instance.format_id == fmt.id %} selected{% endif %}>{{ fmt.name }}</option>
-            {% endfor %}
-        </select>
+        <label>Формат</label>
+        <div class="input-with-button dropdown-container">
+            <input type="text" class="form-control filter-input filter-input-dropdown" 
+                   placeholder="Выберите формат" 
+                   value="{{ form.instance.format.name|default:'' }}"
+                   readonly 
+                   id="formatInput"
+                   data-placeholder="Выберите формат">
+            <button class="input-button dropdown-toggle-btn" type="button" data-target="formatDropdown">
+                <span class="triangle-down"></span>
+            </button>
+            <div class="dropdown-menu-custom" id="formatDropdown">
+                <div class="dropdown-option" data-value="">Все</div>
+                {% for fmt in formats %}
+                    <div class="dropdown-option {% if form.instance.format_id == fmt.id %}active{% endif %}" data-value="{{ fmt.id }}">{{ fmt.name }}</div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="format" id="id_format_hidden" value="{{ form.instance.format_id|default:'' }}">
+        </div>
     </div>
 
     <!-- Дата, длительность, закрыть продажи, возврат билетов — в одну строку -->
@@ -116,17 +139,13 @@
         <div class="form-row">
             <div>
                 <label>Дата</label>
-                <div class="input-with-button date-container" style="position:relative;">
+                <div class="input-with-button date-container event-form-date-container">
                     <input type="text" class="form-control filter-input" 
                            placeholder="ДД:ММ:ГГГГ" 
                            value="{{ form.instance.date_time|date:'d.m.Y'|default:'' }}"
-                           id="dateFromInput"
-                           readonly
-                           style="cursor:pointer; border-radius:20px; border:1px solid rgba(119,122,141,0.3); padding:7px 16px; font-size:14px; width:100%; box-sizing:border-box;">
+                           id="eventFormDateInput"
+                           readonly>
                     <input type="hidden" name="date_time" id="id_date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i'|default:'' }}">
-                    <button type="button" class="input-button" style="width:40px;height:34px;background:#ff8348;border:none;border-radius:20px;cursor:pointer;position:absolute;right:2px;top:50%;transform:translateY(-50%);">
-                        <span class="triangle-down" style="border-top:10px solid white;"></span>
-                    </button>
                     <div class="calendar-popup" id="formCalendar">
                         <div class="calendar-header">
                             <button type="button" class="calendar-prev-month">&lt;</button>
@@ -139,6 +158,14 @@
                             <button type="button" class="calendar-close">Закрыть</button>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div>
+                <label>Время</label>
+                <div class="event-form-time-row">
+                    <input type="number" id="eventFormTimeHours" name="event_form_time_hours" min="0" max="23" class="form-control event-form-time-input" value="{{ form.instance.date_time|date:'H'|default:'12' }}" placeholder="ЧЧ">
+                    <span class="event-form-time-sep">:</span>
+                    <input type="number" id="eventFormTimeMinutes" name="event_form_time_minutes" min="0" max="59" class="form-control event-form-time-input" value="{{ form.instance.date_time|date:'i'|default:'00' }}" placeholder="ММ">
                 </div>
             </div>
             <div>
@@ -273,26 +300,24 @@
     <!-- Заявки через платформу -->
     <div class="form-group">
         <label>Заявки через платформу (может ли пользователь оставить заявку с вопросом?)</label>
-        <div class="toggle-switch">
-            <label>
-                <input type="checkbox" name="allow_platform_requests" id="id_allow_platform_requests" {% if form.instance.allow_platform_requests %}checked{% endif %}>
-                <span class="toggle-slider"></span>
-            </label>
-            <span class="toggle-status toggle-status--no" onclick="document.getElementById('id_allow_platform_requests').click()">НЕТ</span>
-            <span class="toggle-status toggle-status--yes" onclick="document.getElementById('id_allow_platform_requests').click()">ДА</span>
+        <div class="toggle-switch" style="margin-top:0;">
+            <input type="checkbox" name="allow_platform_requests" id="id_allow_platform_requests" {% if form.instance.allow_platform_requests %}checked{% endif %}>
+            <span class="toggle-slider" onclick="var cb=this.previousElementSibling;if(!cb.disabled)cb.checked=!cb.checked">
+                <span class="toggle-status toggle-status--no">НЕТ</span>
+                <span class="toggle-status toggle-status--yes">ДА</span>
+            </span>
         </div>
     </div>
 
     <!-- Разрешить бронирование без оплаты -->
     <div class="form-group">
         <label>Разрешить бронирование без оплаты</label>
-        <div class="toggle-switch">
-            <label>
-                <input type="checkbox" name="allow_booking_without_payment" id="id_allow_booking_without_payment" {% if form.instance.allow_booking_without_payment %}checked{% endif %} {% if has_free_tickets %}disabled{% endif %}>
-                <span class="toggle-slider"></span>
-            </label>
-            <span class="toggle-status toggle-status--no" onclick="if(!document.getElementById('id_allow_booking_without_payment').disabled) document.getElementById('id_allow_booking_without_payment').click()">НЕТ</span>
-            <span class="toggle-status toggle-status--yes" onclick="if(!document.getElementById('id_allow_booking_without_payment').disabled) document.getElementById('id_allow_booking_without_payment').click()">ДА</span>
+        <div class="toggle-switch" style="margin-top:0;">
+            <input type="checkbox" name="allow_booking_without_payment" id="id_allow_booking_without_payment" {% if form.instance.allow_booking_without_payment %}checked{% endif %} {% if has_free_tickets %}disabled{% endif %}>
+            <span class="toggle-slider" onclick="var cb=this.previousElementSibling;if(!cb.disabled)cb.checked=!cb.checked">
+                <span class="toggle-status toggle-status--no">НЕТ</span>
+                <span class="toggle-status toggle-status--yes">ДА</span>
+            </span>
         </div>
         {% if has_free_tickets %}
         <small class="form-text text-muted">Все билеты бесплатные - опция недоступна.</small>
@@ -453,27 +478,17 @@
 <script src="/static/js/pages/calendar.js"></script>
 <script>
     // ============================================================
-    // TOGGLE SWITCHES — pill style
+    // TOGGLE SWITCHES — стили через CSS :checked
     // ============================================================
     function initToggleSwitch(inputId) {
         const input = document.getElementById(inputId);
         if (!input) return;
-        const wrapper = input.closest('.toggle-switch');
-        const noStatus = wrapper.querySelector('.toggle-status--no');
-        const yesStatus = wrapper.querySelector('.toggle-status--yes');
-
-        function updateStatus() {
-            if (input.checked) {
-                yesStatus.classList.add('active');
-                noStatus.classList.remove('active');
-            } else {
-                noStatus.classList.add('active');
-                yesStatus.classList.remove('active');
-            }
+        
+        // Обработка disabled
+        if (input.disabled) {
+            input.closest('.toggle-switch').style.opacity = '0.5';
+            input.closest('.toggle-switch').style.pointerEvents = 'none';
         }
-
-        input.addEventListener('change', updateStatus);
-        updateStatus();
     }
 
     // ============================================================
@@ -732,9 +747,12 @@
         suggestionsContainer.querySelectorAll('.tag-suggestion-chip').forEach(function(chip) {
             chip.addEventListener('click', function() {
                 const tagId = this.dataset.tagId;
+                const isSelected = this.classList.contains('selected');
 
-                // Если уже выбран — ничего не делаем (защита от дублирования)
-                if (this.classList.contains('selected')) {
+                // Если уже выбран — снимаем (toggle)
+                if (isSelected) {
+                    this.classList.remove('selected');
+                    updateTagsInputs();
                     return;
                 }
 
@@ -745,10 +763,8 @@
                     return;
                 }
 
-                // Переключаем selected
+                // Добавляем selected
                 this.classList.add('selected');
-
-                // Обновляем hidden inputs
                 updateTagsInputs();
             });
         });
@@ -774,26 +790,35 @@
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
         // Toggles
-        initToggleSwitch('id_allow_platform_requests');
-        initToggleSwitch('id_allow_booking_without_payment');
+         initToggleSwitch('id_allow_platform_requests');
+         initToggleSwitch('id_allow_booking_without_payment');
 
-        // Flatpickr
-        const minDate = new Date();
-        minDate.setHours(minDate.getHours() + 24);
-        flatpickr("#id_date_time", {
-            enableTime: true,
-            dateFormat: "Y-m-d H:i",
-            minDate: minDate,
-            onClose: function(selectedDates, dateStr, instance) {
-                if (selectedDates[0] && selectedDates[0] < minDate) {
-                    alert('Мероприятие должно быть не ранее чем через 24 часа');
-                    instance.clear();
-                }
-            }
-        });
+         // События формы — синхронизация hidden input date_time
+         const eventFormDateInput = document.getElementById('eventFormDateInput');
+         const eventFormTimeHours = document.getElementById('eventFormTimeHours');
+         const eventFormTimeMinutes = document.getElementById('eventFormTimeMinutes');
+         const idDateTime = document.getElementById('id_date_time');
 
-        // Tags
-        initTags();
+         function syncEventFormDateTime() {
+             if (!eventFormDateInput || !idDateTime) return;
+             const dateVal = eventFormDateInput.value;
+             if (!dateVal || dateVal === '') return;
+             const parts = dateVal.split('.');
+             if (parts.length !== 3) return;
+             const day = parts[0].padStart(2, '0');
+             const month = parts[1].padStart(2, '0');
+             const year = parts[2];
+             const hours = (eventFormTimeHours && eventFormTimeHours.value) ? String(parseInt(eventFormTimeHours.value, 10)).padStart(2, '0') : '12';
+             const minutes = (eventFormTimeMinutes && eventFormTimeMinutes.value) ? String(parseInt(eventFormTimeMinutes.value, 10)).padStart(2, '0') : '00';
+             idDateTime.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+         }
+
+         // При изменении полей времени — обновляем hidden input
+         if (eventFormTimeHours) eventFormTimeHours.addEventListener('input', syncEventFormDateTime);
+         if (eventFormTimeMinutes) eventFormTimeMinutes.addEventListener('input', syncEventFormDateTime);
+
+         // Tags
+         initTags();
 
         // Photo gallery — click on placeholder to upload
         const photoPlaceholder = document.getElementById('photo-upload-placeholder');

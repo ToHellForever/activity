@@ -12,6 +12,7 @@ class CustomCalendar {
         this.displayDateFormat = options.displayDateFormat || 'dd.mm.yyyy';
         this.valueDateFormat = options.valueDateFormat || 'yyyy-mm-dd';
         this.allowPastDates = options.allowPastDates === true;
+        this.minDate = options.minDate || null; // Минимальная дата (например, +24 часа)
         this.onSelectDate = typeof options.onSelectDate === 'function' ? options.onSelectDate : null;
         
         if (!this.input || !this.calendar) {
@@ -286,6 +287,15 @@ class CustomCalendar {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Минимальная дата (для формы — +24 часа, для фильтров — сегодня)
+        let minDate = null;
+        if (this.minDate) {
+            minDate = new Date(this.minDate);
+            minDate.setHours(0, 0, 0, 0);
+        } else if (!this.allowPastDates) {
+            minDate = today;
+        }
+
         // Пустые ячейки до начала месяца
         for (let i = 0; i < startDay; i++) {
             grid.innerHTML += '<div class="calendar-day calendar-day-empty"></div>';
@@ -297,14 +307,14 @@ class CustomCalendar {
             const isToday = date.getTime() === today.getTime();
             const isSelected = this.selectedDate && 
                 date.getTime() === new Date(this.selectedDate).setHours(0, 0, 0, 0);
-            const isPast = date < today;
+            const isDisabled = minDate ? date < minDate : (this.allowPastDates ? false : isPast);
 
             let classes = 'calendar-day';
             if (isToday) classes += ' calendar-day-today';
             if (isSelected) classes += ' calendar-day-selected';
-            if (isPast && !this.allowPastDates) classes += ' calendar-day-disabled';
+            if (isDisabled) classes += ' calendar-day-disabled';
 
-            if (!isPast || this.allowPastDates) {
+            if (!isDisabled) {
                 grid.innerHTML += `<div class="${classes}" data-date="${date.getFullYear()}-${date.getMonth()}-${date.getDate()}">${day}</div>`;
             } else {
                 grid.innerHTML += `<div class="${classes}">${day}</div>`;
@@ -474,11 +484,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Инициализация календаря для формы создания/редактирования мероприятия
     if (document.getElementById('formCalendar')) {
+        // Минимальная дата — через 24 часа от текущего момента
+        const minDate = new Date();
+        minDate.setHours(minDate.getHours() + 24);
         new CustomCalendar(
-            'dateFromInput',
+            'eventFormDateInput',
             'formCalendar',
             'date_time',
-            { allowPastDates: false, displayDateFormat: 'dd.mm.yyyy', valueDateFormat: 'Y-m-d' }
+            {
+                minDate: minDate,
+                displayDateFormat: 'dd.mm.yyyy',
+                valueDateFormat: 'yyyy-mm-dd',
+                // Коллбэк при выборе даты — обновляем скрытый input с временем
+                onSelectDate: function(date) {
+                    const idDateTime = document.getElementById('id_date_time');
+                    const eventFormTimeHours = document.getElementById('eventFormTimeHours');
+                    const eventFormTimeMinutes = document.getElementById('eventFormTimeMinutes');
+                    if (idDateTime) {
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const d = String(date.getDate()).padStart(2, '0');
+                        const h = eventFormTimeHours ? String(parseInt(eventFormTimeHours.value || 12, 10)).padStart(2, '0') : '12';
+                        const min = eventFormTimeMinutes ? String(parseInt(eventFormTimeMinutes.value || 0, 10)).padStart(2, '0') : '00';
+                        idDateTime.value = `${y}-${m}-${d}T${h}:${min}`;
+                    }
+                }
+            }
         );
     }
 
