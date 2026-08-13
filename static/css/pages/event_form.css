@@ -75,37 +75,261 @@
   position: relative;
 }
 
-/* ===== Event form date + time ===== */
+/* ===== Event form date + time in calendar ===== */
 .event-form-date-container .filter-input {
   cursor: pointer;
 }
 
-.event-form-time-row {
+.calendar-time-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  padding: 10px 0 5px;
+  border-top: 1px solid #eee;
+  margin-top: 10px;
 }
 
-.event-form-time-input {
-  width: 60px;
+.calendar-time-label {
+  font-size: 13px;
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+}
+
+.calendar-time-pickers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-time-input {
+  width: 44px;
+  height: 32px;
   text-align: center;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: "Montserrat", sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #fff;
+}
+
+.calendar-time-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+.calendar-time-sep {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* ===== Duration popup (ЧЧ:ММ) — как календарь ===== */
+.duration-popup {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0;
+  background: #ffffff;
+  border-radius: 0 0 15px 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 10005 !important;
+  padding: 15px;
+  min-width: 320px;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+}
+
+.duration-popup.active {
+  display: block;
+}
+
+.duration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.duration-header button {
+  background: #ff8348;
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.duration-header button:hover {
+  background: #e6743c;
+}
+
+.duration-title {
+  font-family: "Montserrat";
+  font-weight: 600;
+  font-size: 1rem;
+  color: #00056e;
+}
+
+.duration-body {
+  margin-bottom: 12px;
+}
+
+.duration-field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: center;
+}
+
+.duration-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.duration-label {
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #9a9a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.duration-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.duration-btn {
+  width: 28px;
+  height: 28px;
+  background: #ff8348;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.duration-btn:hover {
+  background: #e6743c;
+}
+
+.duration-btn:active {
+  transform: scale(0.95);
+}
+
+.duration-field {
+  width: 64px;
+  height: 36px;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  color: #00056e;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  background: #fff;
+  -moz-appearance: textfield;
+}
+
+.duration-field::-webkit-outer-spin-button,
+.duration-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.duration-field:focus {
+  border-color: #ff8348;
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15);
+}
+
+.duration-sep {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00056e;
+  padding-bottom: 8px;
+  user-select: none;
+}
+
+.duration-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.duration-close {
+  background: #00056e;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.duration-close:hover {
+  background: #00045a;
+}
+
+/* ===== Input with suffix (ч) ===== */
+.input-with-suffix {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.input-with-suffix .with-suffix-input {
   border-radius: 20px;
   border: 1px solid rgba(119, 122, 141, 0.3);
-  padding: 7px 8px;
+  padding: 7px 16px;
   font-size: 14px;
   background: #fff;
   outline: none;
   transition: border-color 0.2s;
+  flex: 1;
+  box-sizing: border-box;
+  height: 38px;
 }
 
-.event-form-time-input:focus {
+/* Скрываем стрелки браузера у number-полей */
+.input-with-suffix .with-suffix-input::-webkit-inner-spin-button,
+.input-with-suffix .with-suffix-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-with-suffix .with-suffix-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-with-suffix .with-suffix-input:focus {
   border-color: rgba(255, 131, 72, 1);
-}
-
-.event-form-time-sep {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
 }
 
 /* ===== Tags ===== */
@@ -287,6 +511,7 @@
   margin-left: 5px;
 }
 .form-group input[type="text"],
+.form-group input[type="number"],
 .form-group input[type="email"],
 .form-group input[type="password"],
 .form-group input[type="url"],
@@ -586,13 +811,13 @@
   color: #777;
   background: #fff;
   cursor: pointer;
-  transition: all 0.2s;
   user-select: none;
 }
 
 .tag-suggestion-chip:hover {
-  border-color: #ff8c42;
-  color: #ff8c42;
+  border-color: #555;
+  background: #ccc;
+  color: #333;
 }
 
 .tag-suggestion-chip.selected {
@@ -602,15 +827,10 @@
   font-weight: 600;
 }
 
-.tag-chip:hover {
-  border-color: rgba(255, 131, 72, 1);
-  color: rgba(255, 131, 72, 1);
-}
-
-.tag-chip.selected {
-  border-color: rgba(119, 122, 141, 1);
-  background: rgba(119, 122, 141, 1);
-  color: black;
+.tag-suggestion-chip.selected {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
   font-weight: 600;
 }
 
@@ -642,16 +862,10 @@
   user-select: none;
 }
 
-.tag-suggestion-chip:hover {
-  border-color: rgba(255, 131, 72, 1);
-  color: rgba(255, 131, 72, 1);
-  background: rgba(255, 140, 66, 0.05);
-}
-
 .tag-suggestion-chip.selected {
-  border-color: rgba(255, 131, 72, 1);
-  background: rgba(255, 140, 66, 0.08);
-  color: rgba(255, 131, 72, 1);
+  border-color: #555;
+  background: #ccc;
+  color: #333;
   font-weight: 600;
 }
 

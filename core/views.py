@@ -556,10 +556,25 @@ def event_list(request):
 
     # Получаем выбранные теги из GET-запроса (теперь по ID)
     selected_tags = request.GET.getlist("tags")
+    # Разбиваем значения по запятой (от скрытого инпута) и убираем пустые
+    selected_tags = [t.strip() for t_str in selected_tags for t in t_str.split(",") if t.strip()]
 
     # Фильтруем мероприятия по выбранным тегам, если они есть
+    # Поддерживаем и ID (числа), и имена тегов (строки)
     if selected_tags:
-        active_events = active_events.filter(tags__id__in=selected_tags).distinct()
+        numeric_tags = []
+        name_tags = []
+        for tag in selected_tags:
+            try:
+                numeric_tags.append(int(tag))
+            except (ValueError, TypeError):
+                name_tags.append(tag)
+        filter_q = Q()
+        if numeric_tags:
+            filter_q |= Q(tags__id__in=numeric_tags)
+        if name_tags:
+            filter_q |= Q(tags__name__in=name_tags)
+        active_events = active_events.filter(filter_q).distinct()
 
     # Получаем значения фильтров из GET-запроса
     selected_category = request.GET.get("category", "")

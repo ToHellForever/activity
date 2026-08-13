@@ -115,22 +115,42 @@
                     </div>
                 </div>
             </div>
-            <div class='row filers-row mt-2'>
-                <div class="col-12 filers-col ">
                     <div class="filter-item">
-                        <div class="d-flex flex-wrap" id="tags-filters">
+                        <div class="d-flex flex-wrap">
                             {% for main_tag in main_tags %}
-                                {% for subtag in main_tag.subtags.all %}
-                                    <div class="tag-filter-chip{% if subtag.name in selected_tags %} active{% endif %}" 
-                                         data-tag-id="{{ subtag.id }}" data-tag-name="{{ subtag.name }}">
-                                        {{ subtag.name }}
-                                    </div>
-                                {% endfor %}
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle"
+                                            type="button" id="mainTagDropdown-{{ forloop.counter }}" data-bs-toggle="dropdown"
+                                            aria-expanded="false">
+                                        {{ main_tag.name }}
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="mainTagDropdown-{{ forloop.counter }}">
+                                        {% for subtag in main_tag.subtags.all %}
+                                            <li>
+                                                <div class="form-check ms-2" onclick="event.stopPropagation()">
+                                                    <input class="form-check-input" type="checkbox" name="tags"
+                                                           value="{{ subtag.id }}" id="subtag-{{ subtag.id }}"
+                                                           {% if subtag.id|stringformat:'s' in selected_tags %}checked{% endif %}>
+                                                    <label class="form-check-label" for="subtag-{{ subtag.id }}">
+                                                        {{ subtag.name }}
+                                                    </label>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
+            <div class='row filers-row mt-2'>
+                <div class='col-12 text-end'>
+                    <a href="{% url 'event_list' %}" class="filter-reset-btn">Сбросить фильтры</a>
+                </div>
+            </div>
+            </form>
+</div>
             <div class='row filers-row mt-2'>
                 <div class='col-12 text-end'>
                     <a href="{% url 'event_list' %}" class="filter-reset-btn">Сбросить фильтры</a>

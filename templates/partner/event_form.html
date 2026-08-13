@@ -9,7 +9,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;" data-verification-status="{{ user.verification_status }}">
+<div class="row partner-layout" style="display:flex; gap:14px;" 
+     data-verification-status="{{ user.verification_status }}"
+     data-min-datetime="{{ min_datetime|default:'' }}">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <!-- Toast уведомления -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
@@ -98,7 +100,6 @@
                    readonly 
                    id="categoryInput"
                    data-placeholder="Выберите категорию">
-            <button class="input-button dropdown-toggle-btn" type="button" data-target="categoryDropdown">
                 <span class="triangle-down"></span>
             </button>
             <div class="dropdown-menu-custom" id="categoryDropdown">
@@ -121,7 +122,6 @@
                    readonly 
                    id="formatInput"
                    data-placeholder="Выберите формат">
-            <button class="input-button dropdown-toggle-btn" type="button" data-target="formatDropdown">
                 <span class="triangle-down"></span>
             </button>
             <div class="dropdown-menu-custom" id="formatDropdown">
@@ -138,11 +138,11 @@
     <div class="form-group">
         <div class="form-row">
             <div>
-                <label>Дата</label>
+                <label>Дата и время</label>
                 <div class="input-with-button date-container event-form-date-container">
                     <input type="text" class="form-control filter-input" 
-                           placeholder="ДД:ММ:ГГГГ" 
-                           value="{{ form.instance.date_time|date:'d.m.Y'|default:'' }}"
+                           placeholder="ДД:ММ:ГГГГ ЧЧ:ММ" 
+                           value="{{ form.instance.date_time|date:'d.m.Y H:i'|default:'' }}"
                            id="eventFormDateInput"
                            readonly>
                     <input type="hidden" name="date_time" id="id_date_time" value="{{ form.instance.date_time|date:'Y-m-d\TH:i'|default:'' }}">
@@ -153,6 +153,14 @@
                             <button type="button" class="calendar-next-month">&gt;</button>
                         </div>
                         <div class="calendar-grid"></div>
+                        <div class="calendar-time-row">
+                            <span class="calendar-time-label">Время:</span>
+                            <div class="calendar-time-pickers">
+                                <input type="number" id="formTimeHours" min="0" max="23" value="12" class="calendar-time-input">
+                                <span class="calendar-time-sep">:</span>
+                                <input type="number" id="formTimeMinutes" min="0" max="59" value="00" class="calendar-time-input">
+                            </div>
+                        </div>
                         <div class="calendar-footer">
                             <button type="button" class="calendar-clear">Очистить</button>
                             <button type="button" class="calendar-close">Закрыть</button>
@@ -161,24 +169,61 @@
                 </div>
             </div>
             <div>
-                <label>Время</label>
-                <div class="event-form-time-row">
-                    <input type="number" id="eventFormTimeHours" name="event_form_time_hours" min="0" max="23" class="form-control event-form-time-input" value="{{ form.instance.date_time|date:'H'|default:'12' }}" placeholder="ЧЧ">
-                    <span class="event-form-time-sep">:</span>
-                    <input type="number" id="eventFormTimeMinutes" name="event_form_time_minutes" min="0" max="59" class="form-control event-form-time-input" value="{{ form.instance.date_time|date:'i'|default:'00' }}" placeholder="ММ">
+                <label>Длительность</label>
+                <div class="input-with-button dropdown-container duration-container">
+                    <input type="text" class="form-control filter-input filter-input-dropdown" 
+                           placeholder="ЧЧ:ММ" 
+                           value="{{ form.instance.duration|default:'' }}"
+                           readonly 
+                           id="durationInput"
+                           data-placeholder="ЧЧ:ММ">
+                        <span class="triangle-down"></span>
+                    </button>
+                    <div class="duration-popup" id="durationDropdown">
+                        <div class="duration-header">
+                            <button type="button" class="duration-prev" onclick="adjustDuration('hours', -1)">&lt;</button>
+                            <span class="duration-title">Длительность</span>
+                            <button type="button" class="duration-next" onclick="adjustDuration('hours', 1)">&gt;</button>
+                        </div>
+                        <div class="duration-body">
+                            <div class="duration-field-row">
+                                <div class="duration-field-wrapper">
+                                    <span class="duration-label">Часы</span>
+                                    <div class="duration-input-group">
+                                        <button type="button" class="duration-btn duration-decrease" onclick="adjustDuration('hours', -1)">−</button>
+                                        <input type="number" id="durationHours" min="0" max="23" value="0" class="duration-field calendar-time-input">
+                                        <button type="button" class="duration-btn duration-increase" onclick="adjustDuration('hours', 1)">+</button>
+                                    </div>
+                                </div>
+                                <span class="duration-sep">:</span>
+                                <div class="duration-field-wrapper">
+                                    <span class="duration-label">Минуты</span>
+                                    <div class="duration-input-group">
+                                        <button type="button" class="duration-btn duration-decrease" onclick="adjustDuration('minutes', -1)">−</button>
+                                        <input type="number" id="durationMinutes" min="0" max="59" value="0" class="duration-field calendar-time-input">
+                                        <button type="button" class="duration-btn duration-increase" onclick="adjustDuration('minutes', 1)">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="duration-footer">
+                            <button type="button" class="duration-close">Закрыть</button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="duration" id="id_duration" value="{{ form.instance.duration|default:'' }}">
                 </div>
             </div>
             <div>
-                <label>Длительность</label>
-                <input type="text" id="id_duration" name="duration" value="{{ form.instance.duration|default:'' }}" placeholder="ЧЧ:ММ" class="form-control" pattern="[0-9]{2}:[0-9]{2}">
-            </div>
-            <div>
                 <label>закрыть продажи за</label>
-                <input type="number" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24" class="form-control">
+                <div class="input-with-suffix">
+                    <input type="number" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24" class="form-group">
+                </div>
             </div>
             <div>
                 <label>срок возврата билетов</label>
-                <input type="number" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1" class="form-control">
+                <div class="input-with-suffix">
+                    <input type="number" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1" class="form-group">
+                </div>
             </div>
         </div>
     </div>
@@ -793,10 +838,15 @@
          initToggleSwitch('id_allow_platform_requests');
          initToggleSwitch('id_allow_booking_without_payment');
 
+         // Получаем минимальную дату/время из data-атрибута (серверное время + 24ч)
+         const layout = document.querySelector('.partner-layout');
+         const minDateTimeStr = layout ? layout.dataset.minDateTime : '';
+         let minDateTime = minDateTimeStr ? new Date(minDateTimeStr) : null;
+
          // События формы — синхронизация hidden input date_time
          const eventFormDateInput = document.getElementById('eventFormDateInput');
-         const eventFormTimeHours = document.getElementById('eventFormTimeHours');
-         const eventFormTimeMinutes = document.getElementById('eventFormTimeMinutes');
+         const formTimeHours = document.getElementById('formTimeHours');
+         const formTimeMinutes = document.getElementById('formTimeMinutes');
          const idDateTime = document.getElementById('id_date_time');
 
          function syncEventFormDateTime() {
@@ -808,14 +858,46 @@
              const day = parts[0].padStart(2, '0');
              const month = parts[1].padStart(2, '0');
              const year = parts[2];
-             const hours = (eventFormTimeHours && eventFormTimeHours.value) ? String(parseInt(eventFormTimeHours.value, 10)).padStart(2, '0') : '12';
-             const minutes = (eventFormTimeMinutes && eventFormTimeMinutes.value) ? String(parseInt(eventFormTimeMinutes.value, 10)).padStart(2, '0') : '00';
+             const hours = (formTimeHours && formTimeHours.value) ? String(parseInt(formTimeHours.value, 10)).padStart(2, '0') : '12';
+             const minutes = (formTimeMinutes && formTimeMinutes.value) ? String(parseInt(formTimeMinutes.value, 10)).padStart(2, '0') : '00';
              idDateTime.value = `${year}-${month}-${day}T${hours}:${minutes}`;
          }
 
-         // При изменении полей времени — обновляем hidden input
-         if (eventFormTimeHours) eventFormTimeHours.addEventListener('input', syncEventFormDateTime);
-         if (eventFormTimeMinutes) eventFormTimeMinutes.addEventListener('input', syncEventFormDateTime);
+         // При изменении полей времени в календаре — обновляем hidden input
+         if (formTimeHours) formTimeHours.addEventListener('input', syncEventFormDateTime);
+         if (formTimeMinutes) formTimeMinutes.addEventListener('input', syncEventFormDateTime);
+
+         // Блокировка времени: если выбрана дата равная minDateTime, время не может быть меньше
+         function enforceMinTime() {
+             if (!minDateTime || !eventFormDateInput || !idDateTime) return;
+             const dateVal = eventFormDateInput.value;
+             if (!dateVal) return;
+             const parts = dateVal.split('.');
+             if (parts.length !== 3) return;
+             const day = parts[0].padStart(2, '0');
+             const month = parts[1].padStart(2, '0');
+             const year = parts[2];
+             const selectedDate = new Date(`${year}-${month}-${day}T00:00:00`);
+             const minDateOnly = new Date(minDateTime.getFullYear(), minDateTime.getMonth(), minDateTime.getDate());
+             
+             // Если выбрана та же дата, что и minDateTime — проверяем время
+             if (selectedDate.getTime() === minDateOnly.getTime()) {
+                 const selectedH = parseInt(formTimeHours?.value || 0, 10);
+                 const selectedM = parseInt(formTimeMinutes?.value || 0, 10);
+                 const minH = minDateTime.getHours();
+                 const minM = minDateTime.getMinutes();
+                 
+                 if (selectedH < minH || (selectedH === minH && selectedM < minM)) {
+                     // Устанавливаем минимальное время
+                     formTimeHours.value = String(minH).padStart(2, '0');
+                     formTimeMinutes.value = String(minM).padStart(2, '0');
+                     syncEventFormDateTime();
+                 }
+             }
+         }
+
+         if (formTimeHours) formTimeHours.addEventListener('change', enforceMinTime);
+         if (formTimeMinutes) formTimeMinutes.addEventListener('change', enforceMinTime);
 
          // Tags
          initTags();
@@ -929,6 +1011,9 @@
                 perPersonCb.checked = (val > 1);
             }
         });
+
+        // Duration picker popup
+        initDurationPicker();
 
         // Map
         const placeAdditionalInfoInput = document.getElementById('id_additional_adress');
@@ -1047,6 +1132,121 @@
             });
         });
     });
+
+    // ============================================================
+    // CLOSE ALL DROPDOWNS
+    // ============================================================
+    function closeAllDropdowns() {
+        // Закрываем все dropdown
+        document.querySelectorAll('.dropdown-menu-custom').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.dropdown-container').forEach(c => c.classList.remove('open'));
+        document.querySelectorAll('.calendar-popup').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.date-container').forEach(c => c.classList.remove('open'));
+        document.querySelectorAll('.duration-popup').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.duration-container').forEach(c => c.classList.remove('open'));
+    }
+
+    // ============================================================
+    // DURATION PICKER POPUP
+    // ============================================================
+    function adjustDuration(field, delta) {
+        const hoursInput = document.getElementById('durationHours');
+        const minutesInput = document.getElementById('durationMinutes');
+        
+        if (field === 'hours') {
+            let val = parseInt(hoursInput.value || '0', 10) + delta;
+            val = Math.max(0, Math.min(23, val));
+            hoursInput.value = val;
+        } else if (field === 'minutes') {
+            let val = parseInt(minutesInput.value || '0', 10) + delta;
+            val = Math.max(0, Math.min(59, val));
+            minutesInput.value = val;
+        }
+        
+        syncDurationToHidden();
+    }
+
+    function syncDurationToHidden() {
+        const hoursInput = document.getElementById('durationHours');
+        const minutesInput = document.getElementById('durationMinutes');
+        const hiddenInput = document.getElementById('id_duration');
+        const durationInput = document.getElementById('durationInput');
+        
+        const hours = String(hoursInput.value || '0').padStart(2, '0');
+        const minutes = String(minutesInput.value || '0').padStart(2, '0');
+        const value = hours + ':' + minutes;
+        
+        if (hiddenInput) hiddenInput.value = value;
+        if (durationInput) durationInput.value = value;
+    }
+
+    function initDurationPicker() {
+        const durationInput = document.getElementById('durationInput');
+        const durationDropdown = document.getElementById('durationDropdown');
+        const durationContainer = durationInput?.closest('.duration-container');
+        
+        if (!durationInput || !durationDropdown) return;
+        
+        // Если есть сохранённое значение — разобьём на часы/минуты
+        const savedDuration = document.getElementById('id_duration')?.value;
+        if (savedDuration && savedDuration.includes(':')) {
+            const parts = savedDuration.split(':');
+            document.getElementById('durationHours').value = parseInt(parts[0], 10) || 0;
+            document.getElementById('durationMinutes').value = parseInt(parts[1], 10) || 0;
+        }
+        
+        // Открытие/закрытие popup
+        durationInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isActive = durationDropdown.classList.contains('active');
+            
+            // Закрываем все dropdown
+            closeAllDropdowns();
+            
+            if (!isActive) {
+                durationDropdown.classList.add('active');
+                durationContainer?.classList.add('open');
+            }
+        });
+        
+        // Кнопка-стрелка
+        const toggleBtn = durationContainer?.querySelector('.dropdown-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isActive = durationDropdown.classList.contains('active');
+                
+                closeAllDropdowns();
+                
+                if (!isActive) {
+                    durationDropdown.classList.add('active');
+                    durationContainer.classList.add('open');
+                }
+            });
+        }
+        
+        // Кнопка "Закрыть"
+        const closeBtn = durationDropdown.querySelector('.duration-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                durationDropdown.classList.remove('active');
+                durationContainer?.classList.remove('open');
+            });
+        }
+        
+        // Закрытие по клику вне
+        document.addEventListener('click', function(e) {
+            if (!durationContainer?.contains(e.target)) {
+                durationDropdown.classList.remove('active');
+                durationContainer?.classList.remove('open');
+            }
+        });
+        
+        // Синхронизация при ручном вводе
+        document.getElementById('durationHours')?.addEventListener('input', syncDurationToHidden);
+        document.getElementById('durationMinutes')?.addEventListener('input', syncDurationToHidden);
+    }
 
     // Автоматическая проверка статуса обработки видео
     {% with status=form.instance.video_processing_status %}
