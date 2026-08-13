@@ -72,6 +72,8 @@
 
 .card-img-top {
   width: 100%;
+  height: 200px;
+  object-fit: cover;
   border-top-left-radius: 23.14px;
   border-top-right-radius: 23.14px;
 }
@@ -80,7 +82,10 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+}
+
+.card-spacer {
+  flex-grow: 1;
 }
 
 .card-body .buy-button {
@@ -288,6 +293,9 @@
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title {
@@ -328,7 +336,7 @@
 }
 
 .card-verified {
-  color: #777a8d;
+  color: rgba(119, 122, 141, 1);
   font-family: "Verdana";
   font-weight: 400;
   font-size: clamp(0.7rem, 2vw, 0.9rem);
@@ -345,7 +353,8 @@
   padding: 3px 8px;
   display: inline-block;
 }
-.buy-button {
+.buy-button,
+.refund-button {
   background: #ff8348;
   text-align: center;
   color: #ffffff;

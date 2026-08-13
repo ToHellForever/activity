@@ -1,0 +1,26 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+<aside class="visitor-sidebar">
+    <p class='sidebar-p'>Личный кабинет</p>
+    <nav class="sidebar-nav">
+        <a href="{% url 'visitor:dashboard' %}"
+           class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <img src="/media/icon/gray-profile.svg" alt="" class="sidebar-icon"> Мои билеты
+        </a>
+        <a href="#"
+           class="{% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
+            <img src="/media/icon/star.svg" alt="" class="sidebar-icon"> История заказов
+        </a>
+        <a href="{% url 'visitor:event_chats' %}"
+           class="{% if request.resolver_match.url_name == 'event_chats' %}active{% endif %}">
+            <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты с организаторами
+        </a>
+        <a href="{% url 'support_dashboard' %}"
+           class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
+            <img src="/media/icon/support.svg" alt="" class="sidebar-icon"> Служба поддержки
+        </a>
+        <a href="{% url 'logout' %}">
+            <img src="/media/icon/logout.svg" alt="" class="sidebar-icon"> Выйти из аккаунта
+        </a>
+    </nav>
+</aside>

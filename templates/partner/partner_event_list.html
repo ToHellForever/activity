@@ -105,6 +105,7 @@
                                     {% if item.event.organizer.is_verified %}
                                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class="arrow-card"><span class="card-verified">Проверенный организатор</span></p>
                                     {% endif %}
+                                    <div class="card-spacer"></div>
                                     <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ item.event.date_time|date:"d F Y" }}</span></p>
                                     <p class="card-label" style="margin-top: -10px !important;">Категория: <span class="badge">{{ item.event.category.name }}</span></p>
                                     {% if item.event.tags.all %}
@@ -114,7 +115,7 @@
                                     </p>
                                     {% endif %}
 <div class="partner-card-footer">
-    <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-2">УЧАСТНИКИ</a>
+    <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
     {% if not item.event.has_sold_tickets %}
         <a href="{% url 'partner:edit_event' item.event.id %}"
            class="btn-edit" title="Редактировать">
@@ -177,6 +178,7 @@
                                     {% if item.event.organizer.is_verified %}
                                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class="arrow-card"><span class="card-verified">Проверенный организатор</span></p>
                                     {% endif %}
+                                    <div class="card-spacer"></div>
                                     <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ item.event.date_time|date:"d F Y" }}</span></p>
                                     <p class="card-label" style="margin-top: -10px !important;">Категория: <span class="badge">{{ item.event.category.name }}</span></p>
                                     {% if item.event.tags.all %}
@@ -186,7 +188,7 @@
                                     </p>
                                     {% endif %}
                                     <div class="partner-card-footer">
-                                        <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-2">УЧАСТНИКИ</a>
+                                        <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
                                     </div>
                                 </div>
                             </div>

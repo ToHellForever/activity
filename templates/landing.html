@@ -142,20 +142,21 @@
                 {% if ev.image %}
                 <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% endif %}
-<div class="card-body">
-    <h5 class="card-title">{{ ev.title }}</h5>
-    {% if ev.organizer.is_verified %}
-    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
-    {% endif %}
-    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
-    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
-    {% if ev.tags.all %}
-    <p class="card-label">
-        Формат:
-            <span class="badge">{{ ev.format.name }}</span>
-    </p>
-    {% endif %}
-<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+            <div class="card-body">
+                <h5 class="card-title">{{ ev.title }}</h5>
+                {% if ev.organizer.is_verified %}
+                <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                {% endif %}
+                <div class="card-spacer"></div>
+                <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                {% if ev.tags.all %}
+                <p class="card-label">
+                    Формат:
+                        <span class="badge">{{ ev.format.name }}</span>
+                </p>
+                {% endif %}
+<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-4">КУПИТЬ БИЛЕТ</a>
             </div>
         </div>
     </div>
@@ -175,15 +176,16 @@
     {% if ev.organizer.is_verified %}
     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
     {% endif %}
-    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
-    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
-    {% if ev.tags.all %}
-    <p class="card-label">
-        Формат:
-            <span class="badge">{{ ev.format.name }}</span>
-    </p>
-    {% endif %}
-<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                <div class="card-spacer"></div>
+                <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                {% if ev.tags.all %}
+                <p class="card-label">
+                    Формат:
+                        <span class="badge">{{ ev.format.name }}</span>
+                </p>
+                {% endif %}
+<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-4">КУПИТЬ БИЛЕТ</a>
             </div>
         </div>
     </div>
@@ -198,20 +200,21 @@
                 {% if ev.image %}
                 <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% endif %}
-<div class="card-body">
-    <h5 class="card-title">{{ ev.title }}</h5>
-    {% if ev.organizer.is_verified %}
-    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
-    {% endif %}
-    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
-    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
-    {% if ev.tags.all %}
-    <p class="card-label">
-        Формат:
-            <span class="badge">{{ ev.format.name }}</span>
-    </p>
-    {% endif %}
-<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+            <div class="card-body">
+                <h5 class="card-title">{{ ev.title }}</h5>
+                {% if ev.organizer.is_verified %}
+                <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                {% endif %}
+                <div class="card-spacer"></div>
+                <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                {% if ev.tags.all %}
+                <p class="card-label">
+                    Формат:
+                        <span class="badge">{{ ev.format.name }}</span>
+                </p>
+                {% endif %}
+<a href="{% url 'event_detail' ev.id %}" class="buy-button mt-4">КУПИТЬ БИЛЕТ</a>
             </div>
         </div>
     </div>

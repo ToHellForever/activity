@@ -1,188 +1,81 @@
+templates\visitor\dashboard.html
 {% extends 'base.html' %}
 {% load static %}
-{% load format_filters %}
+
+{% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">
-    <style>
-        .container { background: white; padding: 2rem; border-radius: 8px; max-width: 1000px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h1 { color: #0056b3; text-align: center; }
-        .info { text-align: center; color: #333; margin-bottom: 2rem; }
-        .logout-btn {
-            display: block;
-            width: 50%;
-            margin: 2rem auto 0 auto;
-            padding: 0.7rem;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        .logout-btn:hover { background-color: #c82333; }
+<link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<div>
+    <div class="visitor-layout">
 
-        .ticket-card {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #dee2e6;
-        }
-        .ticket-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-        .event-title {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #0056b3;
-        }
-        .ticket-status {
-            font-size: 0.9rem;
-        }
-        .ticket-active {
-            color: #28a745;
-        }
-        .ticket-refunded {
-            color: #fd7e14;
-        }
-            color: #28a745;
-        }
-        .ticket-completed {
-            color: #6c757d;
-        }
-        .ticket-details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .ticket-details div {
-            margin-bottom: 5px;
-        }
-        .ticket-label {
-            font-weight: 500;
-            color: #6c757d;
-        }
-        .no-tickets {
-            text-align: center;
-            color: #6c757d;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Личный кабинет посетителя</h1>
-        <div class="info">
-            <p>Приветствуем, <strong>{{ user.get_full_name|default:user.email }}</strong>!</p>
-        </div>
+        {% include 'visitor/visitor_sidebar.html' %}
 
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'visitor:change_password' %}" class="btn btn-outline-primary">
-                Сменить пароль
-            </a>
-        </div>
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'support_dashboard' %}" class="btn btn-outline-primary">
-                Служба поддержки
-            </a>
-        </div>
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'visitor:event_chats' %}" class="btn btn-outline-primary">
-                Мои вопросы организаторам
-            </a>
-        </div>
-        <div class="d-flex justify-content-between mb-4">
-            <h2>Мои билеты</h2>
-        </div>
+        <main class="visitor-content">
+            <div class="upcoming-head">
+                <h2 class="upcoming-title">Предстоящие события</h2>
+            </div>
 
-        {% if user_orders %}
-            {% for order in user_orders %}
-                <div class="ticket-card">
-                    <div class="ticket-header">
-                        <div class="event-title">{{ order.ticket.event.title }}</div>
-                        <div class="ticket-status">
-                            {% if order.payment_status == 'refunded' %}
-                                <span class="ticket-refunded">Возврат</span>
-                            {% elif order.ticket.event.status == 'active' %}
-                                <span class="ticket-active">✓ Активен</span>
-                            {% elif order.ticket.event.status == 'completed' %}
-                                <span class="ticket-completed">Завершено</span>
-                            {% else %}
-                                <span>{{ order.ticket.event.get_status_display }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
+            {% if user_orders %}
+                <div class="row">
+                    {% for order in user_orders %}
+                        {% with event=order.ticket.event %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                {% if event.image %}
+                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                                {% elif event.images.all %}
+                                    <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                                {% else %}
+                                    <!-- Placeholder в стиле лендинга или заглушка -->
+                                    <div class="card-img-top" style="height: 150px; background-color: #eee; display: flex; align-items: center; justify-content: center;">
+                                        {{ event.title|truncatechars:20 }}
+                                    </div>
+                                {% endif %}
 
-                    <div class="ticket-details">
-                        <div>
-                            <div class="ticket-label">Тип билета:</div>
-                            <div>{{ order.ticket.name }}</div>
-                        </div>
-                        <div>
-                            <div class="ticket-label">Количество:</div>
-                            <div>{{ order.quantity }}</div>
-                        </div>
-                        <div>
-                            <div class="ticket-label">Сумма:</div>
-                            <div>{{ order.total_price|format_price }} ₽</div>
-                        </div>
-                        <div>
-                            <div class="ticket-label">Дата мероприятия:</div>
-                            <div>{{ order.ticket.event.date_time|date:"d.m.Y H:i" }}</div>
-                        </div>
-                        <div>
-                            <div class="ticket-label">Место проведения:</div>
-                            <div>{% with place=order.ticket.event.place_data %}{% if place %}{{ place.address }}{% else %}Не указано{% endif %}{% endwith %}</div>
-                        </div>
-                        {% if order.ticket.event.status == 'active' %}
-                            <div>
-                                <div class="ticket-label">Действия:</div>
-                                <div>
-                                    {% with event=order.ticket.event refund_deadline=order.ticket.event.get_refund_deadline %}
-                                        {% if refund_deadline and refund_deadline > now and order.payment_status != 'refunded' %}
-                                            <form method="post" action="{% url 'visitor:refund_ticket' order.id %}" style="display: inline;">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Вернуть билет</button>
-                                            </form>
-                                            <small class="text-muted d-block">Возврат возможен до {{ refund_deadline|date:"d.m.Y H:i" }}</small>
-                                        {% elif order.payment_status == 'refunded' %}
-                                            <span class="ticket-refunded">Билет возвращён</span>
-                                        {% else %}
-                                            <span class="text-muted">Возврат невозможен</span>
-                                        {% endif %}
-                                    {% endwith %}
-                                    {% if 'pending' in order.payment_status or 'reserved' in order.payment_status %}
-                                        {% if not order.is_paid %}
-                                            <a href="{% url 'payment:pay_reserved_order' order.id %}" class="btn btn-sm btn-outline-success">Оплатить билет</a>
-                                        {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ event.title }}</h5>
+                                    {% if event.organizer.is_verified %}
+                                    <p class="block-calendar">
+                                        <img src="/media/icon/arrow-card.png" alt="" class='arrow-card'>
+                                        <span class="card-verified">Проверенный организатор</span>
+                                    </p>
                                     {% endif %}
+                                    
+                                    <div class="card-spacer"></div>
+                                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+
+                                    <!-- Логика действий из вашего старого кода -->
+                                    <div class="ticket-actions">
+                                        <p class="ticket-line small text-muted">
+                                            Тип билета: <span class="badge">{{ order.ticket.name }}</span>
+                                        </p>
+                                        <p class="ticket-line small text-muted">
+                                            Стоимость: <span class="badge">{{ order.total_price|floatformat }} р.</span>
+                                        </p>
+
+                                        {% if order.is_paid and order.payment_status != 'refunded' %}
+                                            <a href="{% url 'visitor:download_ticket' order.id %}" class="buy-button mt-4">Показать билет</a>
+                                        {% elif not order.is_paid %}
+                                            <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-4">Оплатить билет</a>
+                                        {% else %}
+                                            <span class="refund-button mt-4 ">Билет возвращён</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                        {% endif %}
-                    </div>
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        {% else %}
-            <div class="no-tickets">
-                <p>У вас пока нет купленных билетов.</p>
-            </div>
-        {% endif %}
-
-        <div class="d-flex justify-content-center mb-4">
-            <a href="{% url 'event_list' %}" class="btn btn-primary">Посмотреть мероприятия</a>
-        </div>
-
-        <a href="{% url 'logout' %}" class="logout-btn">Выйти</a>
+            {% else %}
+                <div class="no-tickets mt-4">
+                    <p>У вас пока нет купленных билетов.</p>
+                    <a href="{% url 'event_list' %}" class="find-button ">Посмотреть мероприятия</a>
+                </div>
+            {% endif %}
+        </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+</div>
 {% endblock %}

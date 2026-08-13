@@ -328,7 +328,7 @@
 }
 
 .card-verified {
-  color: #777a8d;
+  color: rgba(119, 122, 141, 1);
   font-family: "Verdana";
   font-weight: 400;
   font-size: clamp(0.7rem, 2vw, 0.9rem);

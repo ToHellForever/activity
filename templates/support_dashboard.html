@@ -9,7 +9,11 @@
 
 {% block content %}
 <div class="row partner-layout" style="display:flex; gap:14px;">
-    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    {% if user.user_type == 'partner' %}
+        {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    {% else %}
+        {% include 'visitor/visitor_sidebar.html' %}
+    {% endif %}
     <div class="partner-main">
       <div class="support-page">
         <div class="support-sidebar">
