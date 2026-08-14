@@ -7,7 +7,7 @@
            class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             <img src="/media/icon/gray-profile.svg" alt="" class="sidebar-icon"> Мои билеты
         </a>
-        <a href="#"
+        <a href="{% url 'visitor:order_history' %}"
            class="{% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
             <img src="/media/icon/star.svg" alt="" class="sidebar-icon"> История заказов
         </a>

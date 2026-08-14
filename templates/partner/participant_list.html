@@ -131,16 +131,16 @@
                                         <div class="col-md-4 mb-3">
                                             <p class="mb-2">Билет #{{ order_ticket.ticket_number }}</p>
                                             <div class="position-relative d-inline-block" style="cursor: pointer;">
-                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.scheme }}://{{ request.get_host }}/check-ticket/{{ order.id }}/"
                                                     alt="QR-код для билета #{{ order_ticket.ticket_number }}" 
                                                     class="img-fluid qr-hover-target"
-                                                    data-url="{{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/"
+                                                    data-url="{{ request.scheme }}://{{ request.get_host }}/check-ticket/{{ order.id }}/"
                                                     data-ticket="{{ order_ticket.ticket_number }}"
                                                     style="border: 3px solid {% if order.payment_status == 'succeeded' %}#28a745{% elif order.payment_status == 'refunded' %}#dc3545{% else %}#ffc107{% endif %}; padding: 5px;">
                                                 <div class="qr-tooltip" style="display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; white-space: nowrap; z-index: 1000; margin-bottom: 8px;">
                                                     <div>Order ID: {{ order.id }}</div>
                                                     <div>Ticket: {{ order_ticket.ticket_number }}</div>
-                                                    <div style="margin-top: 4px; color: #ffd700; word-break: break-all;">{{ request.scheme }}://{{ request.get_host }}/partner/check_ticket/{{ order.id }}/</div>
+                                                    <div style="margin-top: 4px; color: #ffd700; word-break: break-all;">{{ request.scheme }}://{{ request.get_host }}/check-ticket/{{ order.id }}/</div>
                                                 </div>
                                             </div>
                                         </div>

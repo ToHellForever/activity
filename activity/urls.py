@@ -20,6 +20,7 @@ from core.views import (
     sales_register,
     verify_email_view,
     resend_verification_code,
+    check_ticket,
 )
 
 app_name = "venues"
@@ -54,6 +55,7 @@ urlpatterns = [
     path("visitor/", include("visitor_app.urls")),
     path("venues/", include("venues.urls")),
     path("admin/venues/", include("venues.urls", namespace="admin_venues")),
+    path("check-ticket/<int:order_id>/", check_ticket, name="check_ticket"),
     path("reports/sales-register/", sales_register, name="sales_register"),
     path("payment/", include(("payment.urls", "payment"), namespace="payment")),
 ]

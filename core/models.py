@@ -901,7 +901,7 @@ class Order(models.Model):
         qr_items = []
         for i in range(self.quantity):
             # QR содержит ссылку на проверку билета
-            qr_text_data = f"{base_url}/partner/check_ticket/{self.id}/"
+            qr_text_data = f"{base_url}/check-ticket/{self.id}/"
 
             qr = qrcode.QRCode(
                 version=1,

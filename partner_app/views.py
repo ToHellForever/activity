@@ -1830,32 +1830,6 @@ def mark_attendance(request, event_id, order_id, ticket_number=1):
         return redirect("partner:participant_list", event_id=event.id)
 
 @login_required
-def check_ticket(request, order_id):
-    """
-    Проверка билета по QR-коду.
-    """
-    order = get_object_or_404(Order.objects.prefetch_related('tickets'), id=order_id)
-
-    # Проверяем, что пользователь — организатор мероприятия
-    is_organizer = (order.ticket.event.organizer == request.user)
-
-    # Проверяем валидность билета
-    is_valid = (
-        order.payment_status == "succeeded" 
-        and order.is_paid 
-        and not order.attended
-    )
-
-    partner_profile = getattr(request.user, 'partner_profile', None)
-    context = {
-        "order": order,
-        "is_valid": is_valid,
-        "is_organizer": is_organizer,
-        "partner_profile": partner_profile,
-    }
-    return render(request, "partner/ticket_check.html", context)
-
-@login_required
 def finances(request):
     orders = Order.objects.filter(ticket__event__organizer=request.user)
 

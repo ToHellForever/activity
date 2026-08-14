@@ -31,11 +31,6 @@ urlpatterns = [
         name="mark_attendance_legacy",
     ),
     path(
-        "check_ticket/<int:order_id>/",
-        views.check_ticket,
-        name="check_ticket",
-    ),
-    path(
         "remove_media/<str:media_type>/<int:media_id>/",
         views.remove_media,
         name="remove_media",

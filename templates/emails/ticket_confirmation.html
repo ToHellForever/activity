@@ -101,7 +101,10 @@
             <div style="margin-bottom: 30px; padding: 15px; border: 1px dashed #ccc;">
                 <h4>Билет №{{ qr.ticket_number }}</h4>
 
-                    <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код" style="width: 200px; height: 200px;">
+                <a href="{{ qr.qr_text }}" title="Открыть для проверки билета" target="_blank">
+                    <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код" style="width: 200px; height: 200px; border-radius: 8px;" />
+                </a>
+                <p style="font-size: 11px; color: #888; margin-top: 6px;">Наведите на QR-код, чтобы увидеть ссылку</p>
             </div>
             {% endfor %}
         </div>

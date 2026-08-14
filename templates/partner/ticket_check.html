@@ -1,12 +1,6 @@
-
-
 {% extends 'base.html' %}
 {% load static %}
-
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;">
-    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
-    <div class="partner-main">
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
@@ -80,9 +74,6 @@
                 </div>
             </div>
         </div>
-        </div>
-    </div>
-</div>
     </div>
 </div>
 
@@ -93,11 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var eventId = this.dataset.eventId;
             var orderId = this.dataset.orderId;
             var ticketNumber = this.dataset.ticketNumber;
-            var isAttended = this.dataset.attended === 'true';
 
-            // Блокируем кнопку на время запроса
             this.disabled = true;
-            var originalHTML = this.innerHTML;
 
             fetch("/partner/mark_attendance/" + eventId + "/" + orderId + "/" + ticketNumber + "/", {
                 method: 'POST',
@@ -131,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Функция для получения CSRF-токена
     function getCookie(name) {
         var cookieValue = null;
         var cookies = document.cookie.split(';');
@@ -146,5 +133,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
 {% endblock %}

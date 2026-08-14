@@ -1,0 +1,74 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}История заказов{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
+<div>
+    <div class="visitor-layout">
+
+        {% include 'visitor/visitor_sidebar.html' %}
+
+        <main class="visitor-content">
+            <div class="upcoming-head">
+                <h2 class="upcoming-title">История заказов</h2>
+            </div>
+
+            {% if past_ticket_items %}
+                <div class="row">
+                    {% for item in past_ticket_items %}
+                        {% with event=item.event order=item.order ticket=item.ticket participant_data=item.participant_data ot=item.order_ticket %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card ticket-card">
+                                {% if event.image %}
+                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                                {% elif event.images.all %}
+                                    <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                                {% else %}
+                                    <div class="card-img-top" style="height: 150px; background-color: #eee; display: flex; align-items: center; justify-content: center;">
+                                        {{ event.title|truncatechars:20 }}
+                                    </div>
+                                {% endif %}
+
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ event.title }}</h5>
+                                    
+                                    <div class="card-spacer"></div>
+                                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+
+                                    <div class="ticket-actions">
+                                        <p class="ticket-line small text-muted">
+                                            Тип билета: <span class="badge">{{ item.ticket.name }}</span>
+                                        </p>
+                                        <p class="ticket-line small text-muted">
+                                            Стоимость: <span class="badge">{{ ticket.price|floatformat }} р.</span>
+                                        </p>
+                                        <p class="ticket-line small text-muted">
+                                            Заказ: <span class="badge">№{{ order.id }}</span>
+                                        </p>
+                                    </div>
+
+                                    <!-- Статус -->
+                                    {% if order.payment_status == 'refunded' %}
+                                        <span class="badge bg-secondary mt-2">Возвращён</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary mt-2">Мероприятие прошло</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-tickets mt-4">
+                    <p>У вас пока нет завершённых заказов.</p>
+                    <a href="{% url 'event_list' %}" class="find-button">Посмотреть мероприятия</a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

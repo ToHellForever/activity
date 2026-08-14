@@ -177,6 +177,40 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+}
+
+/* ---------- Кнопка возврата в правом верхнем углу карточки ---------- */
+.refund-corner-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #d64545;
+  color: #d64545;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.refund-corner-btn:hover {
+  background: #d64545;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(214, 69, 69, 0.35);
+}
+
+.refund-corner-btn i {
+  font-size: 14px;
 }
 
 .ticket-photo {
@@ -369,5 +403,109 @@
 
   .ticket-photo {
     height: 150px;
+  }
+}
+
+/* ---------- Модальное окно билета — плавная анимация ---------- */
+.ticket-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ticket-modal--open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.ticket-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.ticket-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  transform: translateY(30px) scale(0.96);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ticket-modal--open .ticket-modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.ticket-modal-title {
+  margin: 0;
+  font-family: "Montserrat", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+}
+
+.ticket-modal-close-btn {
+  position: absolute;
+  top: 16px; /* Отступ от верхнего края */
+  right: 16px; /* Отступ от правого края */
+
+  /* Стилизация */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 32px;
+  line-height: 1;
+  color: #888;
+  z-index: 10; /* Чтобы был поверх любого контента билета */
+
+  /* Плавность при наведении */
+  transition: all 0.2s ease;
+  border-radius: 50%;
+}
+.ticket-modal-body {
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Анимация спиннера */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .ticket-modal {
+    padding: 10px;
+  }
+
+  .ticket-modal-dialog {
+    max-height: 95vh;
+    border-radius: 12px;
   }
 }

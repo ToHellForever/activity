@@ -1,0 +1,43 @@
+<div class="ticket-wrapper">
+  <div class="t-left">
+    <div>
+      <div class="t-left-title">{{ event.title }}</div>
+      <div class="t-left-date">{{ event.date_time|date:"d.m.Y  H:i" }}</div>
+      <div class="t-left-place">{{ place }}</div>
+    </div>
+    <div>
+      <div class="t-left-org-label">Организатор</div>
+      <div class="t-left-org">{{ organizer }}</div>
+    </div>
+  </div>
+
+  <div class="t-right">
+    <div class="t-right-header">Билет на мероприятие</div>
+    <div class="t-right-order">Заказ № {{ order.id }}</div>
+
+    <div>
+      <div class="t-info-label">Тип билета</div>
+      <div class="t-info-value">{{ ticket.name }}</div>
+    </div>
+
+    <div>
+      <div class="t-info-label">Участник</div>
+      <div class="t-info-value">{{ participant_name }}</div>
+    </div>
+
+    <div>
+      <div class="t-info-value t-info-value--email">{{ email }}</div>
+    </div>
+    <div class="t-total">Итого: {{ price|floatformat }} ₽</div>
+
+    <div class="t-qr-area">
+        <h3 style="margin-bottom: 15px;">Ваш билет{% if order.quantity > 1 %}ы{% endif %}</h3>
+        <a href="{{ check_link }}" title="Открыть ссылку для проверки" target="_blank">
+            <img src="{% url 'visitor:ticket_qr' order.id %}" 
+                alt="QR-код" style="width: 200px; height: 200px;" />
+        </a>
+        <p>Наведите или нажмите, чтобы проверить</p>
+        <div class="t-qr-hint">Покажите QR-код на входе</div>
+    </div>
+  </div>
+</div>

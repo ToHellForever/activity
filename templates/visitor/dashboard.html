@@ -1,4 +1,4 @@
-templates\visitor\dashboard.html
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -6,6 +6,7 @@ templates\visitor\dashboard.html
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/ticket_display.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <div>
     <div class="visitor-layout">
@@ -14,21 +15,30 @@ templates\visitor\dashboard.html
 
         <main class="visitor-content">
             <div class="upcoming-head">
-                <h2 class="upcoming-title">Предстоящие события</h2>
+                <h2 class="upcoming-title">Мои билеты</h2>
             </div>
 
-            {% if user_orders %}
+            {% if ticket_items %}
                 <div class="row">
-                    {% for order in user_orders %}
-                        {% with event=order.ticket.event %}
+                    {% for item in ticket_items %}
+                        {% with event=item.event order=item.order ticket=item.ticket participant_data=item.participant_data ot=item.order_ticket %}
                         <div class="col-md-4 mb-4">
-                            <div class="card">
+                            <div class="card ticket-card">
+                                <!-- Кнопка возврата в правом верхнем углу -->
+                                {% if order.is_paid and order.payment_status != 'refunded' and event.date_time > now %}
+                                <a href="{% url 'visitor:refund_ticket' order.id %}"
+                                   class="refund-corner-btn"
+                                   title="Возврат билета"
+                                   onclick="return confirm('Вы уверены, что хотите вернуть билет?');">
+                                    <i class="bi bi-arrow-return-left"></i> Вернуть
+                                </a>
+                                {% endif %}
+
                                 {% if event.image %}
                                     <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}">
                                 {% elif event.images.all %}
                                     <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
                                 {% else %}
-                                    <!-- Placeholder в стиле лендинга или заглушка -->
                                     <div class="card-img-top" style="height: 150px; background-color: #eee; display: flex; align-items: center; justify-content: center;">
                                         {{ event.title|truncatechars:20 }}
                                     </div>
@@ -46,23 +56,29 @@ templates\visitor\dashboard.html
                                     <div class="card-spacer"></div>
                                     <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
 
-                                    <!-- Логика действий из вашего старого кода -->
                                     <div class="ticket-actions">
                                         <p class="ticket-line small text-muted">
-                                            Тип билета: <span class="badge">{{ order.ticket.name }}</span>
+                                            Тип билета: <span class="badge">{{ item.ticket.name }}</span>
                                         </p>
                                         <p class="ticket-line small text-muted">
-                                            Стоимость: <span class="badge">{{ order.total_price|floatformat }} р.</span>
+                                            Стоимость: <span class="badge">{{ ticket.price|floatformat }} р.</span>
                                         </p>
-
-                                        {% if order.is_paid and order.payment_status != 'refunded' %}
-                                            <a href="{% url 'visitor:download_ticket' order.id %}" class="buy-button mt-4">Показать билет</a>
-                                        {% elif not order.is_paid %}
-                                            <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-4">Оплатить билет</a>
-                                        {% else %}
-                                            <span class="refund-button mt-4 ">Билет возвращён</span>
-                                        {% endif %}
                                     </div>
+
+                                    <!-- Статус заказа -->
+                                    {% if order.is_paid and order.payment_status != 'refunded' %}
+                                        <a href="javascript:void(0)" class="buy-button mt-4 show-ticket-btn"
+                                           data-ticket-url="{% url 'visitor:display_ticket' order.id %}"
+                                           data-event-title="{{ event.title }}">Показать билет</a>
+                                    {% elif not order.is_paid and order.payment_status == 'pending' %}
+                                        <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-4">Оплатить билет</a>
+                                        <p class="text-muted small mt-2">Ожидает оплаты</p>
+                                    {% elif not order.is_paid and order.payment_status == 'reserved' %}
+                                        <span class="badge bg-warning text-dark mt-2">Забронировано</span>
+                                        <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-3">Оплатить билет</a>
+                                    {% elif order.payment_status == 'refunded' %}
+                                        <span class="refund-button mt-4">Билет возвращён</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -71,11 +87,24 @@ templates\visitor\dashboard.html
                 </div>
             {% else %}
                 <div class="no-tickets mt-4">
-                    <p>У вас пока нет купленных билетов.</p>
-                    <a href="{% url 'event_list' %}" class="find-button ">Посмотреть мероприятия</a>
+                    <p>У вас пока нет активных билетов.</p>
+                    <a href="{% url 'event_list' %}" class="find-button">Посмотреть мероприятия</a>
                 </div>
             {% endif %}
         </main>
     </div>
 </div>
+
+<!-- Модальное окно билета -->
+<div id="ticketModal" class="ticket-modal">
+    <div class="ticket-modal-backdrop"></div>
+    <div class="ticket-modal-dialog" id="ticketModalDialog">
+            <button type="button" class="ticket-modal-close-btn" id="ticketModalClose" aria-label="Закрыть">&times;</button>
+        <div class="ticket-modal-body" id="ticketModalInner">
+            <!-- Контент загружается через JS -->
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/pages/visitor_dashboard.js' %}"></script>
 {% endblock %}

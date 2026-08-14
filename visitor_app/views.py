@@ -7,6 +7,7 @@ from core.models import Order, Ticket
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.clickjacking import xframe_options_exempt
 from core.models import (
     Event,
     Ticket,
@@ -16,9 +17,11 @@ from core.models import (
     SupportAttachment,
     CustomUser,
     Order,
+    OrderTicket,
     EventPackage,
     UserPackageSubscription,
 )
+
 from django.db import models, transaction, IntegrityError
 import logging
 from django.http import JsonResponse
@@ -54,17 +57,58 @@ def visitor_dashboard(request):
         # Если зашел партнер, перенаправляем его на его кабинет
         return redirect("partner:dashboard")
 
+    now = timezone.now()
+
     # Получаем заказы текущего пользователя по email
-    user_orders = (
+    all_orders = (
         Order.objects.filter(participant_data__email=request.user.email)
         .exclude(payment_status="canceled")
         .only("id", "participant_data", "created_at", "total_price", "quantity", "attended", "is_paid", "payment_deadline", "payment_status", "purchase_type", "ticket")
-        .select_related("ticket")
-        .prefetch_related("ticket__event")
+        .select_related("ticket", "ticket__event")
+        .prefetch_related("tickets")
         .order_by("-created_at")
     )
 
-    logger.info('[dashboard] Заказы для пользователя %s: %d', request.user.email, user_orders.count())
+    # Разделяем на активные и прошедшие
+    active_orders = []
+    past_orders = []
+
+    for order in all_orders:
+        event = order.ticket.event
+        is_past = event.date_time < now or order.payment_status == "refunded"
+
+        if is_past:
+            past_orders.append(order)
+        else:
+            active_orders.append(order)
+
+    # Раскрываем каждый заказ на отдельные тикеты (OrderTicket)
+    def expand_orders(orders):
+        items = []
+        for order in orders:
+            tickets = order.tickets.all()
+            if tickets.exists():
+                for ot in tickets:
+                    items.append({
+                        "order": order,
+                        "order_ticket": ot,
+                        "event": order.ticket.event,
+                        "ticket": order.ticket,
+                        "participant_data": order.participant_data,
+                    })
+            else:
+                for i in range(order.quantity):
+                    items.append({
+                        "order": order,
+                        "order_ticket": None,
+                        "event": order.ticket.event,
+                        "ticket": order.ticket,
+                        "participant_data": order.participant_data,
+                    })
+        return items
+
+    ticket_items = expand_orders(active_orders)
+    past_ticket_items = expand_orders(past_orders)
 
     # Получаем активную подписку пользователя
     user_subscription = (
@@ -80,16 +124,72 @@ def visitor_dashboard(request):
         key=lambda p: package_order.get(p.event_card_type, 99),
     )
 
-    # Логика для посетителя
     context = {
         "user": request.user,
-        "user_orders": user_orders,
-        "now": timezone.now(),
+        "user_orders": active_orders,
+        "ticket_items": ticket_items,
+        "past_ticket_items": past_ticket_items,
+        "past_user_orders": past_orders,
+        "now": now,
         "packages": packages,
         "user_subscription": user_subscription,
         "has_active_subscription": user_subscription is not None,
     }
     return render(request, "visitor/dashboard.html", context)
+
+@login_required
+def visitor_order_history(request):
+    """История заказов — прошедшие мероприятия и возвращённые билеты."""
+    if request.user.user_type != "visitor":
+        return redirect("visitor:dashboard")
+
+    now = timezone.now()
+
+    past_orders = (
+        Order.objects.filter(participant_data__email=request.user.email)
+        .exclude(payment_status="canceled")
+        .select_related("ticket", "ticket__event")
+        .prefetch_related("tickets")
+        .order_by("-created_at")
+    )
+
+    past_orders = [
+        o for o in past_orders
+        if o.ticket.event.date_time < now or o.payment_status == "refunded"
+    ]
+
+    def expand_orders(orders):
+        items = []
+        for order in orders:
+            tickets = order.tickets.all()
+            if tickets.exists():
+                for ot in tickets:
+                    items.append({
+                        "order": order,
+                        "order_ticket": ot,
+                        "event": order.ticket.event,
+                        "ticket": order.ticket,
+                        "participant_data": order.participant_data,
+                    })
+            else:
+                for i in range(order.quantity):
+                    items.append({
+                        "order": order,
+                        "order_ticket": None,
+                        "event": order.ticket.event,
+                        "ticket": order.ticket,
+                        "participant_data": order.participant_data,
+                    })
+        return items
+
+    past_ticket_items = expand_orders(past_orders)
+
+    context = {
+        "user": request.user,
+        "past_ticket_items": past_ticket_items,
+        "past_user_orders": past_orders,
+    }
+    return render(request, "visitor/order_history.html", context)
 
 @login_required
 def change_password(request):
@@ -167,171 +267,99 @@ def visitor_event_chats(request):
 
 @login_required
 @require_http_methods(["GET"])
-def download_ticket(request, order_id):
-    """
-    Скачивание билета в виде PNG-картинки с QR-кодом.
-    Доступно только владельцу заказа: email из participant_data
-    должен совпадать с email авторизованного пользователя.
-    """
+@xframe_options_exempt
+def display_ticket(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("ticket__event__organizer"),
         id=order_id,
         participant_data__email=request.user.email,
     )
-
-    if order.payment_status == "refunded":
-        messages.error(request, "Билет возвращён — скачивание недоступно.")
+    
+    if order.payment_status == "refunded" or not order.is_paid:
+        messages.error(request, "Просмотр недоступен.")
         return redirect("visitor:dashboard")
-
-    if not order.is_paid:
-        messages.error(request, "Билет ещё не оплачен — скачивание недоступно.")
-        return redirect("visitor:dashboard")
-
-    try:
-        image = _build_ticket_image(order)
-    except Exception:
-        logger.exception("Не удалось сформировать билет для заказа %s", order.id)
-        messages.error(request, "Не удалось сформировать билет. Попробуйте позже.")
-        return redirect("visitor:dashboard")
-
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-
-    response = HttpResponse(buffer.getvalue(), content_type="image/png")
-    response["Content-Disposition"] = 'attachment; filename="ticket_{}.png"'.format(order.id)
-    return response
-
-
-def _build_ticket_image(order):
-    """Рисует PNG-билет: тёмно-синяя панель слева + QR-код справа."""
-    from PIL import Image, ImageDraw, ImageFont
 
     event = order.ticket.event
     participant = order.participant_data or {}
+    place = (event.place_data or {}).get("address", "Место уточняется")
+    organizer = event.organizer.get_full_name() or event.organizer.username
 
-    # ---------- QR-код ----------
-    qr = qrcode.QRCode(version=None, box_size=10, border=2)
-    qr.add_data(
-        json.dumps(
-            {
-                "order_id": order.id,
-                "ticket_id": order.ticket_id,
-                "event_id": event.id,
-                "email": participant.get("email") or "",
-            },
-            ensure_ascii=False,
+    # --- ГЕНЕРАЦИЯ ДАННЫХ QR-КОДОВ ---
+    base_url = request.build_absolute_uri('/')[:-1]
+    ticket_number_start = getattr(order, 'ticket_number_start', None)
+    
+    qr_codes = []
+    check_link = f"{base_url}{reverse('check_ticket', args=[order.id])}"
+    
+    for i in range(order.quantity):
+        current_ticket_num = (
+            ticket_number_start + i 
+            if ticket_number_start is not None else f"{order.id}-{i+1}"
         )
+        
+        data_payload = {
+            "order_id": order.id,
+            "ticket_id": str(current_ticket_num),
+            "event_id": event.id,
+            "email": participant.get("email") or "",
+        }
+        
+        qr_img_obj = qrcode.make(json.dumps(data_payload, ensure_ascii=False))
+        buffer = io.BytesIO()
+        qr_img_obj.save(buffer, format="PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+        qr_codes.append({
+            "qr_base64": qr_base64,
+            "qr_text": check_link,
+            "ticket_number": current_ticket_num,
+        })
+
+    context = {
+        "order": order,
+        "event": event,
+        "ticket": order.ticket,
+        "participant_name": participant.get("name") or "Участник",
+        "email": participant.get("email") or "",
+        "price": order.ticket.price,
+        "place": place,
+        "organizer": organizer,
+        "qr_codes": qr_codes,
+        "check_link": check_link,
+    }
+
+    html = render(request, "visitor/ticket_display.html", context).content.decode("utf-8")
+    import re
+    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
+    body_html = body_match.group(1) if body_match else html
+    return HttpResponse(body_html, content_type="text/html")
+
+@login_required
+@require_http_methods(["GET"])
+def ticket_qr(request, order_id):
+    """Возвращает только PNG QR-код для заказа. QR ведёт на страницу проверки билета."""
+    order = get_object_or_404(
+        Order.objects.select_related("ticket__event"),
+        id=order_id,
+        participant_data__email=request.user.email,
     )
+
+    if order.payment_status == "refunded" or not order.is_paid:
+        return HttpResponse(status=403)
+
+    from django.urls import reverse
+    check_url = f"{request.scheme}://{request.get_host()}{reverse('check_ticket', args=[order.id])}"
+
+    qr = qrcode.QRCode(version=None, box_size=10, border=2)
+    qr.add_data(check_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="#00056e", back_color="#ffffff").convert("RGB")
-    qr_img = qr_img.resize((280, 280))
+    qr_img = qr_img.resize((200, 200))
 
-    W, H = 1200, 660
-    DARK = (0, 5, 110)        # #00056e
-    ORANGE = (255, 131, 72)   # #ff8348
-    GRAY = (119, 122, 141)
-    BLACK = (10, 10, 10)
+    buffer = io.BytesIO()
+    qr_img.save(buffer, format="PNG")
 
-    def _font(size, bold=False):
-        path = (
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-            if bold
-            else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-        )
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            return ImageFont.load_default()
+    response = HttpResponse(buffer.getvalue(), content_type="image/png")
+    response["Content-Disposition"] = f'inline; filename="qr_{order.id}.png"'
+    return response
 
-    def _text_width(text, font):
-        try:
-            return font.getbbox(text)[2]
-        except Exception:
-            try:
-                return len(text) * font.size
-            except Exception:
-                return len(text) * 16
-
-    def _wrap(text, font, max_width):
-        lines, current = [], ""
-        for word in str(text).split():
-            candidate = (current + " " + word).strip()
-            if _text_width(candidate, font) <= max_width:
-                current = candidate
-            else:
-                if current:
-                    lines.append(current)
-                current = word
-        if current:
-            lines.append(current)
-        return lines or [""]
-
-    img = Image.new("RGB", (W, H), "#ffffff")
-    draw = ImageDraw.Draw(img)
-
-    # Левая синяя панель с оранжевой полосой
-    draw.rectangle([0, 0, 470, H], fill=DARK)
-    draw.rectangle([462, 0, 470, H], fill=ORANGE)
-
-    title_font = _font(34, bold=True)
-    text_font = _font(24)
-    small_font = _font(20)
-    label_font = _font(17)
-
-    # Название события
-    y = 48
-    for line in _wrap(event.title, title_font, 400):
-        draw.text((48, y), line, fill="#ffffff", font=title_font)
-        y += 50
-    y += 22
-
-    # Дата и время
-    draw.text((48, y), event.date_time.strftime("%d.%m.%Y  %H:%M"), fill=ORANGE, font=text_font)
-    y += 52
-
-    # Место проведения
-    place = (event.place_data or {}).get("address", "Место уточняется")
-    for line in _wrap(place, small_font, 380):
-        draw.text((48, y), line, fill="#ffffff", font=small_font)
-        y += 34
-
-    # Организатор
-    org = event.organizer.get_full_name() or event.organizer.username
-    draw.text((48, H - 90), "Организатор", fill=GRAY, font=label_font)
-    draw.text((48, H - 62), org, fill="#ffffff", font=small_font)
-
-    # Правая часть — информация о билете
-    x = 520
-    y = 48
-    draw.text((x, y), "БИЛЕТ НА МЕРОПРИЯТИЕ", fill=GRAY, font=label_font)
-    y += 44
-    draw.text((x, y), "Заказ № {}".format(order.id), fill=BLACK, font=text_font)
-    y += 56
-
-    draw.text((x, y), "Тип билета", fill=GRAY, font=label_font)
-    y += 30
-    draw.text((x, y), order.ticket.name, fill=BLACK, font=text_font)
-    y += 56
-
-    draw.text((x, y), "Участник", fill=GRAY, font=label_font)
-    y += 30
-    name = participant.get("name") or "Участник"
-    for line in _wrap(name, text_font, 560):
-        draw.text((x, y), line, fill=BLACK, font=text_font)
-        y += 38
-    y += 12
-    draw.text((x, y), participant.get("email") or "", fill=GRAY, font=small_font)
-    y += 48
-
-    price = "{}".format(order.total_price).replace(",", " ")
-    draw.text((x, y), "Количество: {}".format(order.quantity), fill=BLACK, font=small_font)
-    y += 40
-    draw.text((x, y), "Итого: {} ₽".format(price), fill=DARK, font=_font(26, bold=True))
-
-    # QR-код в правом нижнем углу
-    qx, qy = W - 320, H - 330
-    draw.rectangle([qx - 14, qy - 14, qx + 294, qy + 294], outline=ORANGE, width=3)
-    img.paste(qr_img, (qx, qy))
-    draw.text((qx + 8, qy + 300), "Покажите QR-код на входе", fill=GRAY, font=label_font)
-
-    return img

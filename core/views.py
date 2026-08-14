@@ -898,8 +898,38 @@ def sales_register(request):
             "start_date": start_date,
             "end_date": end_date,
         }
+
         return render(request, "admin/sales_register.html", context)
     return render(request, "admin/sales_register_form.html")
+
+def check_ticket(request, order_id):
+    """
+    Публичная страница проверки билета по QR-коду.
+    Доступна всем — не требует авторизации.
+    """
+    order = get_object_or_404(
+        Order.objects.prefetch_related("tickets"),
+        id=order_id,
+    )
+
+    # Проверяем, что пользователь — организатор мероприятия
+    is_organizer = False
+    if request.user.is_authenticated:
+        is_organizer = order.ticket.event.organizer == request.user
+
+    # Проверяем валидность билета
+    is_valid = (
+        order.payment_status == "succeeded"
+        and order.is_paid
+        and not order.attended
+    )
+
+    context = {
+        "order": order,
+        "is_valid": is_valid,
+        "is_organizer": is_organizer,
+    }
+    return render(request, "partner/ticket_check.html", context)
 
 def generate_sales_register(partner, start_date, end_date):
     """
