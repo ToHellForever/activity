@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/visitor/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="visitor-layout">
+    {% include 'visitor/visitor_sidebar.html' %}
+    
+    <main class="visitor-content">
+        <!-- Заголовок -->
+        <h1>Личный кабинет</h1>
+        
+        <!-- Контейнер с формой смены пароля -->
+        <div style="
+            display: flex;
+            gap: 50px; /* Отступ между левой колонкой и формой */
+            margin-top: 2rem;
+        ">
+            
+            <!-- Левая колонка - информация о пользователе -->
+            
+            <!-- Правая колонка - форма изменения пароля -->
+            <form method="post" style="flex-grow: 1; max-width: 400px;">
+                {% csrf_token %}
+
+                {# Вывод ошибок всей формы #}
+                {% if form.non_field_errors %}
+                    <p style="color: red; margin-top: 0;">{{ form.non_field_errors|join:", " }}</p>
+                {% endif %}
+
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-bottom: 1rem;">
+                    <label for="id_old_password">Текущий пароль</label>
+                    <input type="password"
+                           name="old_password"
+                           id="id_old_password"
+                           placeholder="Введите текущий пароль"
+                           value="{{ form.old_password.value|default_if_none:"" }}"
+                           style="border: 1px solid #ccc; padding: 8px; border-radius: 4px;"
+                    >
+                    {# Ошибки поля #}
+                    {% if form.old_password.errors %}
+                        <p style="grid-column-start: span 2; color: red;">{{ form.old_password.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-bottom: 1rem;">
+                    <label for="id_new_password1">Новый пароль</label>
+                    <input type="password"
+                           name="new_password1"
+                           id="id_new_password1"
+                           placeholder="Введите новый пароль"
+                           value="{{ form.new_password1.value|default_if_none:"" }}"
+                           style="border: 1px solid #ccc; padding: 8px; border-radius: 4px;"
+                    >
+                    {% if form.new_password1.errors %}
+                        <p style="grid-column-start: span 2; color: red;">{{ form.new_password1.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-bottom: 1rem;">
+                    <label for="id_new_password2">Подтверждение нового пароля</label>
+                    <input type="password"
+                           name="new_password2"
+                           id="id_new_password2"
+                           placeholder="Повторите новый пароль"
+                           value="{{ form.new_password2.value|default_if_none:"" }}"
+                           style="border: 1px solid #ccc; padding: 8px; border-radius: 4px;"
+                    >
+                    {% if form.new_password2.errors %}
+                        <p style="grid-column-start: span 2; color: red;">{{ form.new_password2.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Кнопка -->
+                <button type="submit" 
+                        style="
+                            background-color: #e9ecef;
+                            color: #333;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            border: none;
+                            cursor: pointer;
+                        "
+                >ИЗМЕНИТЬ ПАРОЛЬ</button>
+
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}

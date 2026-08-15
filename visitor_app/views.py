@@ -192,7 +192,7 @@ def visitor_order_history(request):
     return render(request, "visitor/order_history.html", context)
 
 @login_required
-def change_password(request):
+def settings(request):
     """Отдельная страница для смены пароля в личном кабинете посетителя."""
     if request.method == "POST":
         password_form = PasswordChangeForm(user=request.user, data=request.POST)
@@ -204,7 +204,7 @@ def change_password(request):
     else:
         password_form = PasswordChangeForm(user=request.user)
 
-    return render(request, "change_password.html", {"form": password_form})
+    return render(request, "visitor/settings.html", {"form": password_form})
 
 def buy_ticket(request, ticket_id=None):
     """

@@ -122,20 +122,6 @@ def landing_page(request):
             "search_title": search_title,
         },
     )
-
-@login_required
-def change_password(request):
-    """Отдельная страница для смены пароля."""
-    if request.method == "POST":
-        password_form = PasswordChangeForm(user=request.user, data=request.POST)
-        if password_form.is_valid():
-            password_form.save()
-            update_session_auth_hash(request, password_form.user)
-            return redirect("partner:profile_edit")
-    else:
-        password_form = PasswordChangeForm(user=request.user)
-    return render(request, "change_password.html", {"password_form": password_form})
-
 @never_cache
 def login_view(request):
     if request.user.is_authenticated:
@@ -999,4 +985,3 @@ def generate_sales_register(partner, start_date, end_date):
         "start_date": start_date,
         "end_date": end_date,
     }
-    

@@ -19,8 +19,13 @@
            class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
             <img src="/media/icon/support.svg" alt="" class="sidebar-icon"> Служба поддержки
         </a>
+        <a href="{% url 'visitor:settings' %}">
+            <img src="/media/icon/logout.svg" alt="" class="sidebar-icon"> Настройки профиля
+        </a>
         <a href="{% url 'logout' %}">
             <img src="/media/icon/logout.svg" alt="" class="sidebar-icon"> Выйти из аккаунта
         </a>
+        
     </nav>
 </aside>
+
