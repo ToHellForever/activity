@@ -219,7 +219,6 @@
 .chat-message--incoming {
   align-self: flex-start;
 }
-
 .chat-message-wrapper {
   display: flex;
   flex-direction: column;

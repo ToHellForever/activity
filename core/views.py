@@ -431,46 +431,51 @@ def support_dashboard(request):
     }
     return render(request, "support_dashboard.html", context)
 
-@require_POST
-@login_required
 def send_support_message(request):
-    """Обрабатывает отправку нового сообщения в рамках существующего тикета (AJAX)."""
-    ticket_id = request.POST.get("ticket_id")
-    text = request.POST.get("text")
-    files = request.FILES.getlist("attachment")
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        ticket_id = request.POST.get('ticket_id')
+        text = request.POST.get('text', '').strip()
+        
+        try:
+            ticket = SupportTicket.objects.get(id=ticket_id)
+            
+            # Создаем сообщение (предполагаем, что у вас есть модель Message)
+            message = SupportMessage.objects.create(
+                ticket=ticket,
+                user=request.user, 
+                text=text,
+                is_from_user=True # Участник пишет сам себе/своему организатору
+            )
+            
+            # Если есть файлы
+            for f in request.FILES.getlist('attachment'):
+                Attachment.objects.create(message=message, file=f)
 
-    if not ticket_id or not (text or files):
-        return JsonResponse({"success": False, "message": "Не указан тикет или текст сообщения."}, status=400)
+            # Формируем ОДИНАКОВЫЙ формат ответа, как мы делали в visitor_chats
+            created_dt = message.created_at
+            
+            response_data = {
+                'success': True,
+                'message': {
+                    'id': message.id,
+                    'text': message.text,
+                    'is_from_user': True,
+                    'user_first_name': request.user.first_name or '',
+                    'user_email': request.user.email or '',
+                    # КРИТИЧЕСКИ ВАЖНО: передаем полное ISO время
+                    'full_created_at': created_dt.isoformat(), 
+                    # Для отображения в пузыре сообщения
+                    'created_at': created_dt.strftime('%H:%M'), 
+                }
+            }
+            return JsonResponse(response_data)
 
-    ticket = get_object_or_404(SupportTicket, id=ticket_id)
-
-    # Создаем новое сообщение
-    message = SupportMessage.objects.create(
-        ticket=ticket,
-        user=request.user,
-        is_from_user=request.user == ticket.user,
-        text=text or "(вложение)",
-    )
-
-    # Сохраняем вложения
-    attachments = []
-    for file in files:
-        att = SupportAttachment.objects.create(message=message, file=file)
-        attachments.append({"name": att.file.name.split("/")[-1], "url": att.file.url})
-
-    return JsonResponse({
-        "success": True,
-        "message": {
-            "id": message.id,
-            "text": message.text,
-            "is_from_user": message.is_from_user,
-            "created_at": message.created_at.strftime("%H:%M"),
-            "user_first_name": message.user.first_name or "",
-            "user_email": message.user.email,
-            "user_type": message.user.user_type,
-            "attachments": attachments,
-        },
-    })
+        except SupportTicket.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Билет не найден'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
 
 def upload_image(request):
     if request.method == "POST":

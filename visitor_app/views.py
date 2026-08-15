@@ -230,23 +230,34 @@ def buy_ticket(request, ticket_id=None):
 
 @login_required
 def visitor_chats(request):
+    """
+    Страница конкретного чата ДЛЯ УЧАСТНИКА.
+    Показывает переписку по конкретному билету типа 'participant'.
+    """
     selected_ticket = None
     chat_messages = []
 
+    # Фильтруем ТОЛЬКО свои билеты (где я - автор вопроса)
     tickets = SupportTicket.objects.filter(
-        event__organizer=request.user,
+        user=request.user,
         ticket_type='participant'
     ).order_by("-created_at")
 
     if request.GET.get("ticket_id"):
-        ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(
-            SupportTicket,
-            id=ticket_id,
-            event__organizer=request.user,
-            ticket_type='participant'
-        )
-        chat_messages = selected_ticket.messages.all()
+        try:
+            ticket_id = int(request.GET.get("ticket_id"))
+            # Ищем билет, принадлежащий именно этому пользователю
+            selected_ticket = get_object_or_404(
+                SupportTicket,
+                id=ticket_id,
+                user=request.user,
+                ticket_type='participant'
+            )
+            # Загружаем сообщения сразу одним запросом
+            chat_messages = selected_ticket.messages.all().order_by('created_at')
+        except (ValueError, TypeError):
+            pass # Некорректный ID или тип данных
+
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
@@ -254,18 +265,40 @@ def visitor_chats(request):
     }
     return render(request, "visitor/chats.html", context)
 
+
 @login_required
 def visitor_chats_list(request):
-    # Получаем только тикеты с участниками (ticket_type='participant')
+    """
+    Страница списка чатов ДЛЯ УЧАСТНИКА.
+    Показывает тикеты типа 'participant', которые создал текущий пользователь.
+    """
     tickets = SupportTicket.objects.filter(
-        event__organizer=request.user,
+        user=request.user,
         ticket_type='participant'
-    ).order_by("-created_at")
+    ).order_by("-created_at").select_related('event') # Оптимизация запроса к событию
+
+    # Добавляем последнее сообщение каждому билету "на лету"
+    for ticket in tickets:
+        # Используем order_by + first() — самый эффективный способ получить один объект
+        last_message = ticket.messages.all().order_by('created_at').first()
+        setattr(ticket, 'last_message', last_message)
+
+    selected_ticket = None
+    
+    # Обработка открытия конкретного чата (?ticket_id=...)
+    if request.GET.get("ticket_id"):
+        try:
+            ticket_id = int(request.GET.get("ticket_id"))
+            # Проверяем, принадлежит ли этот билет текущему пользователю
+            selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        except (ValueError, TypeError):
+            pass # Если передан некорректный ID, просто игнорируем его
+
     context = {
         "tickets": tickets,
+        "selected_ticket": selected_ticket,
     }
     return render(request, "visitor/chats_list.html", context)
-
 
 @login_required
 @require_http_methods(["GET"])

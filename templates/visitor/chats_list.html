@@ -1,22 +1,26 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/chats_list.css' %}">
 {% endblock %}
+
 {% block content %}
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'visitor/visitor_sidebar.html' %}
+    
     <div class="partner-main">
         <div class="chats-list-wrapper">
             <div class="chats-list-header">
-                <h2>Чаты с участниками</h2>
-                <p>Вопросы от участников к вашим мероприятиям</p>
+                <h2>Мои вопросы</h2>
+                <p>Вопросы от вас к организаторам мероприятий</p>
             </div>
             <div class="chats-list-body">
                 {% for ticket in tickets %}
-                    {% with last_message=ticket.messages.last %}
-                    <a href="{% url 'partner:chats' %}?ticket_id={{ ticket.id }}" class="chat-list-item">
+                    <!-- Обращаемся к атрибуту, который мы добавили в View -->
+                    {% with last_message=ticket.last_message %}
+                    <a href="{% url 'visitor:chats' %}?ticket_id={{ ticket.id }}" class="chat-list-item">
                         <div class="chat-list-event-card">
                             {% if ticket.event and ticket.event.image %}
                                 <img src="{{ ticket.event.image.url }}" alt="{{ ticket.event.title }}" class="chat-list-event-photo">
@@ -29,27 +33,27 @@
                                     </svg>
                                 </div>
                             {% endif %}
-                            {% if ticket.user.user_type == "guest" %}
-                                <div class="chat-list-user-badge chat-list-user-badge--guest" title="Неавторизованный пользователь">
-                                    <img src="/media/icon/ix_user-profile-filled.svg" alt="">
+                            
+                            {% if ticket.event and ticket.event.organizer %}
+                                <div class="chat-list-user-badge chat-list-user-badge--authorized" title="Организатор {{ ticket.event.organizer.get_full_name }}">
+                                    {{ ticket.event.organizer.get_first_name|default:ticket.event.organizer.email|slice:":1"|upper }}
                                 </div>
                             {% else %}
-                                <div class="chat-list-user-badge chat-list-user-badge--authorized" title="{{ ticket.user.get_first_name|default:ticket.user.get_username }}">
-                                    {{ ticket.user.get_first_name|default:ticket.user.email|slice:":1"|upper }}
+                                <div class="chat-list-user-badge chat-list-user-badge--guest">
+                                    <img src="/media/icon/ix_user-profile-filled.svg" alt="">
                                 </div>
                             {% endif %}
                         </div>
+                        
                         <div class="chat-list-info">
-                            <div class="chat-list-name">
-                                {% if ticket.user.user_type == "guest" %}
-                                    Неавторизованный пользователь
-                                {% else %}
-                                    {{ ticket.user.get_first_name|default:ticket.user.get_username }}
-                                {% endif %}
-                            </div>
+                            <div class="chat-list-name">Организатор</div>
+                            
                             {% if ticket.event %}
                                 <div class="chat-list-event">{{ ticket.event.title }}</div>
+                            {% else %}
+                                <div class="chat-list-event">Мероприятие удалено</div>
                             {% endif %}
+                            
                             {% if last_message %}
                                 <div class="chat-list-preview">
                                     {{ last_message.text|truncatechars:60 }}
@@ -60,7 +64,7 @@
                     {% endwith %}
                 {% empty %}
                     <div class="chats-list-empty">
-                        Пока нет вопросов от участников по вашим мероприятиям.
+                        Пока нет вопросов к организаторам ваших мероприятий.
                     </div>
                 {% endfor %}
             </div>
