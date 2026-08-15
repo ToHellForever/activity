@@ -229,40 +229,42 @@ def buy_ticket(request, ticket_id=None):
     return render(request, 'buy_ticket.html', context)
 
 @login_required
-def visitor_event_chats(request):
-    """
-    Страница участника — показывает чаты по мероприятиям (ticket_type='participant').
-    Здесь участник видит вопросы, которые он задавал организаторам через кнопку «Задать вопрос».
-    """
-    if request.user.user_type != "visitor" and request.user.user_type != "guest":
-        return redirect("visitor:dashboard")
-
+def visitor_chats(request):
     selected_ticket = None
     chat_messages = []
 
-    # Фильтр по статусу
-    ticket_filter = request.GET.get("ticket_filter", "all")
-
-    # Показываем ТОЛЬКО participant-тикеты текущего пользователя
     tickets = SupportTicket.objects.filter(
-        user=request.user,
+        event__organizer=request.user,
         ticket_type='participant'
     ).order_by("-created_at")
 
-    if ticket_filter != "all":
-        tickets = tickets.filter(status=ticket_filter)
-
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        selected_ticket = get_object_or_404(
+            SupportTicket,
+            id=ticket_id,
+            event__organizer=request.user,
+            ticket_type='participant'
+        )
         chat_messages = selected_ticket.messages.all()
-
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
     }
-    return render(request, "visitor/event_chats.html", context)
+    return render(request, "visitor/chats.html", context)
+
+@login_required
+def visitor_chats_list(request):
+    # Получаем только тикеты с участниками (ticket_type='participant')
+    tickets = SupportTicket.objects.filter(
+        event__organizer=request.user,
+        ticket_type='participant'
+    ).order_by("-created_at")
+    context = {
+        "tickets": tickets,
+    }
+    return render(request, "visitor/chats_list.html", context)
 
 
 @login_required

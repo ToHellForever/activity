@@ -11,8 +11,8 @@
            class="{% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
             <img src="/media/icon/star.svg" alt="" class="sidebar-icon"> История заказов
         </a>
-        <a href="{% url 'visitor:event_chats' %}"
-           class="{% if request.resolver_match.url_name == 'event_chats' %}active{% endif %}">
+        <a href="{% url 'visitor:chats_list' %}"
+           class="{% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
             <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты с организаторами
         </a>
         <a href="{% url 'support_dashboard' %}"
