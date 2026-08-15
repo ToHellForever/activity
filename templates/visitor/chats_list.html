@@ -34,15 +34,7 @@
                                 </div>
                             {% endif %}
                             
-                            {% if ticket.event and ticket.event.organizer %}
-                                <div class="chat-list-user-badge chat-list-user-badge--authorized" title="Организатор {{ ticket.event.organizer.get_full_name }}">
-                                    {{ ticket.event.organizer.get_first_name|default:ticket.event.organizer.email|slice:":1"|upper }}
-                                </div>
-                            {% else %}
-                                <div class="chat-list-user-badge chat-list-user-badge--guest">
-                                    <img src="/media/icon/ix_user-profile-filled.svg" alt="">
-                                </div>
-                            {% endif %}
+                            <!-- БЛОК АВАТАРА ПОЛНОСТЬЮ УДАЛЕН -->
                         </div>
                         
                         <div class="chat-list-info">

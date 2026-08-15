@@ -34,17 +34,6 @@
                     </svg>
                   </div>
                 {% endif %}
-                
-                <!-- Бейдж собеседника (теперь это Организатор) -->
-                {% if selected_ticket.event and selected_ticket.event.organizer %}
-                  <div class="chat-header-user-badge chat-header-user-badge--authorized" title="Организатор {{ selected_ticket.event.organizer.get_full_name }}">
-                    {{ selected_ticket.event.organizer.get_first_name|default:selected_ticket.event.organizer.email|slice:":1"|upper }}
-                  </div>
-                {% else %}
-                  <div class="chat-header-user-badge chat-header-user-badge--guest">
-                    <img src="/media/icon/ix_user-profile-filled.svg" alt="">
-                  </div>
-                {% endif %}
               </div>
               
               <div class="chat-header-info">
@@ -66,38 +55,34 @@
             </div>
 
             <!-- ========== ИСТОРИЯ СООБЩЕНИЙ ========== -->
-            <div class="chat-messages" data-date-format="d.m.Y">
-              {% for message in chat_messages %}
-                <div class=" chat-message-wrapper{% if not message.is_from_user %}  --outgoing{% endif %}" data-message-date="{{ message.created_at|date:'Y-m-d' }}">
-                  
-                  {% if message.is_from_user %}
-                    <!-- Сообщение от Участника (ИСХОДЯЩЕЕ) -->
-                    <div class="chat-message chat-message--incoming">
-                      <div class="chat-message-avatar chat-message-avatar--user">
-                        {{ message.user.get_first_name|default:message.user.email|slice:":1"|upper }}
-                      </div>
-                      <div class="chat-message-bubble-row">
-                        <div class="chat-message-bubble">
-                          {{ message.text }}
-                        </div>
-                        <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
-                      </div>
-                    </div>
-                    
-                  {% else %}
-                    <!-- Сообщение от Организатора (ВХОДЯЩЕЕ) -->
-                    <div class="chat-message chat-message--outgoing">
-                      <div class="chat-message-bubble-row">
-                        <div class="chat-message-time">
-                          {{ message.created_at|date:"H:i" }}
-                        </div>
-                        <div class="chat-message-bubble">{{ message.text }}</div>
-                      </div>
-                    </div>
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
+<!-- ========== ИСТОРИЯ СООБЩЕНИЙ ========== -->
+<div class="chat-messages" data-date-format="d.m.Y">
+  {% for message in chat_messages %}
+    <div class="chat-message-wrapper{% if not message.is_from_user %} chat-message-wrapper--outgoing{% endif %}" 
+         data-message-date="{{ message.full_created_at|date:'Y-m-d' }}">
+      
+      {% if message.is_from_user %}
+        <!-- Сообщение от Участника (ИСХОДЯЩЕЕ - СПРАВА) -->
+        <div class="chat-message chat-message--outgoing">
+          <div class="chat-message-bubble-row">
+            <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
+            <div class="chat-message-bubble">{{ message.text }}</div>
+          </div>
+        </div>
+        
+      {% else %}
+        <!-- Сообщение от Организатора (ВХОДЯЩЕЕ - СЛЕВА) -->
+        <div class="chat-message chat-message--incoming">
+          <!-- БЛОК АВАТАРА УДАЛЕН -->
+          <div class="chat-message-bubble-row">
+            <div class="chat-message-bubble">{{ message.text }}</div>
+            <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
 
             <!-- ========== ПОЛЕ ВВОДА ========== -->
             <!-- Форма ответа видна всегда, если чат не закрыт (проверку статуса добавьте сами при необходимости) -->
