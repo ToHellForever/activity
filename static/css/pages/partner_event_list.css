@@ -282,7 +282,7 @@
   text-decoration: none;
   flex-shrink: 0;
   transition: all 0.2s;
-  margin-top: 5px;
+  margin-top: 20px;
 }
 
 .btn-edit img {

@@ -3,12 +3,16 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/support_dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/custom_scrollbar.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="event-chats-page" style="display: flex; gap: 14px;">
+<div>
+    <div class="visitor-layout"> <!-- ОБЕРНУЛИ ВСЁ СЮДА -->
+        {% include 'visitor/visitor_sidebar.html' %}
+        
+        <main class="visitor-content">
+<div class="event-chats-page">
   <!-- ЛЕВАЯ КОЛОНКА: Список чатов -->
   <div class="event-chats-sidebar">
     <div style="padding: 16px; border-bottom: 1px solid #eee;">
@@ -112,7 +116,9 @@
         <p>или задайте вопрос организатору на странице мероприятия.</p>
       </div>
     {% endif %}
-  </div>
+            </div>
+        </main>
+    </div>
 </div>
 {% endblock %}
 

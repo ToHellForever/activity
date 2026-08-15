@@ -960,6 +960,7 @@ class OrderTicket(models.Model):
     )
     ticket_number = models.PositiveIntegerField(default=1, verbose_name="Номер билета")
     attended = models.BooleanField(default=False, verbose_name="Посетил мероприятие")
+    is_refunded = models.BooleanField(default=False, verbose_name="Возвращён")
 
     def __str__(self):
         return f"Заказ #{self.order.id} — Билет #{self.ticket_number}"

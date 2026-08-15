@@ -6,7 +6,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/ticket_display.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/visitor/ticket_display.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <div>
     <div class="visitor-layout">
@@ -72,7 +72,6 @@
                                            data-event-title="{{ event.title }}">Показать билет</a>
                                     {% elif not order.is_paid and order.payment_status == 'pending' %}
                                         <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-4">Оплатить билет</a>
-                                        <p class="text-muted small mt-2">Ожидает оплаты</p>
                                     {% elif not order.is_paid and order.payment_status == 'reserved' %}
                                         <span class="badge bg-warning text-dark mt-2">Забронировано</span>
                                         <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-3">Оплатить билет</a>

@@ -4,8 +4,14 @@
 
 {% block title %}История заказов{% endblock %}
 
-{% block content %}
+{% comment %} extra css {% endcomment %}
+
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/visitor/order_history.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+{% endblock %}
+{% block content %}
 <div>
     <div class="visitor-layout">
 
@@ -52,9 +58,9 @@
 
                                     <!-- Статус -->
                                     {% if order.payment_status == 'refunded' %}
-                                        <span class="badge bg-secondary mt-2">Возвращён</span>
+                                        <span class="button-order-history mt-4">Возвращён</span>
                                     {% else %}
-                                        <span class="badge bg-secondary mt-2">Мероприятие прошло</span>
+                                        <span class="button-order-history mt-4">Мероприятие прошло</span>
                                     {% endif %}
                                 </div>
                             </div>
