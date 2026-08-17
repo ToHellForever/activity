@@ -137,7 +137,7 @@
     <!-- Мобильные: 2 события (скрыто на 900px и выше) -->
     <div class="row d-900-none">
         {% for ev in active_events_mobile %}
-        <div class="col-6 mb-4">
+        <div class="col-6 ">
             <div class="card">
                 {% if ev.image %}
                 <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
@@ -362,12 +362,14 @@
     </div>
     {% endfor %}
 </div>
-
+<div class="text-center mt-2">
+    <a href="{% url 'event_list' %}" class="button-others">Смотреть остальные площадки</a>
+</div>
 <div class='text-and-button mt-5'>
-<h2 class='landing-h'>ПРИСОЕДИНЯЙТЕСЬ К ДЕЛОВОЙ ЖИЗНИ ГОРОДА</h2>
+<h2 class='landing-h-text'>ПРИСОЕДИНЯЙТЕСЬ К ДЕЛОВОЙ ЖИЗНИ ГОРОДА</h2>
 <div class="two-button">
         <a href="{% url 'event_list' %}">
-            <button class="find-button">ВСЕ МЕРОПРИЯТИЯ</button>
+            <button class="find-button">НАЙТИ МЕРОПРИЯТИЯ</button>
         </a>
         <button class="find-button" id="createEventBtn" 
                 data-user-type="{% if request.user.is_authenticated %}{{ request.user.user_type }}{% else %}guest{% endif %}"

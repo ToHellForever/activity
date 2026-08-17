@@ -37,7 +37,7 @@
 <body>
     {% block navbar %}{% include 'includes/nav_menu.html' %}{% endblock %}
 
-    <main>
+    <main class="container-fluid">
         {% if messages %}
         <div class="container mt-3">
             {% for message in messages %}

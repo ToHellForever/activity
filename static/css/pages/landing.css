@@ -1,9 +1,14 @@
-.landing-h {
+.landing-h,
+.landing-h-text {
   font-family: "Verdana";
   font-weight: 700;
   color: rgba(38, 37, 37, 1);
   font-size: clamp(1rem, 3vw, 2.5rem);
 }
+.landing-h-text {
+  font-size: clamp(1.2rem, 3vw, 2.5rem) !important;
+  margin: 0 auto;
+  }
 /* Фильтры лендинга — изолированные стили */
 .landing-block .filters-row {
   display: flex;
@@ -380,7 +385,7 @@
   border-radius: 25px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   box-sizing: border-box;
 }
 
@@ -503,9 +508,10 @@
   border-radius: 19.28px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   padding: 7px 50px 7px 50px;
   color: white;
+  white-space: nowrap;
 }
 
 @media (max-width: 1399px) {
@@ -567,6 +573,12 @@
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
+  .find-button {
+    padding: 7px 15px 7px 15px;
+  }
+  .two-button {
+    gap: 5px;
+  }
   .landing-text {
     margin-top: 0px;
     margin-bottom: 0px;
@@ -574,6 +586,7 @@
   }
   .filters-landing {
     border-radius: 15px;
+    margin-right: 0px;
   }
   .landing-block > .row {
     flex-direction: column;
@@ -760,19 +773,7 @@
   }
 
   .button-others {
-    font-size: 0.9rem;
-    padding: 10px 0;
-  }
-
-  .two-button {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .find-button {
-    width: 100%;
-    font-size: 0.9rem;
-    padding: 12px 0;
+    padding: 7px 0;
   }
 
   /* Стили для календаря на мобильной */
