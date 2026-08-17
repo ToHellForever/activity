@@ -1446,40 +1446,61 @@ def bulk_delete_events(request):
 @login_required
 @check_partner_status('can_request_reports')
 def reports(request):
-    """
-    Отчеты и статистика продаж для партнера.
-    """
     orders = Order.objects.filter(ticket__event__organizer=request.user)
 
     # Расчет общей статистики (без учёта возвратов)
     non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
     total_sales = non_refunded_orders.aggregate(total=Sum("total_price"))["total"] or 0
 
-    # Считаем количество возвратов
+    # Считаем количество возвратов по заказам
     refunded_orders = orders.filter(payment_status__in=["canceled", "refunded"])
     total_refunds = refunded_orders.aggregate(total=Sum("total_price"))["total"] or 0
 
-    # Считаем реальное количество проданных билетов (без возвратов)
+    # Считаем реальное количество проданных билетов (без возвратов на уровне заказа)
     tickets_sold = sum(order.quantity for order in non_refunded_orders)
 
-    # Средний чек = общая выручка / количество проданных билетов
+    # --- Считаем отдельно возвращённые билеты через OrderTicket ---
+    # Билеты возвращённые поштучно (is_refunded=True) в заказах, которые сами не refunded
+    refunded_order_tickets = OrderTicket.objects.filter(
+        order__ticket__event__organizer=request.user,
+        is_refunded=True,
+    ).exclude(
+        order__payment_status__in=["canceled", "refunded"]  # чтобы не дублировать
+    )
+
+    refunded_order_tickets_count = refunded_order_tickets.count()
+
+    # Сумма возвратов по отдельным билетам
+    refunded_order_tickets_sum = (
+        refunded_order_tickets
+        .aggregate(total=Sum("order__ticket__price"))["total"] or 0
+    )
+
+    # Итоговые цифры возвратов (заказы + отдельные билеты)
+    total_refunds = float(total_refunds) + float(refunded_order_tickets_sum)
+    total_refunded_tickets = (
+        sum(order.quantity for order in refunded_orders) + refunded_order_tickets_count
+    )
+
+    # Вычитаем поштучно возвращённые из проданных
+    tickets_sold = tickets_sold - refunded_order_tickets_count
+
+    # Средний чек
     avg_check = total_sales / tickets_sold if tickets_sold > 0 else 0
 
-    # Получаем данные для графика продаж по дням (без учёта возвратов)
+    # График продаж по дням (без учёта возвратов)
     sales_graph_data = (
         non_refunded_orders.annotate(date=TruncDate("created_at"))
         .values("date")
         .annotate(total=Sum("total_price"))
         .order_by("date")
     )
-
-    # Преобразуем в формат для Chart.js (конвертируем Decimal в float)
     sales_graph_data = {
         item["date"].strftime("%Y-%m-%d"): float(item["total"])
         for item in sales_graph_data
     }
 
-    # Получаем данные об источниках трафика (без учёта возвратов)
+    # Источники трафика
     traffic_sources = (
         non_refunded_orders.exclude(utm_source__isnull=True)
         .exclude(utm_source__exact="")
@@ -1487,31 +1508,26 @@ def reports(request):
         .annotate(total=Sum("total_price"), count=Count("id"))
         .order_by("-total")
     )
-
-    # Преобразуем в удобный формат
     traffic_sources_data = {
         item["utm_source"]: {"total": float(item["total"]), "count": item["count"]}
         for item in traffic_sources
     }
 
-    # Получаем список ранее сгенерированных отчётов
-    user_reports = SalesReport.objects.filter(partner=request.user).order_by(
-        "-created_at"
-    )
-
-    # Получаем текущие настройки расписания отчётов
+    # Отчёты и расписание
+    user_reports = SalesReport.objects.filter(partner=request.user).order_by("-created_at")
     try:
         report_schedule = ReportSchedule.objects.get(partner=request.user)
     except ReportSchedule.DoesNotExist:
         report_schedule = None
 
     partner_profile = getattr(request.user, 'partner_profile', None)
+
     context = {
         "total_sales": "{:,.2f}".format(total_sales).replace(",", " "),
         "tickets_sold": tickets_sold,
         "avg_check": "{:,.2f}".format(avg_check).replace(",", " "),
         "total_refunds": "{:,.2f}".format(total_refunds).replace(",", " "),
-        "refunded_tickets": sum(order.quantity for order in refunded_orders),
+        "refunded_tickets": total_refunded_tickets,  # <-- теперь учитывает оба типа возвратов
         "sales_graph_data": json.dumps(sales_graph_data),
         "traffic_sources_data": traffic_sources_data,
         "user_reports": user_reports,

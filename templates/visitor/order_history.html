@@ -57,8 +57,10 @@
                                     </div>
 
                                     <!-- Статус -->
-                                    {% if order.payment_status == 'refunded' %}
-                                        <span class="button-order-history mt-4">Возвращён</span>
+                                    {% if ot.is_refunded %}
+                                        <span class="button-order-history mt-4">Билет №{{ ot.ticket_number }} возвращён</span>
+                                    {% elif order.payment_status == 'refunded' %}
+                                        <span class="button-order-history mt-4">Заказ возвращён</span>
                                     {% else %}
                                         <span class="button-order-history mt-4">Мероприятие прошло</span>
                                     {% endif %}

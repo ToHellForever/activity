@@ -83,12 +83,15 @@ def visitor_dashboard(request):
             active_orders.append(order)
 
     # Раскрываем каждый заказ на отдельные тикеты (OrderTicket)
-    def expand_orders(orders):
+    def expand_orders(orders, exclude_refunded=False):
         items = []
         for order in orders:
             tickets = order.tickets.all()
             if tickets.exists():
                 for ot in tickets:
+                    # Если нужно исключить возвращённые билеты — пропускаем
+                    if exclude_refunded and ot.is_refunded:
+                        continue
                     items.append({
                         "order": order,
                         "order_ticket": ot,
@@ -107,7 +110,7 @@ def visitor_dashboard(request):
                     })
         return items
 
-    ticket_items = expand_orders(active_orders)
+    ticket_items = expand_orders(active_orders, exclude_refunded=True)  # <-- исключаем возвращённые
     past_ticket_items = expand_orders(past_orders)
 
     # Получаем активную подписку пользователя
@@ -139,13 +142,12 @@ def visitor_dashboard(request):
 
 @login_required
 def visitor_order_history(request):
-    """История заказов — прошедшие мероприятия и возвращённые билеты."""
     if request.user.user_type != "visitor":
         return redirect("visitor:dashboard")
 
     now = timezone.now()
 
-    past_orders = (
+    all_orders = (
         Order.objects.filter(participant_data__email=request.user.email)
         .exclude(payment_status="canceled")
         .select_related("ticket", "ticket__event")
@@ -153,41 +155,43 @@ def visitor_order_history(request):
         .order_by("-created_at")
     )
 
-    past_orders = [
-        o for o in past_orders
-        if o.ticket.event.date_time < now or o.payment_status == "refunded"
-    ]
-
-    def expand_orders(orders):
+    def expand_orders_history(orders):
         items = []
         for order in orders:
+            event = order.ticket.event
             tickets = order.tickets.all()
             if tickets.exists():
                 for ot in tickets:
-                    items.append({
-                        "order": order,
-                        "order_ticket": ot,
-                        "event": order.ticket.event,
-                        "ticket": order.ticket,
-                        "participant_data": order.participant_data,
-                    })
+                    is_past_event = event.date_time < now
+                    is_refunded_ticket = ot.is_refunded
+                    is_refunded_order = order.payment_status == "refunded"
+
+                    # Берём если: событие прошло ИЛИ билет возвращён ИЛИ заказ возвращён
+                    if is_past_event or is_refunded_ticket or is_refunded_order:
+                        items.append({
+                            "order": order,
+                            "order_ticket": ot,
+                            "event": event,
+                            "ticket": order.ticket,
+                            "participant_data": order.participant_data,
+                        })
             else:
-                for i in range(order.quantity):
-                    items.append({
-                        "order": order,
-                        "order_ticket": None,
-                        "event": order.ticket.event,
-                        "ticket": order.ticket,
-                        "participant_data": order.participant_data,
-                    })
+                if event.date_time < now or order.payment_status == "refunded":
+                    for i in range(order.quantity):
+                        items.append({
+                            "order": order,
+                            "order_ticket": None,
+                            "event": event,
+                            "ticket": order.ticket,
+                            "participant_data": order.participant_data,
+                        })
         return items
 
-    past_ticket_items = expand_orders(past_orders)
+    past_ticket_items = expand_orders_history(all_orders)
 
     context = {
         "user": request.user,
         "past_ticket_items": past_ticket_items,
-        "past_user_orders": past_orders,
     }
     return render(request, "visitor/order_history.html", context)
 
