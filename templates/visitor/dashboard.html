@@ -25,13 +25,20 @@
                         <div class="col-md-4 mb-4">
                             <div class="card ticket-card">
                                 <!-- Кнопка возврата в правом верхнем углу -->
-                                {% if order.is_paid and order.payment_status != 'refunded' and event.date_time > now %}
-                                <a href="{% url 'visitor:refund_ticket' order.id %}"
-                                   class="refund-corner-btn"
-                                   title="Возврат билета"
-                                   onclick="return confirm('Вы уверены, что хотите вернуть билет?');">
-                                    <i class="bi bi-arrow-return-left"></i> Вернуть
-                                </a>
+                                {% if order.is_paid and event.date_time > now %}
+                                    {% if ot.is_refunded %}
+                                        <!-- Билет возвращён -->
+                                        <span style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                                            Билет №{{ ot.ticket_number }} возвращён
+                                        </span>
+                                    {% else %}
+                                        <a href="{% url 'visitor:refund_ticket' order.id ot.id %}"
+                                           class="refund-corner-btn"
+                                           title="Возврат билета №{{ ot.ticket_number }}"
+                                           onclick="return confirm('Вы уверены, что хотите вернуть билет №{{ ot.ticket_number }}?');">
+                                            <i class="bi bi-arrow-return-left"></i> Вернуть
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
 
                                 {% if event.image %}
@@ -66,7 +73,11 @@
                                     </div>
 
                                     <!-- Статус заказа -->
-                                    {% if order.is_paid and order.payment_status != 'refunded' %}
+                                    {% if ot.is_refunded %}
+                                        <span class="refund-button mt-4">Билет №{{ ot.ticket_number }} возвращён</span>
+                                    {% elif order.payment_status == 'refunded' %}
+                                        <span class="refund-button mt-4">Заказ возвращён</span>
+                                    {% elif order.is_paid %}
                                         <a href="javascript:void(0)" class="buy-button mt-4 show-ticket-btn"
                                            data-ticket-url="{% url 'visitor:display_ticket' order.id %}"
                                            data-event-title="{{ event.title }}">Показать билет</a>
@@ -75,8 +86,6 @@
                                     {% elif not order.is_paid and order.payment_status == 'reserved' %}
                                         <span class="badge bg-warning text-dark mt-2">Забронировано</span>
                                         <a href="{% url 'payment:pay_reserved_order' order.id %}" class="buy-button mt-3">Оплатить билет</a>
-                                    {% elif order.payment_status == 'refunded' %}
-                                        <span class="refund-button mt-4">Билет возвращён</span>
                                     {% endif %}
                                 </div>
                             </div>

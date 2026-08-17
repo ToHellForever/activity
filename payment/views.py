@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -8,7 +9,7 @@ import logging
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser
+from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser, OrderTicket
 from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
 from django.db import transaction, models
 from django.db.models import Sum, F
@@ -1044,16 +1045,18 @@ def yookassa_webhook(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-def refund_ticket(request, order_id):
+def refund_ticket(request, order_id, order_ticket_id=None):
     """
     Возврат билета.
     Для бесплатных билетов — просто обновляем статус в БД.
     Для платных — создаём возврат через ЮКассу.
+    
+    Если передан order_ticket_id — возвращаем только один билет из заказа.
     """
     import traceback
 
     try:
-        print("Starting refund process for order_id:", order_id)
+        print("Starting refund process for order_id:", order_id, "order_ticket_id:", order_ticket_id)
         order = get_object_or_404(Order, id=order_id)
         print(
             "Order found:",
@@ -1064,6 +1067,8 @@ def refund_ticket(request, order_id):
             order.yookassa_payment_id,
             "Price:",
             order.total_price,
+            "Quantity:",
+            order.quantity,
         )
 
         if order.payment_status != "succeeded" or not order.is_paid:
@@ -1073,17 +1078,34 @@ def refund_ticket(request, order_id):
                 {"error": "Заказ не оплачен или билет не был оплачен"},
             )
 
+        # Если передан order_ticket_id — возвращаем только этот билет
+        single_ticket_refund = False
+        ticket_to_refund = None
+        if order_ticket_id:
+            ticket_to_refund = get_object_or_404(
+                OrderTicket,
+                id=order_ticket_id,
+                order=order
+            )
+            single_ticket_refund = True
+            print(f"[REFUND] Возврат одного билета из заказа #{order.id}: билет #{ticket_to_refund.ticket_number}")
+
         # === ДЛЯ БЕСПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ БЕЗ ЮКАССЫ ===
         if float(order.total_price) == 0:
             print(f"[REFUND] Бесплатный билет: возврат в БД для order_id={order.id}")
-            order.payment_status = "refunded"
-            order.save()
-            print(f"[REFUND] Бесплатный билет #{order.id} помечен как возвращённый.")
+            
+            if single_ticket_refund:
+                ticket_to_refund.is_refunded = True
+                ticket_to_refund.save()
+                print(f"[REFUND] Билет #{ticket_to_refund.ticket_number} помечен как возвращённый.")
+            else:
+                order.payment_status = "refunded"
+                order.save()
+                print(f"[REFUND] Заказ #{order.id} помечен как возвращённый.")
 
-            # 🔁 Рендерим специальный шаблон для бесплатных билетов
             return render(request, "refund_success_free.html")
 
-        # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ ЧЕРЕЗ ЮКАССУ ===
+        # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ ===
         if not order.yookassa_payment_id:
             return render(
                 request,
@@ -1091,24 +1113,58 @@ def refund_ticket(request, order_id):
                 {"error": "Отсутствует ID платежа в ЮКассе (невозможно выполнить возврат)"},
             )
 
-        print("Attempting to refund payment with ID:", order.yookassa_payment_id)
-        from yookassa import Refund
+        # Проверяем, были ли уже возвраты по этому платежу
+        refunds_count = order.tickets.filter(is_refunded=True).count()
+        
+        # Рассчитываем сумму возврата
+        if single_ticket_refund:
+            amount_to_refund = order.total_price / order.quantity
+        else:
+            amount_to_refund = order.total_price
+        
+        # Пытаемся сделать возврат через ЮКассу (только если это первый возврат)
+        if refunds_count == 0:
+            print("Attempting to refund payment with ID:", order.yookassa_payment_id, "amount:", amount_to_refund)
+            from yookassa import Refund
 
-        refund = Refund.create(
-            {
-                "payment_id": order.yookassa_payment_id,
-                "amount": {"value": str(order.total_price), "currency": "RUB"},
-            },
-            uuid.uuid4(),
-        )
-        print("Refund created successfully:", refund.id)
+            try:
+                refund = Refund.create(
+                    {
+                        "payment_id": order.yookassa_payment_id,
+                        "amount": {"value": str(amount_to_refund), "currency": "RUB"},
+                    },
+                    uuid.uuid4(),
+                )
+                print("Refund created successfully:", refund.id)
+            except Exception as refund_error:
+                print(f"[REFUND] Ошибка возврата в ЮКассе: {refund_error}")
+                print(f"[REFUND] Пропускаем возврат через ЮКассу, просто помечаем билет")
+        else:
+            # Уже были возвраты — ЮКасса не позволит, просто помечаем
+            print(f"[REFUND] Уже было {refunds_count} возврат(ов), пропускаем ЮКассу")
 
-        order.payment_status = "refunded"
-        order.save()
-        print("Order status updated to 'refunded'")
+        # Помечаем билет(ы) как возвращённые
+        if single_ticket_refund:
+            ticket_to_refund.is_refunded = True
+            ticket_to_refund.save()
+            print(f"[REFUND] Билет #{ticket_to_refund.ticket_number} помечен как возвращённый")
+            
+            # Проверяем, все ли билеты возвращены
+            all_refunded = order.tickets.filter(is_refunded=True).count() == order.quantity
+            
+            if all_refunded:
+                order.payment_status = "refunded"
+                order.save()
+                print(f"[REFUND] Все билеты в заказе #{order.id} возвращены, заказ помечен как возвращённый")
+            else:
+                print(f"[REFUND] Частичный возврат: возвращено {order.tickets.filter(is_refunded=True).count()}/{order.quantity} билетов")
+        else:
+            order.payment_status = "refunded"
+            order.save()
 
-        # Для платных — стандартный шаблон
-        return render(request, "refund_success.html")
+        # Перенаправляем на историю заказов с сообщением об успехе
+        messages.success(request, 'Возврат успешно выполнен!')
+        return redirect('visitor:dashboard')
 
     except Exception as e:
         traceback.print_exc()

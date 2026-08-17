@@ -11,6 +11,7 @@ urlpatterns = [
     path("webhook/", views.yookassa_webhook, name="yookassa_webhook"),
     path("package_success/<int:package_id>/", views.package_success, name="package_success"),
     path("success/<int:order_id>/", views.payment_success, name="payment_success"),
-    path('refund/<int:order_id>/', views.refund_ticket, name='refund_ticket'),
+    path("refund/<int:order_id>/<int:order_ticket_id>/", views.refund_ticket, name="refund_ticket"),
+    path("refund/<int:order_id>/", views.refund_ticket, name="refund_ticket_legacy"),
     path("pay-reserved/<int:order_id>/", views.pay_reserved_order, name="pay_reserved_order"),
 ]
