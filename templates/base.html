@@ -37,7 +37,7 @@
 <body>
     {% block navbar %}{% include 'includes/nav_menu.html' %}{% endblock %}
 
-    <main class="container-fluid">
+    <main>
         {% if rejection_messages %}
         <div class="position-fixed end-0 top-0 p-3" style="z-index: 1050;">
             {% for message in rejection_messages %}

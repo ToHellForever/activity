@@ -193,18 +193,73 @@ def visitor_order_history(request):
 
 @login_required
 def settings(request):
-    """Отдельная страница для смены пароля в личном кабинете посетителя."""
+    """Страница настроек профиля: отображение данных и смена пароля."""
+    
+    # Инициализация формы смены пароля
+    password_form = None
+    
     if request.method == "POST":
-        password_form = PasswordChangeForm(user=request.user, data=request.POST)
-        if password_form.is_valid():
-            password_form.save()
-            update_session_auth_hash(request, password_form.user)
-            messages.success(request, "Пароль успешно изменён!")
-            return redirect("visitor:dashboard")
+        # Проверяем, что запрос именно на смену пароля (можно добавить скрытое поле или проверку префикса имени кнопки)
+        if 'change_password' in request.POST:
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, password_form.user)
+                messages.success(request, "Пароль успешно изменён!")
+                return redirect("visitor:settings") # Перезагружаем страницу, чтобы очистить форму
+            # Если форма не валидна, мы продолжим рендерить страницу с ошибками
+        else:
+            # Здесь можно обработать обновление имени/телефона, если добавите такие формы
+            pass
     else:
         password_form = PasswordChangeForm(user=request.user)
 
-    return render(request, "visitor/settings.html", {"form": password_form})
+    # Получаем данные пользователя для отображения в карточке
+    user_data = {
+        'name': request.user.get_full_name() or request.user.username,
+        'email': request.user.email,
+        'phone': getattr(request.user, 'phone', 'Не указан') # Предполагаем, что у модели есть поле phone
+    }
+
+    return render(request, "visitor/settings.html", {
+        "form": password_form,
+        "user_data": user_data,
+        "errors": password_form.errors if password_form else {}
+    })
+
+@login_required
+@require_http_methods(["POST"])
+def save_field(request):
+    """Сохранение отдельного поля профиля пользователя через AJAX."""
+    field_name = request.POST.get("field_name")
+    field_value = request.POST.get("field_value")
+
+    if not field_name:
+        return JsonResponse({"status": "error", "message": "Не указано поле"}, status=400)
+
+    # Разрешённые поля для редактирования
+    allowed_fields = ["name", "phone"]
+
+    if field_name not in allowed_fields:
+        return JsonResponse({"status": "error", "message": "Недопустимое поле"}, status=400)
+
+    try:
+        if field_name == "name":
+            parts = field_value.strip().split()
+            if len(parts) >= 2:
+                request.user.first_name = parts[0]
+                request.user.last_name = parts[-1]
+            elif len(parts) == 1:
+                request.user.first_name = parts[0]
+            request.user.save(update_fields=["first_name", "last_name"])
+        elif field_name == "phone":
+            request.user.phone = field_value
+            request.user.save(update_fields=["phone"])
+        return JsonResponse({"status": "success"})
+    except Exception as e:
+        logger.error(f"Ошибка сохранения поля {field_name}: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
 
 def buy_ticket(request, ticket_id=None):
     """

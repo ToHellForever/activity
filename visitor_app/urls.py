@@ -14,5 +14,5 @@ urlpatterns = [
     path("chats_list/", views.visitor_chats_list, name="chats_list"),
     path("ticket/<int:order_id>/display/", views.display_ticket, name="display_ticket"),
     path("ticket/<int:order_id>/qr/", views.ticket_qr, name="ticket_qr"),
-    
+    path("save_field/", views.save_field, name="save_field"),
 ]
