@@ -114,17 +114,37 @@
   align-self: flex-end;
 }
 
-/* Кнопка сброса фильтров */
+/* Колонка с тегами - на десктопе занимает всю ширину */
+.filter-col-tags {
+  width: 100%;
+  order: 10; /* По умолчанию в конце */
+}
+
+/* === Кнопка сброса фильтров === */
+.filters-row-reset {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+  padding-right: 10px;
+}
+
 .filter-reset-btn {
   font-family: "Montserrat";
   font-weight: 500;
   font-size: 0.9rem;
   color: #ffffff;
   text-decoration: none;
-  position: absolute;
-  right: 3rem;
-  bottom: 0;
-  margin-bottom: 1rem;
+  transition: opacity 0.2s ease;
+  
+  /* Добавляем эти три строчки: */
+  display: block;       /* Делаем ссылку блочным элементом */
+  width: max-content;   /* Задаем ширину ровно по тексту */
+  margin-left: auto;    /* Теперь margin-left: auto прижмет ее вправо */
+}
+
+.filter-reset-btn:hover {
+  opacity: 0.8;
+  color: #ff8348;
 }
 
 /* Инпут даты — скрываем курсор */
@@ -161,39 +181,71 @@
   font-weight: 600;
 }
 
-/* === Карточки в списках: 2/3/4 в строке === */
-/* <900px — 2 карточки в строке */
+/* === МОБИЛЬНАЯ ВЕРСИЯ (<900px) === */
 @media (max-width: 900px) {
+  .filters-row {
+    display: flex;
+    flex-direction: column;
+  }
+
   .filter-col-category,
   .filter-col-date,
   .filter-col-title,
   .filter-col-format,
-  .filter-col-button {
+  .filter-col-button,
+  .filter-col-tags {
     width: 100% !important;
   }
+
+  /* Порядок элементов на мобильных */
+  .filter-col-category { order: 1; }
+  .filter-col-date { order: 2; }
+  .filter-col-title { order: 3; }
+  .filter-col-format { order: 4; }
+  .filter-col-tags { order: 5; } /* Теги ПЕРЕД кнопкой */
+  .filter-col-button { order: 6; } /* Кнопка в конце */
+
   .filter-button {
     margin-top: 20px;
     padding: 0;
+    width: 100%;
   }
+
   .filter-item {
     margin-top: 7px;
   }
+
   .filter-item-tags {
-        margin-top: 20px;
+    margin-top: 20px;
+    margin-bottom: 10px;
   }
+
   .filter-item .d-flex.flex-wrap {
     width: 100%;
-    gap: 0px;
+    gap: 5px;
     margin-top: 10px;
   }
+
   .dropdown-toggle {
     margin-top: 3px;
   }
+
   .dropdown-menu {
     padding: 10px;
   }
+
   .input-button {
     top: 50% !important;
+  }
+
+  /* Кнопка сброса на мобильных */
+  .filters-row-reset {
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .filter-reset-btn {
+    font-size: 0.85rem;
   }
 }
 
