@@ -2,7 +2,7 @@
   color: #ffffff;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   border-radius: 20px;
   background: transparent;
   border: none;
@@ -27,6 +27,7 @@
 
 .form-check-label {
   white-space: nowrap;
+  font-size: clamp(0.8rem, 1vw, 1rem);
 }
 
 /* Стили для чекбоксов тегов - оранжевый цвет #ff8348 */
@@ -162,13 +163,37 @@
 
 /* === Карточки в списках: 2/3/4 в строке === */
 /* <900px — 2 карточки в строке */
-@media (max-width: 899px) {
-  .event-list-col,
-  .venue-list-col {
-    width: 50% !important;
-    max-width: 50% !important;
-    padding: 0 5px;
-    box-sizing: border-box;
+@media (max-width: 900px) {
+  .filter-col-category,
+  .filter-col-date,
+  .filter-col-title,
+  .filter-col-format,
+  .filter-col-button {
+    width: 100% !important;
+  }
+  .filter-button {
+    margin-top: 20px;
+    padding: 0;
+  }
+  .filter-item {
+    margin-top: 7px;
+  }
+  .filter-item-tags {
+        margin-top: 20px;
+  }
+  .filter-item .d-flex.flex-wrap {
+    width: 100%;
+    gap: 0px;
+    margin-top: 10px;
+  }
+  .dropdown-toggle {
+    margin-top: 3px;
+  }
+  .dropdown-menu {
+    padding: 10px;
+  }
+  .input-button {
+    top: 50% !important;
   }
 }
 
