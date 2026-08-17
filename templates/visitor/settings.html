@@ -18,7 +18,7 @@
                 <div class="info-row">
                     <span class="label">НАЗВАНИЕ ПРОФИЛЯ (ИМЯ)</span>
                     <div class="editable-field">
-                        <input type="text" name="name" value="{{ user_data.name }}" placeholder="Имя профиля" readonly>
+                        <input type="text" name="name" value="{{ user_data.name }}" readonly>
                         <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                     </div>
                 </div>
@@ -26,12 +26,12 @@
                 <div class="info-row">
                     <span class="label">НОМЕР ТЕЛЕФОНА</span>
                     <div class="editable-field">
-                        <input type="tel" name="phone" value="{{ user_data.phone }}" placeholder="+7 (___) ___-__-__" readonly>
+                        <input type="tel" name="phone" value="{{ user_data.phone }}" placeholder="Не указан" inputmode="numeric" pattern="[0-9\+\-\(\)\s]" readonly>
                         <span class="edit-icon"><img src="/media/icon/edit.svg" alt=""></span>
                     </div>
                 </div>
 
-                <div class="info-row">
+                <div class="info-row" style="display:flex; justify-content:center;">
                     <button type="button" id="open-password-modal" class="btn-change-password">
                         ИЗМЕНИТЬ ПАРОЛЬ
                     </button>
@@ -154,9 +154,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.removeAttribute('readonly');
                 input.focus();
                 input.select();
+
+                // === Блокировка букв для телефона ===
+                if (field_name === 'phone') {
+                    input.addEventListener('keydown', function(e) {
+                        // Разрешить: Backspace, Delete, Tab, Enter, стрелки
+                        if ([8, 9, 13, 46, 37, 38, 39, 40].indexOf(e.keyCode) !== -1) {
+                            return;
+                        }
+                        // Разрешить: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                        if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].indexOf(e.keyCode) !== -1) {
+                            return;
+                        }
+                        // Разрешить только цифры, +, -, скобки, пробел
+                        const allowedKeys = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // 0-9
+                                           96, 97, 98, 99, 100, 101, 102, 103, 104, 105, // Numpad 0-9
+                                           187, 189, // + и - (в зависимости от раскладки)
+                                           107, 109, // Numpad + и -
+                                           32]; // пробел
+                        if (allowedKeys.indexOf(e.keyCode) !== -1) {
+                            return;
+                        }
+                        e.preventDefault();
+                    });
+
+                    // Блокировка вставки нежелательных символов
+                    input.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+                        const cleaned = pasted.replace(/[^0-9\+\-\(\)\s]/g, '');
+                        document.execCommand('insertText', false, cleaned);
+                    });
+                }
             } else {
                 // === Save ===
-                const field_value = input.value;
+                let field_value = input.value;
+
+                // Валидация телефона
+                if (field_name === 'phone') {
+                    // Пустое значение = "не указан" — разрешаем
+                    if (field_value.trim() === '') {
+                        field_value = '';
+                    } else {
+                        const digitsOnly = field_value.replace(/\D/g, '');
+                        if (digitsOnly.length < 10) {
+                            showNotification('Введите корректный номер телефона (минимум 10 цифр)', true);
+                            isEditing = false;
+                            input.setAttribute('readonly', '');
+                            this.innerHTML = '<img src="/media/icon/edit.svg" alt="">';
+                            field.classList.remove('editable-field--active');
+                            return;
+                        }
+                    }
+                }
 
                 // Reset icon
                 this.innerHTML = '<img src="/media/icon/edit.svg" alt="">';

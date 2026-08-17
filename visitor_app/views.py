@@ -218,7 +218,7 @@ def settings(request):
     user_data = {
         'name': request.user.get_full_name() or request.user.username,
         'email': request.user.email,
-        'phone': getattr(request.user, 'phone', 'Не указан') # Предполагаем, что у модели есть поле phone
+        'phone': getattr(request.user, 'phone', 'Не указан') or 'Не указан'
     }
 
     return render(request, "visitor/settings.html", {
@@ -253,7 +253,16 @@ def save_field(request):
                 request.user.first_name = parts[0]
             request.user.save(update_fields=["first_name", "last_name"])
         elif field_name == "phone":
-            request.user.phone = field_value
+            phone_clean = field_value.strip()
+            if phone_clean:
+                # Допускаем только цифры, +, -, скобки, пробелы
+                if not all(c.isdigit() or c in '+-() ' for c in phone_clean):
+                    return JsonResponse({"status": "error", "message": "Номер телефона может содержать только цифры, +, -, скобки и пробелы"}, status=400)
+                # Минимум 10 цифр
+                digits = ''.join(c for c in phone_clean if c.isdigit())
+                if len(digits) < 10:
+                    return JsonResponse({"status": "error", "message": "Номер телефона должен содержать минимум 10 цифр"}, status=400)
+            request.user.phone = phone_clean if phone_clean else None
             request.user.save(update_fields=["phone"])
         return JsonResponse({"status": "success"})
     except Exception as e:
@@ -273,7 +282,7 @@ def buy_ticket(request, ticket_id=None):
         initial_data = {
             'name': request.user.get_full_name() or request.user.username,
             'email': request.user.email,
-            'phone': getattr(request.user, 'phone_number', '')
+            'phone': getattr(request.user, 'phone', '')
         }
 
     context = {

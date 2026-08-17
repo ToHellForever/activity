@@ -1,20 +1,17 @@
 /* ===== Visitor Sidebar ===== */
 .visitor-sidebar {
-  width: 236px;
-  min-width: 220px;
-  min-height: calc(100vh - 100px);
+  width: 17%;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
-  padding: 20px 14px;
+  padding: 20px 20px;
   flex-shrink: 0;
-  margin-top: 25px;
+  padding-top: 0 !important;
 }
 
 /* ===== Sidebar ===== */
 .partner-sidebar {
   width: 20%;
-  min-height: calc(100vh - 100px);
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
@@ -159,7 +156,6 @@
 .partner-main {
   flex: 1;
   min-width: 0;
-  margin-top: 25px;
 }
 
 .sidebar-logout {
