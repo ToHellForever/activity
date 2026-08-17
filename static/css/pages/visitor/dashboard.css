@@ -221,6 +221,7 @@
 }
 
 .no-tickets {
+  width: 100%;
   border: 2px dashed #c9cbd6;
   border-radius: 22px;
   padding: 48px 24px;
