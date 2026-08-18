@@ -1485,6 +1485,9 @@ def reports(request):
     # Вычитаем поштучно возвращённые из проданных
     tickets_sold = tickets_sold - refunded_order_tickets_count
 
+    # Вычитаем поштучно возвращённые из суммы продаж
+    total_sales = float(total_sales) - float(refunded_order_tickets_sum)
+
     # Средний чек
     avg_check = total_sales / tickets_sold if tickets_sold > 0 else 0
 

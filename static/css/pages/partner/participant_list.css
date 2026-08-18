@@ -1,0 +1,204 @@
+/* ============================================
+   PARTICIPANT LIST PAGE - Стили
+   ============================================ */
+
+/* ===== Статусы участников ===== */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: "Verdana", sans-serif;
+  white-space: nowrap;
+}
+
+.status-badge--paid {
+  background: #d4f4dd !important;
+  color: #1e7c3a !important;
+}
+
+.status-badge--pending {
+  background: #fff3d4 !important;
+  color: #a67c00 !important;
+}
+
+/* ===== Фильтры ===== */
+.filter-card .card-body {
+  padding: 16px 22px;
+}
+
+.filter-form .form-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.filter-form .form-control,
+.filter-form .form-select {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background-color: #fafafa;
+}
+
+.filter-form .form-control:focus,
+.filter-form .form-select:focus {
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 0.15rem rgba(255, 140, 66, 0.15);
+  background-color: #fff;
+}
+
+.filter-form .btn-primary {
+  background: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.filter-form .btn-primary:hover {
+  background: #f07a2f;
+  border-color: #f07a2f;
+}
+
+.filter-form .btn-outline-secondary {
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: #666;
+  border-color: #e0e0e0;
+}
+
+.filter-form .btn-outline-secondary:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-actions .btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.filter-actions .btn-success {
+  background: #28a745;
+  border-color: #28a745;
+  color: #fff;
+}
+
+.filter-actions .btn-success:hover {
+  background: #219a38;
+  border-color: #1e8e33;
+}
+
+.filter-actions .btn-danger {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.filter-actions .btn-danger:hover {
+  background: #c82333;
+  border-color: #bd2130;
+}
+
+/* ===== Таблица участников ===== */
+.participant-table .table {
+  margin-bottom: 0;
+}
+
+.participant-table .table thead th {
+  background: #fafafa;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #ececec;
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+
+.participant-table .table tbody td {
+  font-size: 13px;
+  color: #333;
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f2f2f2;
+  font-family: "Verdana", sans-serif;
+}
+
+.participant-table .table tbody tr:hover {
+  background: #fafafa;
+}
+
+/* ===== Attendance button ===== */
+.attendance-btn {
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-family: "Verdana", sans-serif;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.attendance-btn.btn-success {
+  background: #d4f4dd;
+  border: 1px solid #b8e6c8;
+  color: #1e7c3a;
+}
+
+.attendance-btn.btn-success:hover {
+  background: #c2edd3;
+  border-color: #a0d8b5;
+}
+
+.attendance-btn.btn-outline-warning {
+  background: transparent;
+  border: 1px solid #ffc107;
+  color: #a67c00;
+}
+
+.attendance-btn.btn-outline-warning:hover {
+  background: #fff8e1;
+  border-color: #e0a800;
+  color: #8a6800;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .filter-card .card-body {
+    padding: 14px 16px;
+  }
+
+  .participant-table .card-header,
+  .participant-table .card-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .filter-actions .btn {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+}
