@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.conf import settings
+from django.utils import timezone
 from core.models import CustomUser
 import os
 import hashlib
@@ -569,3 +570,117 @@ class ReportSchedule(models.Model):
     class Meta:
         verbose_name = "Расписание отчётов"
         verbose_name_plural = "Расписания отчётов"
+
+
+class EventAccessLink(models.Model):
+    """
+    Временная ссылка/код доступа для контроля входа на мероприятие.
+    Одно мероприятие может иметь несколько кодов (по одному на каждого контролёра).
+    """
+    event = models.ForeignKey(
+        "core.Event",
+        on_delete=models.CASCADE,
+        related_name="access_links",
+        verbose_name="Мероприятие",
+    )
+    name = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Имя контролёра",
+        help_text="Например: 'Контролёр Алексей — вход №1'",
+    )
+    access_code = models.CharField(
+        max_length=16,
+        unique=True,
+        verbose_name="Код доступа",
+        help_text="Уникальный короткий код для страницы сканера",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активен",
+        help_text="Если отключён — сканер не работает",
+    )
+    scanned_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Отсканировано билетов",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
+    activated_at = models.DateTimeField(null=True, blank=True, verbose_name="Активирован")
+    deactivated_at = models.DateTimeField(null=True, blank=True, verbose_name="Деактивирован")
+
+    MAX_ACTIVE_LINKS = 2  # Максимум активных ссылок на одно мероприятие
+
+    def __str__(self):
+        status = "активен" if self.is_active else "неактивен"
+        return f"{self.name or self.access_code} — {self.event.title} — {status}"
+
+    def clean(self):
+        """Проверяем ограничение на количество активных ссылок."""
+        from django.core.exceptions import ValidationError
+        
+        if self.is_active and self.pk:
+            # Считаем активные ссылки для этого мероприятия (исключая текущую)
+            active_count = EventAccessLink.objects.filter(
+                event=self.event,
+                is_active=True,
+            ).exclude(pk=self.pk).count()
+            
+            if active_count >= self.MAX_ACTIVE_LINKS:
+                raise ValidationError(
+                    f"Нельзя создать больше {self.MAX_ACTIVE_LINKS} активных ссылок "
+                    f"на одно мероприятие. Сейчас уже активно {active_count}."
+                )
+        elif self.is_active and not self.pk:
+            # Создаём новую ссылку
+            active_count = EventAccessLink.objects.filter(
+                event=self.event,
+                is_active=True,
+            ).count()
+            
+            if active_count >= self.MAX_ACTIVE_LINKS:
+                raise ValidationError(
+                    f"Нельзя создать больше {self.MAX_ACTIVE_LINKS} активных ссылок "
+                    f"на одно мероприятие. Сейчас уже активно {active_count}."
+                )
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Вызываем валидацию перед сохранением
+        if not self.access_code:
+            self.access_code = self._generate_code()
+        if self.is_active and not self.activated_at:
+            self.activated_at = timezone.now()
+        if not self.is_active and not self.deactivated_at:
+            self.deactivated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    @property
+    def scanner_url(self):
+        from django.conf import settings
+        site_url = getattr(settings, "SITE_URL", "")
+        if not site_url:
+            # Fallback — вернём относительный URL
+            return f"/scanner/{self.access_code}/"
+        # Убираем trailing slash
+        site_url = site_url.rstrip("/")
+        return f"{site_url}/scanner/{self.access_code}/"
+
+    def _generate_code(self):
+        import random
+        import string
+        while True:
+            code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not EventAccessLink.objects.filter(access_code=code).exists():
+                return code
+
+    @classmethod
+    def get_total_scanned(cls, event):
+        """Общее количество отсканированных билетов по всем кодам мероприятия."""
+        return cls.objects.filter(event=event, is_active=True).aggregate(
+            total=models.Sum('scanned_count')
+        )['total'] or 0
+
+    class Meta:
+        verbose_name = "Ссылка контроля входа"
+        verbose_name_plural = "Ссылки контроля входа"
+        ordering = ["-created_at"]

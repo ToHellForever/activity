@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Сканер — {{ event.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .scanner-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 16px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .scanner-header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+        .scanner-header .event-title {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Status banner */
+        .status-banner {
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-banner.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-banner.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Counter */
+        .counter-bar {
+            background: #fff;
+            padding: 16px 20px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .counter-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+        .counter-label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Scanner area */
+        .scanner-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .scanner-camera-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .scanner-camera-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scanner-frame {
+            width: 200px;
+            height: 200px;
+            border: 3px solid rgba(255,255,255,0.8);
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+        }
+        .scanner-placeholder {
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            font-size: 14px;
+        }
+        .scanner-placeholder i {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Result card */
+        .result-card {
+            width: 100%;
+            max-width: 360px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            animation: slideUp 0.3s ease;
+            margin-bottom: 20px;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-icon {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+        .result-icon.valid { color: #28a745; }
+        .result-icon.invalid { color: #dc3545; }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .result-title.valid { color: #28a745; }
+        .result-title.invalid { color: #dc3545; }
+
+        .result-details {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .result-details strong {
+            color: #333;
+        }
+
+        /* End shift button */
+        .end-shift-btn {
+            width: 100%;
+            max-width: 360px;
+            padding: 14px;
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .end-shift-btn:hover { background: #c82333; }
+        .end-shift-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Manual input */
+        .manual-input {
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 16px;
+        }
+        .manual-input input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .manual-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .manual-input button {
+            margin-top: 8px;
+            padding: 10px 24px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Vibration animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .shake { animation: shake 0.3s ease; }
+
+        /* Pulse animation for valid */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        .pulse-green { animation: pulse-green 0.5s ease; }
+
+        /* No camera message */
+        .no-camera {
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="scanner-header">
+        <h1><i class="bi bi-qr-code-scan"></i> Контроль входа</h1>
+        <div class="event-title">{{ event.title }}</div>
+    </div>
+
+    {% if is_active %}
+    <div class="status-banner active">
+        <i class="bi bi-check-circle-fill"></i> Контроль входа активен
+    </div>
+    {% else %}
+    <div class="status-banner inactive">
+        <i class="bi bi-x-circle-fill"></i> Контроль входа отключён
+    </div>
+    {% endif %}
+
+    <!-- Counter -->
+    <div class="counter-bar">
+        <div class="counter-number" id="scannedCount">{{ scanned_count }}</div>
+        <div class="counter-label">прошли контроль</div>
+    </div>
+
+    <!-- Main area -->
+    <div class="scanner-area">
+
+        <!-- Result card (hidden by default) -->
+        <div class="result-card" id="resultCard" style="display: none;"></div>
+
+        <!-- Camera scanner -->
+        <div id="scannerContainer">
+            <div class="scanner-camera-wrapper" id="cameraWrapper">
+                <video id="cameraFeed" autoplay playsinline muted></video>
+                <div class="scanner-overlay">
+                    <div class="scanner-frame"></div>
+                </div>
+            </div>
+            <div class="no-camera" id="cameraStatus">
+                <i class="bi bi-camera" style="font-size: 32px;"></i><br>
+                Камера инициализируется...
+            </div>
+        </div>
+
+        <!-- Manual input -->
+        <div class="manual-input">
+            <input type="text" id="manualOrderId" placeholder="Введите номер заказа">
+            <button onclick="manualCheck()">Проверить</button>
+        </div>
+
+        <!-- End shift -->
+        <button class="end-shift-btn" onclick="endShift()">
+            <i class="bi bi-box-arrow-right"></i> Завершить смену
+        </button>
+    </div>
+
+    <script>
+        const ACCESS_CODE = "{{ access_code }}";
+        const EVENT_TITLE = "{{ event.title }}";
+
+        // === Camera setup ===
+        let stream = null;
+
+        async function startCamera() {
+            const video = document.getElementById('cameraFeed');
+            const status = document.getElementById('cameraStatus');
+            const wrapper = document.getElementById('cameraWrapper');
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+                });
+                video.srcObject = stream;
+                status.style.display = 'none';
+                wrapper.style.display = 'block';
+
+                // Запускаем сканирование QR-кода
+                setupQRScanner(video);
+            } catch (err) {
+                console.error('Camera error:', err);
+                status.innerHTML = '<i class="bi bi-camera-x" style="font-size: 32px; color: #dc3545;"></i><br>Камера недоступна.<br>Введите номер заказа вручную.';
+                wrapper.style.display = 'none';
+            }
+        }
+
+        // === Simple QR scanner using canvas ===
+        function setupQRScanner(video) {
+            // Используем библиотеку jsQR для сканирования QR-кодов с видеопотока
+            // Если библиотека не загружена, предлагаем ручной ввод
+            if (typeof jsQR === 'undefined') {
+                document.getElementById('cameraStatus').innerHTML = 
+                    '<i class="bi bi-info-circle" style="font-size: 32px;"></i><br>Сканирование через камеру временно недоступно.<br>Введите номер заказа вручную.';
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            function scanFrame() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+                    if (code) {
+                        // QR-код найден — извлекаем order_id из URL
+                        handleQRFound(code.data);
+                    }
+                }
+                requestAnimationFrame(scanFrame);
+            }
+
+            scanFrame();
+        }
+
+        // === Handle found QR code ===
+        function handleQRFound(qrData) {
+            // QR содержит URL типа /check-ticket/{order_id}/
+            // Извлекаем order_id
+            const match = qrData.match(/check-ticket\/(\d+)\//);
+            if (match) {
+                const orderId = match[1];
+                scanTicket(orderId);
+            } else {
+                showResult('invalid', 'Неверный QR-код', 'Отсканируйте QR-код с билета');
+            }
+        }
+
+        // === Manual check ===
+        function manualCheck() {
+            const input = document.getElementById('manualOrderId');
+            const orderId = input.value.trim();
+            if (!orderId) {
+                alert('Введите номер заказа');
+                return;
+            }
+            scanTicket(orderId);
+            input.value = '';
+        }
+
+        // === Scan ticket via API ===
+        function scanTicket(orderId) {
+            const url = `/scanner/${ACCESS_CODE}/scan/`;
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('ticket_number', '1');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.status === 'valid') {
+                        showResult('valid', data.message, data);
+                        // Вибрация успеха
+                        if (navigator.vibrate) navigator.vibrate(100);
+                    } else {
+                        showResult('invalid', data.message, data);
+                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    }
+                } else {
+                    showResult('invalid', data.message || 'Ошибка проверки');
+                }
+            })
+            .catch(err => {
+                showResult('invalid', 'Ошибка сети: ' + err.message);
+            });
+        }
+
+        // === Show result ===
+        function showResult(type, message, data) {
+            const card = document.getElementById('resultCard');
+            const wrapper = document.getElementById('cameraWrapper');
+
+            let html = '';
+            if (type === 'valid') {
+                html = `
+                    <div class="result-icon valid">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="result-title valid">Билет действителен</div>
+                    <div class="result-details">
+                        <strong>${data.ticket_name || ''}</strong><br>
+                        ${data.participant ? data.participant : ''}<br>
+                        <span class="text-muted">Заказ #${data.order_id}</span><br>
+                        <span class="text-muted">Билет ${data.ticket_number} из ${data.total_count}</span>
+                    </div>
+                `;
+                card.classList.add('pulse-green');
+                setTimeout(() => card.classList.remove('pulse-green'), 600);
+            } else {
+                html = `
+                    <div class="result-icon invalid">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <div class="result-title invalid">Билет недействителен</div>
+                    <div class="result-details">${message}</div>
+                `;
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 400);
+            }
+
+            card.innerHTML = html;
+            card.style.display = 'block';
+            wrapper.style.display = 'none';
+        }
+
+        // === End shift ===
+        function endShift() {
+            if (!confirm('Вы уверены, что хотите завершить смену? Контроль входа будет отключён.')) return;
+
+            fetch(`/scanner/${ACCESS_CODE}/end-shift/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.body.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;">
+                            <div>
+                                <i class="bi bi-check-circle" style="font-size:64px;color:#28a745;"></i>
+                                <h2 style="margin-top:16px;">Смена завершена</h2>
+                                <p style="font-size:18px;color:#555;">Всего прошло участников: <strong>${data.scanned_count}</strong></p>
+                            </div>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => alert('Ошибка: ' + err.message));
+        }
+
+        // === Helpers ===
+        function getCookie(name) {
+            let cookieValue = null;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+            return cookieValue;
+        }
+
+        // === Init ===
+        document.addEventListener('DOMContentLoaded', function() {
+            startCamera();
+
+            // Enter key for manual input
+            document.getElementById('manualOrderId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') manualCheck();
+            });
+        });
+    </script>
+
+    <!-- jsQR library for QR code scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</body>
+</html>

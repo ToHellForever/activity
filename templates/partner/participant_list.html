@@ -69,6 +69,7 @@
                             <th>Тип билета</th>
                             <th>Билет</th>
                             <th>Статус</th>
+                            <th>Посетил</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -101,15 +102,26 @@
                                         <span class="status-badge status-badge--pending">Ожидание</span>
                                     {% endif %}
                                 </td>
+                                <td>
+                                    {% if order_ticket.attended %}
+                                        <span class="status-badge" style="background:#d4edda;color:#155724;">
+                                            <i class="bi bi-check-circle-fill"></i> Да
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge" style="background:#f8f9fa;color:#6c757d;">
+                                            <i class="bi bi-x-circle"></i> Нет
+                                        </span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" class="text-center text-muted">Пока нет купленных билетов на это мероприятие.</td>
+                                <td colspan="9" class="text-center text-muted">Пока нет купленных билетов на это мероприятие.</td>
                             </tr>
                             {% endfor %}
                         {% empty %}
                             <tr>
-                                <td colspan="8" class="text-center text-muted">Пока нет участников.</td>
+                                <td colspan="9" class="text-center text-muted">Пока нет участников.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

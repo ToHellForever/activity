@@ -21,6 +21,11 @@ from core.views import (
     resend_verification_code,
     check_ticket,
 )
+from partner_app.views import (
+    scanner_view,
+    scanner_scan,
+    scanner_end_shift,
+)
 
 app_name = "venues"
 
@@ -56,6 +61,9 @@ urlpatterns = [
     path("check-ticket/<int:order_id>/", check_ticket, name="check_ticket"),
     path("reports/sales-register/", sales_register, name="sales_register"),
     path("payment/", include(("payment.urls", "payment"), namespace="payment")),
+    path("scanner/<str:access_code>/", scanner_view, name="scanner_view"),
+    path("scanner/<str:access_code>/scan/", scanner_scan, name="scanner_scan"),
+    path("scanner/<str:access_code>/end-shift/", scanner_end_shift, name="scanner_end_shift"),
 ]
 
 

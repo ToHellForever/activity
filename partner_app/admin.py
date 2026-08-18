@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import PartnerProfile, SalesReport, ReportSchedule, PortfolioItem, PortfolioImage
+from .models import PartnerProfile, SalesReport, ReportSchedule, PortfolioItem, PortfolioImage, EventAccessLink
 
 
 def _file_link(field_name, label):
@@ -121,3 +121,27 @@ class PortfolioImageAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-width: 80px; border-radius: 4px;" />', obj.image.url)
         return "—"
     preview.short_description = "Превью"
+
+
+@admin.register(EventAccessLink)
+class EventAccessLinkAdmin(admin.ModelAdmin):
+    list_display = ("name", "event", "access_code", "is_active", "scanned_count", "created_at")
+    list_filter = ("is_active",)
+    search_fields = ("name", "event__title", "access_code")
+    readonly_fields = ("created_at", "activated_at", "deactivated_at")
+    
+    fieldsets = (
+        ("Мероприятие", {
+            "fields": ("event",),
+        }),
+        ("Код доступа", {
+            "fields": ("name", "access_code", "is_active"),
+        }),
+        ("Статистика", {
+            "fields": ("scanned_count",),
+        }),
+        ("Даты", {
+            "fields": ("created_at", "activated_at", "deactivated_at"),
+            "classes": ("collapse",),
+        }),
+    )

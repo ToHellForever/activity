@@ -363,6 +363,16 @@
   width: 85% !important;
 }
 
+/* ---------- Кнопка "Контроль входа" ---------- */
+.btn-entry-control {
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-entry-control:hover {
+  background: #218838 !important;
+  transform: scale(1.03);
+}
+
 /* ============================================================
     RESPONSIVE
     ============================================================ */

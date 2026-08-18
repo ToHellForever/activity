@@ -52,4 +52,9 @@ urlpatterns = [
      # Чаты участников по мероприятиям
      path("chats/", views.partner_chats, name="chats"),
      path("chats_list/", views.partner_chats_list, name="chats_list"),
+    # Контроль входа
+    path("entry-control/<int:event_id>/enable/", views.enable_entry_control, name="enable_entry_control"),
+    path("entry-control/<int:link_id>/toggle/", views.toggle_entry_control, name="toggle_entry_control"),
+    path("entry-control/<int:link_id>/delete/", views.delete_entry_control, name="delete_entry_control"),
+    path("entry-control/<int:event_id>/status/", views.entry_control_status, name="entry_control_status"),
 ]

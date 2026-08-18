@@ -22,7 +22,6 @@
 .filter-item .d-flex.flex-wrap {
   width: 90%;
   justify-content: space-between;
-  gap: 15px;
 }
 
 .form-check-label {
@@ -222,7 +221,6 @@
 
   .filter-item .d-flex.flex-wrap {
     width: 100%;
-    gap: 5px;
     margin-top: 10px;
   }
 

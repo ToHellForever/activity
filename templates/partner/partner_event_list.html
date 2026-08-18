@@ -116,6 +116,12 @@
                                     {% endif %}
 <div class="partner-card-footer">
     <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
+    <button type="button" class="btn-entry-control" 
+            data-event-id="{{ item.event.id }}"
+            data-bs-toggle="modal" data-bs-target="#entryControlModal"
+            style="background:#28a745;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-top:8px;">
+        <i class="bi bi-qr-code-scan"></i> Контроль входа
+    </button>
     {% if not item.event.has_sold_tickets %}
         <a href="{% url 'partner:edit_event' item.event.id %}"
            class="btn-edit" title="Редактировать">
@@ -189,6 +195,12 @@
                                     {% endif %}
                                     <div class="partner-card-footer">
                                         <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
+                                        <button type="button" class="btn-entry-control" 
+                                                data-event-id="{{ item.event.id }}"
+                                                data-bs-toggle="modal" data-bs-target="#entryControlModal"
+                                                style="background:#28a745;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-top:8px;">
+                                            <i class="bi bi-qr-code-scan"></i> Контроль входа
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -239,6 +251,223 @@
 
 <!-- Скрипт календаря -->
 <script src="{% static 'js/pages/calendar.js' %}"></script>
+
+<!-- Modal контроля входа -->
+<div class="modal fade" id="entryControlModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;">
+                <h5 class="modal-title"><i class="bi bi-qr-code-scan"></i> Контроль входа</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="entryControlBody" style="padding:24px;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// === Entry Control Logic ===
+let currentEventId = null;
+
+document.querySelectorAll('.btn-entry-control').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentEventId = this.dataset.eventId;
+        loadEntryControlStatus(currentEventId);
+    });
+});
+
+function loadEntryControlStatus(eventId) {
+    fetch(`/partner/entry-control/${eventId}/status/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderEntryControl(data);
+            }
+        })
+        .catch(err => {
+            document.getElementById('entryControlBody').innerHTML = 
+                '<div class="text-center py-4 text-danger">Ошибка загрузки</div>';
+        });
+}
+
+function renderEntryControl(data) {
+    const body = document.getElementById('entryControlBody');
+    
+    let linksHtml = '';
+    if (data.links && data.links.length > 0) {
+        data.links.forEach(link => {
+            const statusBadge = link.is_active 
+                ? '<span class="badge bg-success">Активен</span>' 
+                : '<span class="badge bg-secondary">Отключён</span>';
+            const btnAction = link.is_active
+                ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleLink(${link.id})">Отключить</button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteLink(${link.id})">Удалить</button>`
+                : `<button class="btn btn-sm btn-outline-success" onclick="toggleLink(${link.id})">Включить</button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteLink(${link.id})">Удалить</button>`;
+            
+            linksHtml += `
+                <div class="card mb-2" style="border:1px solid #e0e0e0;border-radius:10px;">
+                    <div class="card-body py-3" style="padding:12px 16px;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <strong>${link.name}</strong> ${statusBadge}
+                                <div class="text-muted" style="font-size:12px;">
+                                    Код: <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;">${link.access_code}</code>
+                                    | Отсканировано: <strong>${link.scanned_count}</strong>
+                                    | Создан: ${link.created_at}
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyUrl('${link.scanner_url}')">
+                                    <i class="bi bi-clipboard"></i> Копировать
+                                </button>
+                                ${btnAction}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    body.innerHTML = `
+        <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0"><i class="bi bi-people"></i> Всего отсканировано: <strong>${data.total_scanned}</strong></h6>
+                <span class="badge ${data.active_count >= 2 ? 'bg-warning' : 'bg-primary'}">
+                    <i class="bi bi-link-45deg"></i> ${data.active_count || 0} / 2 активных
+                </span>
+            </div>
+        </div>
+        
+        <div class="mb-3 p-3" style="background:#f8f9ff;border-radius:10px;border:1px dashed #667eea;">
+            <label class="form-label fw-bold mb-1">Имя контролёра (необязательно):</label>
+            <input type="text" class="form-control mb-2" id="controllerName" placeholder="Например: Алексей — вход №1">
+            <button class="btn w-100 py-2 ${data.active_count >= 2 ? 'btn-secondary disabled' : 'btn-success'}" 
+                    onclick="createLink()" 
+                    ${data.active_count >= 2 ? 'disabled' : ''}>
+                <i class="bi bi-plus-circle"></i> Создать код доступа
+                ${data.active_count >= 2 ? '(Лимит достигнут)' : ''}
+            </button>
+        </div>
+        
+        <div class="mb-2">
+            <h6 class="text-muted"><i class="bi bi-link-45deg"></i> Активные ссылки (${data.links ? data.links.length : 0})</h6>
+        </div>
+        <div id="linksList">${linksHtml}</div>
+    `;
+}
+
+function createLink() {
+    const name = document.getElementById('controllerName').value.trim();
+    const body = document.getElementById('entryControlBody');
+    
+    body.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Создаю код доступа...</p>
+        </div>
+    `;
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    if (name) formData.append('name', name);
+    
+    fetch(`/partner/entry-control/${currentEventId}/enable/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Код доступа создан!', false);
+            loadEntryControlStatus(currentEventId);
+        } else {
+            body.innerHTML = `<div class="text-center py-4 text-danger">${data.message}</div>`;
+        }
+    })
+    .catch(err => {
+        body.innerHTML = '<div class="text-center py-4 text-danger">Ошибка создания кода</div>';
+    });
+}
+
+function toggleLink(linkId) {
+    fetch(`/partner/entry-control/${linkId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, data.is_active);
+            loadEntryControlStatus(currentEventId);
+        } else {
+            showToast(data.message, true);
+        }
+    });
+}
+
+function deleteLink(linkId) {
+    if (!confirm('Удалить этот код навсегда?')) return;
+    
+    fetch(`/partner/entry-control/${linkId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Код удалён');
+            loadEntryControlStatus(currentEventId);
+        } else {
+            showToast(data.message);
+        }
+    });
+}
+
+function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Ссылка скопирована!', false);
+    }).catch(() => {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Ссылка скопирована!', false);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+        }
+    }
+    return cookieValue;
+}
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
