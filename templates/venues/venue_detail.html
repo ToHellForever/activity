@@ -4,7 +4,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/venues/venue_detail.css' %}">
-
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <div class="venue-detail-container">
     <div class="venue-detail-content">
         <!-- Фото площадки -->
@@ -33,7 +33,7 @@
                 </div>
             </div>
             
-            <div class="venue-">
+            <div class="venue-description">
                 {{ venue.description|linebreaks }}
             </div>
             {% if venue.equipment_items.all %}
@@ -60,9 +60,9 @@
     <!-- Другие залы — мобильные: 2 карточки -->
     <div class="other-venues-section">
         <h2 class="section-title">ДРУГИЕ ЗАЛЫ</h2>
-
+<div class='landing-block mt-3'>
         <!-- Мобильные: 2 карточки (скрыто на 900px и выше) -->
-        <div class="row d-900-none">
+        <div class="row d-900-none row-cards-list">
             {% for other_venue in other_venues_mobile %}
             <div class="col-6 mb-4">
                 <div class="venue-card">
@@ -76,7 +76,7 @@
                             <span>{{ other_venue.address }}</span>
                         </div>
                         <div class="venue-card-stats">
-                            <span>{{ other_venue.area }} м²</span>
+                            <span><img src="/media/icon/S.png" alt="" class="icon-calendar">{{ other_venue.area }} м²</span>
                             <span>до {{ other_venue.max_capacity }} человек</span>
                         </div>
                         <div class="venue-card-price">
@@ -94,9 +94,10 @@
             </div>
             {% endfor %}
         </div>
-
+        </div>
+<div class='landing-block mt-3'>
         <!-- Планшет: 3 карточки (скрыто на мобильных и >= 1300px) -->
-        <div class="row d-none d-900-flex d-1300-none">
+        <div class="row d-none d-900-flex d-1300-none row-cards-list">
             {% for other_venue in other_venues_tablet %}
             <div class="col-4 mb-4">
                 <div class="venue-card">
@@ -110,7 +111,7 @@
                             <span>{{ other_venue.address }}</span>
                         </div>
                         <div class="venue-card-stats">
-                            <span>{{ other_venue.area }} м²</span>
+                            <span><img src="/media/icon/S.png" alt="" class="icon-calendar">{{ other_venue.area }} м²</span>
                             <span>до {{ other_venue.max_capacity }} человек</span>
                         </div>
                         <div class="venue-card-price">
@@ -128,9 +129,10 @@
             </div>
             {% endfor %}
         </div>
-
+</div>
+<div class='landing-block mt-3'>
         <!-- Десктоп: 4 карточки (скрыто на мобильных и планшетах) -->
-        <div class="row d-none d-1300-flex">
+        <div class="row d-none d-1300-flex row-cards-list">
             {% for other_venue in other_venues_desktop %}
             <div class="col-md-3 mb-4">
                 <div class="venue-card">
@@ -144,8 +146,8 @@
                             <span>{{ other_venue.address }}</span>
                         </div>
                         <div class="venue-card-stats">
-                            <span>{{ other_venue.area }} м²</span>
-                            <span>до {{ other_venue.max_capacity }} человек</span>
+                            <span><img src="/media/icon/S.png" alt="" class="icon-calendar">{{ other_venue.area }} м²</span>
+                            <span style='margin-left: 10px !important;'>до {{ other_venue.max_capacity }} человек</span>
                         </div>
                         <div class="venue-card-price">
                             {% if other_venue.price_unit == 'hour' %}
@@ -162,6 +164,7 @@
             </div>
             {% endfor %}
         </div>
+    </div>
     </div>
 </div>
 {% endblock %}
