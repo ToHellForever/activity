@@ -201,13 +201,17 @@ class VenueListView(ListView):
         context['metro_list'] = metro_list
         context['selected_metro'] = selected_metro
         
+        # Выбранные equipment IDs для отметки чекбоксов
+        selected_equipment = self.request.GET.getlist("equipment")
+        context['selected_equipment'] = selected_equipment
+        
         # Оборудование для фильтра
         categories = EquipmentCategory.objects.prefetch_related('items').all()
         equipment_list = []
         for category in categories:
             equipment_list.append({
                 'name': category.name,
-                'sub_equipment': list(category.items.values_list('name', flat=True))
+                'sub_equipment': list(category.items.values('id', 'name'))
             })
         context['equipment_list'] = equipment_list
         
@@ -246,8 +250,15 @@ class VenueListView(ListView):
         # Фильтрация по оборудованию
         equipment_ids = self.request.GET.getlist("equipment")
         if equipment_ids:
-            for equipment_id in equipment_ids:
-                qs = qs.filter(equipment_items__id=equipment_id)
+            # Фильтруем только валидные числовые ID
+            valid_ids = []
+            for eq_id in equipment_ids:
+                try:
+                    valid_ids.append(int(eq_id))
+                except (ValueError, TypeError):
+                    continue
+            if valid_ids:
+                qs = qs.filter(equipment_items__id__in=valid_ids).distinct()
 
         district = self.request.GET.get("district")
         if district:
