@@ -138,7 +138,7 @@
   font-size: 0.95rem;
 }
 .card-date-geo-detail {
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -560,10 +560,30 @@ a {
   color: #857d7d;
 }
 
-@media (max-width: 900px) {
-  .event-detail-image {
-    width: 100%;
+/* Десктоп (>= 900px): фото растягивается по высоте правого блока */
+@media (min-width: 900px) {
+  .image-wrapper {
+    aspect-ratio: unset;
     height: 100%;
+    min-height: 100%;
+  }
+
+  .image-wrapper img {
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Мобильные (< 900px): фото на всю ширину, возвращаем пропорции */
+@media (max-width: 899px) {
+  .event-detail-image:first-child {
+    width: 100%;
+  }
+  .event-detail-image:first-child + .col-6 {
+    width: 100%;
+  }
+  .image-wrapper {
+    aspect-ratio: 4 / 3;
   }
   .event-title {
     margin-top: 20px;
