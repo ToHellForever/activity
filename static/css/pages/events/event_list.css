@@ -39,6 +39,11 @@
   cursor: pointer;
 }
 
+  .filter-button {
+    margin-top: 20px;
+    padding: 0;
+    width: 100%;
+  }
 .form-check-input[type="checkbox"]:checked {
   background-color: #ff8348;
   border-color: #ff8348;
@@ -92,24 +97,23 @@
 
 /* Процентная ширина колонок */
 .filter-col-category {
-  width: 15%;
+  width: 20%;
 }
 
 .filter-col-date {
-  width: 10%;
-}
-
-.filter-col-title {
-  width: 35%;
-}
-
-.filter-col-format {
   width: 15%;
 }
 
+.filter-col-title {
+  width: 30%;
+}
+
+.filter-col-format {
+  width: 20%;
+}
+
 .filter-col-button {
-  width: 10%;
-  min-width: 100px;
+  width: 15%;
   align-self: flex-end;
 }
 
@@ -124,7 +128,6 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 15px;
-  padding-right: 10px;
 }
 
 .filter-reset-btn {
@@ -134,7 +137,7 @@
   color: #ffffff;
   text-decoration: none;
   transition: opacity 0.2s ease;
-  
+  margin-top: 5px;
   /* Добавляем эти три строчки: */
   display: block;       /* Делаем ссылку блочным элементом */
   width: max-content;   /* Задаем ширину ровно по тексту */
