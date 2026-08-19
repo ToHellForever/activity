@@ -198,7 +198,7 @@
                 </div>
                 {% endfor %}
         </div>
-            <div class="mt-4 d-flex flex-column">
+            <div class="mt-2 d-flex flex-column">
                 <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
                 <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
@@ -279,11 +279,78 @@
 </div>
 {% endif %}
 <!-- Похожие мероприятия -->
-{% if similar_events %}
+{% if similar_events_mobile or similar_events_tablet or similar_events_desktop %}
 <div class="similar-events-section mt-5">
     <h2 class='landing-h mb-3'>ПОХОЖИЕ МЕРОПРИЯТИЯ <span class="arrow-right"></span></h2>
-    <div class="row">
-        {% for ev in similar_events %}
+<div class='landing-block mt-3'>
+    <!-- Мобильные: 2 карточки (скрыто на 900px и выше) -->
+    <div class="row d-900-none row-cards-list">
+        {% for ev in similar_events_mobile %}
+        <div class="col-6 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all %}
+                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ ev.title }}</h5>
+                    {% if ev.organizer.is_verified %}
+                    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                    {% endif %}
+                    <div class="card-spacer"></div>
+                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                    <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                                        {% if ev.tags.all %}
+                    <p class="card-label">
+                        Формат:
+                            <span class="badge">{{ ev.format.name }}</span>
+                    </p>
+                    {% endif %}
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+    <!-- Планшет: 3 карточки (скрыто на мобильных и >= 1300px) -->
+     <div class='landing-block mt-3'>
+    <div class="row d-none d-900-flex d-1300-none row-cards-list">
+        {% for ev in similar_events_tablet %}
+        <div class="col-4 mb-4">
+            <div class="card">
+                {% if ev.image %}
+                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all %}
+                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ ev.title }}</h5>
+                    {% if ev.organizer.is_verified %}
+                    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                    {% endif %}
+                    <div class="card-spacer"></div>
+                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
+                    <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
+                                        {% if ev.tags.all %}
+                    <p class="card-label">
+                        Формат:
+                            <span class="badge">{{ ev.format.name }}</span>
+                    </p>
+                    {% endif %}
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+        <div class='landing-block mt-3'>
+    <!-- Десктоп: 4 карточки (скрыто на мобильных и планшетах) -->
+    <div class="row d-none d-1300-flex row-cards-list">
+        {% for ev in similar_events_desktop %}
         <div class="col-md-3 mb-4">
             <div class="card">
                 {% if ev.image %}
@@ -299,12 +366,19 @@
                     <div class="card-spacer"></div>
                     <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
                     <p class="card-label">Категория: <span class="badge">{{ ev.category.name }}</span></p>
-                    <a href="{% url 'event_detail' ev.id %}" class="buy-button">КУПИТЬ БИЛЕТ</a>
+                    {% if ev.tags.all %}
+                    <p class="card-label">
+                        Формат:
+                            <span class="badge">{{ ev.format.name }}</span>
+                    </p>
+                    {% endif %}
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+</div>
 </div>
 {% endif %}
 {% endblock %}

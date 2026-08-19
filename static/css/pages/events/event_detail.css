@@ -39,7 +39,7 @@
 
 .verified-badge .card-verified {
   font-family: "Verdana";
-  font-size: 1rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   font-weight: 400;
   color: white;
   text-transform: uppercase;
@@ -50,7 +50,7 @@
 .event-title {
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-size: clamp(1rem, 2vw, 1.5rem);
   color: #000000;
   line-height: 1.2;
 }
@@ -138,7 +138,7 @@
   font-size: 0.95rem;
 }
 .card-date-geo-detail {
-  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-size: clamp(0.65rem, 1vw, 0.9rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -248,7 +248,6 @@ a {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 2fr 1fr 2fr;
-  margin-left: 2px;
 }
 
 .tickets-row:last-child {
@@ -257,7 +256,7 @@ a {
 
 .ticket-col-type {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 400;
   color: black;
 }
@@ -267,6 +266,8 @@ a {
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 700;
   color: black;
+  margin-left: 20px;
+  white-space: nowrap;
 }
 
 .ticket-col-desc {
@@ -549,13 +550,13 @@ a {
 }
 .map-fallback-title {
   font-family: "Verdana";
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 700;
   color: #000;
 }
 .map-fallback-address {
   font-family: "Verdana";
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 400;
   color: #857d7d;
 }
@@ -587,5 +588,11 @@ a {
   }
   .event-title {
     margin-top: 20px;
+  }
+  .map-fallback {
+    padding: 7px;
+  }
+  .date-address-row {
+    gap: 10px;
   }
 }

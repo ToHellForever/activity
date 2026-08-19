@@ -673,10 +673,17 @@ def event_detail(request, event_id):
     # 4. Ограничиваем ровно до 4
     similar_events = similar_events[:4]
     
+    # Срезы для разных экранов (как на лендинге)
+    similar_events_mobile = similar_events[:2]   # мобильные: 2 карточки
+    similar_events_tablet = similar_events[:3]   # планшет: 3 карточки
+    similar_events_desktop = similar_events[:4]  # десктоп: 4 карточки
+    
     return render(request, "events/event_detail.html", {
         "event": event, 
         "tickets": tickets,
-        "similar_events": similar_events
+        "similar_events_mobile": similar_events_mobile,
+        "similar_events_tablet": similar_events_tablet,
+        "similar_events_desktop": similar_events_desktop,
     })
 
 @require_http_methods(["GET", "POST"])

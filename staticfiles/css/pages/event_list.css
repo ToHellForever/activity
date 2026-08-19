@@ -118,7 +118,7 @@
 .filter-reset-btn {
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #FFFFFF;
   text-decoration: none;
   position: absolute; 

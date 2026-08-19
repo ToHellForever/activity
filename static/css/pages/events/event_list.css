@@ -133,7 +133,7 @@
 .filter-reset-btn {
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #ffffff;
   text-decoration: none;
   transition: opacity 0.2s ease;
@@ -243,10 +243,6 @@
   .filters-row-reset {
     justify-content: center;
     margin-top: 20px;
-  }
-
-  .filter-reset-btn {
-    font-size: 0.85rem;
   }
 }
 

@@ -350,7 +350,6 @@ input[type="number"] {
 
   /* Сброс фильтров — рядом с кнопкой НАЙТИ на мобильном */
   .filter-reset-btn {
-    font-size: 0.85rem;
     margin-top: 10px;
   }
 
@@ -384,7 +383,7 @@ input[type="number"] {
     color: #ffffff;
     font-family: "Montserrat", sans-serif;
     font-weight: 500;
-    font-size: 0.8rem;
+    font-size: clamp(0.7rem, 1vw, 0.8rem);
     cursor: pointer;
   }
 
@@ -411,7 +410,7 @@ input[type="number"] {
 
   .form-check-label-sub {
     color: #ffffff;
-    font-size: 0.85rem;
+    font-size: clamp(0.7rem, 1vw, 0.8rem);
   }
 
   /* Карточки залов — 2 в ряд на мобильной (col-6) */
@@ -463,10 +462,4 @@ input[type="number"] {
     width: 14px;
     height: 14px;
   }
-}
-
-@media (max-width: 900px) {
-.filter-button {
-    margin-left: -5px !important
-}
 }

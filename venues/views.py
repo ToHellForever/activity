@@ -472,10 +472,15 @@ class VenueDetailView(DetailView):
         context["limits"] = venue.TARIFF_LIMITS.get(venue.tariff, {})
         
         # Получаем другие площадки (те же типы или форматы, кроме текущей)
-        context["other_venues"] = Venue.objects.filter(
+        all_other_venues = list(Venue.objects.filter(
             status='published'
         ).exclude(
             id=venue.id
-        )[:4]
+        )[:4])
+        
+        # Срезы для разных экранов (как на лендинге)
+        context["other_venues_mobile"] = all_other_venues[:2]   # мобильные: 2 карточки
+        context["other_venues_tablet"] = all_other_venues[:3]   # планшет: 3 карточки
+        context["other_venues_desktop"] = all_other_venues[:4]  # десктоп: 4 карточки
         
         return context

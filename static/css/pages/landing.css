@@ -237,6 +237,7 @@
   width: 100% !important;
   height: 100% !important;
   border-radius: 20px;
+  object-fit: cover;
 }
 
 .active-event-info {
@@ -311,7 +312,7 @@
   color: #000000;
   font-family: "Verdana";
   font-weight: 500;
-  font-size: clamp(0.8rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 1rem);
 }
 
 .icon-calendar {
@@ -348,7 +349,7 @@
   color: rgba(119, 122, 141, 1);
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  font-size: clamp(0.6rem, 2vw, 0.9rem);
   margin-left: 10px;
 }
 
@@ -808,7 +809,6 @@
   }
 
   .filter-reset-btn {
-    font-size: 0.85rem;
     padding: 6px 15px;
   }
 }

@@ -295,7 +295,7 @@
   color: #000000;
   font-family: "Verdana";
   font-weight: 500;
-  font-size: clamp(0.8rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 1rem);
 }
 
 .icon-calendar {
@@ -798,7 +798,6 @@
   }
 
   .filter-reset-btn {
-    font-size: 0.85rem;
     padding: 6px 15px;
   }
 }
