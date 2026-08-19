@@ -273,11 +273,15 @@ input[type="number"] {
   padding-bottom: 23px;
 }
 .equipment-accordion {
-    display: none;
+  display: none;
+}
+
+.mobile-show {
+  display: none;
 }
 
 /* === МОБИЛЬНАЯ ВЕРСИЯ (≤900px) === */
-@media (max-width: 1227px) {
+@media (max-width: 1242px) {
   /* Фильтры — по одному в ряд, 100% ширины */
   .mobile-filter-full {
     flex: 0 0 100% !important;
@@ -285,8 +289,8 @@ input[type="number"] {
     width: 100% !important;
   }
   .filter-col-button {
-  padding-bottom: 0px;
-}
+    padding-bottom: 0px;
+  }
   .equipment-grid {
     display: none;
   }
@@ -357,6 +361,14 @@ input[type="number"] {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  /* Скрыть/показать кнопки на мобильной версии */
+  .mobile-hide {
+    display: none !important;
+  }
+  .mobile-show {
+    display: block;
   }
 
   /* Аккордеон оборудования — мобильная версия */
