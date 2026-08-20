@@ -72,8 +72,8 @@
 /* Крестик для закрытия бургер-меню */
 .burger-close-icon {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 40px;
+  right: 10px;
   width: 2rem;
   height: 2rem;
   cursor: pointer;

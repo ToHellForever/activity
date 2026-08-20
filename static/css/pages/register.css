@@ -444,6 +444,10 @@ align-items: flex-end;
 }
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+  }
     .email-section,
     .password-section,
     .company-info-section,
@@ -485,7 +489,8 @@ align-items: flex-end;
     font-size: 12px;
   }
 
-  .submit-btn {
+  .submit-btn,
+  .submit-btn-visitor {
     max-width: 100%;
     border-radius: 16px;
   }

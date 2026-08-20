@@ -1,42 +1,62 @@
 {% extends 'base.html' %}
 {% load static %}
-{% comment %} css {% endcomment %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/login.css' %}">
 {% endblock %}
+
 {% block content %}
-<div class="auth-container">
-<div class="login-box">
-    <h2 class="auth-title">Авторизация</h2>
-    {% if form.non_field_errors %}
-        <div class="error">
-            {{ form.non_field_errors }}
-        </div>
-    {% endif %}
+<link rel="stylesheet" href="{% static 'css/pages/register.css' %}">
 
-    <form method="post" class="auth-form">
-        {% csrf_token %}
-        <div>
-            <label for="id_email" class="form-label">Email</label>
-            <div class="form-group">{{ form.email }}</div>
-        </div>
+<div class="register-page">
+    <div class="register-container">
+        <h1 class="register-title">Авторизация</h1>
 
-        <div>
-            <label for="id_password" class="form-label">Пароль</label>
-            <div class="form-group">{{ form.password }}</div>
-        </div>
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                <strong>Ошибка:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
 
-        <button type="submit" class="submit-btn">Войти</button>
-    </form>
-    
-    <div>
-        <a href="{% url 'forgot_password' %}" class='auth-link-login'>Забыли пароль?</a>
+        <form method="post" class="register-form">
+            {% csrf_token %}
+
+            <!-- 1. Email -->
+            <div class="form-section email-section">
+                <div class="form-group">
+                    <label class="form-label">Электронная почта</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<ul class="errorlist">{{ form.email.errors }}</ul>{% endif %}
+                </div>
+            </div>
+
+            <!-- 2. Пароль -->
+            <div class="form-section password-section">
+                <div class="form-group">
+                    <label class="form-label">Пароль</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}<ul class="errorlist">{{ form.password.errors }}</ul>{% endif %}
+                </div>
+            </div>
+
+            <!-- Ссылка "Забыли пароль?" -->
+            <div class="form-section" style="margin-bottom: 10px;">
+                <a href="{% url 'forgot_password' %}" class="forgot-password-link">Забыли пароль?</a>
+            </div>
+
+            <button type="submit" class="submit-btn submit-btn-visitor">Войти</button>
+        </form>
+
+        <!-- Ссылка "Нет аккаунта? Зарегистрироваться" -->
+        <div class="auth-section">
+            <span class="auth-text">Нет аккаунта?</span>
+            <a href="{% url 'register' %}" class="auth-link-login">Зарегистрироваться</a>
+        </div>
     </div>
-    <hr class="auth-hr">
-    <div>
-        <span class="auth-text">Нет аккаунта?</span>
-        <a href="{% url 'register' %}" class='auth-link-login'>Зарегистрироваться</a>
-    </div>
-</div>
 </div>
 {% endblock %}
