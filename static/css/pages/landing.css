@@ -322,7 +322,7 @@
 }
 .card-date {
   margin-left: 10px;
-  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -349,8 +349,8 @@
   color: rgba(119, 122, 141, 1);
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(0.6rem, 2vw, 0.9rem);
-  margin-left: 10px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  margin-left: 5px;
 }
 
 .badge {
@@ -371,7 +371,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   width: 100%;

@@ -39,12 +39,12 @@
 
 .verified-badge .card-verified {
   font-family: "Verdana";
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
   font-weight: 400;
   color: white;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-left: 10px;
+  margin-left: 5px;
 }
 
 .event-title {
