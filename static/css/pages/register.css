@@ -167,7 +167,6 @@ align-items: flex-end;
 }
 
 .form-row-double .form-group {
-  flex: 1;
   min-width: 200px;
 }
 
@@ -349,7 +348,8 @@ align-items: flex-end;
 }
 
 /* ===== КНОПКА ОТПРАВКИ ===== */
-.submit-btn {
+.submit-btn,
+.submit-btn-visitor {
   display: block;
   width: 100%;
   max-width: 280px;
@@ -365,6 +365,9 @@ align-items: flex-end;
   letter-spacing: 0.8px;
   cursor: pointer;
   transition: all 0.25s ease;
+}
+.submit-btn-visitor {
+  margin: 0;
 }
 
 .submit-btn:hover {
@@ -450,7 +453,9 @@ align-items: flex-end;
   .register-page {
     padding: 20px 12px;
   }
-
+  .form-group {
+    width: 100% !important;
+  }
   .register-title {
     font-size: 22px;
     margin-bottom: 20px;

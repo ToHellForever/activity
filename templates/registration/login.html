@@ -1,77 +1,42 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Вход в систему</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; }
-        .login-box h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1rem; text-align: left; }
-        label { display: block; margin-bottom: 0.5rem; color: #555; }
-        input[type="email"], input[type="password"] {
-            width: 100%;
-            padding: 0.6rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .radio-group label { margin-right: 1.5rem; }
-        button {
-            width: 100%;
-            padding: 0.7rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        button:hover { background-color: #0056b3; }
-        .error {
-            color: #dc3545;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-
+{% extends 'base.html' %}
+{% load static %}
+{% comment %} css {% endcomment %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/login.css' %}">
+{% endblock %}
+{% block content %}
+<div class="auth-container">
 <div class="login-box">
-    <h2>Авторизация</h2>
-
-    <!-- Блок для вывода общих ошибок (например, неверный логин/пароль) -->
+    <h2 class="auth-title">Авторизация</h2>
     {% if form.non_field_errors %}
         <div class="error">
             {{ form.non_field_errors }}
         </div>
     {% endif %}
 
-    <form method="post">
+    <form method="post" class="auth-form">
         {% csrf_token %}
-        
-        <div class="form-group">
-            <label for="id_email">Email</label>
-            {{ form.email }}
+        <div>
+            <label for="id_email" class="form-label">Email</label>
+            <div class="form-group">{{ form.email }}</div>
         </div>
 
-        <div class="form-group">
-            <label for="id_password">Пароль</label>
-            {{ form.password }}
+        <div>
+            <label for="id_password" class="form-label">Пароль</label>
+            <div class="form-group">{{ form.password }}</div>
         </div>
 
-        <button type="submit">Войти</button>
+        <button type="submit" class="submit-btn">Войти</button>
     </form>
     
-    <div style="text-align: center; margin-top: 1rem;">
-        <a href="{% url 'forgot_password' %}" style="color: #007bff; text-decoration: none;">Забыли пароль?</a>
+    <div>
+        <a href="{% url 'forgot_password' %}" class='auth-link-login'>Забыли пароль?</a>
     </div>
-    
-    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #ddd;">
-        <span style="color: #666;">Нет аккаунта?</span>
-        <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none; margin-left: 0.5rem;">Зарегистрироваться</a>
+    <hr class="auth-hr">
+    <div>
+        <span class="auth-text">Нет аккаунта?</span>
+        <a href="{% url 'register' %}" class='auth-link-login'>Зарегистрироваться</a>
     </div>
 </div>
-
-</body>
-</html>
+</div>
+{% endblock %}

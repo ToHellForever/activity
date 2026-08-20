@@ -120,7 +120,7 @@
     border-radius: 25px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
     text-transform: uppercase;
     border: none;
     cursor: pointer;
@@ -188,7 +188,7 @@
     align-items: center;
     gap: 6px;
     margin-bottom: 10px;
-    font-size: 13px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
     color: #666;
 }
 
@@ -197,7 +197,7 @@
     flex-direction: column;
     gap: 4px;
     margin-bottom: 10px;
-    font-size: 13px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
     color: #555;
 }
 
@@ -212,7 +212,7 @@
     width: 100%;
     text-align: center;
     padding: 12px 20px;
-    font-size: 13px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 /* Адаптивность */
