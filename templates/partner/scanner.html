@@ -1,271 +1,38 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Сканер — {{ event.title }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
 
-        /* Header */
-        .scanner-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            padding: 16px 20px;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .scanner-header h1 {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0 0 4px 0;
-        }
-        .scanner-header .event-title {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        /* Status banner */
-        .status-banner {
-            padding: 10px 16px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .status-banner.active {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-banner.inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Counter */
-        .counter-bar {
-            background: #fff;
-            padding: 16px 20px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .counter-number {
-            font-size: 48px;
-            font-weight: 700;
-            color: #667eea;
-            line-height: 1;
-        }
-        .counter-label {
-            font-size: 13px;
-            color: #888;
-            margin-top: 4px;
-        }
-
-        /* Scanner area */
-        .scanner-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .scanner-camera-wrapper {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            background: #000;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .scanner-camera-wrapper video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .scanner-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .scanner-frame {
-            width: 200px;
-            height: 200px;
-            border: 3px solid rgba(255,255,255,0.8);
-            border-radius: 12px;
-            box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
-        }
-        .scanner-placeholder {
-            color: rgba(255,255,255,0.6);
-            text-align: center;
-            font-size: 14px;
-        }
-        .scanner-placeholder i {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        /* Result card */
-        .result-card {
-            width: 100%;
-            max-width: 360px;
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px 20px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            animation: slideUp 0.3s ease;
-            margin-bottom: 20px;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-icon {
-            font-size: 56px;
-            margin-bottom: 12px;
-        }
-        .result-icon.valid { color: #28a745; }
-        .result-icon.invalid { color: #dc3545; }
-
-        .result-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .result-title.valid { color: #28a745; }
-        .result-title.invalid { color: #dc3545; }
-
-        .result-details {
-            font-size: 14px;
-            color: #555;
-            line-height: 1.6;
-        }
-        .result-details strong {
-            color: #333;
-        }
-
-        /* End shift button */
-        .end-shift-btn {
-            width: 100%;
-            max-width: 360px;
-            padding: 14px;
-            background: #dc3545;
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .end-shift-btn:hover { background: #c82333; }
-        .end-shift-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Manual input */
-        .manual-input {
-            width: 100%;
-            max-width: 360px;
-            margin-bottom: 16px;
-        }
-        .manual-input input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            text-align: center;
-        }
-        .manual-input input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .manual-input button {
-            margin-top: 8px;
-            padding: 10px 24px;
-            background: #667eea;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        /* Vibration animation */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
-        }
-        .shake { animation: shake 0.3s ease; }
-
-        /* Pulse animation for valid */
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
-        .pulse-green { animation: pulse-green 0.5s ease; }
-
-        /* No camera message */
-        .no-camera {
-            padding: 20px;
-            text-align: center;
-            color: #888;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/partner/scanner.css' %}">
+{% endblock %}
+{% block content %}
+<div class="scanner-page">
 
     <!-- Header -->
     <div class="scanner-header">
-        <h1><i class="bi bi-qr-code-scan"></i> Контроль входа</h1>
-        <div class="event-title">{{ event.title }}</div>
+        <div class="scanner-header-title"><i class="bi bi-qr-code-scan"></i> Контроль входа</div>
+        <div class="scanner-header-event">{{ event.title }}</div>
     </div>
 
     {% if is_active %}
-    <div class="status-banner active">
+    <div class="scanner-status-banner scanner-status-banner--active">
         <i class="bi bi-check-circle-fill"></i> Контроль входа активен
     </div>
     {% else %}
-    <div class="status-banner inactive">
+    <div class="scanner-status-banner scanner-status-banner--inactive">
         <i class="bi bi-x-circle-fill"></i> Контроль входа отключён
     </div>
     {% endif %}
 
     <!-- Counter -->
-    <div class="counter-bar">
-        <div class="counter-number" id="scannedCount">{{ scanned_count }}</div>
-        <div class="counter-label">прошли контроль</div>
+    <div class="scanner-counter-bar">
+        <div class="scanner-counter-number" id="scannedCount">{{ scanned_count }}</div>
+        <div class="scanner-counter-label">прошли контроль</div>
     </div>
 
     <!-- Main area -->
     <div class="scanner-area">
 
         <!-- Result card (hidden by default) -->
-        <div class="result-card" id="resultCard" style="display: none;"></div>
+        <div class="scanner-result-card" id="resultCard" style="display: none;"></div>
 
         <!-- Camera scanner -->
         <div id="scannerContainer">
@@ -275,25 +42,28 @@
                     <div class="scanner-frame"></div>
                 </div>
             </div>
-            <div class="no-camera" id="cameraStatus">
-                <i class="bi bi-camera" style="font-size: 32px;"></i><br>
+            <div class="scanner-camera-status" id="cameraStatus">
+                <i class="bi bi-camera"></i>
                 Камера инициализируется...
             </div>
         </div>
 
         <!-- Manual input -->
-        <div class="manual-input">
+        <div class="scanner-manual-input">
             <input type="text" id="manualOrderId" placeholder="Введите номер заказа">
             <button onclick="manualCheck()">Проверить</button>
         </div>
 
         <!-- End shift -->
-        <button class="end-shift-btn" onclick="endShift()">
+        <button class="scanner-end-shift-btn" onclick="endShift()">
             <i class="bi bi-box-arrow-right"></i> Завершить смену
         </button>
     </div>
 
-    <script>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
         const ACCESS_CODE = "{{ access_code }}";
         const EVENT_TITLE = "{{ event.title }}";
 
@@ -419,36 +189,40 @@
             const card = document.getElementById('resultCard');
             const wrapper = document.getElementById('cameraWrapper');
 
+            card.style.display = 'block';
+            card.className = 'scanner-result-card';
+
             let html = '';
             if (type === 'valid') {
                 html = `
-                    <div class="result-icon valid">
+                    <div class="scanner-result-icon scanner-result-icon--valid">
                         <i class="bi bi-check-circle-fill"></i>
                     </div>
-                    <div class="result-title valid">Билет действителен</div>
-                    <div class="result-details">
+                    <div class="scanner-result-title scanner-result-title--valid">Билет действителен</div>
+                    <div class="scanner-result-details">
                         <strong>${data.ticket_name || ''}</strong><br>
                         ${data.participant ? data.participant : ''}<br>
                         <span class="text-muted">Заказ #${data.order_id}</span><br>
                         <span class="text-muted">Билет ${data.ticket_number} из ${data.total_count}</span>
                     </div>
                 `;
-                card.classList.add('pulse-green');
-                setTimeout(() => card.classList.remove('pulse-green'), 600);
+                card.classList.add('scanner-result-card--valid');
+                card.classList.add('scanner-pulse-green');
+                setTimeout(() => card.classList.remove('scanner-pulse-green'), 600);
             } else {
                 html = `
-                    <div class="result-icon invalid">
+                    <div class="scanner-result-icon scanner-result-icon--invalid">
                         <i class="bi bi-x-circle-fill"></i>
                     </div>
-                    <div class="result-title invalid">Билет недействителен</div>
-                    <div class="result-details">${message}</div>
+                    <div class="scanner-result-title scanner-result-title--invalid">Билет недействителен</div>
+                    <div class="scanner-result-details">${message}</div>
                 `;
-                card.classList.add('shake');
-                setTimeout(() => card.classList.remove('shake'), 400);
+                card.classList.add('scanner-result-card--invalid');
+                card.classList.add('scanner-shake');
+                setTimeout(() => card.classList.remove('scanner-shake'), 400);
             }
 
             card.innerHTML = html;
-            card.style.display = 'block';
             wrapper.style.display = 'none';
         }
 
@@ -467,11 +241,11 @@
             .then(data => {
                 if (data.success) {
                     document.body.innerHTML = `
-                        <div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;">
-                            <div>
+                        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px;background:#f5f6f8;">
+                            <div style="background:#fff;border-radius:20px;padding:48px 40px;max-width:400px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
                                 <i class="bi bi-check-circle" style="font-size:64px;color:#28a745;"></i>
-                                <h2 style="margin-top:16px;">Смена завершена</h2>
-                                <p style="font-size:18px;color:#555;">Всего прошло участников: <strong>${data.scanned_count}</strong></p>
+                                <h2 style="margin-top:16px;font-family:Verdana,sans-serif;font-weight:700;color:#000;">Смена завершена</h2>
+                                <p style="font-size:1rem;color:#777a8d;font-family:Verdana,sans-serif;">Всего прошло участников: <strong style="color:#000;">${data.scanned_count}</strong></p>
                             </div>
                         </div>
                     `;
@@ -503,9 +277,8 @@
                 if (e.key === 'Enter') manualCheck();
             });
         });
-    </script>
+</script>
 
     <!-- jsQR library for QR code scanning -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-</body>
-</html>
+{% endblock %}

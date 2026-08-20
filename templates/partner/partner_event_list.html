@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/partner/partner_event_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/partner/entry_control.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -251,17 +252,21 @@
 <script src="{% static 'js/pages/calendar.js' %}"></script>
 
 <!-- Modal контроля входа -->
-<div class="modal fade" id="entryControlModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius:16px;overflow:hidden;">
-            <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;">
-                <h5 class="modal-title"><i class="bi bi-qr-code-scan"></i> Контроль входа</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal fade entry-control-modal" id="entryControlModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header entry-control-header">
+                <h5 class="modal-title entry-control-header-title">
+                    <i class="bi bi-qr-code-scan"></i> Контроль входа
+                </h5>
+                <button type="button" class="entry-control-close-btn" data-bs-dismiss="modal" aria-label="Закрыть">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
-            <div class="modal-body" id="entryControlBody" style="padding:24px;">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 text-muted">Загрузка...</p>
+            <div class="modal-body entry-control-body" id="entryControlBody">
+                <div class="entry-control-spinner">
+                    <i class="bi bi-hourglass-split"></i>
+                    <p class="entry-control-spinner-text">Загрузка...</p>
                 </div>
             </div>
         </div>
@@ -289,7 +294,7 @@ function loadEntryControlStatus(eventId) {
         })
         .catch(err => {
             document.getElementById('entryControlBody').innerHTML = 
-                '<div class="text-center py-4 text-danger">Ошибка загрузки</div>';
+                '<div class="entry-control-error"><i class="bi bi-exclamation-triangle-fill" style="font-size:2rem;color:#dc3545;margin-bottom:8px;display:block;"></i>Ошибка загрузки</div>';
         });
 }
 
@@ -300,32 +305,31 @@ function renderEntryControl(data) {
     if (data.links && data.links.length > 0) {
         data.links.forEach(link => {
             const statusBadge = link.is_active 
-                ? '<span class="badge bg-success">Активен</span>' 
-                : '<span class="badge bg-secondary">Отключён</span>';
+                ? '<span class="entry-control-status-badge entry-control-status-badge--active"><i class="bi bi-check-circle-fill"></i> Активен</span>' 
+                : '<span class="entry-control-status-badge entry-control-status-badge--inactive"><i class="bi bi-pause-circle"></i> Отключён</span>';
             const btnAction = link.is_active
-                ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleLink(${link.id})">Отключить</button>
-                   <button class="btn btn-sm btn-outline-danger" onclick="deleteLink(${link.id})">Удалить</button>`
-                : `<button class="btn btn-sm btn-outline-success" onclick="toggleLink(${link.id})">Включить</button>
-                   <button class="btn btn-sm btn-outline-danger" onclick="deleteLink(${link.id})">Удалить</button>`;
+                ? `<button class="entry-control-btn entry-control-btn--toggle" onclick="toggleLink(${link.id})"><i class="bi bi-pause-circle"></i> Отключить</button>
+                   <button class="entry-control-btn entry-control-btn--delete" onclick="deleteLink(${link.id})"><i class="bi bi-trash"></i> Удалить</button>`
+                : `<button class="entry-control-btn entry-control-btn--activate" onclick="toggleLink(${link.id})"><i class="bi bi-play-circle"></i> Включить</button>
+                   <button class="entry-control-btn entry-control-btn--delete" onclick="deleteLink(${link.id})"><i class="bi bi-trash"></i> Удалить</button>`;
             
             linksHtml += `
-                <div class="card mb-2" style="border:1px solid #e0e0e0;border-radius:10px;">
-                    <div class="card-body py-3" style="padding:12px 16px;">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <strong>${link.name}</strong> ${statusBadge}
-                                <div class="text-muted" style="font-size:12px;">
-                                    Код: <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;">${link.access_code}</code>
-                                    | Отсканировано: <strong>${link.scanned_count}</strong>
-                                    | Создан: ${link.created_at}
-                                </div>
+                <div class="entry-control-link-card">
+                    <div class="entry-control-link-body">
+                        <div class="entry-control-link-info">
+                            <div class="entry-control-link-name">
+                                ${link.name || 'Контролёр'} ${statusBadge}
                             </div>
-                            <div class="d-flex gap-2 align-items-center">
-                                <button class="btn btn-sm btn-outline-primary" onclick="copyUrl('${link.scanner_url}')">
-                                    <i class="bi bi-clipboard"></i> Копировать
-                                </button>
-                                ${btnAction}
+                            <div class="entry-control-link-meta">
+                                Код: <code>${link.access_code}</code>
+                                | Отсканировано: <strong>${link.scanned_count}</strong>
                             </div>
+                        </div>
+                        <div class="entry-control-link-actions">
+                            <button class="entry-control-btn entry-control-btn--copy" onclick="copyUrl('${link.scanner_url}')">
+                                <i class="bi bi-clipboard"></i> Копировать
+                            </button>
+                            ${btnAction}
                         </div>
                     </div>
                 </div>
@@ -333,31 +337,38 @@ function renderEntryControl(data) {
         });
     }
     
+    const createBtnClass = data.active_count >= 2 
+        ? 'entry-control-create-btn entry-control-create-btn--disabled' 
+        : 'entry-control-create-btn entry-control-create-btn--success';
+    const createBtnDisabled = data.active_count >= 2 ? 'disabled' : '';
+    const createBtnText = data.active_count >= 2 ? '(Лимит достигнут)' : '';
+    
     body.innerHTML = `
-        <div class="mb-3">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="mb-0"><i class="bi bi-people"></i> Всего отсканировано: <strong>${data.total_scanned}</strong></h6>
-                <span class="badge ${data.active_count >= 2 ? 'bg-warning' : 'bg-primary'}">
-                    <i class="bi bi-link-45deg"></i> ${data.active_count || 0} / 2 активных
-                </span>
+        <div class="entry-control-stats">
+            <div class="entry-control-stats-total">
+                <i class="bi bi-people"></i> Всего отсканировано: <strong>${data.total_scanned}</strong>
             </div>
+            <span class="entry-control-stats-badge">
+                <i class="bi bi-link-45deg"></i> ${data.active_count || 0} / 2 активных
+            </span>
         </div>
         
-        <div class="mb-3 p-3" style="background:#f8f9ff;border-radius:10px;border:1px dashed #667eea;">
-            <label class="form-label fw-bold mb-1">Имя контролёра (необязательно):</label>
-            <input type="text" class="form-control mb-2" id="controllerName" placeholder="Например: Алексей — вход №1">
-            <button class="btn w-100 py-2 ${data.active_count >= 2 ? 'btn-secondary disabled' : 'btn-success'}" 
+        <div class="entry-control-create-zone">
+            <label class="entry-control-create-label">Имя контролёра (необязательно):</label>
+            <input type="text" class="entry-control-name-input" id="controllerName" placeholder="Например: Алексей — вход №1">
+            <button class="${createBtnClass}" 
                     onclick="createLink()" 
-                    ${data.active_count >= 2 ? 'disabled' : ''}>
-                <i class="bi bi-plus-circle"></i> Создать код доступа
-                ${data.active_count >= 2 ? '(Лимит достигнут)' : ''}
+                    ${createBtnDisabled}>
+                <i class="bi bi-plus-circle"></i> Создать код доступа ${createBtnText}
             </button>
         </div>
         
-        <div class="mb-2">
-            <h6 class="text-muted"><i class="bi bi-link-45deg"></i> Активные ссылки (${data.links ? data.links.length : 0})</h6>
+        <div class="entry-control-links-section">
+            <h6 class="entry-control-links-title">
+                <i class="bi bi-link-45deg"></i> Активные ссылки (${data.links ? data.links.length : 0})
+            </h6>
+            <div id="linksList">${linksHtml}</div>
         </div>
-        <div id="linksList">${linksHtml}</div>
     `;
 }
 
@@ -366,9 +377,9 @@ function createLink() {
     const body = document.getElementById('entryControlBody');
     
     body.innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2">Создаю код доступа...</p>
+        <div class="entry-control-spinner entry-control-spinner--success">
+            <i class="bi bi-gear-spin"></i>
+            <p class="entry-control-spinner-text">Создаю код доступа...</p>
         </div>
     `;
     
@@ -394,7 +405,7 @@ function createLink() {
         }
     })
     .catch(err => {
-        body.innerHTML = '<div class="text-center py-4 text-danger">Ошибка создания кода</div>';
+        body.innerHTML = '<div class="entry-control-error"><i class="bi bi-exclamation-triangle-fill" style="font-size:2rem;color:#dc3545;margin-bottom:8px;display:block;"></i>Ошибка создания кода</div>';
     });
 }
 

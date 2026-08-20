@@ -1,0 +1,184 @@
+/* ============================================================
+   TICKET CHECK PAGE (Проверка билета)
+   ============================================================ */
+
+/* --- Обёртка карточки --- */
+.ticket-check-card {
+  background: #fff;
+  border: none;
+  border-radius: 20px;
+box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10%;
+}
+
+/* --- Иконка статуса --- */
+.ticket-check-icon {
+  font-size: 4rem;
+}
+
+.ticket-check-icon--valid {
+  color: #02369c;
+}
+
+.ticket-check-icon--invalid {
+  color: #dc3545;
+}
+
+.ticket-check-icon--refunded {
+  color: #c62828;
+}
+
+/* --- Заголовки --- */
+.ticket-check-title {
+  font-family: "Verdana", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  margin-bottom: 0.75rem;
+}
+
+.ticket-check-title--valid {
+  color: #02369c;
+  text-align: center;
+}
+
+.ticket-check-title--invalid {
+  color: #dc3545;
+}
+
+.ticket-check-title--refunded {
+  color: #c62828;
+}
+
+/* --- Текст описания --- */
+.ticket-check-text {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.ticket-check-text strong {
+  color: #000;
+  font-weight: 700;
+}
+
+.ticket-check-text .text-muted {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* --- Информация о билете --- */
+.ticket-check-info {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: #333;
+  line-height: 1.8;
+  text-align: center;
+  padding: 16px;
+  margin-top: 25px;
+}
+
+.ticket-check-info div {
+  margin-bottom: 4px;
+    font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: #333;
+  line-height: 1.5;
+}
+
+.ticket-check-info div:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Блок отметки посещаемости --- */
+.attendance-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e8e8e8;
+}
+
+.attendance-section h5 {
+  font-family: "Verdana", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #222;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* --- Кнопки отметки --- */
+.attendance-btn {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attendance-btn i {
+  font-size: 0.9rem;
+}
+
+.attendance-btn:not(.btn-outline-success):not(:disabled) {
+  background: #02369c;
+  border-color: #02369c;
+  color: #fff;
+}
+
+.attendance-btn:not(.btn-outline-success):not(:disabled):hover {
+  background: #012a7e;
+  border-color: #012a7e;
+}
+
+.attendance-btn.btn-outline-success {
+  color: #108725;
+  border-color: #108725;
+}
+
+.attendance-btn.btn-outline-success:hover {
+  background: #108725;
+  color: #fff;
+}
+
+.attendance-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Кнопка "Назад" --- */
+.ticket-check-back-btn {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 8px 24px;
+  border: 1px solid #ddd;
+  color: #555;
+  background: #fff;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-check-back-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+  text-decoration: none;
+}
+
+.ticket-check-back-btn i {
+  font-size: 0.9rem;
+}

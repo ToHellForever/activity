@@ -1,60 +1,62 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/partner/ticket_check.css' %}">
+{% endblock %}
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
+            <div class="card ticket-check-card">
                 <div class="card-body text-center p-5">
                     {% if order.payment_status == "refunded" %}
                         <!-- Билет возвращён -->
                         <div class="mb-4">
-                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                            <i class="bi bi-x-circle-fill ticket-check-icon ticket-check-icon--refunded"></i>
                         </div>
-                        <h3 class="card-title mb-3 text-danger">Билет возвращён</h3>
-                        <p class="card-text mb-4">
+                        <h3 class="card-title ticket-check-title ticket-check-title--refunded">Билет возвращён</h3>
+                        <p class="card-text ticket-check-text mb-4">
                             Этот билет был возвращён и больше не действителен.<br>
                             Заказ: <strong>#{{ order.id }}</strong>
                         </p>
                     {% elif not is_valid %}
                         <!-- Билет недействителен -->
                         <div class="mb-4">
-                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                            <i class="bi bi-x-circle-fill ticket-check-icon ticket-check-icon--invalid"></i>
                         </div>
-                        <h3 class="card-title mb-3 text-danger">Билет недействителен</h3>
-                        <p class="card-text mb-4">
+                        <h3 class="card-title ticket-check-title ticket-check-title--invalid">Билет недействителен</h3>
+                        <p class="card-text ticket-check-text mb-4">
                             Этот билет не найден в системе или уже был использован.<br>
                             Заказ: <strong>#{{ order.id }}</strong>
                         </p>
                     {% else %}
                         <!-- Действительный билет -->
                         <div class="mb-4">
-                            <i class="bi bi-ticket-perforated-fill text-primary" style="font-size: 4rem;"></i>
+                            <i class="bi bi-ticket-perforated-fill ticket-check-icon ticket-check-icon--valid"></i>
                         </div>
-                        <h3 class="card-title mb-3 text-primary">Билет действителен</h3>
-                        <p class="card-text mb-4">
+                        <h3 class="card-title ticket-check-title ticket-check-title--valid">Билет действителен</h3>
+                        <div class="ticket-check-info mb-4">
                             {% if is_organizer %}
-                                Участник: <strong>{{ order.participant_data.first_name|default:order.participant_data.name }} {{ order.participant_data.last_name|default:"" }}</strong><br>
+                                <div>Участник: <strong>{{ order.participant_data.first_name|default:order.participant_data.name }} {{ order.participant_data.last_name|default:"" }}</strong></div>
                             {% else %}
-                                Этот билет действителен для входа на мероприятие.
+                                <div>Этот билет действителен для входа на мероприятие.</div>
                             {% endif %}
-                            Мероприятие: <strong>{{ order.ticket.event.title }}</strong><br>
-                            Тип билета: <strong>{{ order.ticket.name }}</strong><br>
-                            <span class="text-muted">Заказ: #{{ order.id }}</span>
-                        </p>
+                            <div>Мероприятие: <strong>{{ order.ticket.event.title }}</strong></div>
+                            <div>Тип билета: <strong>{{ order.ticket.name }}</strong></div>
+                            <div class="text-muted">Заказ: #{{ order.id }}</div>
+                        </div>
 
                         {% if is_organizer %}
                             <!-- Кнопки отметки для каждого билета в заказе -->
-                            <div class="mt-4">
+                            <div class="attendance-section">
                                 <h5>Билеты в заказе:</h5>
                                 {% for ticket in order.tickets.all %}
                                     <button type="button"
-                                            class="btn btn-sm attendance-btn mb-2"
+                                            class="attendance-btn mb-2{% if ticket.attended %} btn-outline-success{% endif %}"
                                             data-event-id="{{ order.ticket.event.id }}"
                                             data-order-id="{{ order.id }}"
                                             data-ticket-number="{{ ticket.ticket_number }}"
-                                            data-attended="{{ ticket.attended|lower }}"
-                                            {% if ticket.attended %}btn-outline-success{% else %}btn-success{% endif %}>
+                                            data-attended="{{ ticket.attended|lower }}">
                                         {% if ticket.attended %}
                                             <i class="bi bi-check-circle-fill"></i> Билет #{{ ticket.ticket_number }} — посещён
                                         {% else %}
@@ -66,11 +68,6 @@
                         {% endif %}
                     {% endif %}
 
-                    <div class="mt-4">
-                        <a href="javascript:history.back()" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Назад
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
@@ -100,10 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     var newAttended = data.attended;
                     btn.dataset.attended = newAttended;
                     if (newAttended) {
-                        btn.className = 'btn btn-sm attendance-btn mb-2 btn-outline-success';
+                        btn.className = 'attendance-btn mb-2 btn-outline-success';
                         btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Билет #' + ticketNumber + ' — посещён';
                     } else {
-                        btn.className = 'btn btn-sm attendance-btn mb-2 btn-success';
+                        btn.className = 'attendance-btn mb-2';
                         btn.innerHTML = '<i class="bi bi-person-check"></i> Билет #' + ticketNumber + ' — отметить';
                     }
                 } else {

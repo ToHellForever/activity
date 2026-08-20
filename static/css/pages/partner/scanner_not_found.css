@@ -1,0 +1,75 @@
+/* ============================================================
+   SCANNER NOT FOUND PAGE (Код не найден)
+   ============================================================ */
+
+/* --- Фоновый контейнер --- */
+.scanner-error-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f5f6f8;
+  font-family: "Montserrat", sans-serif;
+  margin: 0;
+}
+
+/* --- Карточка ошибки --- */
+.scanner-error-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Иконка ошибки --- */
+.scanner-error-icon {
+  font-size: 64px;
+  color: #dc3545;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+/* --- Заголовок ошибки --- */
+.scanner-error-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+/* --- Текст ошибки --- */
+.scanner-error-text {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.9rem;
+  color: #777a8d;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* --- Кнопка "На главную" --- */
+.scanner-error-btn {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 8px 24px;
+  border: 1px solid #ddd;
+  color: #555;
+  background: #fff;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scanner-error-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+  text-decoration: none;
+}
