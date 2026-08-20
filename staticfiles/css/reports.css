@@ -24,12 +24,6 @@
     padding: 25px;
 }
 
-.statistics-card .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #212529;
-}
-
 .statistics-card .stat-label {
     color: #6c757d;
     font-size: 14px;

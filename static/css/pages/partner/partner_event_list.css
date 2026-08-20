@@ -51,7 +51,7 @@
   border-radius: 24px;
   height: 39px;
   padding: 12px 20px;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #333;
   outline: none;
   transition: border-color 0.2s;
@@ -228,7 +228,7 @@
    Заголовки секций
    ============================================================ */
 .section-title {
-  font-size: 20px;
+  font-size: clamp(0.8rem, 1vw, 1.1rem);
   font-weight: 700;
   text-transform: uppercase;
   color: #222;
@@ -281,7 +281,6 @@
   cursor: pointer;
   text-decoration: none;
   flex-shrink: 0;
-  transition: all 0.2s;
   margin-top: 20px;
 }
 
@@ -351,16 +350,6 @@
   padding: 8px 10px;
   border-radius: 16px;
   width: 85% !important;
-}
-
-/* ---------- Кнопка "Контроль входа" ---------- */
-.btn-entry-control {
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.btn-entry-control:hover {
-  background: #218838 !important;
-  transform: scale(1.03);
 }
 
 /* ============================================================

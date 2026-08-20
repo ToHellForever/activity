@@ -125,13 +125,10 @@
 }
 
 .chat-header-name {
-  font-family: Montserrat;
+  font-family:'Montserrat';
   font-weight: 700;
   font-style: Bold;
-  font-size: 16px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: black;
 }
 
@@ -139,10 +136,7 @@
   font-family: Verdana;
   font-weight: 400;
   font-style: Italic;
-  font-size: 16px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: black;
   margin-top: 7px;
 }
@@ -151,10 +145,7 @@
   font-family: Verdana;
   font-weight: 400;
   font-style: Regular;
-  font-size: 13px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: black;
   margin-top: 5px;
 }
@@ -291,6 +282,7 @@
   background: #4a7cf7;
   color: #fff;
   border-bottom-right-radius: 4px;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
 }
 
 .chat-message-footer {
@@ -316,10 +308,7 @@
   font-family: Verdana;
   font-weight: 400;
   font-style: Regular;
-  font-size: 13px;
-  leading-trim: NONE;
-  line-height: 1.2;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
   color: rgba(0, 0, 0, 1);
 }
 
@@ -332,10 +321,7 @@
   font-family: Verdana;
   font-weight: 400;
   font-style: Italic;
-  font-size: 13px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
   color: rgba(154, 154, 154, 1);
   margin-top: 15px;
 }

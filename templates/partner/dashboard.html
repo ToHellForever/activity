@@ -146,7 +146,6 @@
                 {% for package in packages %}
                 <div class="package-card {% if user_subscription and user_subscription.package.id == package.id %}subscribed{% else %}inactive{% endif %}">
                     <h3 class="package-name">{{ package.name }}</h3>
-                    <div class="package-subtitle">{{ package.subtitle }}</div>
                     <div class="package-features">
                         <div class="feature-item"><span class="feature-label">Описание:</span> {{ package.description }}</div>
                         <div class="feature-item"><span class="feature-label">Фото:</span> до {{ package.max_photos }} шт.</div>

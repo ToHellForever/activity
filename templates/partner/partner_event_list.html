@@ -118,8 +118,7 @@
     <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
     <button type="button" class="btn-entry-control" 
             data-event-id="{{ item.event.id }}"
-            data-bs-toggle="modal" data-bs-target="#entryControlModal"
-            style="background:#28a745;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-top:8px;">
+            data-bs-toggle="modal" data-bs-target="#entryControlModal">
         <i class="bi bi-qr-code-scan"></i> Контроль входа
     </button>
     {% if not item.event.has_sold_tickets %}
@@ -197,8 +196,7 @@
                                         <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
                                         <button type="button" class="btn-entry-control" 
                                                 data-event-id="{{ item.event.id }}"
-                                                data-bs-toggle="modal" data-bs-target="#entryControlModal"
-                                                style="background:#28a745;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-top:8px;">
+                                                data-bs-toggle="modal" data-bs-target="#entryControlModal">
                                             <i class="bi bi-qr-code-scan"></i> Контроль входа
                                         </button>
                                     </div>

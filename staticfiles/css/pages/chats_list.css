@@ -116,7 +116,7 @@
 }
 
 .chat-list-event {
-  font-size: 12px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #9a9a9a;
   font-style: italic;
   margin-bottom: 4px;

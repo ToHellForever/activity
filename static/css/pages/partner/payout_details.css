@@ -1,25 +1,22 @@
-/* ==============================================
-   PAYOUT DETAILS — Мои реквизиты для выплат
-   ============================================== */
-
-/* ==============================================
-   ADD FORM CARD
-   ============================================== */
+.payot-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  color:black;
+  font-size: clamp(1rem, 1vw, 1.5rem);
+}
 .payout-details-form-card {
   background: #fff;
-  border: 1px solid #ececec;
   border-radius: 24px;
   box-shadow: 0 1.93px 9.64px rgba(0, 0, 0, 0.06);
-  padding: 32px;
   margin-bottom: 32px;
 }
 
 .payout-details-form-title {
   font-family: "Montserrat", sans-serif;
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 500;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
   color: #1a1a2e;
-  margin: 0 0 24px;
+  margin: 24px 0 24px;
   letter-spacing: 0.2px;
 }
 
@@ -35,7 +32,7 @@
   display: block;
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 13px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #777a8d;
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -59,7 +56,7 @@
   border: 1.5px solid #e8e8e8;
   border-radius: 16px;
   font-family: "Montserrat", sans-serif;
-  font-size: 15px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 500;
   color: #1a1a2e;
   background: #fafafa;
@@ -140,7 +137,7 @@
 .payout-details-btn-save {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #fff;
   background: #ff8348;
   border: none;
@@ -178,7 +175,7 @@
 .payout-details-section-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
   color: #1a1a2e;
   margin: 0 0 20px;
   letter-spacing: 0.2px;
@@ -242,7 +239,7 @@
 .payout-detail-bank {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
   color: #1a1a2e;
   margin: 0 0 14px;
 }
@@ -262,7 +259,7 @@
 
 .payout-detail-field-label {
   font-family: "Montserrat", sans-serif;
-  font-size: 11px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 500;
   color: #999;
   text-transform: uppercase;
@@ -271,7 +268,7 @@
 
 .payout-detail-field-value {
   font-family: "Montserrat", sans-serif;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 500;
   color: #1a1a2e;
   word-break: break-all;
@@ -279,7 +276,7 @@
 
 .payout-detail-field-value.account-number {
   font-family: "Montserrat", monospace;
-  font-size: 13px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   letter-spacing: 0.5px;
   font-weight: 600;
 }
@@ -295,7 +292,7 @@
 
 .payout-detail-action-btn {
   font-family: "Montserrat", sans-serif;
-  font-size: 12px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 12px;
@@ -377,7 +374,7 @@
 .edit-modal-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
   color: #1a1a2e;
   margin: 0;
   letter-spacing: 0.2px;
@@ -421,7 +418,7 @@
 .edit-modal-btn-save {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(0.9rem, 1vw, 1rem);
   color: #fff;
   background: #ff8348;
   border: none;
@@ -448,7 +445,7 @@
 .edit-modal-btn-cancel {
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: clamp(0.9rem, 1vw, 1rem);
   color: #777a8d;
   background: transparent;
   border: 1.5px solid #e0e0e0;

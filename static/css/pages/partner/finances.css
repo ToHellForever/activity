@@ -1,6 +1,12 @@
 .finance-page {
   width: 100%;
 }
+.finances-title {
+  font-size: clamp(1rem, 1vw, 1.5rem);
+  color: black;
+  font-family: "Verdana";
+  font-weight: 400;
+}
 .finance-card {
   background: #ffffff;
   border: 1px solid #ececec;
@@ -19,7 +25,7 @@
 }
 .finance-card__title {
   margin: 0;
-  font-size: clamp(1.2rem, 2vw, 0.9rem);
+  font-size: clamp(0.9rem, 1vw, 1.1rem);
   color: black;
   font-family: "Verdana";
   font-weight: 400;
@@ -28,7 +34,7 @@
 }
 .finance-card__balance {
   margin: 10px 0 0;
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-size: clamp(1.5rem, 1vw, 3rem);
   font-family: "Verdana";
   font-weight: 700;
   color: black;
@@ -53,7 +59,7 @@
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   font-weight: 500;
   color: rgba(154, 154, 154, 1);
   pointer-events: none;
@@ -63,7 +69,7 @@
   border-radius: 19.28px;
   font-weight: 500;
   font-family: "Montserrat";
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   color: rgba(154, 154, 154, 1);
   background: rgba(232, 225, 225, 1);
   padding: 7px 10px 7px 10px;
@@ -83,7 +89,7 @@
   border: none;
   color: #fff;
   font-family: "Montserrat";
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   border-radius: 19.28px;
   padding: 7px 50px 10px 50px;
   font-weight: 500;
@@ -98,7 +104,7 @@
 .finance-history h2 {
   font-family: Verdana;
   font-weight: 400;
-  font-size: 16px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   line-height: 100%;
   letter-spacing: 0%;
   text-transform: uppercase;
@@ -179,7 +185,7 @@
 .payout-modal-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #1a1a2e;
   margin: 0;
   letter-spacing: 0.2px;
@@ -224,7 +230,7 @@
   display: block;
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 13px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: #777a8d;
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -237,7 +243,7 @@
   border: 1.5px solid #e8e8e8;
   border-radius: 16px;
   font-family: "Montserrat", sans-serif;
-  font-size: 15px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   font-weight: 500;
   color: #1a1a2e;
   background: #fafafa;
@@ -310,7 +316,7 @@
   display: block;
   margin-top: 6px;
   font-family: "Montserrat", sans-serif;
-  font-size: 12px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: #999;
   font-weight: 400;
 }
@@ -347,7 +353,7 @@
 .payout-modal-btn-secondary {
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #777a8d;
   background: transparent;
   border: 1.5px solid #e0e0e0;
@@ -367,7 +373,7 @@
 .payout-modal-btn-primary {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #fff;
   background: #ff8348;
   border: none;
@@ -396,26 +402,4 @@
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
-}
-
-/* Адаптивность для модального окна */
-@media (max-width: 576px) {
-  .payout-modal-header,
-  .payout-modal-body,
-  .payout-modal-footer {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-
-  .payout-modal-title {
-    font-size: 16px;
-  }
-
-  .payout-modal-footer {
-    flex-direction: column-reverse;
-  }
-
-  .payout-modal-footer .btn {
-    width: 100%;
-  }
 }

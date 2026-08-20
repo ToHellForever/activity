@@ -364,7 +364,8 @@
   display: inline-block;
 }
 .buy-button,
-.refund-button {
+.refund-button,
+.btn-entry-control {
   background: #ff8348;
   text-align: center;
   color: #ffffff;
@@ -377,6 +378,7 @@
   width: 100%;
   display: block;
   margin-top: auto;
+  border: none;
 }
 
 .button-others {

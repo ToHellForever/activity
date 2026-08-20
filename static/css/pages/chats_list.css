@@ -23,7 +23,7 @@
 }
 
 .chats-list-header h2 {
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -32,7 +32,7 @@
 }
 
 .chats-list-header p {
-  font-size: 12px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #9a9a9a;
   margin-bottom: 0;
 }
@@ -127,7 +127,7 @@
 }
 
 .chat-list-name {
-  font-size: 16px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 2px;
@@ -138,10 +138,7 @@
   font-family: Verdana;
   font-weight: 400;
   font-style: Italic;
-  font-size: 16px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: black;
   margin-top: 8px;
 }

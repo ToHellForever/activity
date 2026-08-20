@@ -3,10 +3,10 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/partner/finances.css' %}">
-<h1>Финансы и выплаты</h1>
 <div class="row partner-layout" style="display:flex; gap:14px;">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <div class="partner-main finance-page">
+<h1 class="finances-title">Финансы и выплаты</h1>
 <!-- Модальное окно для запроса выплаты -->
 <div class="modal fade" id="payoutModal" tabindex="-1" aria-labelledby="payoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

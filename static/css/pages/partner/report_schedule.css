@@ -1,9 +1,7 @@
-/* ============================================
-   REPORT SCHEDULE PAGE — Custom Styles
-   Design system: Montserrat + Verdana
-   Colors: #02369c (primary), #ff8348 (accent)
-   ============================================ */
 
+.card-body {
+  padding: 0;
+}
 /* ---------- Page layout ---------- */
 .report-schedule-page {
   font-family: "Montserrat", sans-serif;
@@ -23,7 +21,7 @@
 .report-hero-card .card-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 1vw, 1.2rem);
   color: #fff;
   margin-bottom: 0.5rem;
 }
@@ -31,7 +29,7 @@
 .report-hero-card .card-text {
   font-family: "Montserrat", sans-serif;
   font-weight: 400;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.6;
 }
@@ -44,7 +42,6 @@
 .report-schedule-page .report-settings-card.card {
   background: #ffffff !important;
   border: none !important;
-  border-radius: 24px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
   overflow: hidden !important;
   margin-bottom: 20px !important;
@@ -52,47 +49,21 @@
 
 .report-schedule-page .report-settings-card.card .card-header {
   background: #fff !important;
+  border: none !important;
   border-bottom: 1px solid #f0f0f0 !important;
-  border-top: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-radius: 0 !important;
   font-family: "Montserrat", sans-serif !important;
   font-weight: 600 !important;
-  font-size: 1rem !important;
+  font-size: clamp(0.8rem, 1vw, 1.1rem) !important;
   color: #1a1a2e !important;
-  padding: 18px 24px !important;
-  margin-bottom: 0 !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-body {
-  padding: 24px !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-header {
-  background: #fff !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  border-top: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-radius: 0 !important;
-  font-family: "Montserrat", sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  color: #1a1a2e !important;
-  padding: 18px 24px !important;
-  margin-bottom: 0 !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-body {
-  padding: 24px !important;
+  margin-bottom: 20px !important;
+  padding: 0;
 }
 
 /* ---------- Form labels ---------- */
 .report-schedule-page .report-settings-card .form-label {
   font-family: "Montserrat", sans-serif !important;
   font-weight: 500 !important;
-  font-size: 0.85rem !important;
+  font-size: clamp(0.7rem, 1vw, 0.8rem) !important;
   color: #777a8d !important;
   text-transform: uppercase !important;
   letter-spacing: 0.4px !important;
@@ -108,7 +79,7 @@
 .report-schedule-page .report-settings-card input[type="number"] {
   font-family: "Montserrat", sans-serif !important;
   font-weight: 400 !important;
-  font-size: 0.9rem !important;
+  font-size: clamp(0.75rem, 1vw, 0.9rem) !important;
   color: #1a1a2e !important;
   background-color: #fafafa !important;
   border: 1.5px solid #e8e8e8 !important;
@@ -170,55 +141,6 @@
   color: #1a1a2e !important;
   background-color: #fff !important;
   padding: 8px 16px !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-header {
-  background: #fff !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  border-top: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-radius: 0 !important;
-  font-family: "Montserrat", sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  color: #1a1a2e !important;
-  padding: 18px 24px !important;
-  margin-bottom: 0 !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-body {
-  padding: 24px !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-header {
-  background: #fff !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  border-top: none !important;
-  border-right: none !important;
-  border-left: none !important;
-  border-radius: 0 !important;
-  font-family: "Montserrat", sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  color: #1a1a2e !important;
-  padding: 18px 24px !important;
-  margin-bottom: 0 !important;
-}
-
-.report-schedule-page .report-settings-card.card .card-body {
-  padding: 24px !important;
-}
-
-/* ---------- Form labels ---------- */
-.report-schedule-page .report-settings-card .form-label {
-  font-family: "Montserrat", sans-serif !important;
-  font-weight: 500 !important;
-  font-size: 0.85rem !important;
-  color: #777a8d !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.4px !important;
-  margin-bottom: 8px !important;
 }
 
 /* ---------- Form inputs & selects ---------- */
@@ -316,7 +238,7 @@
 .report-schedule-page form .card.report-settings-card .form-check-label {
   font-family: "Montserrat", sans-serif !important;
   font-weight: 500 !important;
-  font-size: 0.9rem !important;
+  font-size: clamp(0.8rem, 1vw, 0.9rem) !important;
   color: #1a1a2e !important;
   cursor: pointer !important;
   margin: 0 !important;
@@ -359,7 +281,7 @@
 /* ---------- Help text ---------- */
 .report-schedule-page .report-settings-card .form-text {
   font-family: "Montserrat", sans-serif !important;
-  font-size: 0.8rem !important;
+  font-size: clamp(0.7rem, 1vw, 0.8rem) !important;
   color: #999 !important;
   margin-top: 6px !important;
 }
@@ -441,7 +363,7 @@
 .report-page-heading {
   font-family: "Montserrat", sans-serif;
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 1vw, 1.3rem);
   color: #1a1a2e;
   margin-bottom: 0;
 }
@@ -449,7 +371,7 @@
 .report-back-link {
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #02369c;
   background: #f0f5ff;
   border: 1.5px solid #d0e0ff;
@@ -483,39 +405,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 768px) {
-  .report-hero-card .card-body {
-    padding: 20px;
-  }
-
-  .report-hero-card .card-title {
-    font-size: 1.1rem;
-  }
-
-  .report-hero-card .card-text {
-    font-size: 0.85rem;
-  }
-
-  .report-schedule-page .report-settings-card .card-body {
-    padding: 16px !important;
-  }
-
-  .report-page-heading {
-    font-size: 1.25rem;
-  }
-
-  .report-btn-save,
-  .report-btn-cancel {
-    width: 100%;
-    text-align: center;
-  }
-
-  .d-md-flex.justify-content-md-end {
-    flex-direction: column;
-    gap: 8px;
   }
 }

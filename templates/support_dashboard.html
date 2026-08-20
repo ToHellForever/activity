@@ -57,7 +57,7 @@
             {% if tickets %}
               {% for ticket in tickets %}
                 <a href="?ticket_id={{ ticket.id }}" class="support-ticket-card {% if selected_ticket and ticket.id == selected_ticket.id %}active{% endif %}">
-                  <div style='color: #817b7b;'>
+                  <div class="ticket-meta">
                     {{ ticket.subject|truncatechars:40 }}
                   </div>
                   <span class="ticket-status">{{ ticket.get_status_display }}</span>
