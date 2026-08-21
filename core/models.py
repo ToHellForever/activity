@@ -989,7 +989,7 @@ class PayoutDetails(models.Model):
     )
     account_number = models.CharField(max_length=50, verbose_name="Номер счёта/карты")
     account_holder = models.CharField(max_length=255, verbose_name="Владелец счёта")
-    inn = models.CharField(max_length=20, blank=True, null=True, verbose_name="ИНН")
+    bik = models.CharField(max_length=9, blank=True, null=True, verbose_name="БИК банка")
     is_default = models.BooleanField(default=False, verbose_name="Основные реквизиты")
 
     def __str__(self):

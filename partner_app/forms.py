@@ -357,13 +357,13 @@ class PayoutDetailsForm(forms.ModelForm):
 
     class Meta:
         model = PayoutDetails
-        fields = ["bank_name", "account_number", "account_holder", "inn"]
+        fields = ["bank_name", "account_number", "account_holder", "bik"]
 
         labels = {
             "bank_name": "Банк",
             "account_number": "Номер счёта или карты",
             "account_holder": "ФИО владельца счёта",
-            "inn": "ИНН (необязательно)",
+            "bik": "БИК банка (необязательно)",
         }
 
     def clean_account_number(self):
@@ -420,20 +420,19 @@ class PayoutDetailsForm(forms.ModelForm):
 
         return value
 
-    def clean_inn(self):
-        """ИНН — 10 цифр (физлицо) или 12 цифр (юрлицо)."""
-        value = self.cleaned_data.get("inn", "").strip()
+    def clean_bik(self):
+        """БИК — 9 цифр."""
+        value = self.cleaned_data.get("bik", "").strip()
 
         if not value:
             return ""
 
         if not value.isdigit():
-            raise forms.ValidationError("ИНН должен содержать только цифры.")
+            raise forms.ValidationError("БИК должен содержать только цифры.")
 
-        if len(value) not in (10, 12):
+        if len(value) != 9:
             raise forms.ValidationError(
-                "ИНН должен содержать 10 цифр (для ИП/физлица) "
-                "или 12 цифр (для юрлица)."
+                "БИК должен содержать 9 цифр."
             )
 
         return value

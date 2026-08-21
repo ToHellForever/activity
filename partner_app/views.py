@@ -2085,7 +2085,7 @@ def payout_details(request):
                 detail.bank_name = request.POST.get("bank_name", detail.bank_name)
                 detail.account_number = request.POST.get("account_number", detail.account_number)
                 detail.account_holder = request.POST.get("account_holder", detail.account_holder)
-                detail.inn = request.POST.get("inn", detail.inn) or None
+                detail.bik = request.POST.get("bik", detail.bik) or None
                 detail.save()
                 return JsonResponse(
                     {"status": "success", "message": "Реквизиты обновлены"}

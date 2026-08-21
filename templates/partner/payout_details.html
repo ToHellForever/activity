@@ -52,12 +52,12 @@
                 </div>
 
                 <div class="payout-details-form-row">
-                    <label class="payout-details-form-label" for="inn">
-                        ИНН <span class="optional">(необязательно)</span>
+                    <label class="payout-details-form-label" for="bik">
+                        БИК банка <span class="optional">(необязательно)</span>
                     </label>
-                    <input type="text" class="payout-details-input" id="inn" name="inn"
-                           placeholder="10 или 12 цифр" inputmode="numeric" maxlength="12">
-                    <div class="payout-details-error" id="inn_error"></div>
+                    <input type="text" class="payout-details-input" id="bik" name="bik"
+                           placeholder="9 цифр" inputmode="numeric" maxlength="9">
+                    <div class="payout-details-error" id="bik_error"></div>
                 </div>
 
                 <button type="submit" class="payout-details-btn-save" id="addPayoutBtn">
@@ -91,17 +91,17 @@
                         <span class="payout-detail-field-label">Владелец</span>
                         <span class="payout-detail-field-value">{{ detail.account_holder }}</span>
                     </div>
-                    {% if detail.inn %}
+                    {% if detail.bik %}
                     <div class="payout-detail-field">
-                        <span class="payout-detail-field-label">ИНН</span>
-                        <span class="payout-detail-field-value">{{ detail.inn }}</span>
+                        <span class="payout-detail-field-label">БИК банка</span>
+                        <span class="payout-detail-field-value">{{ detail.bik }}</span>
                     </div>
                     {% endif %}
                 </div>
 
                 <div class="payout-detail-actions">
                     <button type="button" class="payout-detail-action-btn payout-detail-action-btn--edit"
-                            onclick="openEditModal({{ detail.id }}, '{{ detail.bank_name }}', '{{ detail.account_number|escapejs }}', '{{ detail.account_holder|escapejs }}', '{{ detail.inn|default:''|escapejs }}')">
+                            onclick="openEditModal({{ detail.id }}, '{{ detail.bank_name }}', '{{ detail.account_number|escapejs }}', '{{ detail.account_holder|escapejs }}', '{{ detail.bik|default:''|escapejs }}')">
                         Изменить
                     </button>
                 </div>
@@ -170,12 +170,12 @@
                     </div>
 
                     <div class="payout-details-form-row">
-                        <label class="payout-details-form-label" for="edit_inn">
-                            ИНН <span class="optional">(необязательно)</span>
+                        <label class="payout-details-form-label" for="edit_bik">
+                            БИК банка <span class="optional">(необязательно)</span>
                         </label>
-                        <input type="text" class="payout-details-input" id="edit_inn" name="inn"
-                               placeholder="10 или 12 цифр" inputmode="numeric" maxlength="12">
-                        <div class="payout-details-error" id="edit_inn_error"></div>
+                        <input type="text" class="payout-details-input" id="edit_bik" name="bik"
+                               placeholder="9 цифр" inputmode="numeric" maxlength="9">
+                        <div class="payout-details-error" id="edit_bik_error"></div>
                     </div>
                 </form>
             </div>
@@ -276,11 +276,11 @@ function validateField(fieldId) {
             }
             return '';
         },
-        inn: function(v) {
+        bik: function(v) {
             if (!v.trim()) return '';
             const cv = v.replace(/\s/g, '');
-            if (!/^\d+$/.test(cv)) return 'ИНН должен содержать только цифры.';
-            if (![10, 12].includes(cv.length)) return 'ИНН: 10 или 12 цифр.';
+            if (!/^\d+$/.test(cv)) return 'БИК должен содержать только цифры.';
+            if (cv.length !== 9) return 'БИК: 9 цифр.';
             return '';
         }
     };
@@ -295,16 +295,16 @@ function validateField(fieldId) {
     return true;
 }
 
-window.openEditModal = function(id, bank, account, holder, inn) {
+window.openEditModal = function(id, bank, account, holder, bik) {
     // Очистить стили валидации
-    ['edit_bank_name', 'edit_account_number', 'edit_account_holder', 'edit_inn'].forEach(clearError);
+    ['edit_bank_name', 'edit_account_number', 'edit_account_holder', 'edit_bik'].forEach(clearError);
 
     // Установить значения
     document.getElementById('edit_detail_id').value = id;
     document.getElementById('edit_bank_name').value = bank;
     document.getElementById('edit_account_number').value = account;
     document.getElementById('edit_account_holder').value = holder;
-    document.getElementById('edit_inn').value = inn;
+    document.getElementById('edit_bik').value = bik;
 
     // Показать модалку
     const modal = new bootstrap.Modal(document.getElementById('editPayoutModal'));
@@ -318,7 +318,7 @@ window.openEditModal = function(id, bank, account, holder, inn) {
 $(document).ready(function() {
 
     // Live-валидация при потере фокуса
-    ['account_number', 'account_holder', 'inn'].forEach(function(fieldId) {
+    ['account_number', 'account_holder', 'bik'].forEach(function(fieldId) {
         const input = document.getElementById(fieldId);
         if (input) {
             input.addEventListener('blur', function() { validateField(fieldId); });
@@ -329,7 +329,7 @@ $(document).ready(function() {
     });
 
     // Маска для номера счёта — только цифры
-    ['account_number', 'inn'].forEach(function(fieldId) {
+    ['account_number', 'bik'].forEach(function(fieldId) {
         const input = document.getElementById(fieldId);
         if (input) {
             input.addEventListener('keydown', function(e) {
@@ -352,7 +352,7 @@ $(document).ready(function() {
         else { clearError('bank_name'); }
         if (!validateField('account_number')) valid = false;
         if (!validateField('account_holder')) valid = false;
-        if (!validateField('inn')) valid = false;
+        if (!validateField('bik')) valid = false;
         if (!valid) return;
 
         const $btn = $('#addPayoutBtn');
@@ -379,7 +379,7 @@ $(document).ready(function() {
         else { clearError('edit_bank_name'); }
         if (!validateField('edit_account_number')) valid = false;
         if (!validateField('edit_account_holder')) valid = false;
-        if (!validateField('edit_inn')) valid = false;
+        if (!validateField('edit_bik')) valid = false;
         if (!valid) return;
 
         const $btn = $('#editPayoutBtn');
