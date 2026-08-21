@@ -12,7 +12,41 @@
         {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
         <!-- ===== Main content ===== -->
         <div class="partner-main">
-            
+
+            <!-- ===== Profile header ===== -->
+            <div class="profile-header">
+                <div class="profile-avatar" {% if not partner_profile.logo %}onclick="document.getElementById('id_logo').click()"{% endif %}>
+                    {% if partner_profile and partner_profile.logo %}
+                        <img src="{{ partner_profile.logo.url }}" alt="Logo">
+                        <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
+                            <i class="bi bi-camera-fill"></i>
+                        </span>
+                    {% else %}
+                        <img src="/media/icon/camera.svg" alt="">
+                    {% endif %}
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-company-name">
+                        {{ partner_profile.company_name|default:partner_profile.short_name|default:user.get_full_name|default:user.username }}
+                    </h2>
+                    <div class="profile-email">{{ user.email|default:'—' }}</div>
+                    <div class="profile-details">
+                        <span class="detail-item"><span class="details-label">Тип:</span> {% if partner_profile.registration_type == 'legal' %}ООО
+                        {% elif partner_profile.registration_type == 'ip' %}ИП
+                        {% elif partner_profile.registration_type == 'physical' %}Физическое лицо
+                        {% else %}{{ partner_profile.get_registration_type_display }}
+                        {% endif %}</span>
+                        <span class="detail-item"><span class="details-label">Название:</span> {{ partner_profile.company_name|default:partner_profile.short_name|default:'—' }}</span>
+                        <span class="detail-item"><span class="details-label">Описание:</span> {{ partner_profile.description|default:'—' }}</span>
+                        <span class="detail-item"><span class="details-label">Адрес:</span> {% if partner_profile.postal_code or partner_profile.legal_address %}{% if partner_profile.postal_code %}{{ partner_profile.postal_code }}{% if partner_profile.legal_address %}, {% endif %}{% endif %}{{ partner_profile.legal_address|default:'—' }}{% else %}—{% endif %}</span>
+                        <span class="detail-item"><span class="details-label">ИНН:</span> {{ partner_profile.inn|default:'—' }}</span>
+                        {% if partner_profile.kpp %}
+                        <span class="detail-item"><span class="details-label">КПП:</span> {{ partner_profile.kpp }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Organizer verification section -->
             <div class="organizer-verification-section">
                 <div class="status-row">
