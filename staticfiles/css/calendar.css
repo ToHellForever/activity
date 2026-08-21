@@ -146,10 +146,79 @@
   background: #00045a;
 }
 
-/* Стили для выпадающего списка */
+/* ===== Time picker in calendar — styled to match calendar theme ===== */
+.calendar-time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 8px;
+  border-top: 1px solid #eee;
+  margin-top: 12px;
+}
+
+.calendar-time-label {
+  font-size: 13px;
+  color: #9a9a9a;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+}
+
+.calendar-time-pickers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-time-input {
+  width: 56px;
+  height: 36px;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  color: #00056e;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  background: #fff;
+  -moz-appearance: textfield;
+}
+
+/* Убираем стандартные стрелки в Chrome/Safari/Edge */
+.calendar-time-input::-webkit-outer-spin-button,
+.calendar-time-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.calendar-time-input:focus {
+  border-color: #ff8348;
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15);
+}
+
+.calendar-time-sep {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00056e;
+  user-select: none;
+}
+
+/* ===== Dropdown selects — unified element (как в event_list) ===== */
 .dropdown-container {
   position: relative;
-  z-index: 9999;
+}
+
+/* Category dropdown — z-index 10002 (поверх формата) */
+.dropdown-container:has(#categoryDropdown) {
+  z-index: 10002;
+}
+
+/* Format dropdown — z-index 10000 */
+.dropdown-container:has(#formatDropdown) {
+  z-index: 10000;
 }
 
 .dropdown-menu-custom {
@@ -160,8 +229,8 @@
   margin-top: 0;
   background: #ffffff;
   border-radius: 0 0 15px 15px;
-  z-index: 9999 !important;
-  max-height: 300px;
+  z-index: 10003 !important;
+  max-height: 180px;
   overflow-y: auto;
   min-width: 100%;
   border: 1px solid #e0e0e0;
@@ -231,6 +300,16 @@
 }
 
 .date-container.open .calendar-toggle-btn .triangle-down {
+  border-top: 12px solid #ff8348;
+  transform: rotate(180deg);
+}
+
+/* Стили input-button при открытом календаре */
+.date-container.open .input-button {
+  background: transparent;
+}
+
+.date-container.open .input-button .triangle-down {
   border-top: 12px solid #ff8348;
   transform: rotate(180deg);
 }

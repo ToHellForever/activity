@@ -1,0 +1,761 @@
+/* ===== Partner main area ===== */
+.partner-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================================
+   PROFILE HEADER
+   ========================================= */
+.profile-header {
+  display: none;
+}
+
+@media (max-width: 1150px) {
+  .profile-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.profile-avatar {
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  position: relative;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  padding: 10px;
+}
+
+.profile-avatar .camera-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 131, 72, 1);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.profile-avatar[onclick] {
+  cursor: pointer;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-company-name {
+  margin: 0 0 4px;
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 700;
+  color: #222;
+  line-height: 1.3;
+}
+
+.profile-email {
+  font-family: "Verdana", sans-serif;
+font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.profile-details {
+  font-family: "Verdana", sans-serif;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
+.profile-details .details-label {
+  color: #777;
+  margin-right: 4px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-family: 'Montserrat';
+font-weight: 500;
+
+}
+
+.profile-details .detail-item {
+  display: inline;
+  margin-right: 16px;
+  white-space: nowrap;
+}
+
+/* =========================================
+   STATUS SECTION (Статус партнёра)
+   ========================================= */
+.partner-status-section {
+  margin-bottom: 10px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.status-label {
+  color: rgba(119, 122, 141, 1);
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 700;
+}
+
+.status-value {
+  font-weight: 700;
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+}
+
+.status-approved-text {
+  color: rgba(16, 135, 37, 1);
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 700;
+}
+
+.status-rejected-text {
+  color: #c62828;
+  font-weight: 700;
+}
+
+.status-pending-text {
+  color: #f57f17;
+  font-weight: 700;
+}
+
+.status-reason {
+  color: #999;
+  font-weight: 400;
+}
+
+/* Бейдж "Проверенный организатор" */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #02369c;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.verified-badge svg {
+  flex-shrink: 0;
+}
+
+/* =========================================
+   TARIFF HEADING
+   ========================================= */
+.tariff-heading {
+  font-family: Verdana;
+  font-weight: 400;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: black;
+}
+
+/* =========================================
+   PACKAGE CARDS (Тарифы)
+   ========================================= */
+.package-cards {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.package-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 18px;
+  padding: 30px 20px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+}
+
+.package-card.inactive {
+  background: #fafafa;
+  border-color: #ddd;
+}
+
+.package-name {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(1rem, 1.5vw, 2.5rem);
+  font-weight: 900;
+  color: #222;
+  margin: 0 0 10px;
+  letter-spacing: 0.3px;
+}
+
+.package-features {
+  font-family: "Verdana", sans-serif;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 8px;
+  flex-grow: 1;
+}
+
+.feature-item {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: black;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+
+.feature-label {
+  font-weight: 400;
+  font-family: "Verdana", sans-serif;
+  color: rgba(119, 122, 141, 1);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+}
+
+.package-card .features .feature-item .feature-label {
+  font-weight: 700;
+}
+
+/* Выделение жирным в features */
+.package-features strong {
+  font-weight: 700;
+}
+
+.package-price {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 1.1rem);
+  font-weight: 400;
+  color: black;
+  margin-bottom: 12px;
+}
+
+.btn-buy {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-buy:hover {
+  background: #e87a30;
+}
+
+.btn-buy:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-buy--active {
+  background: #ccc;
+  color: #fff;
+  cursor: default;
+}
+
+/* =========================================
+   PROFILE SECTIONS
+   ========================================= */
+.profile-section {
+  margin-bottom: 16px;
+}
+
+.profile-section .section-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #bbb;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  margin-top: 16px;
+}
+
+.profile-section .section-title:first-child {
+  margin-top: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+/* =========================================
+   EDITABLE FIELDS (с карандашом справа)
+   ========================================= */
+.editable-field {
+  position: relative;
+}
+
+.editable-field input,
+.editable-field textarea {
+  width: 100%;
+  padding: 8px 36px 8px 14px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  background: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  color: #333;
+  height: 38px;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.editable-field--active input,
+.editable-field--active textarea {
+  pointer-events: auto;
+  user-select: text;
+  cursor: text;
+}
+
+.editable-field textarea {
+  height: auto;
+  min-height: 60px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.editable-field input:focus,
+.editable-field textarea:focus {
+  outline: none;
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.15);
+}
+
+.editable-field .edit-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bbb;
+  transition: color 0.2s;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editable-field .edit-icon:hover {
+  color: #888;
+}
+
+.editable-field .edit-icon svg,
+.editable-field .edit-icon img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.editable-field--textarea .edit-icon {
+  top: auto;
+  bottom: 10px;
+  transform: none;
+}
+
+.editable-field--active .edit-icon {
+  color: #4caf50;
+}
+
+.editable-field--active .edit-icon:hover {
+  color: #388e3c;
+}
+
+/* =========================================
+   VIDEO BUSINESS CARD
+   ========================================= */
+.video-carditka-section {
+  width: 100%;
+}
+
+.video-carditka-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.video-carditka-title {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.video-carditka-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.video-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.video-action-btn:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.video-delete-btn:hover {
+  color: #f44336;
+  background: #fff3f3;
+}
+
+.video-player-wrapper {
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.video-player-wrapper:focus-within {
+  border-color: #2196f3;
+}
+
+.video-player-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* =========================================
+   CHANGE PASSWORD BUTTON
+   ========================================= */
+.change-password-wrapper {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-change-password {
+  display: inline-block;
+  padding: 8px 24px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  color: #333;
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 400;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-change-password:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+/* =========================================
+   DOCUMENTS SECTION
+   ========================================= */
+.documents-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+}
+
+.documents-section .section-title {
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  text-transform: uppercase;
+  color: #bbb;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+/* =========================================
+   ORGANIZER VERIFICATION SECTION
+   ========================================= */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 5px;
+  line-height: 1.4;
+  font-family: "Verdana", sans-serif;
+}
+
+.verified-badge svg {
+  flex-shrink: 0;
+}
+
+/* APPROVED: зелёный бейдж */
+.verified-badge--approved {
+  background: #02369c;
+  color: #fff;
+}
+
+/* REJECTED: красный бейдж */
+.verified-badge--rejected {
+  background: rgba(212, 70, 70, 1);
+  color: #fff;
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.7rem, 0.8vw, 0.7rem);
+}
+
+/* PENDING: жёлтый бейдж */
+.verified-badge--pending {
+  background: #ff9800;
+  color: #fff;
+}
+
+/* Информационный блок верификации */
+.verification-info-block {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.verification-info-text {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #999;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.verification-documents {
+  margin-bottom: 16px;
+}
+
+.verification-documents-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: black;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.verification-documents-title strong {
+  font-weight: 700;
+}
+
+.verification-documents-list {
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: black;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.verification-documents-list li {
+  margin-bottom: 2px;
+  margin-left: -15px !important;
+}
+
+/* Форма загрузки */
+.verification-upload-form {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-area {
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.upload-area:hover {
+  background: #f5f9ff;
+}
+
+.upload-area-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: rgba(2, 54, 156, 1);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.btn-submit-verification {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 32px;
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s;
+}
+
+/* Сообщение о причине отклонения */
+.rejection-reason {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #c62828;
+  line-height: 1.5;
+}
+
+.rejection-reason strong {
+  font-weight: 700;
+}
+
+/* Сообщение о проверке */
+.verification-pending-message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff8e1;
+  border: 1px solid #ffecb3;
+  border-radius: 6px;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  color: #f57f17;
+  line-height: 1.5;
+}
+
+/* =========================================
+   STATUS BADGES (для документов)
+   ========================================= */
+.status-approved {
+  color: #108725;
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.status-rejected {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-family: "Verdana", sans-serif;
+}
+
+.status-pending {
+  background: #fff8e1;
+  border: 1px solid #ffecb3;
+  color: #f57f17;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-family: "Verdana", sans-serif;
+}
+
+/* ===== Mobile responsive (< 768px) ===== */
+@media (max-width: 768px) {
+  /* Packages: 1 в ряд вместо 3 */
+  .package-cards {
+    flex-direction: column;
+  }
+
+  /* Form rows: 1 колонка на всю ширину */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Кнопка "Изменить пароль" на всю ширину */
+  .btn-change-password {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+}

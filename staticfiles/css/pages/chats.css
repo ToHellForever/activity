@@ -1,11 +1,63 @@
 /* ============================================
-   СТРАНИЦА ЧАТА (диалог с участником)
-   ============================================ */
+    СТРАНИЦА ЧАТА (диалог с участником)
+    ============================================ */
 
 .chat-page-layout {
   display: flex;
   gap: 14px;
   align-items: flex-start;
+}
+
+/* --- Карточка мероприятия (для заголовка чата) --- */
+.chat-header-event-card {
+  position: relative;
+  flex-shrink: 0;
+  width: 7%;
+  height: auto;
+  background: #f0f0f0;
+}
+
+.chat-header-event-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+.chat-header-event-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+  border-radius: 12px;
+}
+
+/* --- Бейдж пользователя (поверх фото мероприятия) --- */
+.chat-header-user-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-family: "Montserrat", sans-serif;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  z-index: 2;
+}
+
+.chat-header-user-badge--guest {
+  background: #9e9e9e;
+}
+
+.chat-header-user-badge--authorized {
+  background: rgba(255, 131, 72, 1);
 }
 
 .chat-container {
@@ -44,10 +96,6 @@
   transition: background 0.15s;
 }
 
-.chat-header-back:hover {
-  background: #f0f0f0;
-}
-
 .chat-header-avatar {
   flex-shrink: 0;
   width: 44px;
@@ -73,24 +121,37 @@
 .chat-header-info {
   flex: 1;
   min-width: 0;
+  margin-left: 10px;
 }
 
 .chat-header-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-  font-family: "Montserrat", sans-serif;
-  margin-bottom: 1px;
+  font-family: "Montserrat";
+  font-weight: 700;
+  font-style: Bold;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: black;
 }
 
 .chat-header-event {
-  font-size: 12px;
-  color: #9a9a9a;
-  font-style: italic;
-  font-family: "Montserrat", sans-serif;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Italic;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: black;
+  margin-top: 7px;
+}
+
+.chat-header-question {
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: black;
+  margin-top: 5px;
+}
+
+.chat-header-question strong {
+  color: #333;
 }
 
 /* --- История сообщений --- */
@@ -105,12 +166,18 @@
 
 /* Разделитель даты */
 .chat-date-divider {
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 13px;
+  line-height: 100%;
+  letter-spacing: 0%;
   text-align: center;
-  font-size: 12px;
-  color: #9a9a9a;
-  margin: 8px 0;
-  font-family: "Montserrat", sans-serif;
+  color: rgba(119, 122, 141, 1);
   position: relative;
+  display: inline-block;
+  width: 100%;
+  margin: 10px 0;
 }
 
 .chat-date-divider::before,
@@ -135,7 +202,7 @@
 .chat-message {
   display: flex;
   gap: 10px;
-  max-width: 80%;
+  max-width: 50%;
 }
 
 .chat-message--outgoing {
@@ -145,6 +212,15 @@
 
 .chat-message--incoming {
   align-self: flex-start;
+}
+.chat-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.chat-message-wrapper--outgoing {
+  align-self: flex-end;
 }
 
 .chat-message-avatar {
@@ -191,17 +267,19 @@
 }
 
 .chat-message-bubble {
-  padding: 10px 14px;
+  padding: 15px 20px;
   border-radius: 14px;
   font-size: 13px;
   line-height: 1.5;
   font-family: "Montserrat", sans-serif;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .chat-message--incoming .chat-message-bubble {
-  background: #f0f0f0;
-  color: #333;
+  background: rgba(238, 238, 238, 1);
+  color: rgba(0, 0, 0, 1);
   border-bottom-left-radius: 4px;
 }
 
@@ -209,6 +287,7 @@
   background: #4a7cf7;
   color: #fff;
   border-bottom-right-radius: 4px;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
 }
 
 .chat-message-footer {
@@ -231,10 +310,11 @@
 
 /* Сообщение от неавторизованного — с информацией о пользователе */
 .chat-message-guest-info {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 2px;
-  line-height: 1.6;
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
+  color: rgba(0, 0, 0, 1);
 }
 
 .chat-message-guest-info strong {
@@ -243,10 +323,12 @@
 }
 
 .chat-message-guest-note {
-  font-size: 12px;
-  color: #9a9a9a;
-  font-style: italic;
-  font-family: "Montserrat", sans-serif;
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Italic;
+  font-size: clamp(0.8rem, 1vw, 0.8rem);
+  color: rgba(154, 154, 154, 1);
+  margin-top: 15px;
 }
 
 /* --- Поле ввода --- */
@@ -337,7 +419,7 @@
   }
 
   .chat-message {
-    max-width: 90%;
+    max-width: 50%;
   }
 
   .chat-header {

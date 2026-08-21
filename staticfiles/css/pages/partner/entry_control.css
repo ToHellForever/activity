@@ -1,0 +1,394 @@
+/* ============================================================
+   ENTRY CONTROL MODAL (Модальное окно контроля входа)
+   ============================================================ */
+
+/* --- Обёртка модального окна --- */
+.entry-control-modal .modal-content {
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.entry-control-modal .modal-dialog {
+  max-width: 750px;
+}
+
+/* --- Шапка модального окна --- */
+.entry-control-header {
+  background: linear-gradient(135deg, #02369c 0%, #00056e 100%);
+  color: #fff;
+  border: none;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.entry-control-header-title {
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entry-control-header-title i {
+  font-size: 1.3rem;
+}
+
+.entry-control-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.entry-control-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --- Тело модального окна --- */
+.entry-control-body {
+  padding: 24px;
+  font-family: "Verdana", sans-serif;
+}
+
+/* --- Статистика сверху --- */
+.entry-control-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.entry-control-stats-total {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.entry-control-stats-total strong {
+  color: #02369c;
+  font-size: 1.1rem;
+}
+
+.entry-control-stats-badge {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #02369c;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --- Зона создания ссылки --- */
+.entry-control-create-zone {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f0f4ff;
+  border-radius: 14px;
+  border: 2px dashed #02369c;
+}
+
+.entry-control-create-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.entry-control-name-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-family: "Verdana", sans-serif;
+  font-size: 0.85rem;
+  color: #333;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.entry-control-name-input:focus {
+  outline: none;
+  border-color: #02369c;
+  box-shadow: 0 0 0 3px rgba(2, 54, 156, 0.1);
+}
+
+.entry-control-name-input::placeholder {
+  color: #bbb;
+}
+
+.entry-control-create-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.entry-control-create-btn--success {
+  background: #28a745;
+  color: #fff;
+}
+
+.entry-control-create-btn--success:hover {
+  background: #218838;
+}
+
+.entry-control-create-btn--disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* --- Секция списков --- */
+.entry-control-links-section {
+  margin-bottom: 8px;
+}
+
+.entry-control-links-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #777a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Карточка ссылки --- */
+.entry-control-link-card {
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: #fff;
+  transition: box-shadow 0.2s;
+}
+
+.entry-control-link-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.entry-control-link-body {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.entry-control-link-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-control-link-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* --- Бейдж статуса --- */
+.entry-control-status-badge {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.entry-control-status-badge--active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.entry-control-status-badge--inactive {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+/* --- Детали ссылки --- */
+.entry-control-link-meta {
+  font-size: 0.75rem;
+  color: #777a8d;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.entry-control-link-meta code {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.7rem;
+  background: #f5f5f5;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* --- Кнопки действий --- */
+.entry-control-link-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.entry-control-btn {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.entry-control-btn--copy {
+  background: #02369c;
+  border-color: #02369c;
+  color: #fff;
+}
+
+.entry-control-btn--copy:hover {
+  background: #012a7e;
+  border-color: #012a7e;
+}
+
+.entry-control-btn--toggle {
+  background: #fff;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.entry-control-btn--toggle:hover {
+  background: #fff3cd;
+}
+
+.entry-control-btn--activate {
+  background: #fff;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.entry-control-btn--activate:hover {
+  background: #d4edda;
+}
+
+.entry-control-btn--delete {
+  background: #fff;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.entry-control-btn--delete:hover {
+  background: #f8d7da;
+}
+
+/* --- Спиннер загрузки --- */
+.entry-control-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.entry-control-spinner i {
+  font-size: 2rem;
+  color: #02369c;
+  margin-bottom: 12px;
+}
+
+.entry-control-spinner--success i {
+  color: #28a745;
+}
+
+.entry-control-spinner-text {
+  font-size: 0.9rem;
+  color: #777a8d;
+}
+
+/* --- Ошибка --- */
+.entry-control-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+/* --- Адаптивность --- */
+@media (max-width: 767px) {
+  .entry-control-modal .modal-content{
+    border-radius: 0px;
+  }
+  .modal-header {
+    border-radius: 0px;
+  }
+  .entry-control-modal .modal-dialog {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .entry-control-body {
+    padding: 16px;
+  }
+
+  .entry-control-link-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .entry-control-link-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .entry-control-stats {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}

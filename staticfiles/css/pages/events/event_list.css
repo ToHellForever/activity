@@ -1,0 +1,269 @@
+.dropdown-toggle {
+  color: #ffffff;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  border-radius: 20px;
+  background: transparent;
+  border: none;
+  margin-top: 10px;
+  padding: 7px 15px 7px 15px;
+  outline: none;
+}
+
+.dropdown-toggle::after {
+  display: none !important;
+}
+
+.dropdown-toggle:hover {
+  outline: 1px solid #ffffff;
+}
+
+.filter-item .d-flex.flex-wrap {
+  width: 90%;
+  justify-content: space-between;
+}
+
+.form-check-label {
+  white-space: nowrap;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+}
+
+/* Стили для чекбоксов тегов - оранжевый цвет #ff8348 */
+.form-check-input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid #ff8348;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+  .filter-button {
+    margin-top: 20px;
+    padding: 0;
+    width: 100%;
+  }
+.form-check-input[type="checkbox"]:checked {
+  background-color: #ff8348;
+  border-color: #ff8348;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input[type="checkbox"]:hover {
+  border-color: #e6743c;
+}
+
+.form-check-input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 131, 72, 0.25);
+}
+
+.btn:hover,
+.btn:focus,
+.btn:active {
+  color: #ffffff;
+}
+
+.filter-item .btn .triangle-down {
+  display: none;
+}
+
+.dropdown-menu {
+  width: auto;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.filter-input::placeholder {
+  padding: 10px;
+  padding-left: 20px;
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-style: italic;
+  color: #777a8d;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Процентная ширина колонок */
+.filter-col-category {
+  width: 20%;
+}
+
+.filter-col-date {
+  width: 15%;
+}
+
+.filter-col-title {
+  width: 30%;
+}
+
+.filter-col-format {
+  width: 20%;
+}
+
+.filter-col-button {
+  width: 15%;
+  align-self: flex-end;
+}
+
+/* Колонка с тегами - на десктопе занимает всю ширину */
+.filter-col-tags {
+  width: 100%;
+  order: 10; /* По умолчанию в конце */
+}
+
+/* === Кнопка сброса фильтров === */
+.filters-row-reset {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.filter-reset-btn {
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #ffffff;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  margin-top: 5px;
+  /* Добавляем эти три строчки: */
+  display: block;       /* Делаем ссылку блочным элементом */
+  width: max-content;   /* Задаем ширину ровно по тексту */
+  margin-left: auto;    /* Теперь margin-left: auto прижмет ее вправо */
+}
+
+.filter-reset-btn:hover {
+  opacity: 0.8;
+  color: #ff8348;
+}
+
+/* Инпут даты — скрываем курсор */
+#dateFromInput {
+  cursor: pointer;
+  caret-color: transparent;
+}
+
+/* === Стили для тегов-чипсов === */
+.tag-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border: 1px solid rgba(119, 122, 141, 0.4);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #777;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  margin: 3px 4px;
+}
+
+.tag-filter-chip:hover {
+  border-color: #ff8348;
+  color: #ff8348;
+}
+
+.tag-filter-chip.active {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+  font-weight: 600;
+}
+
+/* === МОБИЛЬНАЯ ВЕРСИЯ (<900px) === */
+@media (max-width: 900px) {
+  .filters-row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-col-category,
+  .filter-col-date,
+  .filter-col-title,
+  .filter-col-format,
+  .filter-col-button,
+  .filter-col-tags {
+    width: 100% !important;
+  }
+
+  /* Порядок элементов на мобильных */
+  .filter-col-category { order: 1; }
+  .filter-col-date { order: 2; }
+  .filter-col-title { order: 3; }
+  .filter-col-format { order: 4; }
+  .filter-col-tags { order: 5; } /* Теги ПЕРЕД кнопкой */
+  .filter-col-button { order: 6; } /* Кнопка в конце */
+
+  .filter-button {
+    margin-top: 20px;
+    padding: 0;
+    width: 100%;
+  }
+
+  .filter-item {
+    margin-top: 7px;
+  }
+
+  .filter-item-tags {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .filter-item .d-flex.flex-wrap {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .dropdown-toggle {
+    margin-top: 3px;
+  }
+
+  .dropdown-menu {
+    padding: 10px;
+  }
+
+  .input-button {
+    top: 50% !important;
+  }
+
+  /* Кнопка сброса на мобильных */
+  .filters-row-reset {
+    justify-content: center;
+    margin-top: 20px;
+  }
+}
+
+/* 900px – 1299px — 3 карточки в строке */
+@media (min-width: 900px) and (max-width: 1299px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 33.333% !important;
+    max-width: 33.333% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}
+
+/* >=1300px — 4 карточки в строке */
+@media (min-width: 1300px) {
+  .event-list-col,
+  .venue-list-col {
+    width: 25% !important;
+    max-width: 25% !important;
+    padding: 0 5px;
+    box-sizing: border-box;
+  }
+}

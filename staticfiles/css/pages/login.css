@@ -1,0 +1,28 @@
+/* Ссылка "Забыли пароль?" */
+.forgot-password-link {
+  font-family: "Montserrat", sans-serif;
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+  font-weight: 500;
+  color: #ff6b35;
+  text-decoration: none;
+}
+.email-section,
+.password-section {
+    width: 30% !important;
+}
+.auth-section {
+    margin-top: 10px;
+}
+
+.auth-text{
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+}
+.auth-link-login {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+  color: #ff6b35;
+    text-decoration: none;
+}

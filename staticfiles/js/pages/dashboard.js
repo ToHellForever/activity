@@ -6,7 +6,7 @@ function openBuyPackageModal(packageId, packageName, price) {
     }
     pendingPackageChange.packageId = packageId;
     pendingPackageChange.isChange = true; // Это смена пакета
-    // Сразу показываем модалку выбора смены пакета
+    // Сначала показываем модалку выбора смены пакета
     showPackageChangeModal('', '', packageName, price);
 }
 
@@ -75,8 +75,8 @@ if (buyForm) {
             .catch(err => alert('Ошибка: ' + err))
             .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
         } else {
-            // Смена пакета — сразу меняем
-            changePackage('immediate');
+            // Смена пакета — используем запомненный тип (immediate или scheduled)
+            changePackage(pendingPackageChange.changeType);
         }
     } else {
         const adminEmail = formData.get('admin_email');
@@ -113,7 +113,9 @@ let pendingPackageChange = {
     currentPackageName: '',
     currentPackageEndDate: '',
     newPackageName: '',
-    newPackagePrice: ''
+    newPackagePrice: '',
+    isChange: false,
+    changeType: 'immediate'
 };
 
 function showPackageChangeModal(currentName, endDate, newName, price) {
@@ -129,14 +131,19 @@ function closePackageChangeModal() {
 }
 
 function changePackageImmediate() {
-    // Показываем модалку выбора оплаты
+    // Запоминаем тип смены и показываем модалку выбора оплаты
+    pendingPackageChange.changeType = 'immediate';
     closePackageChangeModal();
     document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
     document.getElementById('buy-package-modal').style.display = 'flex';
 }
 
 function changePackageScheduled() {
-    changePackage('scheduled');
+    // Запоминаем тип смены и показываем модалку выбора оплаты
+    pendingPackageChange.changeType = 'scheduled';
+    closePackageChangeModal();
+    document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
+    document.getElementById('buy-package-modal').style.display = 'flex';
 }
 
 function changePackage(changeType) {

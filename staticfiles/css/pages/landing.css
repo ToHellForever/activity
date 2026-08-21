@@ -1,9 +1,14 @@
-.landing-h {
+.landing-h,
+.landing-h-text {
   font-family: "Verdana";
   font-weight: 700;
   color: rgba(38, 37, 37, 1);
   font-size: clamp(1rem, 3vw, 2.5rem);
 }
+.landing-h-text {
+  font-size: clamp(1.2rem, 3vw, 2.5rem) !important;
+  margin: 0 auto;
+  }
 /* Фильтры лендинга — изолированные стили */
 .landing-block .filters-row {
   display: flex;
@@ -68,11 +73,16 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-8px);
 }
 
 .card-img-top {
   width: 100%;
   height: auto;
+  object-fit: cover;
   border-top-left-radius: 23.14px;
   border-top-right-radius: 23.14px;
 }
@@ -81,7 +91,10 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+}
+
+.card-spacer {
+  flex-grow: 1;
 }
 
 .card-body .buy-button {
@@ -224,6 +237,7 @@
   width: 100% !important;
   height: 100% !important;
   border-radius: 20px;
+  object-fit: cover;
 }
 
 .active-event-info {
@@ -289,6 +303,9 @@
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title {
@@ -305,7 +322,7 @@
 }
 .card-date {
   margin-left: 10px;
-  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -332,8 +349,8 @@
   color: rgba(119, 122, 141, 1);
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(0.7rem, 2vw, 0.9rem);
-  margin-left: 10px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  margin-left: 5px;
 }
 
 .badge {
@@ -347,23 +364,23 @@
   display: inline-block;
 }
 .buy-button,
-.button-order-history {
+.refund-button,
+.btn-entry-control {
   background: #ff8348;
   text-align: center;
   color: #ffffff;
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   width: 100%;
   display: block;
   margin-top: auto;
+  border: none;
 }
-.button-order-history {
-  background: rgba(154, 154, 154, 1) !;
-}
+
 .button-others {
   border: solid 3px rgba(2, 54, 156, 1);
   display: block;
@@ -375,7 +392,7 @@
   border-radius: 25px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   box-sizing: border-box;
 }
 
@@ -438,20 +455,20 @@
   font-family: "Montserrat";
   font-weight: 500;
   color: rgba(119, 122, 141, 1);
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   margin-left: 5px;
 }
 .card-label-venue {
   color: rgba(119, 122, 141, 1);
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
 }
 .card-price-venue {
   color: rgba(7, 7, 7, 1);
   font-family: "Verdana";
   font-weight: 700;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   margin-top: auto;
   line-height: 1;
 }
@@ -498,9 +515,10 @@
   border-radius: 19.28px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
   padding: 7px 50px 7px 50px;
   color: white;
+  white-space: nowrap;
 }
 
 @media (max-width: 1399px) {
@@ -562,6 +580,12 @@
 }
 /* МОБИЛЬНАЯ ВЕРСИЯ  */
 @media (max-width: 900px) {
+  .find-button {
+    padding: 7px 15px 7px 15px;
+  }
+  .two-button {
+    gap: 5px;
+  }
   .landing-text {
     margin-top: 0px;
     margin-bottom: 0px;
@@ -569,6 +593,7 @@
   }
   .filters-landing {
     border-radius: 15px;
+    margin-right: 0px;
   }
   .landing-block > .row {
     flex-direction: column;
@@ -755,19 +780,7 @@
   }
 
   .button-others {
-    font-size: 0.9rem;
-    padding: 10px 0;
-  }
-
-  .two-button {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .find-button {
-    width: 100%;
-    font-size: 0.9rem;
-    padding: 12px 0;
+    padding: 7px 0;
   }
 
   /* Стили для календаря на мобильной */

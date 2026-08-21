@@ -1,0 +1,427 @@
+/* ============================================================
+   SCANNER PAGE (Контроль входа / Сканер)
+   ============================================================ */
+
+/* --- Базовые стили --- */
+.scanner-page {
+  font-family: "Montserrat", sans-serif;
+  background: #f5f6f8;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   HEADER (Шапка сканера)
+   ============================================ */
+.scanner-header {
+  background: linear-gradient(135deg, #02369c 0%, #00056e 100%);
+  color: #fff;
+  padding: 16px 20px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.scanner-header-title {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scanner-header-title i {
+  font-size: 1.1rem;
+}
+
+.scanner-header-event {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ============================================
+   STATUS BANNER (Полоса статуса)
+   ============================================ */
+.scanner-status-banner {
+  padding: 10px 16px;
+  text-align: center;
+  font-family: "Verdana", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.scanner-status-banner--active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.scanner-status-banner--inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.scanner-status-banner i {
+  margin-right: 4px;
+}
+
+/* ============================================
+   COUNTER BAR (Счётчик)
+   ============================================ */
+.scanner-counter-bar {
+  background: #fff;
+  padding: 16px 20px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.scanner-counter-number {
+  font-family: "Montserrat", sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #02369c;
+  line-height: 1;
+}
+
+.scanner-counter-label {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 4px;
+  text-transform: lowercase;
+}
+
+/* ============================================
+   MAIN SCANNER AREA
+   ============================================ */
+.scanner-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 16px;
+}
+
+/* ============================================
+   CAMERA VIEWER (Камера)
+   ============================================ */
+.scanner-camera-wrapper {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.scanner-camera-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-frame {
+  width: 200px;
+  height: 200px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Статус камеры --- */
+.scanner-camera-status {
+  padding: 16px;
+  text-align: center;
+  color: #999;
+  font-family: "Verdana", sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.scanner-camera-status i {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.scanner-camera-status--error i {
+  color: #dc3545;
+}
+
+/* ============================================
+   RESULT CARD (Карточка результата)
+   ============================================ */
+.scanner-result-card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  margin-bottom: 8px;
+}
+
+.scanner-result-card--valid {
+  border: 2px solid #28a745;
+}
+
+.scanner-result-card--invalid {
+  border: 2px solid #dc3545;
+}
+
+/* --- Иконка результата --- */
+.scanner-result-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.scanner-result-icon--valid {
+  color: #28a745;
+}
+
+.scanner-result-icon--invalid {
+  color: #dc3545;
+}
+
+/* --- Заголовок результата --- */
+.scanner-result-title {
+  font-family: "Verdana", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.scanner-result-title--valid {
+  color: #28a745;
+}
+
+.scanner-result-title--invalid {
+  color: #dc3545;
+}
+
+/* --- Детали результата --- */
+.scanner-result-details {
+  font-family: "Verdana", sans-serif;
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.7;
+}
+
+.scanner-result-details strong {
+  color: #000;
+  font-weight: 700;
+}
+
+.scanner-result-details .text-muted {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* ============================================
+   MANUAL INPUT (Ручной ввод)
+   ============================================ */
+.scanner-manual-input {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 8px;
+}
+
+.scanner-manual-input input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 20px;
+  font-family: "Verdana", sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #333;
+  background: #fff;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.scanner-manual-input input:focus {
+  outline: none;
+  border-color: #02369c;
+  box-shadow: 0 0 0 3px rgba(2, 54, 156, 0.1);
+}
+
+.scanner-manual-input input::placeholder {
+  color: #bbb;
+}
+
+.scanner-manual-input button {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px 24px;
+  background: #02369c;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.scanner-manual-input button:hover {
+  background: #012a7e;
+}
+
+/* ============================================
+   END SHIFT BUTTON (Завершить смену)
+   ============================================ */
+.scanner-end-shift-btn {
+  width: 100%;
+  max-width: 360px;
+  padding: 14px;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scanner-end-shift-btn:hover {
+  background: #c82333;
+}
+
+.scanner-end-shift-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* --- Встряска для ошибки --- */
+@keyframes scanner-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.scanner-shake {
+  animation: scanner-shake 0.3s ease;
+}
+
+/* --- Пульсация для успеха --- */
+@keyframes scanner-pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+.scanner-pulse-green {
+  animation: scanner-pulse-green 0.5s ease;
+}
+
+/* --- Появление карточки результата --- */
+@keyframes scanner-slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scanner-result-card {
+  animation: scanner-slideUp 0.3s ease;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Планшеты */
+@media (max-width: 768px) {
+  .scanner-camera-wrapper {
+    width: 240px;
+    height: 240px;
+  }
+
+  .scanner-frame {
+    width: 170px;
+    height: 170px;
+  }
+
+  .scanner-counter-number {
+    font-size: 2.5rem;
+  }
+
+  .scanner-result-card {
+    padding: 20px 16px;
+  }
+
+  .scanner-result-icon {
+    font-size: 48px;
+  }
+}
+
+/* Мобильные */
+@media (max-width: 480px) {
+  .scanner-header {
+    padding: 12px 16px;
+  }
+
+  .scanner-header-title {
+    font-size: 0.85rem;
+  }
+
+  .scanner-camera-wrapper {
+    width: 200px;
+    height: 200px;
+  }
+
+  .scanner-frame {
+    width: 150px;
+    height: 150px;
+  }
+
+  .scanner-counter-number {
+    font-size: 2rem;
+  }
+
+  .scanner-result-card {
+    max-width: 100%;
+    padding: 20px 16px;
+  }
+
+  .scanner-result-title {
+    font-size: 1.05rem;
+  }
+
+  .scanner-result-details {
+    font-size: 0.8rem;
+  }
+}

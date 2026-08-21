@@ -1,11 +1,19 @@
-/* ===== Sidebar ===== */
-.partner-sidebar {
-  width: 20%;
-  min-height: calc(100vh - 100px);
+/* ===== Visitor Sidebar ===== */
+.visitor-sidebar {
+  width: 17%;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
-  padding: 20px 14px;
+  flex-shrink: 0;
+  padding-top: 0 !important;
+}
+
+/* ===== Sidebar ===== */
+.partner-sidebar {
+  width: 20%;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
 }
 .sidebar-icon {
@@ -14,7 +22,7 @@
 }
 .sidebar-p {
   font-family: "Verdana";
-  font-size: 16px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-family: 400;
   color: black;
 }
@@ -91,7 +99,7 @@
 .sidebar-name {
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 15px;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   color: black;
   margin-bottom: 2px;
   text-transform: uppercase;
@@ -101,9 +109,17 @@
 .sidebar-email {
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: 13px;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   color: black;
-  word-break: break-all;
+
+  /* Основные свойства для усечения */
+  white-space: nowrap; /* Запрещает любые переносы строк */
+  overflow: hidden; /* Скрывает всё, что выходит за пределы блока */
+  text-overflow: ellipsis; /* Добавляет ... вместо скрытого текста */
+
+  /* Критически важное дополнение */
+  max-width: 100%; /* Ограничивает ширину (если родитель резиновый) */
+  line-height: 1.2; /* Фиксирует высоту строки под размер шрифта */
 }
 
 .sidebar-nav a {
@@ -115,7 +131,7 @@
   color: black;
   font-family: "Verdana";
   text-decoration: none;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   transition: all 0.2s;
   margin-bottom: 2px;
 }
@@ -146,7 +162,6 @@
 .partner-main {
   flex: 1;
   min-width: 0;
-  margin-top: 25px;
 }
 
 .sidebar-logout {
@@ -175,4 +190,86 @@
   font-size: 15px;
   width: 18px;
   text-align: center;
+}
+
+/* ===== Mobile top navigation ===== */
+.mobile-nav {
+  display: none;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 20px;
+box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
+
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  scrollbar-width: none;
+  justify-content: space-between;
+}
+
+.mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.mobile-nav-item:hover {
+  color: #333;
+}
+
+.mobile-nav-item.active {
+  color: rgba(2, 54, 156, 1);
+  font-weight: 600;
+}
+
+.mobile-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #0d6efd;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  line-height: 1;
+}
+
+/* ===== Responsive: mobile ===== */
+@media (max-width: 1150px) {
+  .partner-layout {
+    flex-direction: column;
+  }
+
+  .partner-sidebar {
+    display: none !important;
+  }
+
+  .mobile-nav {
+    display: flex;
+    width: 100%;
+    order: -1;
+  }
+
+  .partner-main {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
 }

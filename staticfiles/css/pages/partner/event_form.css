@@ -1,0 +1,865 @@
+.text-danger {
+  color: #dc3545;
+  margin-left: 3px;
+}
+.ticket-table-container {
+  margin-bottom: 20px;
+}
+#map {
+  width: 100%;
+  height: 400px;
+  margin: 20px 0;
+  min-height: 400px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.map-container {
+  margin: 20px 0;
+}
+.place-input-container {
+  margin-bottom: 15px;
+}
+.place-additional-info {
+  margin-top: 10px;
+}
+.map-loading {
+  text-align: center;
+  padding: 20px;
+}
+.dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ===== Dropdown selects — unified element (как в event_list) ===== */
+.partner-main .input-with-button {
+  position: relative;
+  width: 100%;
+}
+
+.partner-main .filter-input {
+  border-radius: 20px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  padding: 7px 48px 7px 16px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.partner-main .filter-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+.partner-main .input-button {
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 49px;
+  height: 37px;
+  background: #ff8348;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.partner-main .dropdown-container {
+  position: relative;
+}
+
+/* ===== Event form date + time in calendar ===== */
+.event-form-date-container .filter-input {
+  cursor: pointer;
+}
+
+.calendar-time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 5px;
+  border-top: 1px solid #eee;
+  margin-top: 10px;
+}
+
+.calendar-time-label {
+  font-size: 13px;
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+}
+
+.calendar-time-pickers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-time-input {
+  width: 44px;
+  height: 32px;
+  text-align: center;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: "Montserrat", sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #fff;
+}
+
+.calendar-time-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+.calendar-time-sep {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* ===== Duration popup (ЧЧ:ММ) — как календарь ===== */
+.duration-popup {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0;
+  background: #ffffff;
+  border-radius: 0 0 15px 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 10005 !important;
+  padding: 15px;
+  min-width: 320px;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+}
+
+.duration-popup.active {
+  display: block;
+}
+
+.duration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.duration-header button {
+  background: #ff8348;
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.duration-header button:hover {
+  background: #e6743c;
+}
+
+.duration-title {
+  font-family: "Montserrat";
+  font-weight: 600;
+  font-size: 1rem;
+  color: #00056e;
+}
+
+.duration-body {
+  margin-bottom: 12px;
+}
+
+.duration-field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: center;
+}
+
+.duration-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.duration-label {
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #9a9a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.duration-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.duration-btn {
+  width: 28px;
+  height: 28px;
+  background: #ff8348;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.duration-btn:hover {
+  background: #e6743c;
+}
+
+.duration-btn:active {
+  transform: scale(0.95);
+}
+
+.duration-field {
+  width: 64px;
+  height: 36px;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  color: #00056e;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  background: #fff;
+  -moz-appearance: textfield;
+}
+
+.duration-field::-webkit-outer-spin-button,
+.duration-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.duration-field:focus {
+  border-color: #ff8348;
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.15);
+}
+
+.duration-sep {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00056e;
+  padding-bottom: 8px;
+  user-select: none;
+}
+
+.duration-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.duration-close {
+  background: #00056e;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.duration-close:hover {
+  background: #00045a;
+}
+
+/* ===== Input with suffix (ч) ===== */
+.input-with-suffix {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.input-with-suffix .with-suffix-input {
+  border-radius: 20px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  padding: 7px 16px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+  flex: 1;
+  box-sizing: border-box;
+  height: 38px;
+}
+
+/* Скрываем стрелки браузера у number-полей */
+.input-with-suffix .with-suffix-input::-webkit-inner-spin-button,
+.input-with-suffix .with-suffix-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-with-suffix .with-suffix-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-with-suffix .with-suffix-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+}
+
+/* ===== Tags ===== */
+.tag-selection-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.main-tag {
+  margin-right: 15px;
+}
+.subtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+.form-check {
+  margin-right: 10px;
+}
+
+/* Toggle switch — единая pill */
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  background: #e8e8e8;
+  border-radius: 25px;
+  padding: 3px;
+  position: relative;
+}
+.toggle-switch input[type="checkbox"] {
+  display: none;
+}
+.toggle-switch .toggle-slider {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+}
+.toggle-switch .toggle-status {
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-weight: 400;
+  padding: 5px 18px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+  color: #888;
+}
+.text-muted-small {
+  font-family: "Montserrat";
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+}
+/* НЕТ — по умолчанию активен (белый) */
+.toggle-switch .toggle-status--no {
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.toggle-switch .toggle-status--yes {
+  color: #888;
+}
+/* Когда чекбокс checked — ДА активен (оранжевый) */
+.toggle-switch
+  input[type="checkbox"]:checked
+  ~ .toggle-slider
+  .toggle-status--yes {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.toggle-switch
+  input[type="checkbox"]:checked
+  ~ .toggle-slider
+  .toggle-status--no {
+  color: #888;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Photo gallery — compact container style */
+.photo-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 20px;
+  min-height: 100px;
+}
+.photo-gallery-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #e0e0e0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.photo-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-gallery-item.is-primary {
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.3);
+}
+.photo-gallery-item .primary-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.photo-gallery-item .remove-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.photo-gallery-item .set-primary-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  background: rgba(255, 140, 66, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px;
+}
+
+/* Ticket color picker */
+.ticket-color-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: 24px;
+}
+.form-group label {
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  text-transform: uppercase;
+  color: rgba(154, 154, 154, 1);
+  margin-bottom: 12px;
+  margin-left: 5px;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="url"],
+.form-group input[type="tel"],
+.form-group textarea,
+.form-control,
+#ticketTable input[type="text"],
+#ticketTable input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: 7px 16px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: black;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.form-control:focus,
+#ticketTable input:focus,
+#ticketTable select:focus,
+#ticketTable textarea:focus {
+  outline: none;
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 2px rgba(233, 92, 4, 0.3);
+}
+.form-group .form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.form-group .form-row > * {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* Submit button */
+.submit-btn {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  border: none;
+  padding: 10px 40px;
+  border-radius: 19.28px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 20px;
+  font-family: Montserrat;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: clamp(0.8rem , 1vw, 1rem);
+  text-transform: uppercase;
+}
+.submit-btn:hover {
+  background: #e67a35;
+}
+
+/* Ticket table */
+#ticketTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+#ticketTable th {
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 600;
+  color: #666;
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+#ticketTable td {
+  padding: 6px;
+  vertical-align: middle;
+}
+#ticketTable .per-person-cell {
+  width: 50px;
+  text-align: center;
+}
+
+/* Add ticket button */
+.add-ticket-btn {
+  background: rgba(217, 217, 217, 1);
+  color: black;
+  border: none;
+  padding: 5px 40px 7px 40px;
+  border-radius: 19.28px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+.add-ticket-btn:hover {
+  background: #e0e0e0;
+}
+
+/* Remove button */
+.remove-ticket-btn {
+  background: none;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.remove-ticket-btn:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
+/* Tags */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===== Media upload container (Фото/Видео/Программа) ===== */
+.media-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+  gap: 10px;
+}
+
+.media-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.media-upload-text {
+  font-size: 13px;
+  color: #4a7cf7;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+
+.media-upload-text:hover {
+  color: #e67a35;
+  text-decoration: underline;
+}
+
+.media-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 20px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.media-upload-btn:hover {
+  border-color: rgba(255, 131, 72, 1);
+  color: rgba(255, 131, 72, 1);
+}
+
+.media-upload-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.inner-icon {
+  width: 55px;
+  height: auto;
+  background: rgba(217, 217, 217, 1);
+  border-radius: 50%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+/* ===== Placeholder (пустое состояние) ===== */
+.media-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 20px;
+  width: 100%;
+}
+
+.media-upload-placeholder .media-upload-icon {
+  transition: transform 0.2s;
+}
+
+.media-upload-placeholder:hover .media-upload-icon {
+  transform: scale(1.05);
+}
+
+.media-upload-placeholder .media-upload-text {
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: rgba(2, 54, 156, 1);
+  line-height: 1.4;
+  user-select: none;
+}
+
+.media-upload-placeholder .media-upload-text:hover {
+  color: #e67a35;
+  text-decoration: none;
+}
+
+/* ===== Tag search input ===== */
+.tag-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  border-radius: 20px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  font-family: inherit;
+  font-style: Italic;
+}
+
+.tag-search-input:focus {
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.2);
+}
+
+/* ===== Tag chips ===== */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(119, 122, 141, 0.4);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #555;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.tag-chip:hover {
+  border-color: #ff8c42;
+  color: #ff8c42;
+}
+
+.tag-chip.selected {
+  border-color: #ff8c42;
+  background: rgba(255, 140, 66, 0.08);
+  color: #ff8c42;
+  font-weight: 600;
+}
+
+/* ===== Tag suggestions (пилюли) ===== */
+.tags-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border: 1px solid rgba(119, 122, 141, 0.4);
+  border-radius: 20px;
+  font-family: Montserrat;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: rgba(154, 154, 154, 1);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.tag-suggestion-chip:hover {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+}
+
+.tag-suggestion-chip.selected {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+  font-weight: 600;
+}
+
+.tag-suggestion-chip.selected {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+  font-weight: 600;
+}
+
+/* ===== Tag suggestions (пилюли под поиском) ===== */
+.tags-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag-suggestion-chip.selected {
+  border-color: #555;
+  background: #ccc;
+  color: #333;
+  font-weight: 600;
+}
+
+.btn-venue-list {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  border-radius: 20px;
+  padding: 7px 50px 7px 50px;
+  text-decoration: none;
+  font-family: Montserrat;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  text-transform: uppercase;
+}

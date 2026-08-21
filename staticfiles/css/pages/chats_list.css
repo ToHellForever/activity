@@ -19,11 +19,11 @@
 }
 
 .chats-list-header {
-  padding: 18px 22px 4px 22px;
+  padding: 0px 22px 4px 22px;
 }
 
 .chats-list-header h2 {
-  font-size: 14px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -32,7 +32,7 @@
 }
 
 .chats-list-header p {
-  font-size: 12px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #9a9a9a;
   margin-bottom: 0;
 }
@@ -46,13 +46,14 @@
 /* Элемент списка чатов */
 .chat-list-item {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   padding: 16px 22px;
   text-decoration: none;
   color: inherit;
   transition: background 0.15s ease;
   border-bottom: 1px solid rgba(154, 154, 154, 1);
   cursor: pointer;
+  align-items: flex-start;
 }
 
 .chat-list-item:hover {
@@ -67,69 +68,91 @@
   border-bottom: none;
 }
 
-/* Аватарка с инициалом */
-.chat-list-avatar {
+/* Карточка мероприятия (фото + бейдж пользователя) */
+.chat-list-event-card {
+  position: relative;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 10%;
+  height: auto;
+  background: #f0f0f0;
+}
+
+.chat-list-event-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+.chat-list-event-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+  border-radius: 12px;
+}
+
+/* Бейдж пользователя в правом верхнем углу */
+.chat-list-user-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   color: #fff;
   font-family: "Montserrat", sans-serif;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  z-index: 2;
 }
 
-.chat-list-avatar--guest {
-  background: #ccc;
+.chat-list-user-badge--guest {
+  background: #9e9e9e;
 }
 
-.chat-list-avatar--authorized {
+.chat-list-user-badge--authorized {
   background: rgba(255, 131, 72, 1);
-}
-
-.chat-list-avatar--green {
-  background: #28a745;
-}
-
-.chat-list-avatar--blue {
-  background: #007bff;
-}
-
-.chat-list-avatar--purple {
-  background: #6f42c1;
 }
 
 .chat-list-info {
   flex: 1;
   min-width: 0;
+  margin-left: 10px;
 }
 
 .chat-list-name {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 2px;
   font-family: "Montserrat", sans-serif;
 }
 
 .chat-list-event {
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Italic;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
-  color: #9a9a9a;
-  font-style: italic;
-  margin-bottom: 4px;
-  font-family: "Montserrat", sans-serif;
+  color: black;
+  margin-top: 8px;
 }
 
 .chat-list-preview {
+  font-family: Verdana;
+  font-weight: 400;
+  font-style: Regular;
   font-size: 13px;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: "Montserrat", sans-serif;
+  leading-trim: NONE;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: black;
+  margin-top: 10px;
 }
 
 .chat-list-time {
@@ -159,11 +182,23 @@
 
   .chat-list-item {
     padding: 14px 16px;
+    gap: 12px;
   }
 
-  .chat-list-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+  .chat-list-event-card {
+    width: 56px;
+    height: 56px;
+  }
+
+  .chat-list-event-photo,
+  .chat-list-event-photo--placeholder {
+    border-radius: 10px;
+  }
+
+  .chat-list-user-badge {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+    border-width: 2px;
   }
 }
