@@ -407,7 +407,7 @@
   color: #333;
   font-family: "Verdana", sans-serif;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
-  font-weight: 700;
+  font-weight: 400;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -632,4 +632,24 @@
   padding: 8px 12px;
   margin-bottom: 8px;
   font-family: "Verdana", sans-serif;
+}
+
+/* ===== Mobile responsive (< 768px) ===== */
+@media (max-width: 768px) {
+  /* Packages: 1 в ряд вместо 3 */
+  .package-cards {
+    flex-direction: column;
+  }
+
+  /* Form rows: 1 колонка на всю ширину */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Кнопка "Изменить пароль" на всю ширину */
+  .btn-change-password {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
 }

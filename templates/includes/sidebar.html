@@ -1,5 +1,45 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+
+<!-- ===== Mobile top nav ===== -->
+<div class="mobile-nav">
+    <a href="{% url 'partner:dashboard' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        Профиль
+    </a>
+    <a href="{% url 'partner:partner_event_list' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %}">
+        Мои события
+    </a>
+    <a href="{% url 'partner:chats_list' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
+        Чаты
+        {% if unread_chats_count|default:0 > 0 %}
+        <span class="mobile-nav-badge">{{ unread_chats_count }}</span>
+        {% endif %}
+    </a>
+    <a href="{% url 'partner:portfolio_list' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'portfolio_list' %}active{% endif %}">
+        Портфолио
+    </a>
+    <a href="{% url 'partner:reports' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+        Продажи
+    </a>
+    <a href="{% url 'partner:finances' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'finances' %}active{% endif %}">
+        Финансы
+    </a>
+    <a href="#"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_places' %}active{% endif %}">
+        Площадки
+    </a>
+    <a href="{% url 'support_dashboard' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
+        Поддержка
+    </a>
+</div>
+
         <aside class="partner-sidebar">
             <p class='sidebar-p'>Личный кабинет</p>
             <div class="sidebar-profile">
