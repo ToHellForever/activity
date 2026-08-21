@@ -219,12 +219,12 @@
   align-items: center;
   width: 100%;
   justify-content: space-evenly;
+  flex-wrap: wrap; 
 }
-
 .nav-link {
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   white-space: nowrap;
   text-align: center;
   padding: 0 10px;
@@ -263,7 +263,7 @@
   color: black;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   padding: 5px 5px;
   white-space: nowrap;
 }
@@ -275,13 +275,13 @@
 }
 
 .auth-separator {
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: black;
   font-weight: 500;
 }
 
 .city {
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   white-space: nowrap;
   font-weight: 500;
   margin: 0;
