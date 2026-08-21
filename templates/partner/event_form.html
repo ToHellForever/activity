@@ -365,7 +365,7 @@
             </span>
         </div>
         {% if has_free_tickets %}
-        <small class="form-text text-muted">Все билеты бесплатные - опция недоступна.</small>
+        <small class="form-text text-muted-small">Все билеты бесплатные - опция недоступна.</small>
         {% endif %}
     </div>
     <!-- Адрес -->
@@ -385,7 +385,7 @@
     </div>
     {% comment %} блок с ссылкой на список площадок {% endcomment %}
     <div class="form-group">
-        <p class='text-muted'>Если площадка еще не выбрана, выберете её из каталога</p>
+        <p class='text-muted-small'>Если площадка еще не выбрана, выберете её из каталога</p>
         <div>
             <a href="{% url 'venues:venue_list' %}" class="btn-venue-list">ВЫБРАТЬ ПЛОЩАДКУ</a>
         </div>
@@ -465,7 +465,7 @@
         </div>
         <!-- Скрытые поля для отправки выбранных тегов -->
         <div id="tags-hidden-container"></div>
-        <small class="form-text text-muted">Выберите до 5 тегов (необязательно)</small>
+        <small class="form-text text-muted-small">Выберите до 5 тегов (необязательно)</small>
     </div>
     <div style="display: flex; justify-content: center;">
     <button type="submit" class="submit-btn">ОТПРАВИТЬ НА МОДЕРАЦИЮ</button>

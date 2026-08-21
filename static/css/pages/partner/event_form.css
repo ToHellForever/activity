@@ -372,14 +372,18 @@
   z-index: 1;
 }
 .toggle-switch .toggle-status {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-weight: 400;
   padding: 5px 18px;
   border-radius: 22px;
   cursor: pointer;
   transition: all 0.3s;
   user-select: none;
   color: #888;
+}
+.text-muted-small {
+  font-family: "Montserrat";
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
 }
 /* НЕТ — по умолчанию активен (белый) */
 .toggle-switch .toggle-status--no {
@@ -500,11 +504,7 @@
 .form-group label {
   font-family: "Montserrat";
   font-weight: 500;
-  font-style: Medium;
-  font-size: 13px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   text-transform: uppercase;
   color: rgba(154, 154, 154, 1);
   margin-bottom: 12px;
@@ -525,7 +525,7 @@
   padding: 7px 16px;
   border: 1px solid rgba(119, 122, 141, 1);
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: black;
   background: #fff;
   transition:
@@ -570,10 +570,7 @@
   font-family: Montserrat;
   font-weight: 500;
   font-style: Medium;
-  font-size: 15.42px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem , 1vw, 1rem);
   text-transform: uppercase;
 }
 .submit-btn:hover {
@@ -587,7 +584,7 @@
   margin-top: 8px;
 }
 #ticketTable th {
-  font-size: 12px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 600;
   color: #666;
   padding: 8px 6px;
@@ -610,7 +607,7 @@
   border: none;
   padding: 5px 40px 7px 40px;
   border-radius: 19.28px;
-  font-size: 13px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 600;
   cursor: pointer;
   margin-top: 10px;
@@ -731,7 +728,7 @@
 }
 
 .media-upload-placeholder .media-upload-text {
-  font-size: 13px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: rgba(2, 54, 156, 1);
   line-height: 1.4;
   user-select: none;
@@ -739,6 +736,7 @@
 
 .media-upload-placeholder .media-upload-text:hover {
   color: #e67a35;
+  text-decoration: none;
 }
 
 /* ===== Tag search input ===== */
@@ -807,10 +805,14 @@
   padding: 6px 16px;
   border: 1px solid rgba(119, 122, 141, 0.4);
   border-radius: 20px;
-  font-size: 13px;
-  color: #777;
+  font-family: Montserrat;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: rgba(154, 154, 154, 1);
   background: #fff;
   cursor: pointer;
+  transition: all 0.2s;
   user-select: none;
 }
 
@@ -842,26 +844,6 @@
   margin-top: 12px;
 }
 
-.tag-suggestion-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 16px;
-  border: 1px solid rgba(119, 122, 141, 0.4);
-  border-radius: 20px;
-  font-family: Montserrat;
-  font-weight: 500;
-  font-style: Medium;
-  font-size: 13px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
-  color: rgba(154, 154, 154, 1);
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-}
-
 .tag-suggestion-chip.selected {
   border-color: #555;
   background: #ccc;
@@ -878,9 +860,6 @@
   font-family: Montserrat;
   font-weight: 500;
   font-style: Medium;
-  font-size: 15.42px;
-  leading-trim: NONE;
-  line-height: 100%;
-  letter-spacing: 0%;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   text-transform: uppercase;
 }
