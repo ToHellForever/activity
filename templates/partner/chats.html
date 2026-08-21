@@ -159,12 +159,16 @@
 
     wrappers.forEach(function(wrapper, index) {
       const msgDate = wrapper.getAttribute('data-message-date');
+      if (!msgDate) return;
       if (msgDate !== lastDate) {
         const divider = document.createElement('div');
         divider.className = 'chat-date-divider';
-        // Преобразуем YYYY-MM-DD в DD.MM.YYYY
         const parts = msgDate.split('-');
-        divider.textContent = parts[2] + '.' + parts[1] + '.' + parts[0];
+        if (parts.length === 3) {
+          divider.textContent = parts[2] + '.' + parts[1] + '.' + parts[0];
+        } else {
+          divider.textContent = msgDate;
+        }
         container.insertBefore(divider, wrapper);
         lastDate = msgDate;
       }
@@ -224,17 +228,17 @@
         const container = document.querySelector('.chat-messages');
         const allWrappers = container.querySelectorAll('.chat-message-wrapper');
         const lastWrapper = allWrappers.length > 0 ? allWrappers[allWrappers.length - 1] : null;
-        // Стало: используем full_created_at, которое пришлет бэкенд
-        if (!m || !m.full_created_at) {
+        // Используем created_at, которое пришлёт бэкенд
+        if (!m || !m.created_at) {
         console.error("Сервер не вернул дату создания сообщения:", m);
         // Используем текущую дату как fallback, чтобы страница не сломалась
         const now = new Date();
         var newDate = now.toISOString().slice(0, 10); 
         } else {
         // Работаем только если дата валидна
-        const isoDateTime = m.full_created_at;
+        const isoDateTime = m.created_at;
         var newDate = isoDateTime.slice(0, 10);
-        }// Оставляем только YYYY-MM-DD для атрибута data-message-date
+        }
         let needsDivider = false;
         if (!lastWrapper) {
           // Первое сообщение

@@ -125,7 +125,7 @@
 }
 
 .chat-header-name {
-  font-family:'Montserrat';
+  font-family: "Montserrat";
   font-weight: 700;
   font-style: Bold;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
@@ -170,11 +170,14 @@
   font-weight: 400;
   font-style: Regular;
   font-size: 13px;
-  leading-trim: NONE;
   line-height: 100%;
   letter-spacing: 0%;
   text-align: center;
   color: rgba(119, 122, 141, 1);
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin: 10px 0;
 }
 
 .chat-date-divider::before,
@@ -199,7 +202,7 @@
 .chat-message {
   display: flex;
   gap: 10px;
-  max-width: 80%;
+  max-width: 50%;
 }
 
 .chat-message--outgoing {
@@ -270,6 +273,8 @@
   line-height: 1.5;
   font-family: "Montserrat", sans-serif;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .chat-message--incoming .chat-message-bubble {
@@ -414,7 +419,7 @@
   }
 
   .chat-message {
-    max-width: 90%;
+    max-width: 50%;
   }
 
   .chat-header {
