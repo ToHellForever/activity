@@ -509,7 +509,6 @@
   font-size: clamp(0.7rem, 1vw, 0.8rem);
   text-transform: uppercase;
   color: rgba(154, 154, 154, 1);
-  margin-bottom: 12px;
   margin-left: 5px;
   white-space: nowrap;
   /* ... если не влазит */
@@ -878,13 +877,118 @@
     margin-left: 0px;
     margin-right: 0px;
   }
-  .form-control {
-    width: 100%;
+  .form-group label {
+    /* если не влазит то ... */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: wrap;
   }
-  .filter-input {
-    width: 100%;
+  /* 4 поля → по 2 в строке */
+  .form-group .form-row > * {
+    flex: 0 0 calc(50% - 6px);
+    max-width: calc(50% - 6px);
   }
-  .form-group {
+
+  /* ===== Билеты — мобильная сетка 2 колонки ===== */
+  #ticketTable thead {
+    display: none;
+  }
+  #ticket-tbody td.min-qty-cell,
+  #ticketTable th.min-qty-cell {
+    display: none;
+  }
+  #ticket-tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    margin-bottom: 12px;
+    background: #fff;
+    align-items: start;
+  }
+  #ticket-tbody td {
+    display: block;
+  }
+  /* Цвет — col 1, row 1 */
+  #ticket-tbody td.color-cell {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #ticket-tbody td.color-cell .ticket-color-preview {
+    width: 24px;
+    height: 24px;
+  }
+  /* Тип — col 2-3, row 1 */
+  #ticket-tbody td:nth-child(2) {
+    grid-column: 2 / 4;
+    grid-row: 1;
+  }
+  #ticket-tbody td:nth-child(2)::before {
+    content: "Тип";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
+  /* Цена — col 2, row 2 */
+  #ticket-tbody td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  #ticket-tbody td:nth-child(3)::before {
+    content: "Цена";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
+  /* Кол-во билетов — col 3, row 2 */
+  #ticket-tbody td:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  #ticket-tbody td:nth-child(4)::before {
+    content: "Кол-во билетов";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
+  /* Описание — на всю ширину, row 3 */
+  #ticket-tbody td:nth-child(5) {
+    grid-column: 1 / 4;
+    grid-row: 3;
+  }
+  #ticket-tbody td:nth-child(5)::before {
+    content: "Описание";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
+  /* Действия — col 3, row 1 (рядом с Типом) */
+  #ticket-tbody td.actions-cell {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+  }
+  #ticket-tbody td.actions-cell .remove-ticket-btn {
+    font-size: 14px;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  /* Кнопка "+ ДОБАВИТЬ" — на всю ширину */
+  #addTicketRow {
     width: 100%;
+    text-align: center;
   }
 }
