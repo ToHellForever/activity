@@ -215,14 +215,14 @@
             </div>
             <div>
                 <label>закрыть продажи за</label>
-                <div class="input-with-suffix">
-                    <input type="number" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24" class="form-group">
+                <div class="input-with-suffix form-group">
+                    <input type="number" class="form-control filter-input filter-input-dropdown" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24">
                 </div>
             </div>
             <div>
                 <label>срок возврата билетов</label>
-                <div class="input-with-suffix">
-                    <input type="number" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1" class="form-group">
+                <div class="input-with-suffix form-group">
+                    <input type="number" class="form-control filter-input filter-input-dropdown" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1">
                 </div>
             </div>
         </div>
