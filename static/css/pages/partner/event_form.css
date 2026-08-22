@@ -645,6 +645,10 @@
   color: #fff;
 }
 
+.remove-ticket-btn-mobile {
+  display: none;
+}
+
 /* Tags */
 .tags-container {
   display: flex;
@@ -880,6 +884,12 @@
   .partner-layout {
     margin-left: 0px;
     margin-right: 0px;
+  }
+  .btn-venue-list {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 7px 16px;
   }
   .form-group label {
     /* если не влазит то ... */
