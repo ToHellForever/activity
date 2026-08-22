@@ -469,9 +469,17 @@
         <input type="text" id="tag-search" placeholder="Введите тег или выберите из предложенных" class="tag-search-input">
         <div class="tags-suggestions" id="tags-suggestions">
             {% for main_tag in main_tags %}
-                {% for subtag in main_tag.subtags.all %}
-                <div class="tag-suggestion-chip{% if subtag.id in selected_tag_ids %} selected{% endif %}" data-tag-id="{{ subtag.id }}">{{ subtag.name }}</div>
-                {% endfor %}
+            <div class="tag-group" data-main-tag-id="{{ main_tag.id }}">
+                <div class="tag-group-header">
+                    <span class="tag-group-title">{{ main_tag.name }}</span>
+                    <span class="tag-group-arrow">▼</span>
+                </div>
+                <div class="tag-group-body">
+                    {% for subtag in main_tag.subtags.all %}
+                    <div class="tag-suggestion-chip{% if subtag.id in selected_tag_ids %} selected{% endif %}" data-tag-id="{{ subtag.id }}">{{ subtag.name }}</div>
+                    {% endfor %}
+                </div>
+            </div>
             {% endfor %}
         </div>
         <!-- Скрытые поля для отправки выбранных тегов -->
@@ -817,7 +825,8 @@
 
         // Клик по чипсу — переключение selected
         suggestionsContainer.querySelectorAll('.tag-suggestion-chip').forEach(function(chip) {
-            chip.addEventListener('click', function() {
+            chip.addEventListener('click', function(e) {
+                e.stopPropagation();
                 const tagId = this.dataset.tagId;
                 const isSelected = this.classList.contains('selected');
 
@@ -838,6 +847,14 @@
                 // Добавляем selected
                 this.classList.add('selected');
                 updateTagsInputs();
+            });
+        });
+
+        // Клик по заголовку группы — раскрыть/закрыть
+        suggestionsContainer.querySelectorAll('.tag-group-header').forEach(function(header) {
+            header.addEventListener('click', function() {
+                const group = this.closest('.tag-group');
+                group.classList.toggle('open');
             });
         });
 

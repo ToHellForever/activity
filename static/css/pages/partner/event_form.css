@@ -880,6 +880,19 @@
   text-transform: uppercase;
 }
 
+/* ===== Tag groups — desktop: flat list ===== */
+.tag-group-header {
+  display: none;
+}
+.tag-group-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  max-height: none;
+  overflow: visible;
+}
+
 @media (max-width: 768px) {
   .partner-layout {
     margin-left: 0px;
@@ -1056,5 +1069,70 @@
   }
   #ticket-tbody .remove-ticket-btn-mobile:hover {
     background: #dc3545;
+  }
+
+  /* ===== Мобильная версия тегов: группы ===== */
+  .tag-search-input {
+    display: none;
+  }
+  .tags-suggestions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .tag-group {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .tag-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(255, 131, 72, 0.1);
+    border-radius: 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .tag-group-header:hover {
+    background: rgba(255, 131, 72, 0.2);
+  }
+  .tag-group-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+  .tag-group-arrow {
+    font-size: 10px;
+    color: #999;
+    transition: transform 0.3s;
+  }
+  .tag-group.open .tag-group-arrow {
+    transform: rotate(180deg);
+  }
+  .tag-group-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .tag-group.open .tag-group-body {
+    max-height: 500px;
+  }
+  .tag-suggestion-chip {
+    flex: 1 1 100%;
+    min-width: 100%;
+    text-align: center;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* ===== Submit button — 100% width on mobile ===== */
+  .submit-btn {
+    width: 100%;
+    text-align: center;
   }
 }
