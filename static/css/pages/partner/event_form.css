@@ -628,11 +628,11 @@
 /* Remove button */
 .remove-ticket-btn {
   background: none;
-  border: 1px solid #dc3545;
+  border: none;
   color: #dc3545;
   padding: 4px 10px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 16px;
   cursor: pointer;
   margin-left: 10px;
 }
@@ -889,7 +889,7 @@
     max-width: calc(50% - 6px);
   }
 
-  /* ===== Билеты — мобильная сетка 2 колонки ===== */
+  /* ===== Билеты — мобильная версия ===== */
   #ticketTable thead {
     display: none;
   }
@@ -899,33 +899,35 @@
   }
   #ticket-tbody tr {
     display: grid;
-    grid-template-columns: auto 1fr 1fr;
-    margin-bottom: 12px;
-    background: #fff;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
     align-items: start;
   }
   #ticket-tbody td {
     display: block;
+    padding: 0 !important;
   }
-  /* Цвет — col 1, row 1 */
+  /* Цвет — 1 колонка (10%) */
   #ticket-tbody td.color-cell {
     grid-column: 1;
     grid-row: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
   #ticket-tbody td.color-cell .ticket-color-preview {
     width: 24px;
     height: 24px;
   }
-  /* Тип — col 2-3, row 1 */
+  /* Тип — 9 колонок (90%) */
   #ticket-tbody td:nth-child(2) {
-    grid-column: 2 / 4;
+    grid-column: 2 / 11;
     grid-row: 1;
   }
   #ticket-tbody td:nth-child(2)::before {
-    content: "Тип";
+    content: "ТИП";
     display: block;
     font-size: 11px;
     color: #999;
@@ -933,13 +935,13 @@
     margin-bottom: 4px;
     font-family: "Montserrat", sans-serif;
   }
-  /* Цена — col 2, row 2 */
+  /* Цена — 5 колонок (50%) */
   #ticket-tbody td:nth-child(3) {
-    grid-column: 2;
+    grid-column: 1 / 6;
     grid-row: 2;
   }
   #ticket-tbody td:nth-child(3)::before {
-    content: "Цена";
+    content: "ЦЕНА";
     display: block;
     font-size: 11px;
     color: #999;
@@ -947,13 +949,13 @@
     margin-bottom: 4px;
     font-family: "Montserrat", sans-serif;
   }
-  /* Кол-во билетов — col 3, row 2 */
+  /* Кол-во билетов — 5 колонок (50%) */
   #ticket-tbody td:nth-child(4) {
-    grid-column: 3;
+    grid-column: 6 / 11;
     grid-row: 2;
   }
   #ticket-tbody td:nth-child(4)::before {
-    content: "Кол-во билетов";
+    content: "КОЛ-ВО БИЛЕТОВ";
     display: block;
     font-size: 11px;
     color: #999;
@@ -961,13 +963,13 @@
     margin-bottom: 4px;
     font-family: "Montserrat", sans-serif;
   }
-  /* Описание — на всю ширину, row 3 */
+  /* Описание — на всю ширину (100%) */
   #ticket-tbody td:nth-child(5) {
-    grid-column: 1 / 4;
+    grid-column: 1 / 11;
     grid-row: 3;
   }
   #ticket-tbody td:nth-child(5)::before {
-    content: "Описание";
+    content: "ОПИСАНИЕ";
     display: block;
     font-size: 11px;
     color: #999;
@@ -975,16 +977,29 @@
     margin-bottom: 4px;
     font-family: "Montserrat", sans-serif;
   }
-  /* Действия — col 3, row 1 (рядом с Типом) */
+  /* Крестик удаления — абсолютно справа сверху */
   #ticket-tbody td.actions-cell {
-    grid-column: 3;
-    grid-row: 1;
-    text-align: right;
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 2;
   }
   #ticket-tbody td.actions-cell .remove-ticket-btn {
+    font-size: 18px;
+    padding: 0 2px;
+    background: none;
+    border: none;
+    color: #dc3545;
+    line-height: 1;
+  }
+  /* Все input — pill-shaped */
+  #ticketTable #ticket-tbody td input {
+    border-radius: 20px !important;
+    padding: 8px 14px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
     font-size: 14px;
-    padding: 4px 10px;
-    border-radius: 6px;
   }
   /* Кнопка "+ ДОБАВИТЬ" — на всю ширину */
   #addTicketRow {
