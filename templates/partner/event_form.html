@@ -171,7 +171,7 @@
             <div>
                 <label>Длительность</label>
                 <div class="input-with-button dropdown-container duration-container">
-                    <input type="text" class="form-control filter-input filter-input-dropdown" 
+                    <input type="text" class="form-control filter-input" 
                            placeholder="ЧЧ:ММ" 
                            value="{{ form.instance.duration|default:'' }}"
                            readonly 
@@ -181,9 +181,7 @@
                     </button>
                     <div class="duration-popup" id="durationDropdown">
                         <div class="duration-header">
-                            <button type="button" class="duration-prev" onclick="adjustDuration('hours', -1)">&lt;</button>
                             <span class="duration-title">Длительность</span>
-                            <button type="button" class="duration-next" onclick="adjustDuration('hours', 1)">&gt;</button>
                         </div>
                         <div class="duration-body">
                             <div class="duration-field-row">
@@ -216,13 +214,13 @@
             <div>
                 <label>закрыть продажи за</label>
                 <div class="input-with-suffix form-group">
-                    <input type="number" class="form-control filter-input filter-input-dropdown" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24">
+                    <input type="number" class="form-control filter-input" id="id_auto_close_sales_hours" name="auto_close_sales_hours" value="{{ form.instance.auto_close_sales_hours|default:24 }}" min="24">
                 </div>
             </div>
             <div>
                 <label>срок возврата билетов</label>
                 <div class="input-with-suffix form-group">
-                    <input type="number" class="form-control filter-input filter-input-dropdown" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1">
+                    <input type="number" class="form-control filter-input" id="id_refund_deadline_hours" name="refund_deadline_hours" value="{{ form.instance.refund_deadline_hours|default:24 }}" min="1">
                 </div>
             </div>
         </div>

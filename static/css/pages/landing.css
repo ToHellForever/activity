@@ -202,14 +202,6 @@
   padding: 0;
 }
 
-.triangle-down {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 12px solid white;
-  margin-top: 2px;
-}
 
 /* Стили для формы фильтров */
 .filters-form {
@@ -781,28 +773,6 @@
 
   .button-others {
     padding: 7px 0;
-  }
-
-  /* Стили для календаря на мобильной */
-  .calendar-popup {
-    min-width: 260px;
-    max-width: 320px;
-    padding: 10px;
-  }
-
-  .calendar-day {
-    padding: 8px;
-    font-size: 0.85rem;
-  }
-
-  .calendar-month-year {
-    font-size: 0.9rem;
-  }
-
-  .calendar-header button {
-    width: 25px;
-    height: 25px;
-    font-size: 1rem;
   }
 
   /* Стили для dropdown на мобильной */
