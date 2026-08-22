@@ -473,6 +473,10 @@
   justify-content: center;
   z-index: 2;
 }
+
+.photo-gallery-item .remove-btn-mobile {
+  display: none;
+}
 .photo-gallery-item .set-primary-btn {
   position: absolute;
   bottom: 2px;
@@ -882,11 +886,38 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: wrap;
+    margin-left: 0px;
   }
   /* 4 поля → по 2 в строке */
   .form-group .form-row > * {
     flex: 0 0 calc(50% - 6px);
     max-width: calc(50% - 6px);
+  }
+
+  /* ===== Мобильная версия фото-галереи: × → кнопка "Удалить" 100% ===== */
+  .photo-gallery-item .remove-btn {
+    display: none;
+  }
+  .photo-gallery-item .remove-btn-mobile {
+    display: block;
+    position: absolute;
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100% !important;
+    height: 36px;
+    background: rgba(220, 53, 69, 0.92);
+    color: #fff;
+    border: none;
+    border-radius: 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 3;
+  }
+  .photo-gallery-item .set-primary-btn {
+    bottom: 40px;
   }
 
   /* ===== Билеты — мобильная версия ===== */
@@ -927,8 +958,8 @@
     font-family: "Montserrat", sans-serif;
   }
   #ticket-tbody td.color-cell .ticket-color-preview {
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
   }
   /* Тип — 9 колонок (90%) */
   #ticket-tbody td:nth-child(2) {
@@ -990,5 +1021,30 @@
   #addTicketRow {
     width: 100%;
     text-align: center;
+    margin-top: 0px;
+  }
+
+  /* ===== Мобильная версия: крестик → кнопка "Удалить" 100% ===== */
+  #ticket-tbody .remove-ticket-btn {
+    display: none;
+  }
+  #ticket-tbody .actions-cell {
+    grid-column: 1 / -1;
+  }
+  #ticket-tbody .remove-ticket-btn-mobile {
+    display: block;
+    width: 100%;
+    background: rgba(220, 53, 69, 0.92);
+    color: #fff;
+    border: none;
+    padding: 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  #ticket-tbody .remove-ticket-btn-mobile:hover {
+    background: #dc3545;
   }
 }

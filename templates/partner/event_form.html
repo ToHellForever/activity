@@ -247,6 +247,7 @@
                             <img src="{{ form.instance.image.url }}" alt="Основное фото">
                             <span class="primary-badge">ОСН</span>
                             <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
+                            <button type="button" class="remove-btn-mobile remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">Удалить</button>
                         </div>
                         {% endif %}
                         {% for image in form.instance.images.all %}
@@ -258,6 +259,7 @@
                             <button type="button" class="set-primary-btn" data-image-id="{{ image.id }}">Сделать основным</button>
                             {% endif %}
                             <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">×</button>
+                            <button type="button" class="remove-btn-mobile remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">Удалить</button>
                         </div>
                         {% endfor %}
                     </div>
@@ -418,7 +420,10 @@
                         <!-- Исправлено: добавлено поле min_quantity для существующих билетов -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
-                        <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
+                        <td class="actions-cell">
+                            <button type="button" class="remove-ticket-btn">✕</button>
+                            <button type="button" class="remove-ticket-btn-mobile">Удалить</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 {% elif form.instance.pk and form.instance.tickets.exists %}
@@ -432,7 +437,10 @@
                         <!-- Исправлено: добавлено поле min_quantity -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
-                        <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
+                        <td class="actions-cell">
+                            <button type="button" class="remove-ticket-btn">✕</button>
+                            <button type="button" class="remove-ticket-btn-mobile">Удалить</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 {% else %}
@@ -445,7 +453,10 @@
                         <td><input type="text" name="ticket_description[]" class="form-control"></td>
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">
-                        <td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>
+                        <td class="actions-cell">
+                            <button type="button" class="remove-ticket-btn">✕</button>
+                            <button type="button" class="remove-ticket-btn-mobile">Удалить</button>
+                        </td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -679,7 +690,7 @@
             });
             item.appendChild(setBtn);
 
-            // Кнопка удаления
+            // Кнопка удаления (десктоп)
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'remove-btn';
@@ -688,7 +699,6 @@
                 ev.stopPropagation();
                 item.remove();
                 updatePhotoGalleryState();
-                // Если фото не осталось — показываем placeholder
                 const items = gallery.querySelectorAll('.photo-gallery-item');
                 if (items.length === 0) {
                     const ph = document.getElementById('photo-upload-placeholder');
@@ -696,6 +706,23 @@
                 }
             });
             item.appendChild(removeBtn);
+
+            // Кнопка удаления (мобильная)
+            const removeBtnMobile = document.createElement('button');
+            removeBtnMobile.type = 'button';
+            removeBtnMobile.className = 'remove-btn-mobile';
+            removeBtnMobile.textContent = 'Удалить';
+            removeBtnMobile.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                item.remove();
+                updatePhotoGalleryState();
+                const items = gallery.querySelectorAll('.photo-gallery-item');
+                if (items.length === 0) {
+                    const ph = document.getElementById('photo-upload-placeholder');
+                    if (ph) ph.style.display = '';
+                }
+            });
+            item.appendChild(removeBtnMobile);
 
             // Клик по фото = сделать основным
             item.addEventListener('click', function() {
@@ -755,7 +782,7 @@
             '<td><input type="text" name="ticket_description[]" class="form-control"></td>' +
             '<td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>' +
             '<input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">' +
-            '<td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button></td>';
+            '<td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button><button type="button" class="remove-ticket-btn-mobile">Удалить</button></td>';
 
         tbody.appendChild(tr);
         
@@ -984,7 +1011,7 @@
 
         // Remove ticket row (delegation)
         document.getElementById('ticket-tbody').addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-ticket-btn')) {
+            if (e.target.classList.contains('remove-ticket-btn') || e.target.classList.contains('remove-ticket-btn-mobile')) {
                 e.target.closest('tr').remove();
             }
         });
