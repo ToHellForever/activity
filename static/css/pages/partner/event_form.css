@@ -499,7 +499,7 @@
 
 /* Form groups */
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 .form-group label {
   font-family: "Montserrat";
@@ -648,7 +648,7 @@
   justify-content: center;
   min-height: 120px;
   padding: 24px;
-  border: 1px solid rgba(119, 122, 141, 0.3);
+border: 1px solid rgba(119, 122, 141, 1);
   border-radius: 20px;
   background: #fff;
   text-align: center;
@@ -862,4 +862,20 @@
   font-style: Medium;
   font-size: clamp(0.8rem, 1vw, 1rem);
   text-transform: uppercase;
+}
+
+@media (max-width :768px) {
+  .partner-layout {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+  .form-control {
+    width: 100%;
+  }
+  .filter-input {
+    width: 100%;
+  }
+  .form-group {
+    width: 100%;
+  }
 }

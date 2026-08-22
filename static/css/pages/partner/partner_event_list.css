@@ -177,12 +177,11 @@
   background: #f5f6f8 !important;
   border: 1px solid rgba(119, 122, 141, 1) !important;
   border-radius: 30px !important;
-  padding: 7px;
+  padding: 7px !important;
   font-size: clamp(0.7rem, 1vw, 0.9rem) !important;
   color: #333 !important;
   outline: none !important;
   text-align: center;
-  width: 110px;
   cursor: pointer !important;
   transition:
     border-color 0.2s,
@@ -192,11 +191,6 @@
 .date-input:focus {
   border-color: rgba(255, 131, 72, 1) !important;
   background: #fff !important;
-}
-
-.date-input:focus {
-  border-color: rgba(255, 131, 72, 1);
-  background: #fff;
 }
 
 .filter-actions {
@@ -217,6 +211,7 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
+  margin-left: auto;
 }
 
 .btn-find:hover {
@@ -381,16 +376,27 @@
 /* ============================================================
     RESPONSIVE
     ============================================================ */
-@media (max-width: 600px) {
-  .filter-row {
-    gap: 14px;
+@media (max-width: 900px) {
+  .filter-input {
+    margin-top: 0px !important;
+    width: 100% !important;
   }
-
-  .btn-find {
+}
+@media (max-width: 768px) {
+    .partner-main {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+    .btn-find {
     width: 100%;
   }
-
-  .filter-actions {
-    justify-content: stretch;
+}
+@media (max-width: 600px) {
+  .date-container {
+    width: 100%;
+  }
+  .filter-date {
+    margin-left: 0px;
+    width: 100% !important;
   }
 }

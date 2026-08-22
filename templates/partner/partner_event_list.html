@@ -70,11 +70,9 @@
                             </div>
                         </div>
                     </div>
+                <button type="submit" class="btn-find">Найти</button>
                 </div>
-
-                <div class="filter-actions">
-                    <button type="submit" class="btn-find">Найти</button>
-                </div>
+                
             </form>
 
             <!-- Форма массового удаления (обёртка вокруг обоих блоков) -->
@@ -132,7 +130,7 @@
     <button type="button" class="btn-entry-control" 
             data-event-id="{{ item.event.id }}"
             data-bs-toggle="modal" data-bs-target="#entryControlModal">
-        <i class="bi bi-qr-code-scan"></i> Контроль входа
+        <i class="bi bi-qr-code-scan" style='margin-right: 5px'></i> Контроль
     </button>
     {% if not item.event.has_sold_tickets %}
         <label class="card-check">
