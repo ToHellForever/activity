@@ -917,6 +917,15 @@
     align-items: center;
     justify-content: flex-start;
   }
+  #ticket-tbody td.color-cell::before {
+    content: "ЦВЕТ";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
   #ticket-tbody td.color-cell .ticket-color-preview {
     width: 24px;
     height: 24px;
@@ -976,30 +985,6 @@
     text-transform: uppercase;
     margin-bottom: 4px;
     font-family: "Montserrat", sans-serif;
-  }
-  /* Крестик удаления — абсолютно справа сверху */
-  #ticket-tbody td.actions-cell {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    z-index: 2;
-  }
-  #ticket-tbody td.actions-cell .remove-ticket-btn {
-    font-size: 18px;
-    padding: 0 2px;
-    background: none;
-    border: none;
-    color: #dc3545;
-    line-height: 1;
-  }
-  /* Все input — pill-shaped */
-  #ticketTable #ticket-tbody td input {
-    border-radius: 20px !important;
-    padding: 8px 14px !important;
-    margin: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    font-size: 14px;
   }
   /* Кнопка "+ ДОБАВИТЬ" — на всю ширину */
   #addTicketRow {
