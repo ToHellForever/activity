@@ -266,8 +266,8 @@
 }
 
 /* ============================================================
-    Кнопка редактирования на карточке
-    ============================================================ */
+     Кнопка редактирования на карточке
+     ============================================================ */
 .btn-edit {
   display: inline-flex;
   align-items: center;
@@ -281,10 +281,37 @@
   cursor: pointer;
   text-decoration: none;
   flex-shrink: 0;
-  margin-top: 20px;
 }
 
 .btn-edit img {
+  width: 23px;
+  height: 23px;
+}
+
+/* ---------- Кнопка редактирования в правом верхнем углу карточки ---------- */
+.card-edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(2, 54, 156, 1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  z-index: 2;
+  box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+
+.card-edit-btn img {
   width: 23px;
   height: 23px;
 }
@@ -329,7 +356,6 @@
   color: #b8b4b4;
   transition: background 0.2s;
 }
-
 
 .card-check input[type="checkbox"]:checked + .card-check-box {
   background: rgba(255, 255, 255, 1);
