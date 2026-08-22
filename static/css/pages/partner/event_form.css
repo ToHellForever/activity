@@ -888,9 +888,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 0;
   max-height: none;
   overflow: visible;
+}
+.tag-group:first-child .tag-group-body {
+  margin-top: 12px;
 }
 
 @media (max-width: 768px) {
