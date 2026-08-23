@@ -671,7 +671,9 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             const item = document.createElement('div');
-            item.className = 'photo-gallery-item is-primary';
+            const existingItems = gallery.querySelectorAll('.photo-gallery-item');
+            const isOnlyPhoto = existingItems.length === 0;
+            item.className = 'photo-gallery-item' + (isOnlyPhoto ? ' is-primary' : '');
             item.dataset.isNew = 'true';
 
             const img = document.createElement('img');
@@ -971,11 +973,12 @@
             });
         });
 
-        // Photo gallery — click on item to set primary
-        document.querySelectorAll('.photo-gallery-item').forEach(function(item) {
-            item.addEventListener('click', function() {
-                setPrimaryPhoto(this);
-            });
+        // Photo gallery — click on item to set primary (delegation)
+        document.getElementById('photo-upload-container')?.addEventListener('click', function(e) {
+            const item = e.target.closest('.photo-gallery-item');
+            if (item && !e.target.classList.contains('remove-btn') && !e.target.classList.contains('remove-btn-mobile')) {
+                setPrimaryPhoto(item);
+            }
         });
 
         updatePhotoGalleryState();
