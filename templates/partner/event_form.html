@@ -598,6 +598,7 @@
         if (!gallery) return;
         const items = gallery.querySelectorAll('.photo-gallery-item');
         const addPlaceholder = gallery.querySelector('.add-photo-placeholder');
+        const uploadPlaceholder = document.getElementById('photo-upload-placeholder');
         
         // Показываем серый квадрат с плюсом ТОЛЬКО если есть хотя бы 1 фото
         if (addPlaceholder) {
@@ -609,6 +610,11 @@
             gallery.classList.add('has-photos');
         } else {
             gallery.classList.remove('has-photos');
+        }
+        
+        // Показываем/скрываем зону загрузки при загрузке новых фото
+        if (uploadPlaceholder) {
+            uploadPlaceholder.style.display = items.length === 0 ? '' : 'none';
         }
         
         // Управляем классом на контейнере media-upload-container
@@ -683,11 +689,6 @@
                 ev.stopPropagation();
                 item.remove();
                 updatePhotoGalleryState();
-                const items = gallery.querySelectorAll('.photo-gallery-item');
-                if (items.length === 0) {
-                    const ph = document.getElementById('photo-upload-placeholder');
-                    if (ph) ph.style.display = '';
-                }
             });
             item.appendChild(removeBtn);
 
@@ -700,11 +701,6 @@
                 ev.stopPropagation();
                 item.remove();
                 updatePhotoGalleryState();
-                const items = gallery.querySelectorAll('.photo-gallery-item');
-                if (items.length === 0) {
-                    const ph = document.getElementById('photo-upload-placeholder');
-                    if (ph) ph.style.display = '';
-                }
             });
             item.appendChild(removeBtnMobile);
 
