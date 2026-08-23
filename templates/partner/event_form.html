@@ -995,8 +995,8 @@
             }
         });
 
-        // Add photo placeholder click (delegation — внутри photo-gallery)
-        document.getElementById('photo-gallery')?.addEventListener('click', function(e) {
+        // Add photo placeholder click (delegation — внутри photo-upload-container)
+        document.getElementById('photo-upload-container')?.addEventListener('click', function(e) {
             const placeholder = e.target.closest('.add-photo-placeholder');
             if (placeholder && imagesInput) {
                 imagesInput.click();
