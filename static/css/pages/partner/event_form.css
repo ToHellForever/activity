@@ -216,33 +216,32 @@
 }
 
 .duration-btn {
-    /* Одинаковые размеры для идеального круга */
-    width: 27px;
-    height: 27px;
-    min-width: 27px;
-    min-height: 27px;
-    
-    border-radius: 50%;
-    
-    padding: 0; 
-    
-    background: #ff8348;
-    border: none;
-    color: white;
-    cursor: pointer;
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    transition: background 0.2s;
-    box-sizing: border-box;
-    
-    line-height: 1; 
-    
-    /* Исправление смещения символа в центре круга */
-    /* Небольшой отступ сверху визуально поднимает символ */
+  /* Одинаковые размеры для идеального круга */
+  width: 27px;
+  height: 27px;
+  min-width: 27px;
+  min-height: 27px;
 
+  border-radius: 50%;
+
+  padding: 0;
+
+  background: #ff8348;
+  border: none;
+  color: white;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background 0.2s;
+  box-sizing: border-box;
+
+  line-height: 1;
+
+  /* Исправление смещения символа в центре круга */
+  /* Небольшой отступ сверху визуально поднимает символ */
 }
 
 .duration-btn:hover {
@@ -432,20 +431,283 @@
 .photo-gallery {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   margin-top: 12px;
-  padding: 10px;
-  border: 1px solid rgba(119, 122, 141, 0.3);
-  border-radius: 20px;
-  min-height: 100px;
+  background: #f0f0f0;
+  padding: 0;
+}
+/* Когда есть фото — убираем фон */
+.photo-gallery.has-photos {
+  background: transparent;
 }
 .photo-gallery-item {
   position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 12px;
+  width: 180px;
+  height: 120px;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin: 0;
+}
+.photo-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
+.photo-gallery-item.is-primary::after {
+  content: "ОСНОВНОЕ ФОТО";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+/* Кнопка удаления — белый квадрат с крестиком */
+.photo-gallery-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  padding: 0;
+  line-height: 1;
+  font-size: 16px;
+  color: #666;
+  font-weight: 300;
+  transition: color 0.2s;
+}
+.photo-gallery-item .remove-btn:hover {
+  color: #dc3545;
+}
+
+.photo-gallery-item .remove-btn-mobile {
+  display: none;
+}
+.photo-gallery-item .set-primary-btn {
+  display: none;
+}
+
+/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
+.add-photo-placeholder {
+  width: 180px;
+  height: 120px;
+  background: #d0d0d0;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.add-photo-placeholder:hover {
+  background: #c5c5c5;
+}
+.add-photo-placeholder .plus-icon {
+  font-size: 48px;
+  color: #fff;
+  font-weight: 200;
+  line-height: 1;
+}
+/* Когда есть фото — убираем фон и отступы */
+.photo-gallery.has-photos {
+  background: transparent;
+}
+.photo-gallery-item {
+  position: relative;
+  width: 180px;
+  height: 120px;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.photo-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
+.photo-gallery-item.is-primary::after {
+  content: "ОСНОВНОЕ ФОТО";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+/* Кнопка удаления — белый квадрат с крестиком */
+.photo-gallery-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  padding: 0;
+  line-height: 1;
+  font-size: 16px;
+  color: #666;
+  font-weight: 300;
+  transition: color 0.2s;
+}
+.photo-gallery-item .remove-btn:hover {
+  color: #dc3545;
+}
+
+.photo-gallery-item .remove-btn-mobile {
+  display: none;
+}
+.photo-gallery-item .set-primary-btn {
+  display: none;
+}
+
+/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
+.add-photo-placeholder {
+  width: 180px;
+  height: 120px;
+  background: #d0d0d0;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.add-photo-placeholder:hover {
+  background: #c5c5c5;
+}
+.add-photo-placeholder .plus-icon {
+  font-size: 48px;
+  color: #fff;
+  font-weight: 200;
+  line-height: 1;
+}
+/* Когда есть фото — убираем фон и отступы */
+.photo-gallery.has-photos {
+  background: transparent;
+}
+.photo-gallery-item {
+  position: relative;
+  width: 180px;
+  height: 120px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.photo-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
+.photo-gallery-item.is-primary::after {
+  content: "ОСНОВНОЕ ФОТО";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+/* Кнопка удаления — белый квадрат с крестиком */
+.photo-gallery-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  padding: 0;
+  line-height: 1;
+  font-size: 16px;
+  color: #666;
+  font-weight: 300;
+  transition: color 0.2s;
+}
+.photo-gallery-item .remove-btn:hover {
+  color: #dc3545;
+}
+
+.photo-gallery-item .remove-btn-mobile {
+  display: none;
+}
+.photo-gallery-item .set-primary-btn {
+  display: none;
+}
+
+/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
+.add-photo-placeholder {
+  width: 180px;
+  height: 120px;
+  background: #d0d0d0;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.add-photo-placeholder:hover {
+  background: #c5c5c5;
+}
+.add-photo-placeholder .plus-icon {
+  font-size: 48px;
+  color: #fff;
+  font-weight: 200;
+  line-height: 1;
+}
+/* Когда есть фото — убираем border-radius */
+.photo-gallery.has-photos {
+  border-radius: 0;
+}
+.photo-gallery-item {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #e0e0e0;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -454,56 +716,77 @@
   height: 100%;
   object-fit: cover;
 }
-.photo-gallery-item.is-primary {
-  border-color: rgba(255, 131, 72, 1);
-  box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.3);
-}
-.photo-gallery-item .primary-badge {
+.photo-gallery-item.is-primary::after {
+  content: "ОСНОВНОЕ ФОТО";
   position: absolute;
-  top: 4px;
-  left: 4px;
-  background: rgba(255, 131, 72, 1);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  font-size: 9px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .photo-gallery-item .remove-btn {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
+  color: #666;
+  transition: color 0.2s;
+  padding: 0;
+}
+.photo-gallery-item .remove-btn:hover {
+  color: #dc3545;
+}
+.photo-gallery-item .remove-btn img {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
 }
 
 .photo-gallery-item .remove-btn-mobile {
   display: none;
 }
 .photo-gallery-item .set-primary-btn {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  right: 2px;
-  background: rgba(255, 140, 66, 0.9);
-  color: #fff;
-  border: none;
-  border-radius: 4px;
+  display: none;
+}
+
+/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
+.add-photo-placeholder {
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  background: #e8e8e8;
   cursor: pointer;
-  font-size: 9px;
-  font-weight: 600;
-  padding: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.add-photo-placeholder:hover {
+  background: #ddd;
+}
+.add-photo-placeholder .plus-icon {
+  font-size: 40px;
+  color: #999;
+  font-weight: 300;
+  line-height: 1;
 }
 
 /* Ticket color picker */
@@ -684,6 +967,11 @@
   background: #fff;
   text-align: center;
   gap: 10px;
+}
+/* Когда нет фото — уменьшаем отступы */
+.media-upload-container.has-no-photos {
+  min-height: auto;
+  padding: 16px 24px;
 }
 
 .media-upload-icon {
@@ -941,9 +1229,6 @@
     cursor: pointer;
     z-index: 3;
   }
-  .photo-gallery-item .set-primary-btn {
-    bottom: 40px;
-  }
 
   /* ===== Билеты — мобильная версия ===== */
   #ticketTable thead {
@@ -1118,12 +1403,12 @@
     margin-top: 8px;
     max-height: 0;
     overflow: hidden;
-    transform-origin: top; 
+    transform-origin: top;
     transform: scaleY(0);
     height: auto;
     transition: transform 0.3s ease-in-out;
   }
-  .tag-group.open .tag-group-body  {
+  .tag-group.open .tag-group-body {
     transform: scaleY(1);
     max-height: 1000px;
   }
@@ -1142,4 +1427,11 @@
   }
 }
 
-input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } /* Для IE11+ */ input[type=number] { -moz-appearance:textfield; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+} /* Для IE11+ */
+input[type="number"] {
+  -moz-appearance: textfield;
+}

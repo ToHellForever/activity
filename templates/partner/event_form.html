@@ -243,7 +243,6 @@
                         {% if form.instance.image %}
                         <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
                             <img src="{{ form.instance.image.url }}" alt="Основное фото">
-                            <span class="primary-badge">ОСН</span>
                             <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
                             <button type="button" class="remove-btn-mobile remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">Удалить</button>
                         </div>
@@ -251,15 +250,14 @@
                         {% for image in form.instance.images.all %}
                         <div class="photo-gallery-item" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
                             <img src="{{ image.image.url }}" alt="Фото">
-                            {% if image.is_primary %}
-                            <span class="primary-badge">ОСН</span>
-                            {% else %}
-                            <button type="button" class="set-primary-btn" data-image-id="{{ image.id }}">Сделать основным</button>
-                            {% endif %}
                             <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">×</button>
                             <button type="button" class="remove-btn-mobile remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">Удалить</button>
                         </div>
                         {% endfor %}
+                        <!-- Серый квадрат с плюсом для добавления фото -->
+                        <div class="add-photo-placeholder" id="add-photo-placeholder" title="Добавить фото">
+                            <span class="plus-icon">+</span>
+                        </div>
                     </div>
                 {% else %}
                     <!-- Зона загрузки (иконка + текст кликабельны) -->
@@ -597,58 +595,42 @@
 
     function updatePhotoGalleryState() {
         const gallery = document.getElementById('photo-gallery');
-        const container = document.getElementById('photo-upload-container');
-        const placeholder = document.getElementById('photo-upload-placeholder');
-        if (!gallery || !container) return;
+        if (!gallery) return;
         const items = gallery.querySelectorAll('.photo-gallery-item');
+        const addPlaceholder = gallery.querySelector('.add-photo-placeholder');
         
-        // Если есть хотя бы одно фото — показываем кнопку добавления
-        if (items.length > 0 && items.length < photoMaxCount) {
-            if (!container.querySelector('.add-photo-btn')) {
-                const addBtn = document.createElement('button');
-                addBtn.type = 'button';
-                addBtn.className = 'media-upload-btn add-photo-btn';
-                addBtn.innerHTML = '<span style="font-size: 14px;">+</span> Добавить ещё';
-                addBtn.addEventListener('click', function() {
-                    document.getElementById('id_images').click();
-                });
-                container.appendChild(addBtn);
-            }
+        // Показываем серый квадрат с плюсом ТОЛЬКО если есть хотя бы 1 фото
+        if (addPlaceholder) {
+            addPlaceholder.style.display = items.length > 0 ? 'flex' : 'none';
+        }
+        
+        // Добавляем класс has-photos если есть фото
+        if (items.length > 0) {
+            gallery.classList.add('has-photos');
         } else {
-            const existingBtn = container.querySelector('.add-photo-btn');
-            if (existingBtn) existingBtn.remove();
+            gallery.classList.remove('has-photos');
+        }
+        
+        // Управляем классом на контейнере media-upload-container
+        const container = document.getElementById('photo-upload-container');
+        if (container) {
+            if (items.length > 0) {
+                container.classList.remove('has-no-photos');
+            } else {
+                container.classList.add('has-no-photos');
+            }
         }
     }
 
     function setPrimaryPhoto(item) {
         const gallery = document.getElementById('photo-gallery');
         if (!gallery) return;
-        // Снимаем primary со всех
+        // Снимаем is-primary со всех
         gallery.querySelectorAll('.photo-gallery-item').forEach(el => {
             el.classList.remove('is-primary');
-            const badge = el.querySelector('.primary-badge');
-            if (badge) badge.remove();
-            const setBtn = el.querySelector('.set-primary-btn');
-            if (!setBtn) {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'set-primary-btn';
-                btn.textContent = 'Сделать основным';
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    setPrimaryPhoto(el);
-                });
-                el.appendChild(btn);
-            }
         });
-        // Ставим primary на выбранное
+        // Ставим is-primary на выбранное
         item.classList.add('is-primary');
-        const setBtn = item.querySelector('.set-primary-btn');
-        if (setBtn) setBtn.remove();
-        const badge = document.createElement('span');
-        badge.className = 'primary-badge';
-        badge.textContent = 'ОСН';
-        item.insertBefore(badge, item.firstChild);
 
         // Записываем ID в скрытое поле
         const imageId = item.dataset.imageId;
@@ -667,17 +649,23 @@
             gallery = document.createElement('div');
             gallery.className = 'photo-gallery';
             gallery.id = 'photo-gallery';
-            container.insertBefore(gallery, container.querySelector('.media-upload-placeholder'));
+            const placeholder = document.getElementById('photo-upload-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
+            container.insertBefore(gallery, placeholder);
+            
+            // Добавляем placeholder для добавления фото в новую галерею
+            const addPlaceholder = document.createElement('div');
+            addPlaceholder.className = 'add-photo-placeholder';
+            addPlaceholder.id = 'add-photo-placeholder';
+            addPlaceholder.title = 'Добавить фото';
+            addPlaceholder.innerHTML = '<span class="plus-icon">+</span>';
+            gallery.appendChild(addPlaceholder);
         }
-
-        // Скрываем placeholder
-        const placeholder = document.getElementById('photo-upload-placeholder');
-        if (placeholder) placeholder.style.display = 'none';
 
         const reader = new FileReader();
         reader.onload = function(e) {
             const item = document.createElement('div');
-            item.className = 'photo-gallery-item';
+            item.className = 'photo-gallery-item is-primary';
             item.dataset.isNew = 'true';
 
             const img = document.createElement('img');
@@ -685,21 +673,11 @@
             img.alt = 'Новое фото';
             item.appendChild(img);
 
-            // Кнопка "Сделать основным"
-            const setBtn = document.createElement('button');
-            setBtn.type = 'button';
-            setBtn.className = 'set-primary-btn';
-            setBtn.textContent = 'Сделать основным';
-            setBtn.addEventListener('click', function(ev) {
-                ev.stopPropagation();
-                setPrimaryPhoto(item);
-            });
-            item.appendChild(setBtn);
-
-            // Кнопка удаления (десктоп)
+            // Кнопка удаления (десктоп) — крестик
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'remove-btn';
+            removeBtn.title = 'Удалить';
             removeBtn.textContent = '×';
             removeBtn.addEventListener('click', function(ev) {
                 ev.stopPropagation();
@@ -735,7 +713,13 @@
                 setPrimaryPhoto(item);
             });
 
-            gallery.appendChild(item);
+            // Вставляем перед add-photo-placeholder
+            const existingPlaceholder = gallery.querySelector('.add-photo-placeholder');
+            if (existingPlaceholder) {
+                gallery.insertBefore(item, existingPlaceholder);
+            } else {
+                gallery.appendChild(item);
+            }
             updatePhotoGalleryState();
         };
         reader.readAsDataURL(file);
@@ -876,6 +860,19 @@
     // DOMContentLoaded — инициализация
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Устанавливаем начальное состояние контейнера фото
+        const photoContainer = document.getElementById('photo-upload-container');
+        const photoGallery = document.getElementById('photo-gallery');
+        if (photoContainer && photoGallery) {
+            const hasPhotos = photoGallery.querySelectorAll('.photo-gallery-item').length > 0;
+            if (!hasPhotos) {
+                photoContainer.classList.add('has-no-photos');
+            }
+        } else if (photoContainer) {
+            // Галереи нет — значит фото нет
+            photoContainer.classList.add('has-no-photos');
+        }
+        
         // Toggles
          initToggleSwitch('id_allow_platform_requests');
          initToggleSwitch('id_allow_booking_without_payment');
@@ -968,42 +965,13 @@
             });
         }
 
-        // Photo gallery — remove existing photos
-        document.querySelectorAll('.remove-gallery-photo').forEach(function(btn) {
+        // Photo gallery — remove existing photos (объединённый селектор)
+        document.querySelectorAll('.remove-gallery-photo, .remove-main-photo').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const item = this.closest('.photo-gallery-item');
                 const imageId = this.dataset.imageId;
                 removeExistingPhoto(imageId, item);
-            });
-        });
-
-        // Photo gallery — remove main photo
-        document.querySelectorAll('.remove-main-photo').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const item = this.closest('.photo-gallery-item');
-                const imageId = this.dataset.imageId;
-                removeExistingPhoto(imageId, item);
-            });
-        });
-
-        // Photo gallery — set primary on existing
-        document.querySelectorAll('.set-primary-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const item = this.closest('.photo-gallery-item');
-                setPrimaryPhoto(item);
-                // Сохраняем is_primary через AJAX
-                const imageId = item.dataset.imageId;
-                if (imageId) {
-                    fetch('/partner/set_primary_image/' + imageId + '/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        },
-                    }).catch(function(err) { console.error(err); });
-                }
             });
         });
 
@@ -1028,6 +996,14 @@
         document.getElementById('ticket-tbody').addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-ticket-btn') || e.target.classList.contains('remove-ticket-btn-mobile')) {
                 e.target.closest('tr').remove();
+            }
+        });
+
+        // Add photo placeholder click (delegation — внутри photo-gallery)
+        document.getElementById('photo-gallery')?.addEventListener('click', function(e) {
+            const placeholder = e.target.closest('.add-photo-placeholder');
+            if (placeholder && imagesInput) {
+                imagesInput.click();
             }
         });
 
