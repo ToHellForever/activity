@@ -434,273 +434,11 @@
   margin-top: 12px;
   background: #f0f0f0;
   padding: 0;
+  align-items: flex-start;
 }
 /* Когда есть фото — убираем фон */
 .photo-gallery.has-photos {
   background: transparent;
-}
-.photo-gallery-item {
-  position: relative;
-  width: 180px;
-  height: 120px;
-  flex-shrink: 0;
-  cursor: pointer;
-  margin: 0;
-}
-.photo-gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
-.photo-gallery-item.is-primary::after {
-  content: "ОСНОВНОЕ ФОТО";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px 2px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-/* Кнопка удаления — белый квадрат с крестиком */
-.photo-gallery-item .remove-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
-  line-height: 1;
-  font-size: 16px;
-  color: #666;
-  font-weight: 300;
-  transition: color 0.2s;
-}
-.photo-gallery-item .remove-btn:hover {
-  color: #dc3545;
-}
-
-.photo-gallery-item .remove-btn-mobile {
-  display: none;
-}
-.photo-gallery-item .set-primary-btn {
-  display: none;
-}
-
-/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
-.add-photo-placeholder {
-  width: 180px;
-  height: 120px;
-  background: #d0d0d0;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-.add-photo-placeholder:hover {
-  background: #c5c5c5;
-}
-.add-photo-placeholder .plus-icon {
-  font-size: 48px;
-  color: #fff;
-  font-weight: 200;
-  line-height: 1;
-}
-/* Когда есть фото — убираем фон и отступы */
-.photo-gallery.has-photos {
-  background: transparent;
-}
-.photo-gallery-item {
-  position: relative;
-  width: 180px;
-  height: 120px;
-  flex-shrink: 0;
-  cursor: pointer;
-  margin-right: 8px;
-  margin-bottom: 8px;
-}
-.photo-gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
-.photo-gallery-item.is-primary::after {
-  content: "ОСНОВНОЕ ФОТО";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px 2px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-/* Кнопка удаления — белый квадрат с крестиком */
-.photo-gallery-item .remove-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
-  line-height: 1;
-  font-size: 16px;
-  color: #666;
-  font-weight: 300;
-  transition: color 0.2s;
-}
-.photo-gallery-item .remove-btn:hover {
-  color: #dc3545;
-}
-
-.photo-gallery-item .remove-btn-mobile {
-  display: none;
-}
-.photo-gallery-item .set-primary-btn {
-  display: none;
-}
-
-/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
-.add-photo-placeholder {
-  width: 180px;
-  height: 120px;
-  background: #d0d0d0;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  margin-right: 8px;
-  margin-bottom: 8px;
-}
-.add-photo-placeholder:hover {
-  background: #c5c5c5;
-}
-.add-photo-placeholder .plus-icon {
-  font-size: 48px;
-  color: #fff;
-  font-weight: 200;
-  line-height: 1;
-}
-/* Когда есть фото — убираем фон и отступы */
-.photo-gallery.has-photos {
-  background: transparent;
-}
-.photo-gallery-item {
-  position: relative;
-  width: 180px;
-  height: 120px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.photo-gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-/* Подпись "ОСНОВНОЕ ФОТО" — тёмная полоска внизу фото */
-.photo-gallery-item.is-primary::after {
-  content: "ОСНОВНОЕ ФОТО";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px 2px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-/* Кнопка удаления — белый квадрат с крестиком */
-.photo-gallery-item .remove-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0;
-  line-height: 1;
-  font-size: 16px;
-  color: #666;
-  font-weight: 300;
-  transition: color 0.2s;
-}
-.photo-gallery-item .remove-btn:hover {
-  color: #dc3545;
-}
-
-.photo-gallery-item .remove-btn-mobile {
-  display: none;
-}
-.photo-gallery-item .set-primary-btn {
-  display: none;
-}
-
-/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
-.add-photo-placeholder {
-  width: 180px;
-  height: 120px;
-  background: #d0d0d0;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-.add-photo-placeholder:hover {
-  background: #c5c5c5;
-}
-.add-photo-placeholder .plus-icon {
-  font-size: 48px;
-  color: #fff;
-  font-weight: 200;
-  line-height: 1;
-}
-/* Когда есть фото — убираем border-radius */
-.photo-gallery.has-photos {
-  border-radius: 0;
 }
 .photo-gallery-item {
   position: relative;
@@ -710,28 +448,30 @@
   overflow: hidden;
   cursor: pointer;
   flex-shrink: 0;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
 }
 .photo-gallery-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
-.photo-gallery-item.is-primary::after {
-  content: "ОСНОВНОЕ ФОТО";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 10px;
+/* Подпись "ОСНОВНОЕ ФОТО" — под фото */
+.primary-label {
+  color: rgba(154, 154, 154, 1);
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  
   font-weight: 500;
   text-align: center;
-  padding: 4px 2px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+/* Кнопка удаления — белый круг с крестиком */
 .photo-gallery-item .remove-btn {
   position: absolute;
   top: 4px;
@@ -771,20 +511,22 @@
   width: 150px;
   height: 150px;
   border-radius: 8px;
-  background: #e8e8e8;
+  background: rgba(217, 217, 217, 1);
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  margin-right: 8px;
+  margin-bottom: 8px;
 }
 .add-photo-placeholder:hover {
   background: #ddd;
 }
 .add-photo-placeholder .plus-icon {
   font-size: 40px;
-  color: #999;
+  color: white;
   font-weight: 300;
   line-height: 1;
 }
@@ -968,10 +710,17 @@
   text-align: center;
   gap: 10px;
 }
-/* Когда нет фото — уменьшаем отступы */
+/* Когда нет фото — уменьшаем отступы и сохраняем border-radius */
 .media-upload-container.has-no-photos {
   min-height: auto;
   padding: 16px 24px;
+}
+/* Когда есть фото — убираем border-radius, оставляем border */
+.media-upload-container.has-photos {
+  border-radius: 0;
+  border: none;
+  align-items: start;
+  padding: 0;
 }
 
 .media-upload-icon {

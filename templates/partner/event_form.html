@@ -243,6 +243,7 @@
                         {% if form.instance.image %}
                         <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
                             <img src="{{ form.instance.image.url }}" alt="Основное фото">
+                            <div class="primary-label">ОСНОВНОЕ ФОТО</div>
                             <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
                             <button type="button" class="remove-btn-mobile remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">Удалить</button>
                         </div>
@@ -599,17 +600,11 @@
         const items = gallery.querySelectorAll('.photo-gallery-item');
         const addPlaceholder = gallery.querySelector('.add-photo-placeholder');
         const uploadPlaceholder = document.getElementById('photo-upload-placeholder');
+        const container = document.getElementById('photo-upload-container');
         
         // Показываем серый квадрат с плюсом ТОЛЬКО если есть хотя бы 1 фото
         if (addPlaceholder) {
             addPlaceholder.style.display = items.length > 0 ? 'flex' : 'none';
-        }
-        
-        // Добавляем класс has-photos если есть фото
-        if (items.length > 0) {
-            gallery.classList.add('has-photos');
-        } else {
-            gallery.classList.remove('has-photos');
         }
         
         // Показываем/скрываем зону загрузки при загрузке новых фото
@@ -617,13 +612,21 @@
             uploadPlaceholder.style.display = items.length === 0 ? '' : 'none';
         }
         
-        // Управляем классом на контейнере media-upload-container
-        const container = document.getElementById('photo-upload-container');
+        // Управляем классами на контейнере и галерее
         if (container) {
             if (items.length > 0) {
                 container.classList.remove('has-no-photos');
+                container.classList.add('has-photos');
             } else {
                 container.classList.add('has-no-photos');
+                container.classList.remove('has-photos');
+            }
+        }
+        if (gallery) {
+            if (items.length > 0) {
+                gallery.classList.add('has-photos');
+            } else {
+                gallery.classList.remove('has-photos');
             }
         }
     }
@@ -631,12 +634,18 @@
     function setPrimaryPhoto(item) {
         const gallery = document.getElementById('photo-gallery');
         if (!gallery) return;
-        // Снимаем is-primary со всех
+        // Снимаем is-primary со всех и удаляем label
         gallery.querySelectorAll('.photo-gallery-item').forEach(el => {
             el.classList.remove('is-primary');
+            const existingLabel = el.querySelector('.primary-label');
+            if (existingLabel) existingLabel.remove();
         });
-        // Ставим is-primary на выбранное
+        // Ставим is-primary на выбранное и добавляем label
         item.classList.add('is-primary');
+        const label = document.createElement('div');
+        label.className = 'primary-label';
+        label.textContent = 'ОСНОВНОЕ ФОТО';
+        item.appendChild(label);
 
         // Записываем ID в скрытое поле
         const imageId = item.dataset.imageId;
@@ -680,6 +689,14 @@
             img.src = e.target.result;
             img.alt = 'Новое фото';
             item.appendChild(img);
+
+            // Подпись "ОСНОВНОЕ ФОТО" под фото
+            if (isOnlyPhoto) {
+                const label = document.createElement('div');
+                label.className = 'primary-label';
+                label.textContent = 'ОСНОВНОЕ ФОТО';
+                item.appendChild(label);
+            }
 
             // Кнопка удаления (десктоп) — крестик
             const removeBtn = document.createElement('button');
