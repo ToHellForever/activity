@@ -293,12 +293,24 @@
             <div id="video-file-display" style="display:none; flex-direction:column;">
                 <div style="position:relative; display:inline-block;">
                     <video controls style="max-width: 100%; height: auto;"></video>
-                    <button type="button" class="program-remove-btn" data-media-type="video_url" data-media-id="{{ form.instance.id|default:'' }}" title="Удалить">&times;</button>
+                    <!-- Кнопки управления — справа сверху -->
+                    <div style="position:absolute; top:8px; right:8px; display:flex; gap:4px;">
+                        <label class="video-action-btn video-upload-btn" title="Заменить видео" data-media-type="video_url">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </label>
+                        <button type="button" class="video-action-btn video-delete-btn" title="Удалить" data-media-type="video_url" data-media-id="{{ form.instance.id|default:'' }}">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <span id="video-file-name" ></span>
-                <button type="button" class="media-program-button" data-media-type="video_url">
-                    Заменить видео
-                </button>
+                <span id="video-file-name"></span>
             </div>
             {% if form.instance.video_url and form.instance.video_processing_status == 'completed' %}
                 <script>
@@ -1381,8 +1393,17 @@
                      }
                  })
                  .catch(err => showToast('Ошибка: ' + err.message, true));
-             });
-         });
+        });
+
+        // Replace video button (заменить видео — иконка загрузки)
+        document.querySelectorAll('.video-upload-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('id_video_url');
+                if (fileInput) fileInput.click();
+            });
+        });
+    });
 
         // Remove media buttons (video и др.)
         document.querySelectorAll('.remove-media-btn').forEach(function(btn) {
