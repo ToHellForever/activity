@@ -134,7 +134,7 @@ function initMediaHandlers() {
 
     // Обработчики для кнопок загрузки новых файлов
     document.addEventListener('click', function(e) {
-        if (e.target && (e.target.classList.contains('media-upload-btn') || e.target.classList.contains('custom-media-upload-btn'))) {
+        if (e.target && (e.target.classList.contains('media-upload-btn') || e.target.classList.contains('custom-media-upload-btn') || e.target.classList.contains('media-program-button'))) {
             const button = e.target;
             const mediaType = button.getAttribute('data-media-type');
             const fileInput = document.querySelector(`#id_${mediaType}`);
