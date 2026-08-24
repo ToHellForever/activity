@@ -320,11 +320,13 @@
         <label>Программа</label>
         <div class="media-upload-container" id="program-upload-container">
             <!-- Блок отображения загруженного файла (всегда присутствует) -->
-            <div id="program-file-display" style="display:none; flex-direction:column; align-items:flex-start;" class='media-upload-program'>
-                <a href="#" class="btn-document" download>
-                    <img src="/media/icon/document.png" alt="PDF">
+            <div id="program-file-display" style="display:none; flex-direction:column;">
+                <a href="#" class="btn-document">
+                    <img src="/media/icon/document.png" alt="">
+                </a>
+                <a href="#" class="p-document" download>Скачать</a>
                 <span id="program-file-name" style="font-size: 12px; color: #555; margin-top: 4px; word-break: break-all;"></span>
-                <button type="button" class="media-upload-btn" data-media-type="program_file" style="margin-top:8px;">
+                <button type="button" class="media-upload-btn" data-media-type="program_file">
                     <span style="font-size: 14px;">+</span> Заменить программу
                 </button>
                 <button type="button" class="remove-media-btn" data-media-type="program_file" data-media-id="{{ form.instance.id|default:'' }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top:4px;">Удалить</button>
