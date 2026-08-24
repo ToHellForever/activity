@@ -21,11 +21,12 @@
 <div class="row partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-<div class="container mt-5">
+<div class='container-fluid'>
         <div class="period-filters">
         <button type="button" class="period-btn active" data-period="week">Неделя</button>
         <button type="button" class="period-btn" data-period="month">Месяц</button>
         <button type="button" class="period-btn" data-period="3month">3 месяца</button>
+        <div class='filter-date'>
         <span class="period-label">Период</span>
         <span class="period-range">
             <div class="input-with-button date-container">
@@ -62,8 +63,9 @@
                 </div>
             </div>
         </span>
+            </div>
     </div>
-<h2 class="mb-4">Отчёты о продажах</h2>
+<h2 class="mt-1">Отчёты о продажах</h2>
 
 <div class="row reports-summary-row">
     <div class="col-md-6">

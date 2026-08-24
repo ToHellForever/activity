@@ -82,44 +82,6 @@
   box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.12);
 }
 
-/* Select банка */
-.payout-details-select {
-  appearance: none;
-  background-color: #fafafa;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23777a8d'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  padding-right: 40px;
-  cursor: pointer;
-}
-
-.payout-details-select option[value=""] {
-  color: #bbb;
-}
-
-/* Валидация — ошибки */
-.payout-details-input.is-invalid,
-.payout-details-select.is-invalid {
-  border-color: #e74c3c;
-  background: #fff8f8;
-}
-
-.payout-details-input.is-invalid:focus,
-.payout-details-select.is-invalid:focus {
-  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.12);
-}
-
-.payout-details-input.is-valid,
-.payout-details-select.is-valid {
-  border-color: #2ecc71;
-  background: #f8fff9;
-}
-
-.payout-details-input.is-valid:focus,
-.payout-details-select.is-valid:focus {
-  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.12);
-}
-
 .payout-details-error {
   display: none;
   margin-top: 6px;
@@ -584,9 +546,6 @@
    RESPONSIVE
    ============================================== */
 @media (max-width: 768px) {
-  .payout-details-form-card {
-    padding: 24px 20px;
-  }
 
   .payout-details-grid {
     grid-template-columns: 1fr;
@@ -605,8 +564,8 @@
   .edit-modal-header,
   .edit-modal-body,
   .edit-modal-footer {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 15px;
+    padding-right: 15px;
   }
 
   .edit-modal-footer,
@@ -621,11 +580,9 @@
 }
 
 @media (max-width: 576px) {
-  .payout-details-form-card {
-    padding: 20px 16px;
-  }
-
-  .payout-detail-card {
-    padding: 18px;
+  .payout-details-btn-save,
+  .edit-modal-btn-save,
+  .edit-modal-btn-cancel {
+    width: 100%;
   }
 }

@@ -6,7 +6,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;">
+<div. class='container-fluid'>
+<div class=" partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
         <h1 class='payot-title'>Мои реквизиты для выплат</h1>
@@ -22,7 +23,7 @@
                     <label class="payout-details-form-label" for="bank_name">
                         Банк <span class="required">*</span>
                     </label>
-                    <select class="payout-details-input payout-details-select" id="bank_name" name="bank_name" required>
+                    <select class="payout-details-input" id="bank_name" name="bank_name" required>
                         <option value="">Выберите банк</option>
                         <option value="sberbank">Сбербанк</option>
                         <option value="tinkoff">Тинькофф</option>
@@ -140,7 +141,7 @@
                         <label class="payout-details-form-label" for="edit_bank_name">
                             Банк <span class="required">*</span>
                         </label>
-                        <select class="payout-details-input payout-details-select" id="edit_bank_name" name="bank_name" required>
+                        <select class="payout-details-input" id="edit_bank_name" name="bank_name" required>
                             <option value="">Выберите банк</option>
                             <option value="sberbank">Сбербанк</option>
                             <option value="tinkoff">Тинькофф</option>
@@ -211,7 +212,7 @@
     <span class="payout-toast-icon"></span>
     <span class="payout-toast-text"></span>
 </div>
-
+</div>
 </div>
 {% endblock %}
 

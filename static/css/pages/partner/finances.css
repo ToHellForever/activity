@@ -6,6 +6,7 @@
   color: black;
   font-family: "Verdana";
   font-weight: 400;
+  margin-bottom: 15px;
 }
 .finance-card {
   background: #ffffff;
@@ -13,7 +14,7 @@
   border-radius: 30px;
   box-shadow: 0 1.93px 9.64px rgba(0, 0, 0, 0.5);
   padding: 32px;
-  width: 40%;
+  width: auto;
   margin-bottom: 28px;
 }
 .finance-card__header {
@@ -46,10 +47,6 @@
   gap: 14px;
   margin-top: 30px;
 }
-.finance-card__amount-wrapper {
-  flex: 1 1 0;
-  min-width: 0;
-}
 .finance-card__input-wrap {
   position: relative;
   width: 100%;
@@ -65,13 +62,13 @@
   pointer-events: none;
 }
 .finance-card__available-input {
-  width: 100%;
   border-radius: 19.28px;
   font-weight: 500;
   font-family: "Montserrat";
   font-size: clamp(0.8rem, 1vw, 1rem);
   color: rgba(154, 154, 154, 1);
   background: rgba(232, 225, 225, 1);
+  border: none;
   padding: 7px 10px 7px 10px;
   padding-right: 32px;
 }
@@ -93,6 +90,7 @@
   border-radius: 19.28px;
   padding: 7px 50px 10px 50px;
   font-weight: 500;
+  white-space: wrap;
 }
 .finance-card__button:hover {
   background: #ff8348;
@@ -402,4 +400,43 @@
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
+}
+
+
+@media (max-width: 580px) {
+  .finance-card__title {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .finance-card {
+    padding: 15px;
+  }
+  .finance-card__actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .finance-card__amount-wrapper {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .finance-card__available-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .finance-card__button {
+    width: 100% !important;
+  }
+  .payout-modal-header,
+  .payout-modal-body,
+  .payout-modal-footer {
+    padding: 15px;
+  }
+  .payout-modal-btn-secondary,
+  .payout-modal-btn-primary {
+    width: 100%;
+  }
+  .payout-modal-footer {
+    gap: 0;
+  }
 }

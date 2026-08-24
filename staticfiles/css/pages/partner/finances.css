@@ -403,3 +403,22 @@
   cursor: not-allowed;
   transform: none;
 }
+
+@media (max-width: 580px) {
+  .finance-card__actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .finance-card__amount-wrapper {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .finance-card__available-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .finance-card__button {
+    width: 100% !important;
+  }
+}
