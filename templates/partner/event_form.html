@@ -244,16 +244,14 @@
                         {% if form.instance.image %}
                         <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
                             <img src="{{ form.instance.image.url }}" alt="Основное фото">
-                            <div class="primary-label">ОСНОВНОЕ ФОТО</div>
-                            <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">×</button>
-                            <button type="button" class="remove-btn-mobile remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить">Удалить</button>
+                            <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
+                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
                         </div>
                         {% endif %}
                         {% for image in form.instance.images.all %}
                         <div class="photo-gallery-item" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
                             <img src="{{ image.image.url }}" alt="Фото">
-                            <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">×</button>
-                            <button type="button" class="remove-btn-mobile remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить">Удалить</button>
+                            <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
                         </div>
                         {% endfor %}
                         <!-- Серый квадрат с плюсом для добавления фото -->
@@ -710,18 +708,20 @@
     function setPrimaryPhoto(item) {
         const gallery = document.getElementById('photo-gallery');
         if (!gallery) return;
-        // Снимаем is-primary со всех и удаляем label
+        
+        // Снимаем is-primary со всех фото и убираем подписи
         gallery.querySelectorAll('.photo-gallery-item').forEach(el => {
             el.classList.remove('is-primary');
-            const existingLabel = el.querySelector('.primary-label');
-            if (existingLabel) existingLabel.remove();
+            const caption = el.querySelector('.photo-gallery-caption');
+            if (caption) caption.remove();
         });
-        // Ставим is-primary на выбранное и добавляем label
+        
+        // Ставим is-primary на выбранное и добавляем подпись под фото
         item.classList.add('is-primary');
-        const label = document.createElement('div');
-        label.className = 'primary-label';
-        label.textContent = 'ОСНОВНОЕ ФОТО';
-        item.appendChild(label);
+        const caption = document.createElement('div');
+        caption.className = 'photo-gallery-caption';
+        caption.textContent = 'ОСНОВНОЕ ФОТО';
+        item.appendChild(caption);
 
         // Записываем ID в скрытое поле
         const imageId = item.dataset.imageId;
@@ -766,15 +766,7 @@
             img.alt = 'Новое фото';
             item.appendChild(img);
 
-            // Подпись "ОСНОВНОЕ ФОТО" под фото
-            if (isOnlyPhoto) {
-                const label = document.createElement('div');
-                label.className = 'primary-label';
-                label.textContent = 'ОСНОВНОЕ ФОТО';
-                item.appendChild(label);
-            }
-
-            // Кнопка удаления (десктоп) — крестик
+            // Кнопка удаления — корзина
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'remove-btn';
@@ -786,18 +778,6 @@
                 updatePhotoGalleryState();
             });
             item.appendChild(removeBtn);
-
-            // Кнопка удаления (мобильная)
-            const removeBtnMobile = document.createElement('button');
-            removeBtnMobile.type = 'button';
-            removeBtnMobile.className = 'remove-btn-mobile';
-            removeBtnMobile.textContent = 'Удалить';
-            removeBtnMobile.addEventListener('click', function(ev) {
-                ev.stopPropagation();
-                item.remove();
-                updatePhotoGalleryState();
-            });
-            item.appendChild(removeBtnMobile);
 
             // Клик по фото = сделать основным
             item.addEventListener('click', function() {
