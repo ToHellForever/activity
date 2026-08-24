@@ -56,8 +56,8 @@ function initMediaHandlers() {
             console.log('Удаление медиа:', { mediaId, mediaType });
 
             // Если это новый файл, который ещё не загружен на сервер, просто удаляем превью
-            if (mediaId === 'new') {
-                mediaContainer.remove();
+            if (mediaId === 'new' || !mediaId) {
+                if (mediaContainer) mediaContainer.remove();
                 const hiddenInput = document.querySelector(`#id_${mediaType}`);
                 if (hiddenInput) {
                     hiddenInput.value = '';
@@ -134,7 +134,7 @@ function initMediaHandlers() {
 
     // Обработчики для кнопок загрузки новых файлов
     document.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('custom-media-upload-btn')) {
+        if (e.target && (e.target.classList.contains('media-upload-btn') || e.target.classList.contains('custom-media-upload-btn'))) {
             const button = e.target;
             const mediaType = button.getAttribute('data-media-type');
             const fileInput = document.querySelector(`#id_${mediaType}`);

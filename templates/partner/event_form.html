@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/partner/event_form.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -318,16 +319,22 @@
     <div class="form-group">
         <label>Программа</label>
         <div class="media-upload-container" id="program-upload-container">
+            <!-- Блок отображения загруженного файла (всегда присутствует) -->
+            <div id="program-file-display" style="display:none; flex-direction:column; align-items:flex-start;" class='media-upload-program'>
+                <a href="#" class="btn-document" download>
+                    <img src="/media/icon/document.png" alt="PDF">
+                <span id="program-file-name" style="font-size: 12px; color: #555; margin-top: 4px; word-break: break-all;"></span>
+                <button type="button" class="media-upload-btn" data-media-type="program_file" style="margin-top:8px;">
+                    <span style="font-size: 14px;">+</span> Заменить программу
+                </button>
+                <button type="button" class="remove-media-btn" data-media-type="program_file" data-media-id="{{ form.instance.id|default:'' }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top:4px;">Удалить</button>
+            </div>
             {% if form.instance.program_file %}
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="/media/icon/mingcute_pdf-fill.svg" alt="" class='inner-icon'>
-                    <span class="text-muted" style="font-size: 13px;">{{ form.instance.program_file.name }}</span>
-                </div>
-                <div class="media-upload-actions">
-                    <button type="button" class="remove-media-btn" data-media-type="program_file" data-media-id="{{ form.instance.id }}" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Удалить</button>
-                    <button type="button" class="media-upload-btn" data-media-type="program_file">
-                        <span style="font-size: 14px;">+</span> Заменить программу
-                    </button>
+                <div id="program-upload-placeholder" style="display:none;" onclick="document.getElementById('id_program_file').click()">
+                    <div class="media-upload-icon">
+                        <img src="/media/icon/mingcute_pdf-fill.svg" alt="" style='margin-bottom: 10px;'>
+                    </div>
+                    <div class="media-upload-text">+ загрузите программу в формате PDF</div>
                 </div>
             {% else %}
                 <div class="media-upload-placeholder" id="program-upload-placeholder" onclick="document.getElementById('id_program_file').click()">
@@ -703,7 +710,7 @@
             removeBtn.type = 'button';
             removeBtn.className = 'remove-btn';
             removeBtn.title = 'Удалить';
-            removeBtn.textContent = '×';
+            removeBtn.innerHTML = '<img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box">';
             removeBtn.addEventListener('click', function(ev) {
                 ev.stopPropagation();
                 item.remove();
@@ -1000,6 +1007,27 @@
 
         updatePhotoGalleryState();
 
+        // Инициализация имени файла программы (для уже загруженного файла)
+        {% if form.instance.program_file %}
+        (function() {
+            var display = document.getElementById('program-file-display');
+            var placeholder = document.getElementById('program-upload-placeholder');
+            var fileNameSpan = document.getElementById('program-file-name');
+            if (display) {
+                display.style.display = 'flex';
+                var url = "{{ form.instance.program_file.url|escapejs }}";
+                display.querySelectorAll('a').forEach(function(link) { link.href = url; });
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (fileNameSpan) {
+                var name = "{{ form.instance.program_file.name|escapejs }}";
+                var base = name.replace(/.*[\/]/, '');
+                var short = base.length > 40 ? base.substring(0, 37) + '...' : base;
+                fileNameSpan.textContent = short;
+            }
+        })();
+        {% endif %}
+
         // Ticket table
         const addBtn = document.getElementById('addTicketRow');
         if (addBtn) {
@@ -1022,6 +1050,40 @@
                 imagesInput.click();
             }
         });
+
+        // Program file upload — переключение placeholder / отображение файла
+        const programFileInput = document.getElementById('id_program_file');
+        if (programFileInput) {
+            programFileInput.addEventListener('change', function() {
+                const file = this.files && this.files[0];
+                const display = document.getElementById('program-file-display');
+                const placeholder = document.getElementById('program-upload-placeholder');
+                const fileNameSpan = document.getElementById('program-file-name');
+                if (file) {
+                    // Краткое имя файла — только basename без расширения
+                    const name = file.name || '';
+                    const base = name.replace(/.*[\/]/, ''); // убираем путь
+                    const short = base.length > 40 ? base.substring(0, 37) + '...' : base;
+                    if (fileNameSpan) fileNameSpan.textContent = short;
+
+                    // Обновляем ссылки на скачивание (превью)
+                    const dummyUrl = URL.createObjectURL(file);
+                    const downloadLinks = display?.querySelectorAll('a');
+                    if (downloadLinks) {
+                        downloadLinks.forEach(function(link) {
+                            link.href = dummyUrl;
+                        });
+                    }
+                    // Скрываем placeholder, показываем display
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (display) display.style.display = 'flex';
+                } else {
+                    // Файл снят — показываем placeholder
+                    if (display) display.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'flex';
+                }
+            });
+        }
 
         // Min quantity → auto-toggle per-person checkbox (delegation)
         document.getElementById('ticket-tbody').addEventListener('input', function(e) {
@@ -1138,29 +1200,40 @@
             {% endfor %}
         {% endif %}
 
-        // Custom media upload buttons
-        document.querySelectorAll('.custom-media-upload-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const mediaType = this.dataset.mediaType;
-                const input = document.getElementById('id_' + mediaType);
-                if (input) input.click();
-            });
-        });
 
         // Remove media buttons
         document.querySelectorAll('.remove-media-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const mediaType = this.dataset.mediaType;
-                const mediaId = this.dataset.mediaId;
-                if (!mediaId) return;
+                const mediaId = this.dataset.mediaId || '';
+                const display = document.getElementById('program-file-display');
+                const placeholder = document.getElementById('program-upload-placeholder');
+
+                // Если это новый файл (ещё не на сервере) — просто скрываем превью
+                if (!mediaId && mediaType === 'program_file') {
+                    if (display) display.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'flex';
+                    return;
+                }
+
                 fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
                 })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.status === 'success') location.reload();
-                    else showToast('Ошибка удаления', true);
+                    if (data.status === 'success') {
+                        if (mediaType === 'program_file') {
+                            if (display) display.style.display = 'none';
+                            if (placeholder) placeholder.style.display = 'flex';
+                        } else if (mediaType === 'video_url') {
+                            location.reload();
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        showToast('Ошибка удаления', true);
+                    }
                 })
                 .catch(err => showToast('Ошибка: ' + err.message, true));
             });

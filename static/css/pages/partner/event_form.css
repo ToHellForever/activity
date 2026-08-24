@@ -476,8 +476,8 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 34px;
   background: rgba(255, 255, 255, 0.9);
   border: none;
   border-radius: 50%;
@@ -762,11 +762,17 @@
   border-color: rgba(255, 131, 72, 1);
   color: rgba(255, 131, 72, 1);
 }
-
-.media-upload-actions {
+.media-upload-program {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  background: #fff;
+  text-align: start;
+  gap: 10px;
 }
 .inner-icon {
   width: 55px;
