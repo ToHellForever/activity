@@ -54,7 +54,7 @@ def send_order_confirmation_email(order, request=None):
         "now": timezone.now(),
     }
 
-    email_html = render_to_string("emails/ticket_confirmation.html", context)
+    email_html = render_to_string("emails/order_confirmation.html", context)
 
     email_message = EmailMultiAlternatives(
         subject=f"Подтверждение заказа #{order.id}",

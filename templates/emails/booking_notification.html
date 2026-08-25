@@ -5,69 +5,114 @@
     <title>Новая заявка на площадку</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
+            font-family: 'Verdana', sans-serif;
             margin: 0 auto;
             padding: 20px;
         }
-        .header {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .venue-title {
-            font-size: 1.5em;
+
+        .page-title {
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .section {
-            margin-bottom: 20px;
-        }
-        .section-title {
-            font-weight: bold;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-        .footer {
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #666;
             text-align: center;
+            margin-bottom: 24px;
+            color: rgba(38, 37, 37, 1);
+        }
+
+        .section-heading {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            margin-top: 0;
+        }
+
+        .detail-table {
+            width: 100%;
+        }
+
+        .detail-label {
+            color: rgba(119, 122, 141, 1);
+            vertical-align: top;
+            font-size: 14px;
+            padding-bottom: 16px;
+            padding-top: 16px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+        }
+
+        .cta-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: rgba(2, 54, 156, 1);
+            text-align: center;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .footer-note {
+            font-size: 14px;
+            color: #888888;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 0;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="venue-title">Новая заявка на площадку "{{ venue.title }}"</div>
-    </div>
 
-    <div class="section">
-        <div class="section-title">Данные заявителя:</div>
-        <p><strong>Имя:</strong> {{ booking.name }}</p>
-        <p><strong>Телефон:</strong> {{ booking.phone }}</p>
+    <div class="page-title">НОВАЯ ЗАЯВКА НА ПЛОЩАДКУ</div>
+
+    <div class="section-heading">Данные заявителя:</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="detail-label">Имя:</td>
+            <td class="detail-value">{{ booking.name }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Телефон:</td>
+            <td class="detail-value">{{ booking.phone }}</td>
+        </tr>
         {% if booking.email %}
-        <p><strong>Email:</strong> {{ booking.email }}</p>
+        <tr>
+            <td class="detail-label">Email:</td>
+            <td class="detail-value">{{ booking.email }}</td>
+        </tr>
         {% endif %}
-    </div>
+    </table>
 
-    <div class="section">
-        <div class="section-title">Информация о мероприятии:</div>
-        <p><strong>Дата и время:</strong> {{ event_date }}</p>
-        <p><strong>Количество участников:</strong> {{ booking.participants_count }}</p>
-        <p><strong>Формат мероприятия:</strong> {{ formats }}</p>
-        {% if booking.comment %}
-        <p><strong>Комментарий:</strong> {{ booking.comment }}</p>
-        {% endif %}
-    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+        <tr>
+            <td class="detail-label">Информация о мероприятии:</td>
+            <td class="detail-value">{{ event.title }}</td>
+        </tr>
+    </table>
 
-    <div class="footer">
-        <p>Это автоматическое уведомление. Пожалуйста, не отвечайте на это письмо.</p>
-        <p>Свяжитесь с заявителем для подтверждения бронирования.</p>
-    </div>
+    <div class="section-heading">Информация о мероприятии:</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="detail-label">Дата и время:</td>
+            <td class="detail-value">{{ event_date }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Количество участников:</td>
+            <td class="detail-value">{{ booking.participants_count }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Формат мероприятия:</td>
+            <td class="detail-value">{{ formats }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Комментарий:</td>
+            <td class="detail-value">{% if booking.comment %}{{ booking.comment }}{% else %}-{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="cta-text">Свяжитесь с заявителем для подтверждения бронирования</div>
+
+    <p class="footer-note">Это автоматическое уведомление. Пожалуйста, не отвечайте на это письмо.</p>
+
 </body>
 </html>

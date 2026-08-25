@@ -4,11 +4,201 @@
     <meta charset="utf-8">
     <title>Срок оплаты истёк</title>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2>Срок оплаты заказа #{{ order.id }} истёк</h2>
-    <p>К сожалению, вы не успели оплатить билет на мероприятие <strong>{{ event.title }}</strong> в течение 10 минут.</p>
-    <p>Билет был зарезервирован за вами, но теперь возвращается в продажу.</p>
-    <p>Если вы хотите купить билет снова — перейдите на страницу мероприятия.</p>
-    <p style="margin-top: 30px; color: #888;">С уважением, команда платформы</p>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    font-family: 'Verdana', sans-serif;
+}
+
+.email-wrapper {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.email-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 40px;
+}
+
+.order-title {
+    margin: 0 0 20px 0;
+    font-size: 15px;
+    color: #333333;
+}
+
+.greeting {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 10px;
+}
+
+.message-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 30px;
+}
+
+.details-card {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    padding-left: 15px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+
+}
+
+.details-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.8;
+}
+
+.detail-label {
+    color: rgba(119, 122, 141, 1);
+    width: 130px;
+    vertical-align: top;
+    font-size: 15px;
+}
+
+.detail-value {
+    font-size: 15px;
+}
+
+.detail-value-bold {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.pre-button-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-top: 30px;
+    padding-bottom: 24px;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 10px 30px;
+    font-size: 15px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 50px;
+    letter-spacing: 1px;
+}
+
+.footer-text {
+    margin: 0;
+    font-size: 15px;
+    color: #888888;
+}
+
+.cancelled-text {
+    color: rgba(255, 7, 7, 1);
+    font-weight: bold;
+}
+
+.footer-spacer {
+    padding-top: 30px;
+    padding-bottom: 10px;
+}
+.event-name {
+    color: rgba(2, 54, 156, 1);
+}
+</style>
+<body>
+    <table role="presentation" class="email-wrapper" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table role="presentation" class="email-container">
+
+                    <!-- Приветствие -->
+                    <tr>
+                        <td class="greeting">
+                            Здравствуйте!
+                        </td>
+                    </tr>
+
+                    <!-- Текст сообщения -->
+                    <tr>
+                        <td class="message-text">
+                            К сожалению, ваше бронирование на мероприятие
+                            <strong class="event-name">“{{ event.title }}”</strong>
+                            <span class="cancelled-text">было отменено</span>,
+                            так как оплата не была произведена в установленный срок.
+                        </td>
+                    </tr>
+
+                    <!-- Карточка с деталями -->
+                    <tr>
+                        <td>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <!-- Мероприятие -->
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">Мероприятие:</td>
+                                                <td class="detail-value-bold">{{ event.title }}</td>
+                                            </tr>
+                                            <!-- Дата и время -->
+                                            <tr>
+                                                <td class="detail-label">Дата и время:</td>
+                                                <td class="detail-value">{{ event.date }} в {{ event.time }}</td>
+                                            </tr>
+                                            <!-- Тип билета -->
+                                            <tr>
+                                                <td class="detail-label">Тип билета:</td>
+                                                <td class="detail-value">{{ ticket.type }}</td>
+                                            </tr>
+                                            <!-- Стоимость -->
+                                            <tr>
+                                                <td class="detail-label">Стоимость:</td>
+                                                <td class="detail-value">{{ ticket.price }} руб.</td>
+                                            </tr>
+                                            <!-- Количество -->
+                                            <tr>
+                                                <td class="detail-label">Количество:</td>
+                                                <td class="detail-value">{{ ticket.quantity }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Текст перед кнопкой -->
+                    <tr>
+                        <td class="pre-button-text">
+                            Забронируйте билеты снова на странице мероприятия
+                        </td>
+                    </tr>
+
+                    <!-- Кнопка -->
+                    <tr>
+                        <td align="center" style="padding-bottom: 10px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="border-radius: 50px; background-color: #ff8c42;">
+                                        <a href="{{ event.url }}" target="_blank" class="cta-button">
+                                            НА СТРАНИЦУ МЕРОПРИЯТИЯ
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
