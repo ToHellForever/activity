@@ -3,7 +3,6 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/partner/finances.css' %}">
-<div class='container-fluid'>
 <div class="row partner-layout" style="display:flex; gap:14px;">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <div class="partner-main finance-page">
@@ -108,7 +107,6 @@
     {% else %}
         <p class="text-muted">История выплат пуста.</p>
     {% endif %}
-</div>
 </div>
 </div>
 </div>

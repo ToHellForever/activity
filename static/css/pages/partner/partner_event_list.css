@@ -409,10 +409,6 @@
   }
 }
 @media (max-width: 768px) {
-  .partner-main {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-  }
   .btn-find {
     width: 100%;
   }
