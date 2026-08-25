@@ -26,3 +26,9 @@
   color: #ff6b35;
     text-decoration: none;
 }
+
+@media (max-width: 768px) {
+  .email-section, .password-section {
+    width: 100% !important;
+  }
+}

@@ -38,6 +38,10 @@
        class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
         Поддержка
     </a>
+    <a href="{% url 'logout' %}"
+       class="mobile-nav-item">
+        Выйти
+    </a>
 </div>
 
         <aside class="partner-sidebar">

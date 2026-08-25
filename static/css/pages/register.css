@@ -450,7 +450,7 @@ align-items: flex-end;
         width: 100%;
     }
   .register-page {
-    padding: 20px 12px;
+    padding: 0;
   }
   .form-group {
     width: 100% !important;

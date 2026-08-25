@@ -23,6 +23,10 @@
        class="mobile-nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
         Настройки
     </a>
+    <a href="{% url 'logout' %}"
+       class="mobile-nav-item">
+        Выйти
+    </a>
 </div>
 
 <aside class="visitor-sidebar">
