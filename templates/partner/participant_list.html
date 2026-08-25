@@ -12,6 +12,95 @@
 <div>
     <h2>Участники: {{ event.title }}</h2>
 
+    <!-- Модальное окно с деталями заказа -->
+    {% for order in orders %}
+    <div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Заказ №{{ order.id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Данные участника -->
+                    <div class="order-detail-section">
+                        <h6 class="section-title">Данные участника</h6>
+                        <div class="detail-row">
+                            <span class="detail-label">Имя:</span>
+                            <span class="detail-value">
+                                {% if order.participant_data.first_name or order.participant_data.last_name %}
+                                    {{ order.participant_data.first_name|default:'' }} {{ order.participant_data.last_name|default:'' }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">E-mail:</span>
+                            <span class="detail-value">{{ order.participant_data.email|default:'-' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Телефон:</span>
+                            <span class="detail-value">{{ order.participant_data.phone|default:'-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Информация о заказе -->
+                    <div class="order-detail-section">
+                        <h6 class="section-title">Информация о заказе</h6>
+                        <div class="detail-row">
+                            <span class="detail-label">Тип билета:</span>
+                            <span class="detail-value">{{ order.ticket.name }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Дата покупки:</span>
+                            <span class="detail-value">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Стоимость:</span>
+                            <span class="detail-value">{{ order.total_price }} ₽</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Количество билетов:</span>
+                            <span class="detail-value">{{ order.quantity }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Список билетов -->
+                    <div class="order-detail-section">
+                        <h6 class="section-title">Билеты</h6>
+                        <div class="ticket-list">
+                            {% for order_ticket in order.tickets.all %}
+                            <div class="ticket-item">
+                                <div class="ticket-number">№{{ order_ticket.ticket_number }}</div>
+                                <div class="ticket-statuses">
+                                    {% if order_ticket.is_refunded %}
+                                        <span class="status-badge" style="background:#fadada;color:#a83232;">Возвращён</span>
+                                    {% elif order.payment_status == 'succeeded' %}
+                                        <span class="status-badge status-badge--paid">Оплачен</span>
+                                    {% else %}
+                                        <span class="status-badge status-badge--pending">Ожидание</span>
+                                    {% endif %}
+                                    {% if order_ticket.attended %}
+                                        <span class="status-badge" style="background:#d4edda;color:#155724;">
+                                            <i class="bi bi-check-circle-fill"></i> Посетил
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge" style="background:#f8f9fa;color:#6c757d;">
+                                            <i class="bi bi-x-circle"></i> Не посетил
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
     <!-- Фильтры -->
     <div class="card report-card filter-card mb-3">
         <div class="card-body">
@@ -54,8 +143,8 @@
         </a>
     </div>
 
-    <!-- Таблица участников -->
-    <div class="card report-card mb-4 participant-table">
+    <!-- Таблица участников (только десктоп) -->
+    <div class="card report-card mb-4 participant-table d-none d-md-block">
         <div class="card-header">Список участников</div>
         <div class="card-body">
             <div class="table-responsive">
@@ -128,6 +217,32 @@
                 </table>
             </div>
         </div>
+    </div>
+
+    <!-- Карточки заказов -->
+    <div class="mobile-cards">
+        {% for order in orders %}
+        <div class="card order-card mb-3">
+            <div class="card-body">
+                <div class="order-card-header">
+                    <span class="order-card-id">Заказ №{{ order.id }}</span>
+                </div>
+                <div class="order-card-email">{{ order.participant_data.email|default:'-' }}</div>
+                <div class="order-card-tickets">
+                    Куплено билетов: <strong>{{ order.quantity }}</strong>
+                </div>
+                <button type="button" class="btn order-card-btn mt-2" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
+                    <i class="bi bi-eye"></i> Подробнее
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card report-card mb-4">
+            <div class="card-body text-center text-muted">
+                Пока нет участников.
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
 </div>
