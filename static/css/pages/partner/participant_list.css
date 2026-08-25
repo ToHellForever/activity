@@ -298,7 +298,10 @@
   font-family: 'Verdana';
   font-size: clamp(0.8rem, 2vw, 1rem);
 }
-
+.order-card-btn:hover{
+  background-color:rgba(255, 131, 72, 1);
+  color: white;
+}
 .order-card-header {
   display: flex;
   justify-content: space-between;

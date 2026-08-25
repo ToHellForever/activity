@@ -834,6 +834,9 @@ class Order(models.Model):
     yookassa_payment_data = models.JSONField(
         null=True, blank=True, verbose_name="Данные платежа из ЮКассы"
     )
+    email_sent = models.BooleanField(
+        default=False, verbose_name="Письмо отправлено"
+    )
     platform_commission = models.DecimalField(
         max_digits=10,
         decimal_places=2,

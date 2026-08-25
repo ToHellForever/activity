@@ -1202,10 +1202,13 @@ def payment_success(request, order_id):
                         })
 
                     # Отправляем письмо только один раз
-                    if o.id not in sent_emails:
+                    if not o.email_sent:
                         try:
                             send_order_confirmation_email(o, request)
+                            o.email_sent = True
+                            o.save(update_fields=['email_sent'])
                             sent_emails.add(o.id)
+                            logger.info('[success] Письмо отправлено для заказа %s', o.id)
                         except Exception as e:
                             logger.error('[success] Ошибка отправки письма', extra={
                                 'order_id': o.id,
