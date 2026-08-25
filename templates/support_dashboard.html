@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;">
+<div class="partner-layout" style="display:flex; gap:14px;">
     {% if user.user_type == 'partner' %}
         {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     {% else %}

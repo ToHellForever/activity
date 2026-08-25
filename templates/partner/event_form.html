@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="row partner-layout" style="display:flex; gap:14px;" 
+<div class="partner-layout" style="display:flex; gap:14px;" 
      data-verification-status="{{ user.verification_status }}"
      data-min-datetime="{{ min_datetime|default:'' }}">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}

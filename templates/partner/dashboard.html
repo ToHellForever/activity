@@ -8,7 +8,7 @@
 {% block content %}
 {% with partner_profile=partner_profile|default:None %}
 <div class="py-2" data-verification-status="{{ user.verification_status }}">
-    <div class="row partner-layout" style="display:flex; gap:14px;">
+    <div class="partner-layout" style="display:flex; gap:14px;">
         {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
         <!-- ===== Main content ===== -->
         <div class="partner-main">
