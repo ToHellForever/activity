@@ -8,18 +8,17 @@
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/visitor/ticket_display.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
-<div>
+<div >
     <div class="visitor-layout">
 
         {% include 'visitor/visitor_sidebar.html' %}
-
         <main class="visitor-content">
             <div class="upcoming-head">
                 <h2 class="upcoming-title">Предстоящие события</h2>
             </div>
 
             {% if ticket_items %}
-                <div class="row">
+                <div class="row"> 
                     {% for item in ticket_items %}
                         {% with event=item.event order=item.order ticket=item.ticket participant_data=item.participant_data ot=item.order_ticket %}
                         <div class="col-md-4 mb-4">
@@ -29,8 +28,7 @@
                                         <a href="{% url 'visitor:refund_ticket' order.id ot.id %}"
                                            class="refund-corner-btn"
                                            title="Возврат билета №{{ ot.ticket_number }}"
-                                           onclick="return confirm('Вы уверены, что хотите вернуть билет №{{ ot.ticket_number }}?');">
-                                            <i class="bi bi-arrow-return-left"></i> Вернуть
+                                           onclick="return confirm('Вы уверены, что хотите вернуть билет №{{ ot.ticket_number }}?');"> Вернуть
                                         </a>
                                     {% endif %}
 
@@ -95,7 +93,6 @@
         </main>
     </div>
 </div>
-
 <!-- Модальное окно билета -->
 <div id="ticketModal" class="ticket-modal">
     <div class="ticket-modal-backdrop"></div>

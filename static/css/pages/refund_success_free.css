@@ -1,0 +1,91 @@
+/* ============================================
+   REFUND SUCCESS FREE PAGE - Стили
+   ============================================ */
+
+.refund-free-success-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.refund-free-success-card {
+  max-width: 520px;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+/* ===== Зелёный хедер ===== */
+.refund-free-success-header {
+  background: #4CAF50;
+  padding: 40px 24px;
+  text-align: center;
+  color: #fff;
+}
+
+.refund-free-success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refund-free-success-icon svg {
+  width: 36px;
+  height: 36px;
+  fill: #fff;
+}
+
+.refund-free-success-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+/* ===== Тело карточки ===== */
+.refund-free-success-body {
+  padding: 32px 24px;
+}
+
+.refund-free-success-message {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+/* ===== Кнопка ===== */
+.refund-free-success-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 16px 24px;
+  background: #FF8348;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.refund-free-success-btn:hover {
+  background: #e6733d;
+  color: #fff;
+}
+
+.refund-free-success-btn i {
+  margin-right: 8px;
+}

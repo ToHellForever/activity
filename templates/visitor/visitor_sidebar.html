@@ -1,5 +1,30 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+
+<!-- ===== Mobile top nav ===== -->
+<div class="mobile-nav">
+    <a href="{% url 'visitor:dashboard' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        Мои билеты
+    </a>
+    <a href="{% url 'visitor:order_history' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
+        История заказов
+    </a>
+    <a href="{% url 'visitor:chats_list' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
+        Чаты
+    </a>
+    <a href="{% url 'support_dashboard' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
+        Поддержка
+    </a>
+    <a href="{% url 'visitor:settings' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+        Настройки
+    </a>
+</div>
+
 <aside class="visitor-sidebar">
     <p class='sidebar-p'>Личный кабинет</p>
     <div class="sidebar-profile">

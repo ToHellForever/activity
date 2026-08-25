@@ -4,7 +4,6 @@
   display: flex;
   align-items: flex-start;
   gap: 28px;
-  padding: 28px 0 56px;
 }
 
 .visitor-content {
@@ -59,8 +58,8 @@
   color: #d64545;
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 12px;
-  padding: 6px 14px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  padding: 6px;
   border-radius: 999px;
   text-decoration: none;
   display: inline-flex;
@@ -177,12 +176,15 @@
 .ticket-line {
   margin: 0 0 2px;
   font-family: "Montserrat", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
   color: #8b8d97;
 }
 
 .ticket-line span {
   color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ticket-actions {
@@ -262,6 +264,13 @@
   .sidebar-nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 900px) {
+  .row > .col-md-4 {
+    flex: 0 0 50%;
+    max-width: 50%;
   }
 }
 
@@ -357,6 +366,9 @@
   overflow-y: auto;
   flex: 1;
 }
+.row > * {
+  padding: 0 5px;
+}
 .button-order-history {
   background: rgba(154, 154, 154, 1);
   text-align: center;
@@ -364,7 +376,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.8rem, 1vw, 1rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   width: 100%;
@@ -385,9 +397,15 @@
   .ticket-modal {
     padding: 10px;
   }
-
+  .button-order-history {
+    padding: 5px;
+    /* ... если не влазит */
+      white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .ticket-modal-dialog {
     max-height: 95vh;
-    border-radius: 12px;
+    border-radius: 16px;
   }
 }

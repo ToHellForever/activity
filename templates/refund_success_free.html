@@ -1,13 +1,29 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/refund_success_free.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="alert alert-success">
-        <h4 class="alert-heading">Возврат успешно выполнен!</h4>
-        <p>Бесплатный билет был успешно возвращён в систему.</p>
-        <hr>
-        <p class="mb-0">Теперь этот билет снова доступен для регистрации других пользователей.</p>
+<div class="refund-free-success-wrapper">
+    <div class="refund-free-success-card">
+        <div class="refund-free-success-header">
+            <div class="refund-free-success-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+            </div>
+            <h2>Возврат успешно выполнен!</h2>
+        </div>
+        <div class="refund-free-success-body">
+            <p class="refund-free-success-message">
+                Бесплатный билет был успешно возвращён в систему. Теперь этот билет снова доступен для регистрации других пользователей.
+            </p>
+            <a href="{% url 'visitor:dashboard' %}" class="refund-free-success-btn">
+                <i class="bi bi-arrow-left"></i> Вернуться в личный кабинет
+            </a>
+        </div>
     </div>
-    <a href="{% url 'visitor:dashboard' %}" class="btn btn-primary">Вернуться в личный кабинет</a>
 </div>
 {% endblock %}

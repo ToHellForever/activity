@@ -342,7 +342,6 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: clamp(0.6rem, 1vw, 0.8rem);
-  margin-left: 5px;
 }
 
 .badge {

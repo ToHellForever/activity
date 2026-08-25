@@ -1,13 +1,31 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/refund_error.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="alert alert-danger">
-        <h4 class="alert-heading">Ошибка возврата!</h4>
-        <p>{{ error }}</p>
-        <hr>
-        <p class="mb-0">Попробуйте ещё раз или свяжитесь с нашей службой поддержки.</p>
+<div class="refund-error-wrapper">
+    <div class="refund-error-card">
+        <div class="refund-error-header">
+            <div class="refund-error-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                </svg>
+            </div>
+            <h2>Ошибка возврата!</h2>
+        </div>
+        <div class="refund-error-body">
+            <p class="refund-error-message">
+                {{ error }}
+                <br><br>
+                Попробуйте ещё раз или свяжитесь с нашей службой поддержки.
+            </p>
+            <a href="{% url 'visitor:dashboard' %}" class="refund-error-btn">
+                <i class="bi bi-arrow-left"></i> Вернуться в личный кабинет
+            </a>
+        </div>
     </div>
-    <a href="{% url 'visitor:dashboard' %}" class="btn btn-primary">Вернуться в личный кабинет</a>
 </div>
 {% endblock %}
