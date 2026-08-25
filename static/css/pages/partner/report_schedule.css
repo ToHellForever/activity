@@ -371,12 +371,12 @@
 .report-back-link {
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #02369c;
   background: #f0f5ff;
   border: 1.5px solid #d0e0ff;
   border-radius: 16px;
-  padding: 8px 20px;
+  padding: 8px 10px;
   text-decoration: none;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -388,6 +388,11 @@
   background: #dce8ff;
   color: #012470;
   border-color: #b0ccff;
+}
+.report_page_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* ---------- Conditional cards animation ---------- */
@@ -405,5 +410,20 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+.row {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 768px) {
+  .report_page_header {
+    /* в колонку */
+    flex-direction: column;
+    gap: 10px;
+  }
+  .report-back-link {
+    text-align: center;
   }
 }

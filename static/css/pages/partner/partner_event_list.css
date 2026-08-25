@@ -358,24 +358,50 @@
 }
 
 /* ---------- Footer карточки партнёра ---------- */
-.partner-card-footer {
+
+.partner-card-footer-buttons {
   display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+/* Кнопки в footer карточки — одинаковый стиль */
+.partner-card-footer .buy-button,
+.partner-card-footer .buy-button-sm,
+.partner-card-footer .btn-entry-control {
+  flex: 1;
+  width: auto;
+  display: inline-flex;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-top: auto;
+  text-align: center;
+  margin-top: 7px;
+  font-size: 0.75rem;
+  padding: 10px 10px;
+  border-radius: 20px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  background: #ff8348;
+  color: #ffffff;
+  border: none;
+  text-decoration: none;
+  line-height: 1.2;
 }
-
-/* ---------- Уменьшенная кнопка "УЧАСТНИКИ" ---------- */
-.buy-button-sm {
-  font-size: 11px;
-  padding: 8px 10px;
-  border-radius: 16px;
-  width: 85% !important;
+.partner-card-footer-buttons .buy-button,
+.partner-card-footer-buttons .buy-button-sm,
+.partner-card-footer-buttons .btn-entry-control {
+  width: 100% !important;
+  margin-top: 10px;
 }
-
 /* ============================================================
     RESPONSIVE
     ============================================================ */
+@media (max-width: 600px) {
+  .partner-card-footer-buttons {
+    flex-direction: column;
+  }
+}
 @media (max-width: 900px) {
   .filter-input {
     margin-top: 0px !important;
@@ -383,11 +409,11 @@
   }
 }
 @media (max-width: 768px) {
-    .partner-main {
+  .partner-main {
     padding-left: 10px !important;
     padding-right: 10px !important;
   }
-    .btn-find {
+  .btn-find {
     width: 100%;
   }
 }

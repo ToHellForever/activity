@@ -12,7 +12,7 @@
 <!-- Toast уведомления -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100" id="toastContainer"></div>
 
-<div class="row partner-layout" style="display:flex; gap:14px;">
+<div class="partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 
     <div class="partner-main">
@@ -126,12 +126,14 @@
                                     </p>
                                     {% endif %}
 <div class="partner-card-footer">
-    <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
-    <button type="button" class="btn-entry-control" 
-            data-event-id="{{ item.event.id }}"
-            data-bs-toggle="modal" data-bs-target="#entryControlModal">
-        <i class="bi bi-qr-code-scan" style='margin-right: 5px'></i> Контроль
-    </button>
+    <div class="partner-card-footer-buttons">
+        <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm">УЧАСТНИКИ</a>
+        <button type="button" class="btn-entry-control" 
+                data-event-id="{{ item.event.id }}"
+                data-bs-toggle="modal" data-bs-target="#entryControlModal">
+             КОНТРОЛЬ
+        </button>
+    </div>
     {% if not item.event.has_sold_tickets %}
         <label class="card-check">
             <input type="checkbox" name="event_ids"
@@ -196,7 +198,9 @@
                                     </p>
                                     {% endif %}
                                     <div class="partner-card-footer">
-                                        <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm mt-4">УЧАСТНИКИ</a>
+                                        <div class="partner-card-footer-buttons">
+                                            <a href="{% url 'partner:participant_list' item.event.id %}" class="buy-button buy-button-sm">УЧАСТНИКИ</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

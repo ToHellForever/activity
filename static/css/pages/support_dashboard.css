@@ -507,6 +507,7 @@
 @media (max-width: 1140px) {
   .support-page {
     flex-direction: column;
+    padding: 0;
   }
   .support-sidebar,
   .support-chat-column {

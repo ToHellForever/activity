@@ -13,7 +13,8 @@
   position: relative;
   flex-shrink: 0;
   width: 7%;
-  height: auto;
+  min-width: 74px;
+  aspect-ratio: 1 / 1;
   background: #f0f0f0;
 }
 .chat-header-event-photo {
@@ -29,6 +30,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
   border-radius: 12px;
+  min-width: 44px;
 }
 .chat-header-user-badge--guest img {
   width: 100%;
@@ -417,6 +419,9 @@
    АДАПТИВ
    ============================================ */
 @media (max-width: 768px) {
+  .chat-header-back {
+    display: none;
+  }
   .chat-container {
     height: calc(100vh - 80px);
   }
@@ -430,7 +435,7 @@
   }
 
   .chat-messages {
-    padding: 12px 16px;
+    padding: 5px;
   }
 
   .chat-input-area {

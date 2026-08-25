@@ -5,13 +5,13 @@
 <link rel="stylesheet" href="{% static 'css/pages/chats_list.css' %}">
 {% endblock %}
 {% block content %}
+{% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <div class='container-fluid'>
 <div class="row partner-layout" style="display:flex; gap:14px;">
-    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
         <div class="chats-list-wrapper">
             <div class="chats-list-header">
-                <h2>Чаты с участниками</h2>
+                <h2 class='mt-2'>Чаты с участниками</h2>
                 <p>Вопросы от участников к вашим мероприятиям</p>
             </div>
             <div class="chats-list-body">
