@@ -43,13 +43,13 @@
 }
 
 .label {
-font-family: Montserrat;
-font-weight: 500;
-font-style: Medium;
-font-size: 13px;
-white-space: nowrap;
-text-transform: uppercase;
-color: rgba(154, 154, 154, 1);
+  font-family: Montserrat;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: 13px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: rgba(154, 154, 154, 1);
 }
 
 /* =========================================
@@ -127,6 +127,11 @@ color: rgba(154, 154, 154, 1);
 /* =========================================
    CHANGE PASSWORD BUTTON
    ========================================= */
+.info-row--password {
+  display: flex;
+  justify-content: center;
+}
+
 .btn-change-password {
   width: 100%;
   display: inline-block;
@@ -268,7 +273,6 @@ color: rgba(154, 154, 154, 1);
 .btn-submit-modal:hover {
   background: #e87a30;
 }
-
 
 @media (max-width: 1150px) {
   .visitor-content {
