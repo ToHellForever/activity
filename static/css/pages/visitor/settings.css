@@ -269,6 +269,12 @@ color: rgba(154, 154, 154, 1);
   background: #e87a30;
 }
 
+
+@media (max-width: 1150px) {
+  .visitor-content {
+    width: 100% !important;
+  }
+}
 /* =========================================
    RESPONSIVE
    ========================================= */
