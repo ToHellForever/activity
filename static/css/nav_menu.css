@@ -137,7 +137,7 @@
   text-decoration: none;
   color: black;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 .burger-icons {
@@ -156,7 +156,7 @@
 .burger-footer-link {
   text-decoration: none;
   color: #777a8d;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 .desktop-only {

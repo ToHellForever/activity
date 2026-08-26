@@ -396,6 +396,16 @@
 
 /* Мобильные */
 @media (max-width: 768px) {
+  .footer-bottom-link {
+    padding: 0;
+  }
+  .footer-logo {
+    margin-left: -25px !important;
+  }
+
+  .footer-logo a {
+    padding-left: 0;
+  }
   .footer-header {
     padding: 16px 20px;
   }
@@ -415,9 +425,8 @@
   }
 
   .footer-contacts {
-    width: 100%;
     justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .footer-bottom {
