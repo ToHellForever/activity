@@ -167,7 +167,11 @@
   border: none;
   border-radius: 24px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
+  overflow: visible;
+}
+
+#payoutModal .modal-dialog {
+  overflow: visible;
 }
 
 /* Шапка */
@@ -213,11 +217,13 @@
 /* Тело */
 .payout-modal-body {
   padding: 24px 28px;
+  overflow: visible;
 }
 
 /* Группа формы */
 .payout-form-group {
   margin-bottom: 20px;
+  overflow: visible;
 }
 
 .payout-form-group:last-child {
@@ -288,12 +294,86 @@
   pointer-events: none;
 }
 
-/* Select */
-.payout-form-select {
-  appearance: none;
-  background-image: none;
-  padding-right: 16px;
+/* Стили для input с выпадающим списком */
+.dropdown-container {
+  position: relative;
+}
+
+.payout-form-input.filter-input-dropdown {
   cursor: pointer;
+  pointer-events: auto;
+}
+
+.payout-form-input.filter-input-dropdown:focus {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* При открытом dropdown убираем нижние border-radius у инпута */
+.dropdown-container.open .payout-form-input.filter-input-dropdown {
+  border-radius: 16px 16px 0 0 !important;
+}
+
+/* Убираем тень у инпута при открытом списке */
+.dropdown-container.open .payout-form-input {
+  box-shadow: none;
+}
+
+/* Стили кнопки dropdown при открытом меню */
+.dropdown-container.open .dropdown-toggle-btn {
+  background: transparent;
+}
+
+.dropdown-container.open .dropdown-toggle-btn .triangle-down {
+  border-top: 12px solid #ff8348;
+  transform: rotate(180deg);
+}
+.dropdown-toggle-btn {
+  display: none;
+}
+/* Кастомное выпадающее меню */
+.dropdown-menu-custom {
+  display: none;
+  position: fixed;
+  z-index: 10001 !important;
+  background: #ffffff;
+  border-radius: 0 0 16px 16px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-menu-custom.active {
+  display: block !important;
+}
+
+.dropdown-menu-custom .dropdown-option {
+  padding: 12px 16px;
+  font-family: "Verdana", sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: #777a8d;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-menu-custom .dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-menu-custom .dropdown-option:hover {
+  background: #f8f9fa;
+  color: #ff8348;
+}
+
+.dropdown-menu-custom .dropdown-option.active {
+  color: #ff8348;
+  font-weight: 600;
 }
 
 .payout-form-select option[value=""] {

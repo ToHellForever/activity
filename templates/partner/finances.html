@@ -28,15 +28,31 @@
                     
                      <div class="payout-form-group">
                         <label for="payoutDetails" class="payout-form-label">Реквизиты для выплаты</label>
-                        <select class="payout-form-input payout-form-select" id="payoutDetails" name="payout_details" required>
-                            {% if partner_payout_details %}
-                                {% for detail in partner_payout_details %}
-                                    <option value="{{ detail.id }}">{{ detail.get_bank_name_display }} ({{ detail.account_number }})</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="" disabled selected>Нет сохранённых реквизитов</option>
-                            {% endif %}
-                        </select>
+                        <div class="input-with-button dropdown-container">
+                            <input type="text" class="form-control filter-input filter-input-dropdown payout-form-input" 
+                                   placeholder="Выберите реквизиты" 
+                                   value=""
+                                   readonly 
+                                   id="payoutDetailsInput"
+                                   data-placeholder="Выберите реквизиты">
+                            <button class="input-button dropdown-toggle-btn" type="button" data-target="payoutDetailsDropdown">
+                                <span class="triangle-down"></span>
+                            </button>
+                            <div class="dropdown-menu-custom" id="payoutDetailsDropdown">
+                                {% if partner_payout_details %}
+                                    {% for detail in partner_payout_details %}
+                                        <div class="dropdown-option" data-value="{{ detail.id }}">
+                                            {{ detail.get_bank_name_display }} ({{ detail.account_number }})
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="dropdown-option" data-value="">
+                                        Нет сохранённых реквизитов
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="payout_details" id="payoutDetailsHidden" value="">
+                        </div>
                         <a href="{% url 'partner:payout_details' %}" class="payout-link">
                             Добавить или изменить реквизиты
                         </a>
@@ -224,6 +240,58 @@ $(document).ready(function() {
             alert('Произошла ошибка при отправке запроса на выплату');
         });
     });
+
+    // === Кастомный dropdown для реквизитов ===
+    (function() {
+        const container = document.querySelector('#payoutDetailsDropdown')?.closest('.dropdown-container');
+        if (!container) return;
+        const input = container.querySelector('.filter-input-dropdown');
+        const button = container.querySelector('.dropdown-toggle-btn');
+        const dropdown = container.querySelector('.dropdown-menu-custom');
+        const hidden = document.getElementById('payoutDetailsHidden');
+
+        function openDropdown() {
+            const rect = input.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+            dropdown.classList.add('active');
+            container.classList.add('open');
+        }
+
+        function closeDropdown() {
+            dropdown.classList.remove('active');
+            container.classList.remove('open');
+        }
+
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.classList.contains('active')) closeDropdown();
+            else openDropdown();
+        });
+
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.classList.contains('active')) closeDropdown();
+            else openDropdown();
+        });
+
+        dropdown.querySelectorAll('.dropdown-option').forEach(function(opt) {
+            opt.addEventListener('click', function() {
+                const val = this.getAttribute('data-value');
+                const txt = this.textContent.trim();
+                input.value = txt;
+                if (hidden) hidden.value = val;
+                dropdown.querySelectorAll('.dropdown-option').forEach(function(o) { o.classList.remove('active'); });
+                this.classList.add('active');
+                closeDropdown();
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!container.contains(e.target)) closeDropdown();
+        });
+    })();
 });
 </script>
 {% endblock %}

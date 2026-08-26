@@ -1,7 +1,7 @@
 .payot-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  color:black;
+  color: black;
   font-size: clamp(1rem, 1vw, 1.5rem);
 }
 .payout-details-form-card {
@@ -19,7 +19,9 @@
   margin: 24px 0 24px;
   letter-spacing: 0.2px;
 }
-
+.dropdown-toggle-btn {
+  display: none;
+}
 .payout-details-form-row {
   margin-bottom: 20px;
 }
@@ -59,10 +61,22 @@
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 500;
   color: #1a1a2e;
+  cursor: pointer;
   background: #fafafa;
   padding: 12px 16px;
   transition: all 0.25s ease;
   box-sizing: border-box;
+}
+
+/* Кастомный select — стрелка как в фильтрах лендинга */
+.payout-details-input[type="select"],
+.payout-details-input:is([name="bank_name"]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23777a8d'%3E%3Cpath d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+  cursor: pointer;
 }
 
 .payout-details-input::placeholder {
@@ -321,7 +335,11 @@
   border: none;
   border-radius: 24px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
+  overflow: visible;
+}
+
+#editPayoutModal .modal-dialog {
+  overflow: visible;
 }
 
 .edit-modal-header {
@@ -543,10 +561,66 @@
 }
 
 /* ==============================================
-   RESPONSIVE
-   ============================================== */
-@media (max-width: 768px) {
+    RESPONSIVE
+    ============================================== */
 
+/* ==============================================
+    CUSTOM DROPDOWN — как в фильтрах лендинга
+    ============================================== */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-container.open .filter-input-dropdown {
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: none;
+}
+
+.dropdown-menu-custom {
+  display: none;
+  position: fixed;
+  z-index: 10001 !important;
+  background: #ffffff;
+  border-radius: 0 0 16px 16px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-menu-custom.active {
+  display: block !important;
+}
+
+.dropdown-option {
+  padding: 12px 16px;
+  font-family: "Verdana", sans-serif;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: #777a8d;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background: #f8f9fa;
+  color: #ff8348;
+}
+
+.dropdown-option.active {
+  color: #ff8348;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
   .payout-details-grid {
     grid-template-columns: 1fr;
   }

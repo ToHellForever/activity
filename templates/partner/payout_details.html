@@ -22,14 +22,26 @@
                     <label class="payout-details-form-label" for="bank_name">
                         Банк <span class="required">*</span>
                     </label>
-                    <select class="payout-details-input" id="bank_name" name="bank_name" required>
-                        <option value="">Выберите банк</option>
-                        <option value="sberbank">Сбербанк</option>
-                        <option value="tinkoff">Тинькофф</option>
-                        <option value="vtb">ВТБ</option>
-                        <option value="alfabank">Альфа-Банк</option>
-                        <option value="other">Другой банк</option>
-                    </select>
+                    <div class="input-with-button dropdown-container">
+                        <input type="text" class="form-control filter-input filter-input-dropdown payout-details-input" 
+                               placeholder="Выберите банк" 
+                               value=""
+                               readonly 
+                               id="bankNameInput"
+                               data-placeholder="Выберите банк">
+                        <button class="input-button dropdown-toggle-btn" type="button" data-target="bankNameDropdown">
+                            <span class="triangle-down"></span>
+                        </button>
+                        <div class="dropdown-menu-custom" id="bankNameDropdown">
+                            <div class="dropdown-option" data-value="">Выберите банк</div>
+                            <div class="dropdown-option" data-value="sberbank">Сбербанк</div>
+                            <div class="dropdown-option" data-value="tinkoff">Тинькофф</div>
+                            <div class="dropdown-option" data-value="vtb">ВТБ</div>
+                            <div class="dropdown-option" data-value="alfabank">Альфа-Банк</div>
+                            <div class="dropdown-option" data-value="other">Другой банк</div>
+                        </div>
+                        <input type="hidden" name="bank_name" id="bankNameHidden" value="">
+                    </div>
                     <div class="payout-details-error" id="bank_name_error">Выберите банк</div>
                 </div>
 
@@ -140,14 +152,26 @@
                         <label class="payout-details-form-label" for="edit_bank_name">
                             Банк <span class="required">*</span>
                         </label>
-                        <select class="payout-details-input" id="edit_bank_name" name="bank_name" required>
-                            <option value="">Выберите банк</option>
-                            <option value="sberbank">Сбербанк</option>
-                            <option value="tinkoff">Тинькофф</option>
-                            <option value="vtb">ВТБ</option>
-                            <option value="alfabank">Альфа-Банк</option>
-                            <option value="other">Другой банк</option>
-                        </select>
+                        <div class="input-with-button dropdown-container">
+                            <input type="text" class="form-control filter-input filter-input-dropdown payout-details-input" 
+                                   placeholder="Выберите банк" 
+                                   value=""
+                                   readonly 
+                                   id="editBankNameInput"
+                                   data-placeholder="Выберите банк">
+                            <button class="input-button dropdown-toggle-btn" type="button" data-target="editBankNameDropdown">
+                                <span class="triangle-down"></span>
+                            </button>
+                            <div class="dropdown-menu-custom" id="editBankNameDropdown">
+                                <div class="dropdown-option" data-value="">Выберите банк</div>
+                                <div class="dropdown-option" data-value="sberbank">Сбербанк</div>
+                                <div class="dropdown-option" data-value="tinkoff">Тинькофф</div>
+                                <div class="dropdown-option" data-value="vtb">ВТБ</div>
+                                <div class="dropdown-option" data-value="alfabank">Альфа-Банк</div>
+                                <div class="dropdown-option" data-value="other">Другой банк</div>
+                            </div>
+                            <input type="hidden" name="bank_name" id="editBankNameHidden" value="">
+                        </div>
                         <div class="payout-details-error" id="edit_bank_name_error">Выберите банк</div>
                     </div>
 
@@ -300,7 +324,8 @@ window.openEditModal = function(id, bank, account, holder, bik) {
 
     // Установить значения
     document.getElementById('edit_detail_id').value = id;
-    document.getElementById('edit_bank_name').value = bank;
+    document.getElementById('editBankNameInput').value = {sberbank:'Сбербанк',tinkoff:'Тинькофф',vtb:'ВТБ',alfabank:'Альфа-Банк',other:'Другой банк'}[bank] || '';
+    document.getElementById('editBankNameHidden').value = bank;
     document.getElementById('edit_account_number').value = account;
     document.getElementById('edit_account_holder').value = holder;
     document.getElementById('edit_bik').value = bik;
@@ -309,12 +334,12 @@ window.openEditModal = function(id, bank, account, holder, bik) {
     const modal = new bootstrap.Modal(document.getElementById('editPayoutModal'));
     modal.show();
     setTimeout(function() {
-        document.getElementById('edit_bank_name').focus();
+        document.getElementById('editBankNameInput').focus();
     }, 200);
 };
 
 // === ИНИЦИАЛИЗАЦИЯ при загрузке ===
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
 
     // Live-валидация при потере фокуса
     ['account_number', 'account_holder', 'bik'].forEach(function(fieldId) {
@@ -342,98 +367,166 @@ $(document).ready(function() {
     });
 
     // === ДОБАВЛЕНИЕ ===
-    $('#addPayoutForm').on('submit', function(e) {
+    document.getElementById('addPayoutForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
         // Валидация
         let valid = true;
-        if (!$('#bank_name').val()) { showError('bank_name', 'Выберите банк'); valid = false; }
+        if (!document.getElementById('bankNameHidden').value) { showError('bank_name', 'Выберите банк'); valid = false; }
         else { clearError('bank_name'); }
         if (!validateField('account_number')) valid = false;
         if (!validateField('account_holder')) valid = false;
         if (!validateField('bik')) valid = false;
         if (!valid) return;
 
-        const $btn = $('#addPayoutBtn');
-        $btn.prop('disabled', true).text('Сохранение...');
+        const btn = document.getElementById('addPayoutBtn');
+        btn.disabled = true;
+        btn.textContent = 'Сохранение...';
 
-        $.ajax({
-            url: '{% url "partner:payout_details" %}',
+        const formData = new URLSearchParams(new FormData(this));
+        fetch('{% url "partner:payout_details" %}', {
             method: 'POST',
-            data: $(this).serialize(),
-            success: function(response) {
-                window.location.reload();
-            },
-            error: function() {
-                showToast('Ошибка при сохранении.', 'error');
-                $btn.prop('disabled', false).text('Сохранить реквизиты');
-            }
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        })
+        .then(function() { window.location.reload(); })
+        .catch(function() {
+            showToast('Ошибка при сохранении.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Сохранить реквизиты';
         });
     });
 
     // === РЕДАКТИРОВАНИЕ ===
-    $('#editPayoutBtn').on('click', function() {
+    document.getElementById('editPayoutBtn').addEventListener('click', function() {
         let valid = true;
-        if (!$('#edit_bank_name').val()) { showError('edit_bank_name', 'Выберите банк'); valid = false; }
+        if (!document.getElementById('editBankNameHidden').value) { showError('edit_bank_name', 'Выберите банк'); valid = false; }
         else { clearError('edit_bank_name'); }
         if (!validateField('edit_account_number')) valid = false;
         if (!validateField('edit_account_holder')) valid = false;
         if (!validateField('edit_bik')) valid = false;
         if (!valid) return;
 
-        const $btn = $('#editPayoutBtn');
-        $btn.prop('disabled', true).text('Сохранение...');
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Сохранение...';
 
-        $.ajax({
-            url: '{% url "partner:payout_details" %}',
+        const formData = new URLSearchParams(new FormData(document.getElementById('editPayoutForm')));
+        fetch('{% url "partner:payout_details" %}', {
             method: 'POST',
-            data: $('#editPayoutForm').serialize(),
-            success: function() {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editPayoutModal'));
-                modal.hide();
-                showToast('Реквизиты обновлены!', 'success');
-                setTimeout(function() { window.location.reload(); }, 800);
-            },
-            error: function(xhr) {
-                const msg = xhr.responseJSON ? xhr.responseJSON.message : 'Ошибка';
-                showToast(msg, 'error');
-                $btn.prop('disabled', false).text('Сохранить');
-            }
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        })
+        .then(function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editPayoutModal'));
+            modal.hide();
+            showToast('Реквизиты обновлены!', 'success');
+            setTimeout(function() { window.location.reload(); }, 800);
+        })
+        .catch(function(xhr) {
+            var msg = 'Ошибка';
+            if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+            showToast(msg, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Сохранить';
         });
     });
 
     // === УДАЛЕНИЕ ===
-    $('#confirmDeleteBtn').on('click', function() {
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
         if (!deleteDetailId) return;
-        $.ajax({
-            url: '{% url "partner:payout_details" %}',
+        fetch('{% url "partner:payout_details" %}', {
             method: 'POST',
-            data: {
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: new URLSearchParams({
                 action: 'delete',
                 detail_id: deleteDetailId,
                 csrfmiddlewaretoken: '{{ csrf_token }}'
-            },
-            success: function() {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-                modal.hide();
-                showToast('Реквизиты удалены.', 'success');
-                setTimeout(function() { window.location.reload(); }, 800);
-            },
-            error: function() {
-                showToast('Ошибка при удалении.', 'error');
-            }
+            })
+        })
+        .then(function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            modal.hide();
+            showToast('Реквизиты удалены.', 'success');
+            setTimeout(function() { window.location.reload(); }, 800);
+        })
+        .catch(function() {
+            showToast('Ошибка при удалении.', 'error');
         });
     });
 
     // === УТИЛИТЫ ===
     function showToast(text, type) {
-        const $toast = $('#payoutToast');
-        $toast.removeClass('success error').addClass(type);
-        $toast.find('.payout-toast-text').text(text);
-        $toast.find('.payout-toast-icon').text(type === 'success' ? '✓' : '✕');
-        $toast.addClass('show');
-        setTimeout(function() { $toast.removeClass('show'); }, 3000);
+        const toast = document.getElementById('payoutToast');
+        toast.className = 'payout-toast ' + type;
+        toast.querySelector('.payout-toast-text').textContent = text;
+        toast.querySelector('.payout-toast-icon').textContent = type === 'success' ? '✓' : '✕';
+        toast.classList.add('show');
+        setTimeout(function() { toast.classList.remove('show'); }, 3000);
     }
+
+    // === Кастомные dropdown для select-ов ===
+    function initDropdown(container) {
+        if (!container) return;
+        const input = container.querySelector('.filter-input-dropdown');
+        const button = container.querySelector('.dropdown-toggle-btn');
+        const dropdown = container.querySelector('.dropdown-menu-custom');
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+        if (!input || !dropdown) return;
+
+        function openDropdown() {
+            const rect = input.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+            dropdown.classList.add('active');
+            container.classList.add('open');
+        }
+
+        function closeDropdown() {
+            dropdown.classList.remove('active');
+            container.classList.remove('open');
+        }
+
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.classList.contains('active')) closeDropdown();
+            else openDropdown();
+        });
+
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.classList.contains('active')) closeDropdown();
+            else openDropdown();
+        });
+
+        dropdown.querySelectorAll('.dropdown-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const text = this.textContent.trim();
+                input.value = text;
+                if (hiddenInput) hiddenInput.value = value;
+
+                dropdown.querySelectorAll('.dropdown-option').forEach(function(o) {
+                    o.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                closeDropdown();
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!container.contains(e.target)) {
+                closeDropdown();
+            }
+        });
+    }
+
+    // Инициализация всех dropdown-ов
+    document.querySelectorAll('.dropdown-container').forEach(function(container) {
+        initDropdown(container);
+    });
 });
 </script>
 {% endblock %}
