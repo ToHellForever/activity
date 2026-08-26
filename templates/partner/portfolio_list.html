@@ -9,7 +9,7 @@
 <div class="partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
-        <h1>Портфолио</h1>
+        <h1 class='portfolio-title'>Портфолио</h1>
         {% if portfolio_items %}
         <div class="portfolio-grid">
             {% for item in portfolio_items %}
