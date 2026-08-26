@@ -1,0 +1,20 @@
+/* =========================================
+   STICKY FOOTER (прижатие футера к низу)
+   ========================================= */
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main.container-fluid {
+  flex: 1 0 auto;
+}
+
+footer.footer-header {
+  flex-shrink: 0;
+}

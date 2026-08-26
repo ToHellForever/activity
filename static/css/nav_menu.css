@@ -198,13 +198,14 @@
   }
 
   .mobile-icons {
-    display: flex;
+    display: flex !important;
     align-items: center;
-    gap: 10px; /* Пробел между иконками */
+    gap: 10px;
+    margin-left: auto;
   }
 
   .burger-menu-icon {
-    display: flex;
+    display: flex !important;
   }
 }
 
@@ -219,7 +220,7 @@
   align-items: center;
   width: 100%;
   justify-content: space-evenly;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
 }
 .nav-link {
   text-decoration: none;

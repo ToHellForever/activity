@@ -47,9 +47,7 @@ font-family: Montserrat;
 font-weight: 500;
 font-style: Medium;
 font-size: 13px;
-leading-trim: NONE;
-line-height: 100%;
-letter-spacing: 0%;
+white-space: nowrap;
 text-transform: uppercase;
 color: rgba(154, 154, 154, 1);
 }

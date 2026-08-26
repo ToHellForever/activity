@@ -1,99 +1,443 @@
 /* Стили для футера */
 
 .footer-header {
-  display: flex;
-  align-items: center;
-  color: black;
-  padding: 15px 40px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  padding: 24px 40px;
   font-family: "Montserrat", sans-serif;
-  width: 100%;
-  position: relative;
-  gap: 20px;
+  color: #333;
 }
 
-.footer-header .nav-links-container {
+.footer-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+/* ---------- Логотип ---------- */
+.footer-logo a {
+  text-decoration: none;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  flex-shrink: 0;
+}
+
+.footer-logo span {
+  display: block;
+}
+
+/* ---------- Навигация ---------- */
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  align-items: center;
+}
+
+.footer-nav-link {
+  text-decoration: none;
+  color: #333;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.footer-nav-link:hover {
+  color: #0d6efd;
+}
+
+/* ---------- Контакты ---------- */
+.footer-contacts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.footer-city {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.footer-social-icon {
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+/* ---------- Нижняя строка ---------- */
+.footer-bottom {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  max-width: 1280px;
+  margin-left: auto;
   margin-right: auto;
 }
 
-.footer-header .nav-links {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  justify-content: space-between;
-}
-
-.footer-header .nav-links:last-child {
-  justify-content: flex-start;
-  gap: 20px;
-  width: auto;
-}
-
-.footer-header .nav-links:last-child .nav-link {
-  color: rgba(119, 122, 141, 1);
-}
-
-.footer-header .nav-link {
+.footer-bottom-link {
   text-decoration: none;
-  font-weight: 500;
-  font-size: 1rem;
-  margin-right: 2.5rem;
+  color: #777a8d;
+  font-size: 0.8rem;
+  font-weight: 400;
   white-space: nowrap;
+  transition: color 0.2s;
 }
 
-.footer-header .nav-links:first-child {
-  justify-content: space-between;
-  align-items: center;
+.footer-bottom-link:hover {
+  color: #333;
 }
 
-.footer-header .auth-block {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  margin-left: auto;
-}
-
-.footer-header .auth-link-container {
-  display: flex;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: 500;
-  white-space: nowrap;
-  padding: 5px 10px;
-}
-
-.footer-header .contacts-links {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.footer-header .contact-icon {
-  width: 1.5rem;
-  height: auto;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 1024px) {
+/* ---------- Планшет ---------- */
+@media (max-width: 992px) {
   .footer-header {
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 10px;
+    padding: 20px 24px;
   }
 
-  .footer-header .nav-links-container {
-    width: 100%;
-    order: 2;
+  .footer-inner {
+    gap: 20px;
   }
 
-  .footer-header .auth-block {
+  .footer-nav {
+    gap: 6px 14px;
+  }
+
+  .footer-nav-link {
+    font-size: 0.8rem;
+  }
+}
+
+/* ---------- Мобильные ---------- */
+@media (max-width: 640px) {
+  .footer-header {
+    padding: 16px 16px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .footer-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .footer-nav-link {
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+
+  .footer-contacts {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    align-self: flex-start;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 14px;
+  }
+
+  .footer-bottom-link {
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Логотип */
+.footer-logo a {
+  text-decoration: none;
+  color: black;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+/* Навигация */
+.footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.footer-nav-link {
+  text-decoration: none;
+  color: black;
+  font-weight: 500;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.footer-nav-link:hover {
+  background: #e9ecef;
+}
+
+/* Контакты */
+.footer-contacts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.footer-city {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.footer-social-icon {
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.footer-phone-icon {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Нижняя строка */
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+  flex-wrap: wrap;
+}
+
+.footer-bottom-link {
+  text-decoration: none;
+  color: #777a8d;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.footer-bottom-link:hover {
+  color: #333;
+}
+
+/* Бургер-иконка футера (отдельные классы) */
+.footer-burger-menu-icon {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  cursor: pointer;
+  position: absolute;
+  top: 24px;
+  right: 40px;
+  z-index: 2;
+}
+
+.footer-burger-line {
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background-color: #333;
+}
+
+/* Бургер-меню (фуллскрин) */
+.footer-burger-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  z-index: 11000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.footer-burger-menu.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.footer-burger-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.close-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background-color: #333;
+  left: 0;
+}
+
+.close-line.first {
+  transform: rotate(45deg);
+}
+
+.close-line.second {
+  transform: rotate(-45deg);
+}
+
+.footer-burger-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 500px;
+  width: 100%;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.footer-burger-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.footer-burger-link {
+  text-decoration: none;
+  color: black;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.footer-burger-contacts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.footer-burger-socials {
+  display: flex;
+  gap: 16px;
+}
+
+.footer-burger-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+  margin-top: auto;
+}
+
+/* ===== Адаптивность ===== */
+
+/* Планшеты */
+@media (max-width: 1100px) {
+  .footer-nav-link {
+    font-size: 0.8rem;
+    padding: 4px 5px;
+  }
+}
+
+/* Мобильные */
+@media (max-width: 768px) {
+  .footer-header {
+    padding: 16px 20px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .footer-logo a {
+    font-size: 1rem;
+  }
+
+  .footer-nav {
+    display: none;
+  }
+
+  .footer-contacts {
     width: 100%;
-    order: 3;
-    margin-left: 0;
-    margin-top: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .footer-burger-menu-icon {
+    display: flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-inner {
+    gap: 8px;
+  }
+
+  .footer-nav-link {
+    font-size: 0.75rem;
+    padding: 4px 4px;
   }
 }

@@ -1,41 +1,44 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/footer.css' %}">
 
-<div class="landing-header footer-header">
-    <!-- Логотип (всегда слева, в одну строку) -->
-<div class="logo">
-    <a href="{% url 'landing_page' %}" style="text-decoration: none; color: inherit;">
-    <span>БИЗНЕС</span>
-    <span>АФИША</span>
-    </a>
-</div>
-    <div class="nav-links-container desktop-only">
-        <div class="nav-links">
-            <a href="#" class="nav-link">Главная</a>
-            <a href="#" class="nav-link">Каталог мероприятий</a>
-            <a href="#" class="nav-link">Каталог залов</a>
-            <a href="#" class="nav-link">Для организаторов</a>
-            <a href="#" class="nav-link">О платформе</a>
-            <a href="#" class="nav-link">FAQ</a>
-            <a href="#" class="nav-link">Контакты</a>
-            <div class="auth-block">
-                <div class="auth-link-container">
-                    Новосибирск
-                </div>
-                <div class="contacts-links">
-                    <a href="https://t.me/" target="_blank" title="Telegram">
-                        <img src="/media/icon/tg.png" alt="TG" class="nav-icon-1">
-                    </a>
-                    <a href="tel:" title="Телефон">
-                        <img src="/media/icon/phone.png" alt="Phone" class="nav-icon-2">
-                    </a>
-                </div>
+<footer class="footer-header">
+    <div class="footer-inner">
+        <!-- Логотип -->
+        <div class="footer-logo">
+            <a href="{% url 'landing_page' %}">
+                <img src="/media/icon/logo.svg" alt="">
+            </a>
+        </div>
+
+        <!-- Навигация -->
+        <nav class="footer-nav">
+            <a href="#" class="footer-nav-link">Главная</a>
+            <a href="#" class="footer-nav-link">Каталог мероприятий</a>
+            <a href="#" class="footer-nav-link">Каталог залов</a>
+            <a href="#" class="footer-nav-link">Для организаторов</a>
+            <a href="#" class="footer-nav-link">О платформе</a>
+            <a href="#" class="footer-nav-link">FAQ</a>
+            <a href="#" class="footer-nav-link">Контакты</a>
+        </nav>
+
+        <!-- Контакты -->
+        <div class="footer-contacts">
+            <span class="footer-city">Новосибирск</span>
+            <div class="footer-socials">
+                <a href="https://t.me/" target="_blank" title="Telegram">
+                    <img src="/media/icon/tg.png" alt="TG" class="footer-social-icon">
+                </a>
+                <a href="tel:" title="Телефон">
+                    <img src="/media/icon/phone.png" alt="Phone" class="footer-social-icon footer-phone-icon">
+                </a>
             </div>
         </div>
-        <div class="nav-links">
-            <a href="#" class="nav-link">Политика конфиденциальности</a>
-            <a href="#" class="nav-link">Условия использования</a>
-            <a href="#" class="nav-link">Помощь</a>
-        </div>
     </div>
-</div>
+
+    <!-- Нижняя строка -->
+    <div class="footer-bottom">
+        <a href="#" class="footer-bottom-link">Политика конфиденциальности</a>
+        <a href="#" class="footer-bottom-link">Условия использования</a>
+        <a href="#" class="footer-bottom-link">Помощь</a>
+    </div>
+</footer>
