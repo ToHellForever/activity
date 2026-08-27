@@ -162,8 +162,8 @@ def process_video_task(
             return f"{model_name} {instance_id} does not exist"
 
         # Устанавливаем статус в processing
-        instance.video_processing_status = 'processing'
-        instance.save(update_fields=['video_processing_status'])
+        instance.video_business_card_processing_status = 'processing'
+        instance.save(update_fields=['video_business_card_processing_status'])
         logger.info(f"CELERY TASK: Set status to processing for {model_name} {instance_id}")
 
         video_field = getattr(instance, video_field_name)
@@ -291,8 +291,8 @@ def process_video_task(
         # 4. Обновляем хэш и статус обработки видео
         new_hash = instance._get_video_hash(getattr(instance, video_field_name))
         setattr(instance, hash_field_name, new_hash)
-        setattr(instance, 'video_processing_status', 'completed')
-        instance.save(update_fields=[hash_field_name, 'video_processing_status'])
+        setattr(instance, 'video_business_card_processing_status', 'completed')
+        instance.save(update_fields=[hash_field_name, 'video_business_card_processing_status'])
         logger.info(f"CELERY TASK: Updated hash to {new_hash} and status to completed")
 
         # 5. Удаляем временные локальные файлы (сжатое и с водяным знаком)
@@ -311,8 +311,8 @@ def process_video_task(
         logger.error(f"Исключение при обработке видео: {str(e)}", exc_info=True)
         # Устанавливаем статус failed при ошибке
         try:
-            instance.video_processing_status = 'failed'
-            instance.save(update_fields=['video_processing_status'])
+            instance.video_business_card_processing_status = 'failed'
+            instance.save(update_fields=['video_business_card_processing_status'])
             logger.error(f"CELERY TASK: Set status to failed for {model_name} {instance_id}")
         except:
             pass

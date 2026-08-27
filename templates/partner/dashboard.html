@@ -302,10 +302,28 @@
                         </div>
                         <div class="video-player-wrapper">
                             {% if partner_profile.video_business_card %}
-                            <video controls preload="metadata" poster="">
-                                <source src="{{ partner_profile.video_business_card.url }}" type="video/mp4">
-                                Ваш браузер не поддерживает видео.
-                            </video>
+                                {% if partner_profile.video_business_card_processing_status == 'processing' %}
+                                <div class="video-player-placeholder video-processing">
+                                    <svg class="processing-spinner" viewBox="0 0 50 50">
+                                        <circle cx="25" cy="25" r="20" fill="none" stroke="#ccc" stroke-width="4"/>
+                                        <circle cx="25" cy="25" r="20" fill="none" stroke="#4a7cf7" stroke-width="4" stroke-dasharray="90" stroke-dashoffset="30" stroke-linecap="round">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/>
+                                        </circle>
+                                    </svg>
+                                    <div class="processing-text">Видео обрабатывается...</div>
+                                </div>
+                                {% elif partner_profile.video_business_card_processing_status == 'failed' %}
+                                <div class="video-player-placeholder video-error">
+                                    <div class="error-icon">⚠️</div>
+                                    <div class="error-text">Ошибка обработки видео</div>
+                                    <div class="error-hint">Загрузите видео-визитку повторно</div>
+                                </div>
+                                {% else %}
+                                <video controls preload="metadata" poster="">
+                                    <source src="{{ partner_profile.video_business_card.url }}" type="video/mp4">
+                                    Ваш браузер не поддерживает видео.
+                                </video>
+                                {% endif %}
                             {% else %}
                             <div class="video-player-placeholder">
                                 <div class="play-icon">

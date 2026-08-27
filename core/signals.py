@@ -70,11 +70,21 @@ def process_event_video(sender, instance, **kwargs):
 def process_video_business_card(sender, instance, **kwargs):
     logger.info(f"SIGNAL: process_video_business_card triggered for PartnerProfile {instance.id}")
     
-    # Проверяем, не вызвано ли это обновлением хэша после обработки
+    # Проверяем, не вызвано ли это обновлением хэша или статуса после обработки
     update_fields = kwargs.get('update_fields', None)
-    if update_fields and 'processed_video_business_card_hash' in update_fields:
-        logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_business_card_hash for CustomUser {instance.id}")
-        return
+    if update_fields:
+        if 'processed_video_business_card_hash' in update_fields:
+            logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_business_card_hash for PartnerProfile {instance.id}")
+            return
+        if 'video_business_card_processing_status' in update_fields:
+            logger.info(f"SIGNAL: Skipping - update_fields contains video_business_card_processing_status for PartnerProfile {instance.id}")
+            return
+        if 'video_business_card' in update_fields:
+            # Если статус уже processing или completed — не запускаем повторно
+            status = instance.video_business_card_processing_status
+            if status in ('processing', 'completed'):
+                logger.info(f"SIGNAL: Skipping - status is '{status}' for PartnerProfile {instance.id}")
+                return
 
     if not instance.video_business_card:
         return
