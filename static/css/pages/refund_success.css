@@ -3,11 +3,9 @@
    ============================================ */
 
 .refund-success-wrapper {
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
   background: #f5f5f5;
 }
 
@@ -16,7 +14,8 @@
   width: 100%;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+
   background: #fff;
 }
 
@@ -46,7 +45,8 @@
 }
 
 .refund-success-header h2 {
-  font-size: 24px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(0.9rem, 1vw, 1.1rem);
   font-weight: 700;
   margin: 0 0 8px;
   color: #fff;
@@ -58,23 +58,25 @@
 }
 
 .refund-success-message {
-  font-size: 15px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #555;
-  line-height: 1.6;
+  line-height: 1.4;
   margin: 0 0 24px;
 }
 
 /* ===== Кнопка ===== */
 .refund-success-btn {
+  font-family: 'Montserrat', sans-serif;
   display: block;
   width: 100%;
   text-align: center;
-  padding: 16px 24px;
+  padding: 10px 24px;
   background: #FF8348;
   color: #fff;
   border: none;
   border-radius: 14px;
-  font-size: 16px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s ease;

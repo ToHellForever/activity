@@ -89,11 +89,6 @@
                 class="{% if request.resolver_match.url_name == 'finances' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <img src="/media/icon/finances.svg" alt="" class="sidebar-icon"> Финансы и выплаты
                 </a>
-                {% comment %} мои площадки {% endcomment %}
-                <a href="#"
-                class="{% if request.resolver_match.url_name == 'partner_places' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
-                    <img src="/media/icon/S.png" alt="" class="sidebar-icon"> Мои площадки
-                </a>
                 {% comment %} поддержка {% endcomment %}
                 <a href="{% url 'support_dashboard' %}"
                 class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import render
 from core.views import (
     landing_page,
     login_view,
@@ -26,6 +27,18 @@ from partner_app.views import (
     scanner_scan,
     scanner_end_shift,
 )
+
+
+def _dev_refund_error(request):
+    return render(request, "refund_error.html", {"error": "Произошла ошибка при обработке возврата. Попробуйте ещё раз или свяжитесь с нашей службой поддержки."})
+
+
+def _dev_refund_success(request):
+    return render(request, "refund_success.html", {})
+
+
+def _dev_refund_success_free(request):
+    return render(request, "refund_success_free.html", {})
 
 app_name = "venues"
 
@@ -64,6 +77,10 @@ urlpatterns = [
     path("scanner/<str:access_code>/", scanner_view, name="scanner_view"),
     path("scanner/<str:access_code>/scan/", scanner_scan, name="scanner_scan"),
     path("scanner/<str:access_code>/end-shift/", scanner_end_shift, name="scanner_end_shift"),
+    # DEV: локальные страницы для просмотра стилей
+    path("dev/refund-error/", _dev_refund_error, name="dev_refund_error"),
+    path("dev/refund-success/", _dev_refund_success, name="dev_refund_success"),
+    path("dev/refund-success-free/", _dev_refund_success_free, name="dev_refund_success_free"),
 ]
 
 
