@@ -209,6 +209,7 @@
   border-right: 6px solid transparent;
   border-top: 12px solid white;
   margin-top: 2px;
+  display: none;
 }
 
 /* Стили для формы фильтров */

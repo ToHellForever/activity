@@ -329,3 +329,7 @@
 .dropdown-menu-custom {
   pointer-events: auto; /* Возвращаем клики для dropdown */
 }
+
+.triangle-down {
+  display: none;
+}

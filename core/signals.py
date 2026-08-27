@@ -22,15 +22,30 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
 def process_event_video(sender, instance, **kwargs):
     logger.info(f"SIGNAL: process_event_video triggered for Event {instance.id}")
     
-    # Проверяем, не вызвано ли это обновлением хэша после обработки
-    # Если обновляются только поля хэша, пропускаем сигнал
+    # Проверяем, не вызвано ли это обновлением хэша или статуса после обработки
     update_fields = kwargs.get('update_fields', None)
-    if update_fields and 'processed_video_url_hash' in update_fields:
-        logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_url_hash for Event {instance.id}")
-        return
+    if update_fields:
+        if 'processed_video_url_hash' in update_fields:
+            logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_url_hash for Event {instance.id}")
+            return
+        if 'video_processing_status' in update_fields:
+            logger.info(f"SIGNAL: Skipping - update_fields contains video_processing_status for Event {instance.id}")
+            return
+        if 'video_url' in update_fields:
+            # Если статус уже processing или completed — таск уже работает или завершён
+            status = instance.video_processing_status
+            if status in ('processing', 'completed', 'failed'):
+                logger.info(f"SIGNAL: Skipping - status is '{status}' for Event {instance.id}")
+                return
 
     if not instance.video_url:
         logger.info(f"SIGNAL: No video_url for Event {instance.id}")
+        return
+
+    # Если статус processing — таск уже работает, пропускаем
+    status = instance.video_processing_status
+    if status == 'processing':
+        logger.info(f"SIGNAL: Skipping - status is '{status}' for Event {instance.id}")
         return
 
     # Получаем текущий хэш видео для логирования
@@ -62,7 +77,8 @@ def process_event_video(sender, instance, **kwargs):
             model_name='Event',
             instance_id=instance.id,
             video_field_name='video_url',
-            hash_field_name='processed_video_url_hash'
+            hash_field_name='processed_video_url_hash',
+            status_field_name='video_processing_status'
         )
         logger.info(f"SIGNAL: Task sent with ID: {result.id}")
         
@@ -96,7 +112,8 @@ def process_video_business_card(sender, instance, **kwargs):
             model_name='PartnerProfile',
             instance_id=instance.id,
             video_field_name='video_business_card',
-            hash_field_name='processed_video_business_card_hash'
+            hash_field_name='processed_video_business_card_hash',
+            status_field_name='video_business_card_processing_status'
         )
     else:
         logger.info(f"SIGNAL: Video business card already processed for PartnerProfile {instance.id}, skipping")

@@ -6,6 +6,7 @@ import logging
 from django.apps import apps
 import os
 import time
+import hashlib
 from django.utils import timezone
 from django.conf import settings
 from core.models import Event, Ticket
@@ -125,7 +126,7 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
 
 @shared_task(bind=True)
 def process_video_task(
-    self, model_name, instance_id, video_field_name, hash_field_name
+    self, model_name, instance_id, video_field_name, hash_field_name, status_field_name=None
 ):
     """
     Асинхронная обработка видео:
@@ -134,7 +135,14 @@ def process_video_task(
     3. Загружает в Яндекс Cloud (если включен)
     4. Удаляет временный локальный файл
     """
-    logger.info(f"CELERY TASK STARTED: process_video_task for {model_name} {instance_id}")
+    # Определяем поле статуса по умолчанию, если не передано
+    if not status_field_name:
+        if model_name == 'PartnerProfile':
+            status_field_name = 'video_business_card_processing_status'
+        else:
+            status_field_name = 'video_processing_status'
+
+    logger.info(f"CELERY TASK STARTED: process_video_task for {model_name} {instance_id}, status_field={status_field_name}")
     try:
         # Разбираем model_name в формате "app_label.model_name"
         if isinstance(model_name, str) and "." in model_name:
@@ -162,8 +170,8 @@ def process_video_task(
             return f"{model_name} {instance_id} does not exist"
 
         # Устанавливаем статус в processing
-        instance.video_business_card_processing_status = 'processing'
-        instance.save(update_fields=['video_business_card_processing_status'])
+        setattr(instance, status_field_name, 'processing')
+        instance.save(update_fields=[status_field_name])
         logger.info(f"CELERY TASK: Set status to processing for {model_name} {instance_id}")
 
         video_field = getattr(instance, video_field_name)
@@ -179,6 +187,9 @@ def process_video_task(
 
         if not os.path.exists(video_path):
             logger.error(f"Файл видео не найден: {video_path}")
+            setattr(instance, status_field_name, 'failed')
+            instance.save(update_fields=[status_field_name])
+            logger.error(f"CELERY TASK: Set status to failed - file not found: {video_path}")
             return f"Файл не найден: {video_path}"
 
         # Проверяем размер файла
@@ -289,10 +300,16 @@ def process_video_task(
                 return f"Ошибка при замене файла: {e}"
 
         # 4. Обновляем хэш и статус обработки видео
-        new_hash = instance._get_video_hash(getattr(instance, video_field_name))
+        # Хэш генерируем из имени облачного файла (поскольку _get_video_hash не работает с облаком)
+        cloud_name = getattr(instance, video_field_name)
+        if cloud_name:
+            # Используем имя облачного файла как хэш (или MD5 от имени)
+            new_hash = hashlib.md5(str(cloud_name).encode()).hexdigest()
+        else:
+            new_hash = None
         setattr(instance, hash_field_name, new_hash)
-        setattr(instance, 'video_business_card_processing_status', 'completed')
-        instance.save(update_fields=[hash_field_name, 'video_business_card_processing_status'])
+        setattr(instance, status_field_name, 'completed')
+        instance.save(update_fields=[hash_field_name, status_field_name])
         logger.info(f"CELERY TASK: Updated hash to {new_hash} and status to completed")
 
         # 5. Удаляем временные локальные файлы (сжатое и с водяным знаком)
@@ -311,8 +328,8 @@ def process_video_task(
         logger.error(f"Исключение при обработке видео: {str(e)}", exc_info=True)
         # Устанавливаем статус failed при ошибке
         try:
-            instance.video_business_card_processing_status = 'failed'
-            instance.save(update_fields=['video_business_card_processing_status'])
+            setattr(instance, status_field_name, 'failed')
+            instance.save(update_fields=[status_field_name])
             logger.error(f"CELERY TASK: Set status to failed for {model_name} {instance_id}")
         except:
             pass
