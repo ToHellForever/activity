@@ -70,8 +70,6 @@
   background: #fff;
   border-radius: 16px;
   overflow: hidden;
-  height: calc(100vh - 220px);
-  max-height: 800px;
   display: flex;
   flex-direction: column;
 }
@@ -162,6 +160,7 @@
 /* --- История сообщений --- */
 .chat-messages {
   flex: 1;
+  max-height: calc(100vh - 370px);
   overflow-y: auto;
   padding: 16px 22px;
   display: flex;
@@ -341,6 +340,7 @@
   flex-shrink: 0;
   padding: 14px 22px;
   border-top: 1px solid #ececec;
+  background: #fff;
 }
 
 .chat-input-form {
@@ -414,16 +414,18 @@
   font-size: 14px;
   font-family: "Montserrat", sans-serif;
 }
-
 /* ============================================
    АДАПТИВ
    ============================================ */
 @media (max-width: 768px) {
+  .chat-message-bubble {
+    padding: 8px 10px;
+  }
   .chat-header-back {
     display: none;
   }
   .chat-container {
-    height: calc(100vh - 80px);
+    margin-bottom: 0;
   }
 
   .chat-message {
@@ -436,9 +438,13 @@
 
   .chat-messages {
     padding: 5px;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .chat-input-area {
     padding: 12px 16px;
+    flex-shrink: 0;
   }
 }
