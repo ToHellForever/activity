@@ -222,15 +222,17 @@
 }
 
 #activeEventsCarousel {
-  height: 100% !important;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 .carousel-inner {
-  height: 100% !important;
+  height: 100%;
 }
 
 .carousel-item {
-  height: 100% !important;
+  height: 100%;
 }
 
 .carousel-item img {
@@ -626,9 +628,31 @@
     max-width: 100%;
     margin-bottom: 10px;
   }
-  /* Скрываем карусель на мобильной версии */
+  /* Показываем карусель на мобильной версии, на 100% ширины */
   .events-carousel-wrapper {
-    display: none;
+    display: block;
+    width: 100% !important;
+    height: 400px;
+    order: -1;
+  }
+
+  .landing-block > .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .landing-block > .row > .col-8 {
+    order: 1;
+    width: 100% !important;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .landing-block > .row > .col-4 {
+    order: -1;
+    width: 100% !important;
+    max-width: 100%;
+    flex: 0 0 100%;
   }
 
   .arrow-right {
