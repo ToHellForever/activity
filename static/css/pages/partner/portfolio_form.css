@@ -1,25 +1,27 @@
+/* ===== Единая адаптивная сетка фото ===== */
+/* 6 колонок на десктопе: максимум 5 фото + кнопка добавления в одну строку */
 .existing-photos-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
-  flex-wrap: wrap;
 }
 .existing-photo-item {
   position: relative;
+  aspect-ratio: 180 / 130;
+  border-radius: 6px;
+  overflow: hidden;
 }
 .existing-photo-item .photo-container {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  border-radius: 8px;
 }
 .existing-photo-item .portfolio-photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-}
-.existing-photo-item {
-  width: 180px;
-  height: 130px;
-  position: relative;
-  border-radius: 20px;
 }
 .raphael_photo {
   background: rgba(217, 217, 217, 1);
@@ -35,15 +37,16 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
+/* Превью новых фото — прозрачный контейнер, элементы участвуют в общей сетке */
 .photo-preview-container {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+  display: contents;
 }
 .photo-preview-item {
-  width: 120px;
   position: relative;
+  aspect-ratio: 180 / 130;
+  border-radius: 8px;
+  overflow: hidden;
 }
 .photo-preview-item img {
   width: 100%;
@@ -62,14 +65,13 @@
   cursor: pointer;
 }
 
-/* ===== Кнопка добавления ещё фото (справа от последнего фото) ===== */
+/* ===== Кнопка добавления ещё фото (элемент сетки, справа от последнего фото) ===== */
 .portfolio-add-photo-placeholder {
-  width: 180px;
-  height: 130px;
-  border-radius: 20px;
+  width: 100%;
+  aspect-ratio: 180 / 130;
+  border-radius: 6px;
   background: rgba(217, 217, 217, 1);
   cursor: pointer;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,7 +82,7 @@
   background: #d0d0d0;
 }
 .portfolio-add-photo-placeholder .plus-icon {
-  font-size: 40px;
+  font-size: clamp(24px, 3vw, 40px);
   color: white;
   font-weight: 300;
   line-height: 1;
@@ -172,10 +174,16 @@ select:focus {
     flex: 0 0 49%;
     max-width: 49%;
   }
-  .existing-photo-item {
-    width: 150px;
+  /* Планшет/мобилка 500–768px: 3 фото в строку */
+  .existing-photos-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
-  .portfolio-add-photo-placeholder {
-    width: 150px;
+}
+
+/* Мобилка ≤500px: 2 фото в строку (лимит 5 фото + кнопка) */
+@media (max-width: 500px) {
+  .existing-photos-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

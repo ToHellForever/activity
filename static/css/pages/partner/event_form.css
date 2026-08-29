@@ -427,14 +427,17 @@
   box-shadow: none;
 }
 
-/* Photo gallery — compact container style */
+/* Photo gallery — адаптивная grid-сетка (как в портфолио) */
+/* Число колонок задаётся через --gallery-cols (JS: min(max_photos + 1, 6)),
+   чтобы максимум фото + кнопка добавления занимали ровно одну строку */
 .photo-gallery {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--gallery-cols, 6), 1fr);
+  gap: 8px;
   margin-top: 12px;
   background: #f0f0f0;
   padding: 0;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 /* Когда есть фото — убираем фон */
@@ -443,20 +446,17 @@
 }
 .photo-gallery-item {
   position: relative;
-  width: 150px;
-  height: 150px;
+  aspect-ratio: 1 / 1;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  flex-shrink: 0;
-  margin-right: 8px;
-  margin-bottom: 8px;
   display: flex;
   flex-direction: column;
 }
 .photo-gallery-item img {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   object-fit: cover;
   display: block;
 }
@@ -507,26 +507,23 @@
   display: none;
 }
 
-/* ===== Add photo placeholder (серый квадрат с плюсом) ===== */
+/* ===== Add photo placeholder (серый квадрат с плюсом — элемент сетки) ===== */
 .add-photo-placeholder {
-  width: 150px;
-  height: 150px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 8px;
   background: rgba(217, 217, 217, 1);
   cursor: pointer;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
-  margin-right: 8px;
-  margin-bottom: 8px;
 }
 .add-photo-placeholder:hover {
   background: #ddd;
 }
 .add-photo-placeholder .plus-icon {
-  font-size: 40px;
+  font-size: clamp(24px, 3vw, 40px);
   color: white;
   font-weight: 300;
   line-height: 1;
@@ -951,6 +948,11 @@
     margin-left: 0px;
     margin-right: 0px;
   }
+  /* Планшет/мобилка 500–768px: 3 фото в строку */
+  .photo-gallery {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
   .btn-venue-list {
     display: block;
     width: 100%;
@@ -1251,4 +1253,11 @@ input[type="number"] {
 .video-delete-btn:hover {
   color: #f44336;
   background: #fff3f3;
+}
+
+/* ===== Мобилка ≤500px: 2 фото в строку ===== */
+@media (max-width: 500px) {
+  .photo-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

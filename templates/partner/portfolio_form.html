@@ -33,13 +33,13 @@
                 <div class="portfolio-form-section">
                     <label class="portfolio-form-label">ФОТОГРАФИИ</label>
 
-                    <!-- Существующие фото (для редактирования) -->
-                    <div class="existing-photos-grid" style="display: flex; gap: 10px; margin-bottom: 0px; flex-wrap: wrap;">
+                    <!-- Единая сетка фото: существующие + новые превью + кнопка добавления -->
+                    <div class="existing-photos-grid" id="portfolioPhotosGrid">
                         {% if is_edit and portfolio_item and portfolio_item.images.exists %}
                             {% for photo in portfolio_item.images.all %}
                             <div class="existing-photo-item" data-image-id="{{ photo.id }}">
-                                <div class="photo-container" style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
-                                    <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div class="photo-container">
+                                    <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
                                 </div>
                                 <button type="button" class="photo-delete-btn photo-remove" onclick="markPhotoForDelete(this)" title="Удалить фото">
                                     ✕
@@ -47,6 +47,15 @@
                             </div>
                             {% endfor %}
                         {% endif %}
+
+                        <!-- Контейнер для отображения превью новых фото (display:contents — элементы участвуют в сетке) -->
+                        <div id="photoPreview" class="photo-preview-container"></div>
+
+                        <!-- Кнопка добавления ещё фото (справа от последнего фото, если есть хотя бы 1 фото) -->
+                        <div class="portfolio-add-photo-placeholder" id="portfolioAddPhotoBtn" title="Добавить фото"
+                             style="display:none;" onclick="document.getElementById('id_images').click();">
+                            <span class="plus-icon">+</span>
+                        </div>
                     </div>
 
                     <!-- Загрузка новых фото -->
@@ -54,15 +63,6 @@
                         <!-- Иконка камеры -->
                         <div class="photo-upload-placeholder" id="photoUploadPlaceholder" onclick="document.getElementById('id_images').click();">
                             <img src="/media/icon/raphael_photo.svg" alt="Загрузить фото" class='raphael_photo' style="cursor: pointer;">
-                        </div>
-
-                        <!-- Контейнер для отображения превью новых фото -->
-                        <div id="photoPreview" class="photo-preview-container"></div>
-
-                        <!-- Кнопка добавления ещё фото (справа от последнего фото, если есть хотя бы 1 фото) -->
-                        <div class="portfolio-add-photo-placeholder" id="portfolioAddPhotoBtn" title="Добавить фото"
-                             style="display:none;" onclick="document.getElementById('id_images').click();">
-                            <span class="plus-icon">+</span>
                         </div>
 
                         <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">

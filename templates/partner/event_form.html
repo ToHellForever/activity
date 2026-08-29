@@ -663,6 +663,16 @@
     const TICKET_PALETTE = ['#4A7CF7','#FF6B6B','#51CF66','#FFD43B','rgba(255, 131, 72, 1)','#845EF7','#20C997','#F06595','#339AF0','#F783AC'];
     let photoMaxCount = {{ form.current_package.max_photos|default:10 }};
 
+    // Адаптивная сетка галереи: колонок = min(лимит фото + кнопка, 6),
+    // чтобы максимум фото + кнопка добавления занимали ровно одну строку без пустот
+    (function initGalleryColumns() {
+        const gallery = document.getElementById('photo-gallery');
+        if (gallery) {
+            const cols = Math.min(photoMaxCount + 1, 6);
+            gallery.style.setProperty('--gallery-cols', cols);
+        }
+    })();
+
     // Массив для хранения новых выбранных файлов фото
     let newPhotoFiles = [];
 
@@ -758,6 +768,7 @@
             gallery = document.createElement('div');
             gallery.className = 'photo-gallery';
             gallery.id = 'photo-gallery';
+            gallery.style.setProperty('--gallery-cols', Math.min(photoMaxCount + 1, 6));
             const placeholder = document.getElementById('photo-upload-placeholder');
             if (placeholder) placeholder.style.display = 'none';
             container.insertBefore(gallery, placeholder);
