@@ -251,35 +251,72 @@ document.addEventListener('DOMContentLoaded', function() {
     var photoInput = document.getElementById('id_images');
     var photoPreview = document.getElementById('photoPreview');
 
+    // Массив накопленных (ещё не сохранённых) новых фото — чтобы повторный выбор добавлял, а не заменял
+    window.selectedPortfolioPhotos = [];
+
+    // Синхронизация массива файлов с input file (чтобы на сервер ушло всё накопленное)
+    window.syncPortfolioPhotosToInput = function() {
+        if (!photoInput) return;
+        var dt = new DataTransfer();
+        window.selectedPortfolioPhotos.forEach(function(file) {
+            if (file) dt.items.add(file);
+        });
+        photoInput.files = dt.files;
+    };
+
+    // Перерисовка превью из массива накопленных фото
+    window.renderPortfolioPreviews = function() {
+        if (!photoPreview) return;
+        photoPreview.innerHTML = '';
+        window.selectedPortfolioPhotos.forEach(function(file, index) {
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var div = document.createElement('div');
+                div.className = 'photo-preview-item';
+                div.setAttribute('data-index', index);
+                div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
+                    '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
+                // Вставляем превью перед кнопкой «+», если она внутри контейнера
+                var addBtn = document.getElementById('portfolioAddPhotoBtn');
+                if (addBtn && addBtn.parentElement === photoPreview) {
+                    photoPreview.insertBefore(div, addBtn);
+                } else {
+                    photoPreview.appendChild(div);
+                }
+                updatePlaceholderVisibility();
+            };
+            reader.readAsDataURL(file);
+        });
+        updatePlaceholderVisibility();
+    }
+
     if (photoInput && photoPreview) {
         photoInput.addEventListener('change', function() {
-            photoPreview.innerHTML = '';
-            var files = this.files;
+            var incoming = Array.prototype.slice.call(this.files);
+            if (!incoming.length) return;
+
             var currentCount = document.querySelectorAll('.existing-photo-item').length;
-            var maxAllowed = 5 - currentCount;
+            var selectedCount = window.selectedPortfolioPhotos.filter(function(f) { return f; }).length;
+            var maxAllowed = 5 - currentCount - selectedCount;
 
-            if (files.length > maxAllowed) {
-                alert('Нельзя добавить ' + files.length + ' фото. Доступно только ' + maxAllowed + ' (лимит 5).');
-                this.value = '';
-                updatePlaceholderVisibility();
-                return;
+            if (incoming.length > maxAllowed) {
+                alert('Нельзя добавить ' + incoming.length + ' фото. Доступно только ' + Math.max(maxAllowed, 0) + ' (лимит 5).');
+                if (maxAllowed > 0) {
+                    incoming = incoming.slice(0, maxAllowed);
+                } else {
+                    window.syncPortfolioPhotosToInput(); // восстанавливаем прежний набор
+                    return;
+                }
             }
 
-            for (var i = 0; i < files.length; i++) {
-                (function(file, index) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        var div = document.createElement('div');
-                        div.className = 'photo-preview-item';
-                        div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
-                            '<span class="photo-remove" data-index="' + index + '" onclick="removePreview(this)">✕</span>';
-                        photoPreview.appendChild(div);
-                        updatePlaceholderVisibility();
-                    };
-                    reader.readAsDataURL(file);
-                })(files[i], i);
-            }
-            updatePlaceholderVisibility();
+            // ДОБАВЛЯЕМ новые файлы к уже выбранным (не заменяем)
+            incoming.forEach(function(file) {
+                window.selectedPortfolioPhotos.push(file);
+            });
+
+            window.syncPortfolioPhotosToInput();
+            window.renderPortfolioPreviews();
         });
     }
 
@@ -335,40 +372,33 @@ function updatePlaceholderVisibility() {
     }
 }
 
-// Удаление выбранного preview (нового) фото
+// Удаление выбранного preview (нового) фото — из накопленного массива
 function removePreview(btn) {
     var index = parseInt(btn.getAttribute('data-index'), 10);
     var photoInput = document.getElementById('id_images');
-    var previewContainer = document.getElementById('photoPreview');
 
-    if (photoInput && photoInput.files.length > 0) {
-        var dt = new DataTransfer();
-        var files = photoInput.files;
-
-        for (var i = 0; i < files.length; i++) {
-            if (i !== index) {
-                dt.items.add(files[i]);
-            }
-        }
-        photoInput.files = dt.files;
-
-        previewContainer.innerHTML = '';
-        var newFiles = photoInput.files;
-        for (var j = 0; j < newFiles.length; j++) {
-            (function(file, idx) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var div = document.createElement('div');
-                    div.className = 'photo-preview-item';
-                    div.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
-                        '<span class="photo-remove" data-index="' + idx + '" onclick="removePreview(this)">✕</span>';
-                    previewContainer.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            })(newFiles[j], j);
-        }
+    // Помечаем файл удалённым в накопленном массиве
+    if (window.selectedPortfolioPhotos && window.selectedPortfolioPhotos[index]) {
+        window.selectedPortfolioPhotos[index] = null;
     }
-    
+
+    // Синхронизируем input file с массивом
+    if (photoInput) {
+        var dt = new DataTransfer();
+        window.selectedPortfolioPhotos.forEach(function(file) {
+            if (file) dt.items.add(file);
+        });
+        photoInput.files = dt.files;
+    }
+
+    // Перерисовываем превью
+    if (typeof renderPortfolioPreviews === 'function') {
+        renderPortfolioPreviews();
+    } else {
+        var item = btn.closest('.photo-preview-item');
+        if (item) item.remove();
+    }
+
     setTimeout(updatePlaceholderVisibility, 50);
 }
 
