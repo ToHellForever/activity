@@ -270,7 +270,6 @@
             {% endif %}
         </div>
         <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;" accept="image/*">
-        <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
     </div>
 
     <!-- Видео -->
@@ -659,6 +658,9 @@
     const TICKET_PALETTE = ['#4A7CF7','#FF6B6B','#51CF66','#FFD43B','rgba(255, 131, 72, 1)','#845EF7','#20C997','#F06595','#339AF0','#F783AC'];
     let photoMaxCount = {{ form.current_package.max_photos|default:10 }};
 
+    // Массив для хранения новых выбранных файлов фото
+    let newPhotoFiles = [];
+
     function updatePhotoGalleryState() {
         const gallery = document.getElementById('photo-gallery');
         if (!gallery) return;
@@ -694,6 +696,17 @@
                 gallery.classList.remove('has-photos');
             }
         }
+    }
+
+    // Синхронизация новых фото-файлов с input file
+    function syncPhotoFilesToInput() {
+        const imagesInput = document.getElementById('id_images');
+        if (!imagesInput) return;
+        const dt = new DataTransfer();
+        newPhotoFiles.forEach(function(file) {
+            if (file) dt.items.add(file);
+        });
+        imagesInput.files = dt.files;
     }
 
     function setPrimaryPhoto(item) {
@@ -744,6 +757,7 @@
             gallery.appendChild(addPlaceholder);
         }
 
+        const fileIndex = newPhotoFiles.length;
         const reader = new FileReader();
         reader.onload = function(e) {
             const item = document.createElement('div');
@@ -751,6 +765,8 @@
             const isOnlyPhoto = existingItems.length === 0;
             item.className = 'photo-gallery-item' + (isOnlyPhoto ? ' is-primary' : '');
             item.dataset.isNew = 'true';
+            // Сохраняем индекс в массиве newPhotoFiles
+            item.dataset.fileIndex = fileIndex;
 
             const img = document.createElement('img');
             img.src = e.target.result;
@@ -765,7 +781,11 @@
             removeBtn.innerHTML = '<img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box">';
             removeBtn.addEventListener('click', function(ev) {
                 ev.stopPropagation();
+                // Удаляем файл из массива (помечаем как null)
+                newPhotoFiles[parseInt(item.dataset.fileIndex, 10)] = null;
                 item.remove();
+                // Пересобираем files в input
+                syncPhotoFilesToInput();
                 updatePhotoGalleryState();
             });
             item.appendChild(removeBtn);
@@ -1013,17 +1033,25 @@
         }
         if (imagesInput) {
             imagesInput.addEventListener('change', function(e) {
-                const files = e.target.files;
+                const files = Array.from(e.target.files);
                 const gallery = document.getElementById('photo-gallery');
                 const currentCount = gallery ? gallery.querySelectorAll('.photo-gallery-item').length : 0;
-                const remaining = photoMaxCount - currentCount;
+                const currentNewCount = newPhotoFiles.filter(f => f !== null).length;
+                const remaining = photoMaxCount - currentCount - currentNewCount;
                 if (files.length > remaining) {
                     alert('Можно загрузить ещё не более ' + remaining + ' фото.');
                 }
-                for (let i = 0; i < Math.min(files.length, remaining); i++) {
-                    addNewPhotoPreview(files[i]);
+                let added = 0;
+                for (let i = 0; i < files.length && added < remaining; i++) {
+                    const file = files[i];
+                    if (file) {
+                        newPhotoFiles.push(file);
+                        addNewPhotoPreview(file);
+                        added++;
+                    }
                 }
-                this.value = '';
+                // Записываем все новые файлы в input через DataTransfer
+                syncPhotoFilesToInput();
             });
         }
 
