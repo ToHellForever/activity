@@ -13,6 +13,7 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         self.current_package = kwargs.pop('current_package', None)
+        self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
 
         # Делаем поля обязательными
@@ -133,7 +134,38 @@ class EventForm(forms.ModelForm):
                     "Ваш пакет не поддерживает заявки через платформу."
                 )
 
+        # Проверка: хотя бы одно фото должно быть
+        if self.request:
+            self._validate_photos()
+
         return cleaned_data
+
+    def _validate_photos(self):
+        """Проверяет, что загружено хотя бы одно фото и выбрано основное."""
+        # Проверяем новые загруженные фото
+        new_images = []
+        if self.files:
+            new_images = self.files.getlist("images")
+        
+        # Проверяем удалённые фото
+        deleted_image_ids = self.data.get("deleted_image_ids", "") if self.data else ""
+        deleted_ids = [int(x) for x in deleted_image_ids.split(",") if x.strip()]
+        
+        # Если это создание нового события
+        if not self.instance or not self.instance.pk:
+            if not new_images:
+                raise forms.ValidationError("Загрузите хотя бы одно фото для мероприятия.")
+            return
+        
+        # Для редактирования: проверяем, что осталось хотя бы одно фото
+        if self.instance.pk:
+            from core.models import EventImage
+            existing_ids = list(self.instance.images.values_list('id', flat=True))
+            remaining = [eid for eid in existing_ids if eid not in deleted_ids]
+            
+            # Если удалили все EventImage и не загрузили новые
+            if not remaining and not new_images:
+                raise forms.ValidationError("Нельзя удалить все фото. Загрузите хотя бы одно новое фото.")
 
     class Meta:
         model = Event

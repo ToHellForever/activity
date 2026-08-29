@@ -496,7 +496,7 @@
   width: 14px;
   height: 14px;
   pointer-events: none;
-   object-fit: initial !important;
+  object-fit: initial !important;
 }
 
 .photo-gallery-item .remove-btn-mobile {
@@ -529,6 +529,14 @@
   color: white;
   font-weight: 300;
   line-height: 1;
+}
+
+/* Подсказка под галереей фото */
+.photo-gallery-hint {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+  padding: 0 8px;
 }
 
 /* Ticket color picker */

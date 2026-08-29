@@ -326,7 +326,19 @@ def create_event(request):
                 return redirect("partner:dashboard")
             package = active_subscription.package
 
-        form = EventForm(request.POST, request.FILES, user=request.user, current_package=package)
+        form = EventForm(request.POST, request.FILES, user=request.user, current_package=package, request=request)
+        
+        # Если это редактирование существующего мероприятия — проверяем event.image
+        if 'event_id' in request.POST:
+            if event and event.image:
+                try:
+                    if not event.image.storage.exists(event.image.name):
+                        event.image.delete(save=False)
+                        event.image = None
+                        event.save(update_fields=["image"])
+                except Exception:
+                    pass
+        
         if form.is_valid():
             # Проверяем типы загружаемых файлов
             video_file = request.FILES.get("video_url")
@@ -589,8 +601,28 @@ def create_event(request):
             images = request.FILES.getlist("images")
             if images:
                 from core.models import EventImage
+                created_images = []
                 for image in images:
-                    EventImage.objects.create(event=event, image=image)
+                    img = EventImage.objects.create(event=event, image=image)
+                    created_images.append(img)
+                
+                # Устанавливаем основное фото среди загруженных
+                primary_new_index = request.POST.get("primary_new_photo_file_index", "")
+                if primary_new_index:
+                    try:
+                        idx = int(primary_new_index)
+                        if 0 <= idx < len(created_images):
+                            created_images[idx].is_primary = True
+                            created_images[idx].save(update_fields=["is_primary"])
+                    except (ValueError, IndexError):
+                        pass
+                elif created_images:
+                    # Если основное не выбрано — первое фото становится основным
+                    created_images[0].is_primary = True
+                    created_images[0].save(update_fields=["is_primary"])
+                
+                # Синхронизируем Event.image с primary EventImage
+                event.set_primary_from_event_images()
 
         else:
             # если форма не валидна — не создаём/сохраняем event здесь
@@ -598,7 +630,7 @@ def create_event(request):
 
         if event is None:
             # просто отдадим форму как есть (предыдущая логика уже делает ticket_data для невалидного POST)
-            form = EventForm(request.POST, request.FILES, user=request.user, current_package=active_subscription.package)
+            form = EventForm(request.POST, request.FILES, user=request.user, current_package=active_subscription.package, request=request)
             ticket_data = [
                 {"name": name, "price": price, "quantity": quantity}
                 for name, price, quantity in zip(
@@ -621,10 +653,11 @@ def create_event(request):
             "formats": Format.objects.all(),
             "user_subscription": active_subscription if 'active_subscription' in locals() else None,
             "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
-                    "has_free_tickets": False,
-                    "packages": EventPackage.objects.all(),
-                },
-            )
+            "has_free_tickets": False,
+            "packages": EventPackage.objects.all(),
+            "primary_event_image": primary_event_image,
+        },
+    )
 
         # Обрабатываем теги из массива ID
         tags_ids = request.POST.getlist("tags")
@@ -722,7 +755,7 @@ def create_event(request):
             )
             return redirect("partner:dashboard")
 
-        form = EventForm(user=request.user, current_package=active_subscription.package)
+        form = EventForm(user=request.user, current_package=active_subscription.package, request=request)
 
     ticket_data = []
     if request.method == "POST" and not form.is_valid():
@@ -780,6 +813,20 @@ def edit_event(request, event_id):
     )
 
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    
+    # Проверяем, существует ли файл event.image, и если нет — сбрасываем
+    if event.image:
+        try:
+            if not event.image.storage.exists(event.image.name):
+                event.image.delete(save=False)
+                event.image = None
+                event.save(update_fields=["image"])
+        except Exception:
+            pass
+    
+    # Определяем primary_event_image для шаблона (доступно через request)
+    primary_event_image = event.primary_image if event.pk else None
+    request.primary_event_image = primary_event_image
 
     if event.has_sold_tickets:
         messages.error(
@@ -792,7 +839,7 @@ def edit_event(request, event_id):
         # Передаем request.FILES, чтобы обработать загрузку нового видео
         # Определяем текущий пакет для передачи в форму
         current_package = event.package if event.package else (active_subscription.package if active_subscription else None)
-        form = EventForm(request.POST, request.FILES, instance=event, current_package=current_package)
+        form = EventForm(request.POST, request.FILES, instance=event, current_package=current_package, request=request)
 
         # --- НАЧАЛО БЛОГА ИЗМЕНЕНИЙ ---
         # Удаляем старые файлы, если пришли новые
@@ -1132,25 +1179,64 @@ def edit_event(request, event_id):
                         except EventImage.DoesNotExist:
                             pass
 
-            # Дополнительные фото (input images - list): добавляем новые к существующим
-            images = request.FILES.getlist("images")
-            if images:
-                from core.models import EventImage
-                for image in images:
-                    EventImage.objects.create(event=event, image=image)
-
-            # Обработка is_primary: если передан primary_image_id, снимаем is_primary у всех и ставим у выбранного
+            # Обработка is_primary и новых фото (до добавления новых фото)
             primary_image_id = request.POST.get("primary_image_id", "")
+            primary_new_index = request.POST.get("primary_new_photo_file_index", "")
+            new_images = request.FILES.getlist("images")
+            
+            from core.models import EventImage
+            EventImage.objects.filter(event=event).update(is_primary=False)
+            
+            # Если выбрано существующее фото как основное
             if primary_image_id:
-                from core.models import EventImage
-                # Снимаем is_primary у всех фото мероприятия
-                EventImage.objects.filter(event=event).update(is_primary=False)
                 try:
                     img = EventImage.objects.get(id=int(primary_image_id), event=event)
                     img.is_primary = True
                     img.save(update_fields=["is_primary"])
                 except (EventImage.DoesNotExist, ValueError):
                     pass
+            
+            # Если выбрано новое загруженное фото как основное
+            used_primary_index = None
+            if primary_new_index and new_images:
+                try:
+                    idx = int(primary_new_index)
+                    if 0 <= idx < len(new_images):
+                        EventImage.objects.create(event=event, image=new_images[idx], is_primary=True)
+                        used_primary_index = idx
+                except (ValueError, IndexError):
+                    pass
+            elif new_images and not primary_image_id:
+                # Если ни primary_image_id, ни primary_new_index не заданы, но есть новые фото — первое становится основным
+                EventImage.objects.create(event=event, image=new_images[0], is_primary=True)
+                used_primary_index = 0
+            
+            # Остальные новые фото (без is_primary)
+            if new_images:
+                for i, image in enumerate(new_images):
+                    if i != used_primary_index:
+                        EventImage.objects.create(event=event, image=image)
+            
+            # Если не выбрано конкретное фото как основное, но есть оставшиеся - делаем первое доступное фото основным
+            if not primary_image_id and not primary_new_index:
+                # Получаем ID удалённых фото
+                deleted_image_ids = request.POST.get("deleted_image_ids", "")
+                deleted_ids = [int(x) for x in deleted_image_ids.split(",") if x.strip()]
+                
+                # Проверяем, есть ли оставшиеся EventImage (исключая удалённые)
+                if deleted_ids:
+                    remaining_images = event.images.filter(is_primary=False).exclude(id__in=deleted_ids)
+                else:
+                    remaining_images = event.images.filter(is_primary=False)
+                
+                if remaining_images.exists():
+                    # Делаем первое оставшееся фото основным
+                    first_remaining = remaining_images.first()
+                    first_remaining.is_primary = True
+                    first_remaining.save(update_fields=["is_primary"])
+            
+            # Синхронизируем Event.image с primary EventImage
+            event.set_primary_from_event_images()
 
             # Теги
             tags_ids = request.POST.getlist("tags")
@@ -1240,7 +1326,7 @@ def edit_event(request, event_id):
         # а также пакет из активной подписки пользователя (fallback),
         # чтобы информация всегда была доступна как в create_event.
         current_package = event.package if event.package else (active_subscription.package if active_subscription else None)
-        form = EventForm(instance=event, current_package=current_package)
+        form = EventForm(instance=event, current_package=current_package, request=request)
 
         # 1) Пакет события (если заполнен)
         if event.package:
@@ -2497,8 +2583,20 @@ def remove_event_image(request, image_id):
         from core.models import EventImage
 
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
+        event = image.event
+        
+        # Если удаляемое фото было основным и совпадало с event.image — сбрасываем
+        if image.is_primary and event.image and event.image.name == image.image.name:
+            event.image = None
+        
         image.delete_file_field("image")  # Корректное удаление из S3
         image.delete()  # Удаляем запись из БД
+        
+        # Если после удаления не осталось EventImage — сбрасываем event.image
+        if not EventImage.objects.filter(event=event).exists():
+            event.image = None
+            event.save(update_fields=["image"])
+        
         return JsonResponse({"status": "success"})
     except EventImage.DoesNotExist:
         return JsonResponse(

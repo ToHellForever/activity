@@ -32,8 +32,8 @@
                                         </a>
                                     {% endif %}
 
-                                {% if event.image %}
-                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                                {% if event.has_real_image %}
+                                    <img src="{{ event.primary_image_url }}" class="card-img-top" alt="{{ event.title }}">
                                 {% elif event.images.all %}
                                     <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
                                 {% else %}

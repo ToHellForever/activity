@@ -332,7 +332,6 @@
   margin: 0;
   z-index: 2;
 }
-
 .card-check input[type="checkbox"] {
   position: absolute;
   opacity: 0;

@@ -23,8 +23,8 @@
               </a>
               
               <div class="chat-header-event-card">
-                {% if selected_ticket.event and selected_ticket.event.image %}
-                  <img src="{{ selected_ticket.event.image.url }}" alt="{{ selected_ticket.event.title }}" class="chat-header-event-photo">
+                {% if selected_ticket.event and selected_ticket.event.has_real_image %}
+                  <img src="{{ selected_ticket.event.primary_image_url }}" alt="{{ selected_ticket.event.title }}" class="chat-header-event-photo">
                 {% else %}
                   <div class="chat-header-event-photo chat-header-event-photo--placeholder">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">

@@ -24,6 +24,7 @@
     {% csrf_token %}
     <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
     <input type="hidden" name="primary_image_id" id="primary_image_id" value="">
+    <input type="hidden" name="primary_new_photo_file_index" id="primary_new_photo_file_index" value="">
     <input type="hidden" name="requires_strict_moderation" value="off">
     {% if form.instance.pk %}
     <input type="hidden" name="event_id" value="{{ form.instance.id }}">
@@ -227,47 +228,50 @@
     <!-- Фото мероприятия -->
     <div class="form-group">
         <label>Фото (не более {{ form.current_package.max_photos|default:10 }})</label>
+        <div class="photo-gallery-hint">Нажмите на фото, чтобы сделать его основным</div>
         <div class="media-upload-container" id="photo-upload-container">
             {% if form.instance.pk %}
                 {% if form.instance.image or form.instance.images.exists %}
                     <!-- Существующие фото -->
                     <div class="photo-gallery" id="photo-gallery">
-                        {% if form.instance.image %}
-                        <div class="photo-gallery-item is-primary" data-image-id="{{ form.instance.image.id }}" data-is-main="true">
+{% if request.primary_event_image %}
+                        <div class="photo-gallery-item is-primary" data-image-id="{{ request.primary_event_image.id }}" data-is-new="" data-is-main="true">
+                            <img src="{{ request.primary_event_image.image.url }}" alt="Основное фото">
+                            <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ request.primary_event_image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
+                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
+                        </div>
+                        {% elif form.instance.image and form.instance.image.name %}
+                        <div class="photo-gallery-item is-primary" data-image-id="" data-is-new="" data-is-main="true">
                             <img src="{{ form.instance.image.url }}" alt="Основное фото">
-                            <button type="button" class="remove-btn remove-main-photo" data-image-id="{{ form.instance.image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
+                            <button type="button" class="remove-btn remove-main-photo" data-image-id="" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
                             <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
                         </div>
                         {% endif %}
                         {% for image in form.instance.images.all %}
-                        <div class="photo-gallery-item" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
+                        {% if not request.primary_event_image or request.primary_event_image.id != image.id %}
+                        <div class="photo-gallery-item{% if image.is_primary %} is-primary{% endif %}" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
                             <img src="{{ image.image.url }}" alt="Фото">
                             <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
+                            {% if image.is_primary %}
+                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
+                            {% endif %}
                         </div>
+                        {% endif %}
                         {% endfor %}
                         <!-- Серый квадрат с плюсом для добавления фото -->
                         <div class="add-photo-placeholder" id="add-photo-placeholder" title="Добавить фото">
                             <span class="plus-icon">+</span>
                         </div>
                     </div>
-                {% else %}
-                    <!-- Зона загрузки (иконка + текст кликабельны) -->
-                    <div class="media-upload-placeholder" id="photo-upload-placeholder">
-                        <div class="media-upload-icon">
-                            <img src="/media/icon/raphael_photo.svg" alt="" class='inner-icon'>
-                        </div>
-                        <div class="media-upload-text">+ ваш пакет позволяет загрузить до {{ form.current_package.max_photos|default:10 }} фото (1 основное и {{ form.current_package.max_photos|default:10|add:-1 }} дополнительных)</div>
-                    </div>
                 {% endif %}
-            {% else %}
-                <!-- Зона загрузки для создания -->
-                <div class="media-upload-placeholder" id="photo-upload-placeholder">
-                    <div class="media-upload-icon">
-                        <img src="/media/icon/raphael_photo.svg" alt="" class='inner-icon'>
-                    </div>
-                    <div class="media-upload-text">+ ваш пакет позволяет загрузить до {{ form.current_package.max_photos|default:10 }} фото (1 основное и {{ form.current_package.max_photos|default:10|add:-1 }} дополнительных)</div>
-                </div>
             {% endif %}
+            <!-- Зона загрузки — всегда в DOM, JS показывает/скрывает -->
+            <div class="media-upload-placeholder" id="photo-upload-placeholder">
+                <div class="media-upload-icon">
+                    <img src="/media/icon/raphael_photo.svg" alt="" class='inner-icon'>
+                </div>
+                <div class="media-upload-text">+ ваш пакет позволяет загрузить до {{ form.current_package.max_photos|default:10 }} фото (1 основное и {{ form.current_package.max_photos|default:10|add:-1 }} дополнительных)</div>
+            </div>
         </div>
         <input type="file" name="images" id="id_images" class="custom-media-input" multiple style="display: none;" accept="image/*">
     </div>
@@ -661,42 +665,41 @@
     // Массив для хранения новых выбранных файлов фото
     let newPhotoFiles = [];
 
-    function updatePhotoGalleryState() {
-        const gallery = document.getElementById('photo-gallery');
-        if (!gallery) return;
-        const items = gallery.querySelectorAll('.photo-gallery-item');
-        const addPlaceholder = gallery.querySelector('.add-photo-placeholder');
-        const uploadPlaceholder = document.getElementById('photo-upload-placeholder');
-        const container = document.getElementById('photo-upload-container');
-        
-        // Показываем серый квадрат с плюсом ТОЛЬКО если есть хотя бы 1 фото
-        if (addPlaceholder) {
-            addPlaceholder.style.display = items.length > 0 ? 'flex' : 'none';
-        }
-        
-        // Показываем/скрываем зону загрузки при загрузке новых фото
-        if (uploadPlaceholder) {
-            uploadPlaceholder.style.display = items.length === 0 ? '' : 'none';
-        }
-        
-        // Управляем классами на контейнере и галерее
-        if (container) {
-            if (items.length > 0) {
-                container.classList.remove('has-no-photos');
-                container.classList.add('has-photos');
-            } else {
-                container.classList.add('has-no-photos');
-                container.classList.remove('has-photos');
-            }
-        }
-        if (gallery) {
-            if (items.length > 0) {
-                gallery.classList.add('has-photos');
-            } else {
-                gallery.classList.remove('has-photos');
-            }
-        }
-    }
+     function updatePhotoGalleryState() {
+         const gallery = document.getElementById('photo-gallery');
+         const items = gallery ? gallery.querySelectorAll('.photo-gallery-item') : [];
+         const addPlaceholder = gallery ? gallery.querySelector('.add-photo-placeholder') : null;
+         const uploadPlaceholder = document.getElementById('photo-upload-placeholder');
+         const container = document.getElementById('photo-upload-container');
+         
+         // Показываем серый квадрат с плюсом ТОЛЬКО если есть хотя бы 1 фото
+         if (addPlaceholder) {
+             addPlaceholder.style.display = items.length > 0 ? 'flex' : 'none';
+         }
+         
+         // Зона загрузки: показываем если нет фото (как у видео)
+         if (uploadPlaceholder) {
+             uploadPlaceholder.style.display = items.length === 0 ? 'flex' : 'none';
+         }
+         
+         // Управляем классами на контейнере и галерее
+         if (container) {
+             if (items.length > 0) {
+                 container.classList.remove('has-no-photos');
+                 container.classList.add('has-photos');
+             } else {
+                 container.classList.add('has-no-photos');
+                 container.classList.remove('has-photos');
+             }
+         }
+         if (gallery) {
+             if (items.length > 0) {
+                 gallery.classList.add('has-photos');
+             } else {
+                 gallery.classList.remove('has-photos');
+             }
+         }
+     }
 
     // Синхронизация новых фото-файлов с input file
     function syncPhotoFilesToInput() {
@@ -727,11 +730,21 @@
         caption.textContent = 'ОСНОВНОЕ ФОТО';
         item.appendChild(caption);
 
-        // Записываем ID в скрытое поле
-        const imageId = item.dataset.imageId;
+        // Определяем ID фото (существующее или индекс нового файла)
+        const imageId = item.dataset.imageId || '';
+        const isNew = item.dataset.isNew === 'true';
+        const fileIndex = item.dataset.fileIndex || '';
+        
+        // Записываем ID в скрытое поле для существующих фото
         const hiddenField = document.getElementById('primary_image_id');
-        if (hiddenField && imageId) {
+        if (hiddenField) {
             hiddenField.value = imageId;
+        }
+        
+        // Записываем индекс нового файла, если это загруженное фото
+        const newPhotoField = document.getElementById('primary_new_photo_file_index');
+        if (newPhotoField) {
+            newPhotoField.value = isNew ? fileIndex : '';
         }
     }
 
@@ -767,6 +780,8 @@
             item.dataset.isNew = 'true';
             // Сохраняем индекс в массиве newPhotoFiles
             item.dataset.fileIndex = fileIndex;
+            // Для новых фото imageId пустой (ID ещё нет на сервере)
+            item.dataset.imageId = '';
 
             const img = document.createElement('img');
             img.src = e.target.result;
@@ -808,6 +823,12 @@
     }
 
     function removeExistingPhoto(imageId, item) {
+        if (!imageId) {
+            // Это Event.image (старое поле), просто удаляем из DOM
+            item.remove();
+            updatePhotoGalleryState();
+            return;
+        }
         fetch(`/partner/remove_event_image/${imageId}/`, {
             method: 'POST',
             headers: {

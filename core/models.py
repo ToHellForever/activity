@@ -552,7 +552,8 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         super().save(*args, **kwargs)
 
         # Удаляем старые файлы ПОСЛЕ сохранения (чтобы не удалить новые)
-        if self.pk:
+        # НО не удаляем, если это внутренняя синхронизация (флаг _avoid_file_deletion)
+        if self.pk and not getattr(self, '_avoid_file_deletion', False):
             # Удаляем старое видео, если оно заменено
             if old_video_url and (not self.video_url or old_video_url != self.video_url):
                 self.delete_old_video_file(old_video_url, old_video_hash)
@@ -596,6 +597,64 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         Возвращает крайний срок возврата билета.
         """
         return self.date_time - timezone.timedelta(hours=self.refund_deadline_hours)
+
+    @property
+    def primary_image_url(self):
+        """
+        Возвращает URL основного фото. Если нет — возвращает заглушку.
+        """
+        if self.pk:
+            try:
+                primary = self.images.filter(is_primary=True).first()
+                if primary:
+                    return primary.image.url
+            except Exception:
+                pass
+        if self.image:
+            return self.image.url
+        return "/media/icon/logo.svg"
+
+    @property
+    def has_real_image(self):
+        """Возвращает True, если есть реальное фото (не заглушка)."""
+        if self.pk:
+            try:
+                if self.images.filter(is_primary=True).exists():
+                    return True
+            except Exception:
+                pass
+        return bool(self.image)
+
+    @property
+    def primary_image(self):
+        """
+        Возвращает EventImage с is_primary=True, если есть, иначе None.
+        Также проверяет Event.image для обратной совместимости.
+        """
+        if self.pk:
+            try:
+                primary = self.images.filter(is_primary=True).first()
+                if primary:
+                    return primary
+            except Exception:
+                pass
+        return None
+
+    def set_primary_from_event_images(self):
+        """
+        Синхронизирует Event.image с EventImage.is_primary=True.
+        Вызывать после сохранения EventImage записей.
+        """
+        if not self.pk:
+            return
+        primary = self.images.filter(is_primary=True).first()
+        if primary:
+            if not self.image or self.image.name != primary.image.name:
+                self.image = primary.image
+                # Устанавливаем флаг, чтобы save() не удалял старые файлы при синхронизации
+                self._avoid_file_deletion = True
+                self.save(update_fields=["image"])
+                del self._avoid_file_deletion
 
     def delete_old_file(self, old_file):
         """

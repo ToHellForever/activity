@@ -86,11 +86,13 @@
                     <div class="row">
                         {% for item in active_events %}
                         <div class="col-md-4 mb-4">
-                            <div class="card partner-event-card">
-                                <div class="partner-card-image">
-                                    {% if item.event.image %}
-                                    <img src="{{ item.event.image.url }}" class="card-img-top" alt="{{ item.event.title }}">
-                                    {% endif %}
+                             <div class="card partner-event-card">
+                                 <div class="partner-card-image">
+                                     {% if item.event.has_real_image %}
+                                     <img src="{{ item.event.primary_image_url }}" class="card-img-top" alt="{{ item.event.title }}">
+                                     {% else %}
+                                     <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                                     {% endif %}
                                     {% if not item.event.has_sold_tickets %}
                                     <a href="{% url 'partner:edit_event' item.event.id %}"
                                        class="card-edit-btn" title="Редактировать">
@@ -172,12 +174,15 @@
                         <div class="col-md-4 mb-4">
                             <div class="card partner-event-card">
                                 <div class="partner-card-image">
-                                    {% if item.event.image %}
-                                    <img src="{{ item.event.image.url }}" class="card-img-top" alt="{{ item.event.title }}">
+                                    {% if item.event.has_real_image %}
+                                    <img src="{{ item.event.primary_image_url }}" class="card-img-top" alt="{{ item.event.title }}">
+                                    {% else %}
+                                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                                     {% endif %}
                                     <label class="card-check">
                                         <input type="checkbox" name="event_ids"
-                                               value="{{ item.event.id }}" class="event-checkbox">
+                                               value="{{ item.event.id }}" class="event-checkbox"
+                                               onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
                                         <span class="card-check-box">
                                             <img src="/media/icon/trash.svg" alt="">
                                         </span>

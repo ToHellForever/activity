@@ -40,7 +40,7 @@
                 </div>
                 <div class="carousel-inner">
                     <div class="carousel-item active">
-                        <img src="{{ event.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                        <img src="{{ event.primary_image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
                     {% for img in event.images.all %}
                     <div class="carousel-item">
@@ -93,7 +93,7 @@
         {% elif event.image %}
             <!-- Одиночное основное фото -->
             <div class="image-wrapper">
-                <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                <img src="{{ event.primary_image_url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
                     <img src="/media/icon/ok.png" alt="" class='arrow-card'>

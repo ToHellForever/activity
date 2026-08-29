@@ -22,8 +22,8 @@
                     {% with last_message=ticket.last_message %}
                     <a href="{% url 'visitor:chats' %}?ticket_id={{ ticket.id }}" class="chat-list-item">
                         <div class="chat-list-event-card">
-                            {% if ticket.event and ticket.event.image %}
-                                <img src="{{ ticket.event.image.url }}" alt="{{ ticket.event.title }}" class="chat-list-event-photo">
+                            {% if ticket.event and ticket.event.has_real_image %}
+                                <img src="{{ ticket.event.primary_image_url }}" alt="{{ ticket.event.title }}" class="chat-list-event-photo">
                             {% else %}
                                 <div class="chat-list-event-photo chat-list-event-photo--placeholder">
                                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">
