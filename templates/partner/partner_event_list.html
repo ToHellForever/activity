@@ -85,7 +85,7 @@
                 {% if active_events %}
                     <div class="row">
                         {% for item in active_events %}
-                        <div class="col-md-4 mb-4">
+                        <div class="col-6 col-md-4 mb-4" style='padding: 0 5px !important'>
                              <div class="card partner-event-card">
                                  <div class="partner-card-image">
                                      {% if item.event.has_real_image %}
@@ -167,11 +167,11 @@
 
                 <!-- ==================== АРХИВ ==================== -->
                 <h2 class="section-title mt-4">Архив</h2>
-
+ 
                 {% if archived_events %}
                     <div class="row">
                         {% for item in archived_events %}
-                        <div class="col-md-4 mb-4">
+                        <div class="col-6 col-md-4 mb-4" style='padding: 0 5px !important'>
                             <div class="card partner-event-card">
                                 <div class="partner-card-image">
                                     {% if item.event.has_real_image %}
