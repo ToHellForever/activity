@@ -86,10 +86,6 @@
   border-top-left-radius: 23.14px;
   border-top-right-radius: 23.14px;
 }
-.card-logo-placeholder {
-  object-fit: contain;
-  height: 100% !important;
-}
 .card-body {
   flex-grow: 1;
   display: flex;

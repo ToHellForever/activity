@@ -612,7 +612,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
                 pass
         if self.image:
             return self.image.url
-        return "/media/icon/logo.svg"
+        return "/media/icon/logo-card.svg"
 
     @property
     def has_real_image(self):

@@ -91,7 +91,7 @@
                                      {% if item.event.has_real_image %}
                                      <img src="{{ item.event.primary_image_url }}" class="card-img-top" alt="{{ item.event.title }}">
                                      {% else %}
-                                     <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                                     <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                                      {% endif %}
                                     {% if not item.event.has_sold_tickets %}
                                     <a href="{% url 'partner:edit_event' item.event.id %}"
@@ -177,7 +177,7 @@
                                     {% if item.event.has_real_image %}
                                     <img src="{{ item.event.primary_image_url }}" class="card-img-top" alt="{{ item.event.title }}">
                                     {% else %}
-                                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                                    <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                                     {% endif %}
                                     <label class="card-check">
                                         <input type="checkbox" name="event_ids"
