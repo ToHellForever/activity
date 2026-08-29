@@ -164,8 +164,10 @@
         {% for ev in active_events %}
         <div class="col-12 event-list-col mb-4">
             <div class="card">
-                {% if ev.image %}
-                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% if ev.has_real_image %}
+                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% else %}
+                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>

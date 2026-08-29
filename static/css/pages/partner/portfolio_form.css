@@ -24,7 +24,6 @@
 .raphael_photo {
   background: rgba(217, 217, 217, 1);
   padding: 10px 40px;
-  width: 13%;
 }
 .photo-delete-btn {
   position: absolute;
@@ -44,7 +43,6 @@
 }
 .photo-preview-item {
   width: 120px;
-  height: 80px;
   position: relative;
 }
 .photo-preview-item img {
@@ -55,19 +53,43 @@
 }
 .photo-remove {
   position: absolute;
-  top: 4px;
+  top: 6px;
   right: 6px;
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
+  border-radius: 50%;
   padding: 2px 6px;
-  border-radius: 12px;
   cursor: pointer;
 }
 
+/* ===== Кнопка добавления ещё фото (справа от последнего фото) ===== */
+.portfolio-add-photo-placeholder {
+  width: 180px;
+  height: 130px;
+  border-radius: 20px;
+  background: rgba(217, 217, 217, 1);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  box-sizing: border-box;
+}
+.portfolio-add-photo-placeholder:hover {
+  background: #d0d0d0;
+}
+.portfolio-add-photo-placeholder .plus-icon {
+  font-size: 40px;
+  color: white;
+  font-weight: 300;
+  line-height: 1;
+}
 
 .portfolio-form-row--inline {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 16px;
 }
 
 .portfolio-form-section--compact {
@@ -86,7 +108,7 @@
   border-radius: 20px;
   border: 1px solid rgba(217, 217, 217, 1);
   padding: 6px 12px;
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-size: clamp(0.7rem, 0.9vw, 0.9rem);
   font-weight: 500;
   color: black;
@@ -97,21 +119,15 @@
 input:focus,
 textarea:focus,
 select:focus {
-    border-color: rgba(255, 140, 66, 1) !important;
-    outline: none !important;
-    box-shadow: none !important;
+  border-color: rgba(255, 140, 66, 1) !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .portfolio-form-label {
   color: rgba(154, 154, 154, 1);
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-size: clamp(0.7rem, 0.9vw, 0.9rem);
-  font-weight: 500;
-}
-.photo-upload-label {
-    color: rgba(154, 154, 154, 1);
-  font-family: 'Montserrat';
-  font-size: clamp(0.7rem, 0.8vw, 1rem);
   font-weight: 500;
 }
 .portfolio-form-card {
@@ -119,17 +135,16 @@ select:focus {
   gap: 15px;
 }
 
-.portfolio-form-row--inline {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .portfolio-form-section--compact {
   display: grid;
   gap: 12px;
 }
-
+.portfolio-title {
+  color: black;
+  font-family: "Montserrat";
+  font-size: clamp(0.9rem, 1vw, 1.1rem);
+  font-weight: 500;
+}
 .portfolio-form-section {
   display: grid;
   gap: 8px;
@@ -140,22 +155,27 @@ select:focus {
   border-radius: 19.28px;
   border: none;
   color: black;
-  font-family: 'Montserrat';
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-family: "Montserrat";
+  font-size: clamp(0.8rem, 1vw, 1rem);
   font-weight: 500;
   padding: 7px 40px;
 }
-@media (max-width: 768px) {
-  .portfolio-form-row--inline {
-    flex-direction: column;
-  }
+.portfolio-form-section--small {
+  flex: 0 0 25%;
+  max-width: 25%;
 }
-
-/* Smaller upload area on mobile */
-@media (max-width: 576px) {
-  .existing-photo-item .photo-container,
-  .photo-preview-item {
-    width: 96px;
-    height: 64px;
+@media (max-width: 768px) {
+  .date-container {
+    width: 100% !important;
+  }
+  .portfolio-form-section--small {
+    flex: 0 0 49%;
+    max-width: 49%;
+  }
+  .existing-photo-item {
+    width: 150px;
+  }
+  .portfolio-add-photo-placeholder {
+    width: 150px;
   }
 }

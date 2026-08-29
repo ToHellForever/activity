@@ -23,6 +23,7 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
+    <input type="hidden" name="delete_main_image" id="delete_main_image" value="">
     <input type="hidden" name="primary_image_id" id="primary_image_id" value="">
     <input type="hidden" name="primary_new_photo_file_index" id="primary_new_photo_file_index" value="">
     <input type="hidden" name="requires_strict_moderation" value="off">
@@ -824,34 +825,28 @@
 
     function removeExistingPhoto(imageId, item) {
         if (!imageId) {
-            // Это Event.image (старое поле), просто удаляем из DOM
+            // Это Event.image (старое поле) — помечаем к удалению, удалится после сохранения формы
+            const flag = document.getElementById('delete_main_image');
+            if (flag) flag.value = '1';
             item.remove();
             updatePhotoGalleryState();
             return;
         }
-        fetch(`/partner/remove_event_image/${imageId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const deletedInput = document.getElementById('deleted_image_ids');
-                const cur = deletedInput.value;
-                deletedInput.value = cur ? cur + ',' + imageId : imageId;
-                item.remove();
-                updatePhotoGalleryState();
-            } else {
-                showToast('Ошибка при удалении: ' + (data.message || ''), true);
-            }
-        })
-        .catch(err => showToast('Ошибка: ' + err.message, true));
+        // Отложенное удаление: фото скрывается и помечается в deleted_image_ids,
+        // реально удаляется на сервере только после нажатия «Отправить на модерацию»
+        const deletedInput = document.getElementById('deleted_image_ids');
+        if (deletedInput) {
+            const ids = deletedInput.value.split(',').filter(function(v) { return v && v !== imageId; });
+            ids.push(imageId);
+            deletedInput.value = ids.join(',');
+        }
+        // Если удалили основное фото — сбрасываем выбор, чтобы сервер назначил новое из оставшихся
+        const primaryField = document.getElementById('primary_image_id');
+        if (primaryField && primaryField.value === imageId) {
+            primaryField.value = '';
+        }
+        item.remove();
+        updatePhotoGalleryState();
     }
 
     // ============================================================

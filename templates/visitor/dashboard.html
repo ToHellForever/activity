@@ -37,9 +37,7 @@
                                 {% elif event.images.all %}
                                     <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
                                 {% else %}
-                                    <div class="card-img-top" style="height: 150px; background-color: #eee; display: flex; align-items: center; justify-content: center;">
-                                        {{ event.title|truncatechars:20 }}
-                                    </div>
+                                    <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                                 {% endif %}
 
                                 <div class="card-body">

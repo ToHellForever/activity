@@ -7,10 +7,10 @@
 {% endblock %}
 
 {% block content %}
-<h1>{% if is_edit %}Редактирование кейса{% else %}Добавление кейса{% endif %}</h1>
 <div class="partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
+    <h1 class='portfolio-title'>{% if is_edit %}Редактирование кейса{% else %}Добавление кейса{% endif %}</h1>
         <form method="post" enctype="multipart/form-data" class="portfolio-form" id="portfolioForm">
             {% csrf_token %}
 
@@ -41,7 +41,7 @@
                                 <div class="photo-container" style="width: 100%; height: 100%; border-radius: 8px; overflow: hidden;">
                                     <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo" style="width: 100%; height: 100%; object-fit: cover;">
                                 </div>
-                                <button type="button" class="photo-delete-btn photo-remove" data-delete-url="{% url 'partner:portfolio_image_delete' photo.id %}" onclick="deletePhotoAjax(this)" title="Удалить фото">
+                                <button type="button" class="photo-delete-btn photo-remove" onclick="markPhotoForDelete(this)" title="Удалить фото">
                                     ✕
                                 </button>
                             </div>
@@ -59,9 +59,12 @@
                         <!-- Контейнер для отображения превью новых фото -->
                         <div id="photoPreview" class="photo-preview-container"></div>
 
-                        <label for="id_images" class="photo-upload-label" style="cursor: pointer; display: inline-block; margin-top: 5px; font-weight: bold;">
-                            + ЗАГРУЗИТЬ ФОТО
-                        </label>
+                        <!-- Кнопка добавления ещё фото (справа от последнего фото, если есть хотя бы 1 фото) -->
+                        <div class="portfolio-add-photo-placeholder" id="portfolioAddPhotoBtn" title="Добавить фото"
+                             style="display:none;" onclick="document.getElementById('id_images').click();">
+                            <span class="plus-icon">+</span>
+                        </div>
+
                         <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;">
                         
                         <div>
@@ -87,8 +90,8 @@
                 </div>
 
                 <!-- Дата и Город -->
-                <div class="portfolio-form-row portfolio-form-row--inline" style="display: flex; gap: 40px;">
-                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 25%; max-width: 25%;">
+                <div class="portfolio-form-row portfolio-form-row--inline">
+                    <div class="portfolio-form-section portfolio-form-section--small">
                         <label class="portfolio-form-label">ДАТА ПРОВЕДЕНИЯ</label>
                         <div class="input-with-button date-container" style="position: relative; width: 100%;">
                             
@@ -118,7 +121,7 @@
                         {% if form.event_date.errors %}<ul class="errorlist">{{ form.event_date.errors }}</ul>{% endif %}
                     </div>
                     
-                    <div class="portfolio-form-section portfolio-form-section--small" style="flex: 0 0 35%; max-width: 35%;">
+                    <div class="portfolio-form-section portfolio-form-section--small">
                         <label class="portfolio-form-label">ГОРОД</label>
                         {{ form.city }}
                         {% if form.city.errors %}<ul class="errorlist">{{ form.city.errors }}</ul>{% endif %}
@@ -283,21 +286,52 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePlaceholderVisibility();
 });
 
-// Функция скрытия/показа квадрата с камерой
+// Функция скрытия/показа квадрата с камерой и кнопки «+»
+function getAddPhotoButton() {
+    // Восстанавливаем кнопку, если она была удалена вместе с очисткой контейнера превью
+    var addBtn = document.getElementById('portfolioAddPhotoBtn');
+    if (!addBtn) {
+        addBtn = document.createElement('div');
+        addBtn.className = 'portfolio-add-photo-placeholder';
+        addBtn.id = 'portfolioAddPhotoBtn';
+        addBtn.title = 'Добавить фото';
+        addBtn.innerHTML = '<span class="plus-icon">+</span>';
+        addBtn.addEventListener('click', function() {
+            document.getElementById('id_images').click();
+        });
+    }
+    return addBtn;
+}
+
 function updatePlaceholderVisibility() {
     var placeholder = document.getElementById('photoUploadPlaceholder');
     var photoInput = document.getElementById('id_images');
-    
+    var existingGrid = document.querySelector('.existing-photos-grid');
+    var previewContainer = document.getElementById('photoPreview');
+
     var newFilesCount = (photoInput && photoInput.files) ? photoInput.files.length : 0;
     var existingPhotosCount = document.querySelectorAll('.existing-photo-item').length;
+    var previewCount = previewContainer ? previewContainer.querySelectorAll('.photo-preview-item').length : 0;
     var totalPhotos = newFilesCount + existingPhotosCount;
 
+    // Камера видна только пока фото нет совсем
     if (placeholder) {
-        if (totalPhotos > 0) {
-            placeholder.style.display = 'none';
-        } else {
-            placeholder.style.display = 'flex';
+        placeholder.style.display = totalPhotos > 0 ? 'none' : 'flex';
+    }
+
+    // Кнопка «+» — если есть хотя бы 1 фото (существующее или добавленное)
+    if (totalPhotos > 0) {
+        var addBtn = getAddPhotoButton();
+        // Перемещаем кнопку так, чтобы она стояла справа от последнего фото
+        if (previewContainer && previewCount > 0) {
+            previewContainer.appendChild(addBtn);
+        } else if (existingGrid) {
+            existingGrid.appendChild(addBtn);
         }
+        addBtn.style.display = 'flex';
+    } else {
+        var addBtn = document.getElementById('portfolioAddPhotoBtn');
+        if (addBtn) addBtn.style.display = 'none';
     }
 }
 
@@ -354,39 +388,24 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// AJAX-удаление ранее сохраненных фотографий из БД
-function deletePhotoAjax(btn) {
-    var url = btn.dataset.deleteUrl;
-    if (!url) return;
-    var csrftoken = getCookie('csrftoken');
+// Отложенное удаление ранее сохранённых фото:
+// фото скрывается и помечается в deleted_image_ids, реально удалится после нажатия «Сохранить»
+function markPhotoForDelete(btn) {
+    var photoItem = btn.closest('.existing-photo-item');
+    if (!photoItem) return;
 
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Accept': 'application/json'
-        },
-        credentials: 'same-origin'
-    })
-    .then(function(response) {
-        if (!response.ok) throw new Error('Ошибка сети');
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.status === 'success') {
-            var photoItem = btn.closest('.existing-photo-item');
-            if (photoItem) {
-                photoItem.remove();
-                updatePlaceholderVisibility();
-            }
-        } else {
-            alert(data.message || 'Ошибка при удалении фото');
+    var imageId = photoItem.dataset.imageId;
+    if (imageId) {
+        var deletedInput = document.getElementById('deleted_image_ids');
+        if (deletedInput) {
+            var ids = deletedInput.value.split(',').filter(function(v) { return v && v !== imageId; });
+            ids.push(imageId);
+            deletedInput.value = ids.join(',');
         }
-    })
-    .catch(function(err) {
-        console.error('Ошибка удаления фото:', err);
-        alert('Не удалось удалить фото. Попробуйте ещё раз.');
-    });
+    }
+
+    photoItem.remove();
+    updatePlaceholderVisibility();
 }
 </script>
 {% endblock %}

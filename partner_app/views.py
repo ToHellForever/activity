@@ -1166,6 +1166,12 @@ def edit_event(request, event_id):
             if main_image:
                 event.image = main_image
                 event.save(update_fields=["image"])
+            elif request.POST.get("delete_main_image") == "1":
+                # Старое основное фото (Event.image) помечено к удалению в форме
+                if event.image:
+                    event.image.delete(save=False)
+                event.image = None
+                event.save(update_fields=["image"])
 
             # Удаляем фотографии, которые были отмечены для удаления
             deleted_image_ids = request.POST.get("deleted_image_ids", "")

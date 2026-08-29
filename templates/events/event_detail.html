@@ -115,7 +115,7 @@
         {% endif %}
     {% else %}
         <div class="image-wrapper no-image">
-            <span>Нет изображения</span>
+            <img src="/media/icon/logo-card.svg" class="card-logo-placeholder" alt="{{ event.title }}">
         </div>
     {% endif %}
 </div>
@@ -288,10 +288,12 @@
         {% for ev in similar_events_mobile %}
         <div class="col-6 mb-4">
             <div class="card">
-                {% if ev.image %}
-                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% if ev.has_real_image %}
+                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% else %}
+                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -321,10 +323,12 @@
         {% for ev in similar_events_tablet %}
         <div class="col-4 mb-4">
             <div class="card">
-                {% if ev.image %}
-                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% if ev.has_real_image %}
+                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% else %}
+                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -353,10 +357,12 @@
         {% for ev in similar_events_desktop %}
         <div class="col-md-3 mb-4">
             <div class="card">
-                {% if ev.image %}
-                <img src="{{ ev.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% if ev.has_real_image %}
+                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% else %}
+                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
