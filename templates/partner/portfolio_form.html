@@ -157,7 +157,7 @@
                 <a href="{% url 'partner:portfolio_delete' portfolio_item.id %}"
                    class="btn-portfolio-delete"
                    style="margin-top: 20px;"
-                   onclick="return confirm('Вы уверены, что хотите удалить этот кейс?');">УДАЛИТЬ КЕЙС</a>
+                   data-delete-url="{% url 'partner:portfolio_delete' portfolio_item.id %}">УДАЛИТЬ КЕЙС</a>
                 {% endif %}
             </div>
         </form>
@@ -234,6 +234,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---------- Дальше идёт ваш остальной код без изменений ----------
+
+    // Мгновенное удаление кейса (кнопка "УДАЛИТЬ КЕЙС")
+    document.querySelectorAll('.btn-portfolio-delete[data-delete-url]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var url = this.dataset.deleteUrl;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function(response) {
+                if (response.ok || response.redirected) {
+                    window.location.href = '{% url "partner:portfolio_list" %}';
+                }
+            });
+        });
+    });
 
     // Счётчик символов для названия
     var titleInput = document.getElementById('id_title');

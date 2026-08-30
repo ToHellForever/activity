@@ -16,7 +16,7 @@
   text-align: left;
 }
 ul {
-    padding-left: 15px;
+  padding-left: 15px;
 }
 /* ===== ПЕРЕКЛЮЧАТЕЛЬ ТИПА РЕГИСТРАЦИИ ===== */
 .type-switcher {
@@ -75,10 +75,10 @@ ul {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #0C0C0C;
+  color: #0c0c0c;
   cursor: pointer;
   user-select: none;
   position: relative;
@@ -145,7 +145,7 @@ ul {
 }
 
 .section-title {
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-size: 13px;
   font-weight: 400;
   color: #1a1a1a;
@@ -186,13 +186,50 @@ ul {
 
 .form-label {
   display: block;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 500;
   font-size: clamp(0.6rem, 1vw, 0.8rem);
-  color: #9A9A9A;
+  color: #9a9a9a;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
   text-transform: uppercase;
+}
+
+/* ===== ПОЛЯ ВВОДА ===== */
+
+/* ===== PASSWORD FIELD WRAPPER ===== */
+.password-field {
+  position: relative;
+}
+
+.password-field input[type="password"],
+.password-field input[type="text"] {
+  padding-right: 44px;
+}
+
+.password-field .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9a9a9a;
+  transition: color 0.2s ease;
+}
+
+.password-field .password-toggle:hover {
+  color: #ff6b35;
+}
+
+.password-field .password-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ===== ПОЛЯ ВВОДА ===== */
@@ -266,7 +303,7 @@ ul {
 .file-upload-label {
   display: inline-block;
   background: transparent;
-  color: #02369C;
+  color: #02369c;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
@@ -293,7 +330,7 @@ ul {
 
 .documents-list {
   font-size: 12px;
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-weight: 400;
   color: #000000;
   line-height: 1.7;
@@ -301,7 +338,7 @@ ul {
 
 .advantages-text {
   font-size: 12px;
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-weight: 400;
   color: black;
   margin-top: 12px;
@@ -320,7 +357,7 @@ ul {
   align-items: flex-start;
   gap: 8px;
   cursor: pointer;
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-weight: 400;
   font-size: 12px;
   color: #000000;
@@ -337,7 +374,7 @@ ul {
 }
 
 .agreement-item a {
-  color: #02369C;
+  color: #02369c;
   text-decoration: none;
 }
 
@@ -406,23 +443,22 @@ ul {
   font-size: 11px;
 }
 
-
 @media (max-width: 969px) {
-    .email-section {
-        width: 49%;
-    }
-    .password-section {
-        width: 100%;
-    }
+  .email-section {
+    width: 49%;
+  }
+  .password-section {
+    width: 100%;
+  }
 }
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
-    .email-section,
-    .password-section,
-    .company-info-section,
-    .contact-info-section {
-        width: 100%;
-    }
+  .email-section,
+  .password-section,
+  .company-info-section,
+  .contact-info-section {
+    width: 100%;
+  }
   .register-page {
     padding: 0;
   }

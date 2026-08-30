@@ -628,7 +628,6 @@
 }
 
 .modal-title {
-  font-family: "Verdana", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: #333;
@@ -658,7 +657,7 @@
 .password-modal-form .label {
   display: block;
   font-family: "Montserrat", sans-serif;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   font-weight: 500;
   color: rgba(154, 154, 154, 1);
   margin-bottom: 8px;
@@ -669,10 +668,42 @@
   user-select: text;
   cursor: text;
   height: 38px;
+  padding-right: 44px;
 }
 
 .password-modal-form .editable-field .edit-icon {
   display: none;
+}
+
+/* ===== PASSWORD FIELD WRAPPER ===== */
+.password-field {
+  position: relative;
+}
+
+.password-field .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9a9a9a;
+  transition: color 0.2s ease;
+  pointer-events: auto;
+}
+
+.password-field .password-toggle:hover {
+  color: #ff6b35;
+}
+
+.password-field .password-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .btn-submit-modal {

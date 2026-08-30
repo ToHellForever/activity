@@ -2916,6 +2916,9 @@ def portfolio_delete(request, item_id):
         # Метод delete() в PortfolioImage уже удаляет файл
         item.delete()
         messages.success(request, "Элемент портфолио удалён.")
+        # Если AJAX — вернуть JSON, иначе — редирект
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"status": "ok"})
         return redirect("partner:portfolio_list")
 
     partner_profile = getattr(request.user, "partner_profile", None)
