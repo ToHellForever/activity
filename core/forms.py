@@ -85,6 +85,31 @@ class CustomAuthenticationForm(forms.Form):
 
 
 # --- ФОРМА РЕГИСТРАЦИИ ---
+class VisitorRegistrationForm(UserCreationForm):
+    """Простая форма для регистрации участника (только email + пароль)."""
+
+    class Meta:
+        model = CustomUser
+        fields = ("email", "password1", "password2")
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email:
+            if CustomUser.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    "Пользователь с таким email уже существует."
+                )
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = user.email
+        user.user_type = "visitor"
+        if commit:
+            user.save()
+        return user
+
+
 class CustomUserCreationForm(UserCreationForm):
     """Форма для регистрации с выбором роли."""
 

@@ -6,15 +6,23 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100vh !important;
   display: flex;
   flex-direction: column;
 }
 
 main.container-fluid {
   flex: 1 0 auto;
+  min-height: 68vh;
 }
 
 footer.footer-header {
   flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  main.container-fluid {
+  flex: 1 0 auto;
+  min-height: 60vh;
+}
 }

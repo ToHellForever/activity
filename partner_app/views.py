@@ -2566,8 +2566,18 @@ def change_password(request):
         if password_form.is_valid():
             password_form.save()
             update_session_auth_hash(request, password_form.user)
+            # AJAX-запрос из модального окна на дашборде — возвращаем JSON
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success"})
             messages.success(request, "Пароль успешно изменён!")
             return redirect("partner:dashboard")
+        # Ошибки валидации для AJAX — отдаём их в JSON, чтобы показать в модалке
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            errors = {
+                field: [str(e) for e in error_list]
+                for field, error_list in password_form.errors.items()
+            }
+            return JsonResponse({"status": "error", "errors": errors})
     else:
         password_form = PasswordChangeForm(user=request.user)
 

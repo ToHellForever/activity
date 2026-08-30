@@ -158,7 +158,6 @@ ul {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
-align-items: flex-end;
 }
 
 .form-row-double {
@@ -189,7 +188,7 @@ align-items: flex-end;
   display: block;
   font-family: 'Montserrat', sans-serif;
   font-weight: 500;
-  font-size: 10px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
   color: #9A9A9A;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
@@ -407,31 +406,6 @@ align-items: flex-end;
   font-size: 11px;
 }
 
-/* ===== ЧАТ-ВИДЖЕТ ===== */
-.chat-widget {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
-}
-
-.chat-widget-button {
-  width: 50px;
-  height: 50px;
-  background: #ff6b35;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
-  transition: all 0.25s ease;
-}
-
-.chat-widget-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
-}
 
 @media (max-width: 969px) {
     .email-section {
@@ -489,16 +463,6 @@ align-items: flex-end;
     max-width: 100%;
     border-radius: 16px;
   }
-
-  .chat-widget {
-    bottom: 16px;
-    right: 16px;
-  }
-
-  .chat-widget-button {
-    width: 44px;
-    height: 44px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -509,11 +473,6 @@ align-items: flex-end;
   .form-section {
     margin-bottom: 10px;
   }
-
-  .form-label {
-    font-size: 10px;
-  }
-
   .form-group input[type="text"],
   .form-group input[type="email"],
   .form-group input[type="password"],

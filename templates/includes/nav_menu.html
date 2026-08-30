@@ -8,7 +8,7 @@
 
     <!-- Иконки в мобильной версии -->
     <div class="mobile-icons">
-        <i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></i>
+        <a href="{% url 'visitor:dashboard' %}"><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></a>
         <div class="burger-menu-icon">
             <div class="burger-line"></div>
             <div class="burger-line"></div>
@@ -38,7 +38,7 @@
     </div>
         <div class="auth-block">
 <div class="auth-link-container">
-<i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></i>
+<a href="{% url 'visitor:dashboard' %}"><img src="/media/icon/profile.png" alt="" class="nav-icon-profile"></a>
     {% if user.is_authenticated %}
 <a href="{% url 'visitor:dashboard' %}" class="auth-link">Личный кабинет</a>
     {% else %}
@@ -62,7 +62,7 @@
             <div class="burger-auth-block">
                 <div class="auth-link-container">
 <div style="text-align: center;">
-    <i><img src="/media/icon/profile.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto;"></i>
+    <a href="{% url 'visitor:dashboard' %}"><img src="/media/icon/profile.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto;"></a>
     {% if user.is_authenticated %}
 <a href="{% url 'visitor:dashboard' %}" class="auth-link" style="display: block;">Личный кабинет</a>
     {% else %}
@@ -76,7 +76,7 @@
                 </div>
                 <div class="city-block">
                     <div style="text-align: center;">
-                        <i><img src="/media/icon/geo-blue.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto; margin-bottom: 5px; width: 1.7rem;"></i>
+                        <i><img src="/media/icon/geo-blue.png" alt="" class="nav-icon-profile" style="display: block; margin: 0 auto; margin-bottom: 5px; width: 1.7rem;"></a>
                         <div class="city" style="display: block;">Новосибирск</div>
                     </div>
                 </div>

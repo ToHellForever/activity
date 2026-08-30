@@ -114,7 +114,6 @@
   background: #00056e;
   padding: clamp(1rem, 3vw, 3rem);
   border-radius: 20px;
-  margin-right: -10px;
   position: relative;
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 }

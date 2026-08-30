@@ -1,81 +1,18 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Подтверждение почты</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .verify-box {
-            background: #fff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 350px;
-            text-align: center;
-        }
-        .verify-box h2 {
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-        .code-inputs {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 1.5rem;
-        }
-        .code-inputs input {
-            width: 40px;
-            height: 50px;
-            text-align: center;
-            font-size: 1.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .error-message {
-            color: #dc3545;
-            margin-bottom: 1rem;
-        }
-        button {
-            width: 100%;
-            padding: 0.7rem;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-    </style>
-</head>
-<body>
-
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/registration/verify_email.css' %}">
 <div class="verify-box">
-    <h2>Подтверждение почты</h2>
+    <h2 class='verify-h'>Подтверждение почты</h2>
 
     {% if error_message %}
-        <div class="error-message">
+        <div class="error-message" >
             {{ error_message }}
         </div>
     {% endif %}
 
-    <p>На вашу почту отправлен код подтверждения.</p>
-    <p>Пожалуйста, введите его в поля ниже.</p>
+    <p class='verify-p'>На вашу почту отправлен код подтверждения.</p>
+    <p class='verify-p'>Пожалуйста, введите его в поля ниже.</p>
 
     <form method="post">
         {% csrf_token %}
@@ -88,12 +25,12 @@
             <input type="text" name="code5" maxlength="1" required>
         </div>
 
-        <button type="submit">Подтвердить</button>
+        <button type="submit" class='verify-btn'>Подтвердить</button>
     </form>
-    <p>Не получили код? <span id="timer-display" style="font-weight: bold;">1:00</span></p>
-    <button id="resend-code-button" style="display: none; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 0.5rem 1rem; margin-top: 1rem;">Отправить код повторно</button>
+    <p class='resend'>Не получили код? <span id="timer-display">1:00</span></p>
+    <button id="resend-code-button" class='resend-btn'>Отправить код повторно</button>
 </div>
-
+</div>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const inputs = document.querySelectorAll('.code-inputs input');
@@ -167,5 +104,4 @@
             });
         </script>
 
-</body>
-</html>
+{% endblock %}

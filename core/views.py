@@ -4,6 +4,7 @@ from django.shortcuts import (
     get_object_or_404,
     reverse,
 )
+from django.conf import settings
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth import logout as auth_logout
@@ -197,9 +198,9 @@ def forgot_password(request):
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
-    from .forms import CustomUserCreationForm
+    from .forms import CustomUserCreationForm, VisitorRegistrationForm
     
-    form = CustomUserCreationForm()
+    form = VisitorRegistrationForm()
     partner_form = PartnerRegistrationForm()
     
     if request.method == "POST":
@@ -251,14 +252,16 @@ def register_view(request):
                 request.session['unverified_user_id'] = user.id
                 return redirect("verify_email")
         else:
-            form = CustomUserCreationForm(request.POST)
+            form = VisitorRegistrationForm(request.POST)
             if form.is_valid():
                 user = form.save(commit=False)
                 user.backend = "core.backends.EmailBackend"
                 user.save()
 
                 # Отправляем код подтверждения на почту
-                form.send_verification_code(request)
+                from .forms import CustomUserCreationForm
+                verification_form = CustomUserCreationForm(instance=user)
+                verification_form.send_verification_code(request)
 
                 # Сохраняем пользователя в сессии для дальнейшего подтверждения
                 request.session['unverified_user_id'] = user.id
@@ -438,7 +441,7 @@ def send_support_message(request):
                 Attachment.objects.create(message=message, file=f)
 
             # Формируем ОДИНАКОВЫЙ формат ответа, как мы делали в visitor_chats
-            created_dt = message.created_at
+            created_dt = timezone.localtime(message.created_at)
             
             response_data = {
                 'success': True,
@@ -448,7 +451,7 @@ def send_support_message(request):
                     'is_from_user': True,
                     'user_first_name': request.user.first_name or '',
                     'user_email': request.user.email or '',
-                    # КРИТИЧЕСКИ ВАЖНО: передаем полное ISO время
+                    # КРИТИЧЕСКИ ВАЖНО: передаем полное ISO время (дата + время)
                     'full_created_at': created_dt.isoformat(), 
                     # Для отображения в пузыре сообщения
                     'created_at': created_dt.strftime('%H:%M'), 
@@ -840,6 +843,9 @@ def send_event_request(request, event_id, question=""):
             return redirect("event_detail", event_id=event_id)
 
 def activate_account(request, pk):
+    '''
+    Представление для активации аккаунта.
+    '''
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == "POST":
         password = request.POST.get("password")

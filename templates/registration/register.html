@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/pages/register.css' %}">
-<script src="{% static 'js/pages/register.js' %}"></script>
+<link rel="stylesheet" href="{% static '/css/pages/registration/register.css' %}">
+<script src="{% static '/js/pages/register.js' %}"></script>
 
 <div class="register-page">
     <div class="register-container">
@@ -110,7 +110,7 @@
             <div class="form-section">
                 <div class="form-row form-row-quadruple">
                     <div class="form-group">
-                        <label class="form-label">Название организации / ФИО</label>
+                        <label class="form-label">Название организации</label>
                         {{ partner_form.company_name }}
                         {% if partner_form.company_name.errors %}<ul class="errorlist">{{ partner_form.company_name.errors }}</ul>{% endif %}
                     </div>
@@ -302,15 +302,6 @@
     </div>
 </div>
 
-<!-- Чат-виджет (как на скриншоте) -->
-<div class="chat-widget">
-    <div class="chat-widget-button">
-        <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5L2 22l5.17-1.34A9.96 9.96 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
-        </svg>
-    </div>
-</div>
-
 <script>
 // Обработка отображения имени файла логотипа
 document.getElementById('id_logo').addEventListener('change', function() {
@@ -327,13 +318,14 @@ document.getElementById('documents-upload').addEventListener('change', function(
 // Автоопределение почтового индекса по юридическому адресу
   var addressInput = document.getElementById('id_legal_address');
   var postalInput = document.getElementById('id_postal_code');
-  if (!addressInput || !postalInput) return;
-
-  var timer = null;
-  addressInput.addEventListener('blur', function() {
-    clearTimeout(timer);
-    timer = setTimeout(fetchPostalCode, 300);
-  });
+  if (!addressInput || !postalInput) { /* поля не найдены — пропускаем */ }
+  else {
+    var timer = null;
+    addressInput.addEventListener('blur', function() {
+      clearTimeout(timer);
+      timer = setTimeout(fetchPostalCode, 300);
+    });
+  }
 
   function fetchPostalCode() {
     var address = addressInput.value.trim();
@@ -350,7 +342,6 @@ document.getElementById('documents-upload').addEventListener('change', function(
       })
       .catch(function() { /* индекс не определён — останется пустым */ });
   }
-})();
 </script>
 </div>
 

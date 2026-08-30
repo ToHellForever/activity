@@ -189,7 +189,7 @@ align-items: flex-end;
   display: block;
   font-family: 'Montserrat', sans-serif;
   font-weight: 500;
-  font-size: 10px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: #9A9A9A;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
@@ -508,10 +508,6 @@ align-items: flex-end;
 
   .form-section {
     margin-bottom: 10px;
-  }
-
-  .form-label {
-    font-size: 10px;
   }
 
   .form-group input[type="text"],
