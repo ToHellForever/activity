@@ -291,8 +291,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background: rgba(2, 54, 156, 1);
   color: #fff;
@@ -342,7 +342,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 10px;
   border-radius: 50%;
   box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
@@ -399,6 +400,19 @@
 @media (max-width: 600px) {
   .partner-card-footer-buttons {
     flex-direction: column;
+  }
+  .card-check-box,
+  .card-edit-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .card-edit-btn {
+    right: 45px;
+  }
+  .card-edit-btn img,
+  .card-check-box img {
+    width: 15px;
+    height: 15px;
   }
 }
 @media (max-width: 900px) {

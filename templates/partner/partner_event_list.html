@@ -109,7 +109,7 @@
                                         <input type="checkbox" name="event_ids"
                                                value="{{ item.event.id }}" class="event-checkbox">
                                         <span class="card-check-box">
-                                            <img src="/media/icon/trash.svg" alt="">
+                                            <img src="/media/icon/trash.svg" alt="" title="Удалить">
                                         </span>
                                     </label>
                                 </div>
@@ -142,7 +142,7 @@
                    value="{{ item.event.id }}" class="event-checkbox"
                    onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
             <span class="card-check-box">
-                <img src="/media/icon/trash.svg" alt="">
+                <img src="/media/icon/trash.svg" alt="" title="Удалить">
             </span>
         </label>
     {% else %}
@@ -151,7 +151,7 @@
                    value="{{ item.event.id }}" class="event-checkbox"
                    onclick="showToast('Удаление невозможно, так как на мероприятие продан хотя бы 1 билет.'); event.stopPropagation(); return false;">
             <span class="card-check-box">
-                <img src="/media/icon/trash.svg" alt="">
+                <img src="/media/icon/trash.svg" alt="" title="Удалить">
             </span>
         </label>
     {% endif %}
@@ -184,7 +184,7 @@
                                                value="{{ item.event.id }}" class="event-checkbox"
                                                onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
                                         <span class="card-check-box">
-                                            <img src="/media/icon/trash.svg" alt="">
+                                            <img src="/media/icon/trash.svg" alt="" title="Удалить">
                                         </span>
                                     </label>
                                 </div>
