@@ -13,7 +13,7 @@
         {% if portfolio_items %}
         <div class="portfolio-grid">
             {% for item in portfolio_items %}
-            <div class="portfolio-card">
+            <div class="portfolio-card" data-edit-url="{% url 'partner:portfolio_edit' item.id %}">
                 <div class="portfolio-card-image">
                     {% if item.images.exists %}
                         <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}">
@@ -63,4 +63,20 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// На мобильных (≤578px) кнопки редактирования/удаления скрыты —
+// переход к редактированию выполняется по клику на саму карточку
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.portfolio-card[data-edit-url]').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            if (window.matchMedia('(max-width: 578px)').matches) {
+                window.location.href = card.dataset.editUrl;
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

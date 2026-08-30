@@ -72,7 +72,7 @@
                                 {% if is_edit %}
                                     Добавление к существующим (лимит: 5 фото всего)
                                 {% else %}
-                                    До 5 фотографий. Максимальный размер файла: 10 МБ.
+                                    До 5 фотографий.
                                 {% endif %}
                             </small>
                         </div>
@@ -149,9 +149,17 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-portfolio-submit" style="margin-top: 20px;">
-                {% if is_edit %}СОХРАНИТЬ ИЗМЕНЕНИЯ{% else %}+ ДОБАВИТЬ{% endif %}
-            </button>
+            <div class="portfolio-form-actions">
+                <button type="submit" class="btn-portfolio-submit" style="margin-top: 20px;">
+                    {% if is_edit %}СОХРАНИТЬ{% else %}+ ДОБАВИТЬ{% endif %}
+                </button>
+                {% if is_edit and portfolio_item %}
+                <a href="{% url 'partner:portfolio_delete' portfolio_item.id %}"
+                   class="btn-portfolio-delete"
+                   style="margin-top: 20px;"
+                   onclick="return confirm('Вы уверены, что хотите удалить этот кейс?');">УДАЛИТЬ КЕЙС</a>
+                {% endif %}
+            </div>
         </form>
     </div>
 </div>

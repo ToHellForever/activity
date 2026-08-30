@@ -12,8 +12,8 @@
   display: flex;
   gap: 20px;
   align-items: flex-start;
-  position: relative; 
-  padding-right: 20px; 
+  position: relative;
+  padding-right: 20px;
 }
 
 /* Изображение слева */
@@ -23,10 +23,12 @@
   object-fit: cover;
   border-radius: 12px;
   display: block;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+
 }
 
 .portfolio-card-image-placeholder {
- width: 180px;
+  width: 180px;
   height: 130px;
   background: #f0f0f0;
   border-radius: 4px;
@@ -45,7 +47,7 @@
 .portfolio-card-title {
   margin: 0 0 4px 0;
   font-size: clamp(0.75rem, 1vw, 1rem);
-  font-family: 'Verdana';
+  font-family: "Verdana";
   font-weight: 400;
   color: black;
 }
@@ -54,19 +56,20 @@
 .portfolio-card-meta {
   color: rgba(119, 122, 141, 1); /* Голубой цвет как на макете */
   font-size: clamp(0.75rem, 1vw, 1rem); /* Адаптивный размер шрифта */
-  font-family: 'Verdana';
+  font-family: "Verdana";
   font-weight: 400;
-    margin-top: 5px;
-
+  margin-top: 5px;
 }
 
 .portfolio-card-desc {
   margin-top: 5px;
   color: black;
-  font-family: 'Verdana';
+  font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8rem;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Блок с кнопками в правом верхнем углу */
@@ -79,7 +82,7 @@
 }
 
 .portfolio-title {
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-weight: 400;
   font-size: clamp(1rem, 1vw, 2rem);
   text-transform: uppercase;
@@ -96,7 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Verdana';
+  font-family: "Verdana";
   font-weight: 400;
   font-size: 0.8rem;
   color: rgba(0, 0, 0, 1);
@@ -110,17 +113,20 @@
 
 /* Адаптивность для мобильных */
 @media (max-width: 576px) {
-  .portfolio-card {
-    flex-direction: column;
-    padding-right: 0;
-  }
-  
-  .portfolio-card-image img,
-  .portfolio-card-image-placeholder {
-    height: 180px;
-  }
-  
+
   .portfolio-card-actions {
     margin-top: 10px;
+  }
+}
+
+/* ≤578px: кнопки редактирования/удаления скрыты,
+   редактирование — по клику на всю карточку */
+@media (max-width: 578px) {
+  .portfolio-card {
+    cursor: pointer;
+  }
+
+  .portfolio-card-actions {
+    display: none;
   }
 }

@@ -158,9 +158,49 @@ select:focus {
   border: none;
   color: black;
   font-family: "Montserrat";
-  font-size: clamp(0.8rem, 1vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 1rem);
   font-weight: 500;
-  padding: 7px 40px;
+  padding: 6px 45px;
+}
+
+/* Контейнер: кнопка удаления рядом с «Сохранить изменения» */
+.portfolio-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-portfolio-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(220, 53, 69, 0.6);
+  border-radius: 19.28px;
+  color: rgba(220, 53, 69, 1);
+  font-family: "Montserrat";
+  font-size: clamp(0.7rem, 1vw, 1rem);
+  font-weight: 500;
+  padding: 6px 24px;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.btn-portfolio-delete:hover {
+  background: rgba(220, 53, 69, 1);
+  color: #fff;
+}
+
+/* Кнопка удаления — только на мобильных (≤578px), на десктопе скрыта */
+.btn-portfolio-delete {
+  display: none;
+}
+@media (max-width: 578px) {
+  .btn-portfolio-delete {
+    display: inline-flex;
+  }
 }
 .portfolio-form-section--small {
   flex: 0 0 25%;
