@@ -1004,29 +1004,29 @@ def generate_sales_register(partner, start_date, end_date):
 
 def privacy_policy_view(request):
     """Политика конфиденциальности"""
-    return render(request, "privacy_policy.html")
+    return render(request, "other/privacy_policy.html")
 
 
 def offer_view(request):
     """Публичная оферта"""
-    return render(request, "offer.html")
+    return render(request, "other/offer.html")
 
 
 def requisites_view(request):
     """Реквизиты организации"""
-    return render(request, "requisites.html")
+    return render(request, "other/requisites.html")
 
 
 def faq_view(request):
     """FAQ — часто задаваемые вопросы"""
-    return render(request, "faq.html")
+    return render(request, "other/faq.html")
 
 
 def contacts_view(request):
     """Контакты"""
-    return render(request, "contacts.html")
+    return render(request, "other/contacts.html")
 
 
 def about_view(request):
     """О платформе"""
-    return render(request, "about.html")
+    return render(request, "other/about.html")
