@@ -4,82 +4,270 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Подтверждение заказа</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .order-details {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .qr-codes {
-            margin-top: 20px;
-        }
-        .qr-code {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .qr-code img {
-            max-width: 200px;
-            height: auto;
-        }
-    </style>
 </head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.email-wrapper {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.email-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.order-title {
+    margin: 0 0 20px 0;
+    font-size: 15px;
+    color: #333333;
+    font-weight: bold;
+}
+
+.greeting {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 10px;
+}
+
+.message-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 30px;
+}
+
+.details-card {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    padding-left: 15px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+}
+
+.details-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.8;
+}
+
+.detail-label {
+    color: rgba(119, 122, 141, 1);
+    width: 130px;
+    vertical-align: top;
+    font-size: 15px;
+}
+
+.detail-value {
+    font-size: 15px;
+}
+
+.detail-value-bold {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.section-title {
+    font-size: 15px;
+    color: #333333;
+    font-weight: bold;
+    margin-bottom: 12px;
+    margin-top: 0;
+}
+
+.qr-codes {
+    margin-top: 30px;
+}
+
+.qr-code {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.qr-code img {
+    max-width: 200px;
+    height: auto;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 10px 30px;
+    font-size: 15px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 50px;
+    letter-spacing: 1px;
+    background-color: #ff8c42;
+}
+
+.footer-text {
+    margin: 0;
+    font-size: 15px;
+    color: #888888;
+}
+
+.event-name {
+    color: rgb(0, 0, 0);
+}
+
+.footer-spacer {
+    padding-top: 30px;
+    padding-bottom: 10px;
+}
+</style>
 <body>
-    <div class="header">
-        <h1>Подтверждение заказа №{{ order.id }}</h1>
-    </div>
+    <table role="presentation" class="email-wrapper" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table role="presentation" class="email-container">
 
-    <div class="order-details">
-        <h2>Информация о заказе</h2>
-        <p><strong>Мероприятие:</strong> {{ ticket.event.title }}</p>
-        <p><strong>Билет:</strong> {{ ticket.name }}</p>
-        <p><strong>Количество:</strong> {{ order.quantity }}</p>
-        <p><strong>Стоимость:</strong> {{ order.total_price }} ₽</p>
-        <p><strong>Дата заказа:</strong> {{ order.created_at }}</p>
-    </div>
+                    <!-- Заголовок -->
+                    <tr>
+                        <td class="order-title">
+                            Подтверждение заказа №{{ order.id }}
+                        </td>
+                    </tr>
 
-    <div class="participant-details">
-        <h2>Данные участника</h2>
-        <p><strong>Имя:</strong> {{ participant_data.name }}</p>
-        <p><strong>Email:</strong> {{ participant_data.email }}</p>
-        <p><strong>Телефон:</strong> {{ participant_data.phone }}</p>
-    </div>
+                    <!-- Карточка с деталями заказа -->
+                    <tr>
+                        <td>
+                            <div class="section-title">Информация о заказе</div>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">Мероприятие:</td>
+                                                <td class="detail-value-bold event-name">{{ ticket.event.title }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Билет:</td>
+                                                <td class="detail-value">{{ ticket.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Количество:</td>
+                                                <td class="detail-value">{{ order.quantity }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Стоимость:</td>
+                                                <td class="detail-value">{{ order.total_price }} ₽</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Дата заказа:</td>
+                                                <td class="detail-value">{{ order.created_at }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-    <div class="qr-codes">
-        <h2>Ваши QR-коды</h2>
-        {% if qr_codes %}
-            {% for qr in qr_codes %}
-            <div class="qr-code">
-                <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
-                <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код">
-                <p>{{ qr.qr_text }}</p>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p>QR-коды будут доступны после оплаты.</p>
-        {% endif %}
-    </div>
+                    <!-- Данные участника -->
+                    <tr>
+                        <td>
+                            <div class="section-title">Данные участника</div>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">Имя:</td>
+                                                <td class="detail-value">{{ participant_data.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Email:</td>
+                                                <td class="detail-value">{{ participant_data.email }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Телефон:</td>
+                                                <td class="detail-value">{{ participant_data.phone }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-    {% if payment_url %}
-    <div class="payment-button" style="text-align: center; margin: 20px 0;">
-        <a href="{{ payment_url }}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Оплатить билет</a>
-    </div>
-    {% endif %}
+                    <!-- QR-коды -->
+                    <tr>
+                        <td>
+                            <div class="qr-codes">
+                                <div class="section-title">Ваши QR-коды</div>
+                                {% if qr_codes %}
+                                    {% for qr in qr_codes %}
+                                    <div class="qr-code">
+                                        <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
+                                        <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код">
+                                        <p>{{ qr.qr_text }}</p>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>QR-коды будут доступны после оплаты.</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
 
-    <div class="footer">
-        <p>Спасибо за покупку! Приходите ещё!</p>
-    </div>
+                    <!-- Кнопка оплаты (только для неоплаченных заказов) -->
+                    {% if order.payment_status != 'succeeded' and order.payment_status != 'canceled' %}
+                    <tr>
+                        <td align="center" style="padding-top: 30px; padding-bottom: 24px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="border-radius: 50px; background-color: #ff8c42;">
+                                        <a href="{{ payment_url|default:'#' }}" target="_blank" class="cta-button">
+                                            ОПЛАТИТЬ БИЛЕТ
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Статус заказа (для оплаченных) -->
+                    {% if order.payment_status == 'succeeded' %}
+                    <tr>
+                        <td align="center" style="padding-top: 20px; padding-bottom: 10px;">
+                            <p style="font-size: 15px; color: #4caf50; font-weight: bold; margin: 0;">
+                                ✓ Заказ оплачен
+                            </p>
+                        </td>
+                    </tr>
+                    {% elif order.payment_status == 'canceled' %}
+                    <tr>
+                        <td align="center" style="padding-top: 20px; padding-bottom: 10px;">
+                            <p style="font-size: 15px; color: #f44336; font-weight: bold; margin: 0;">
+                                Заказ отменён
+                            </p>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Подвал -->
+                    <tr>
+                        <td>
+                            <div class="footer-spacer"></div>
+                            <p class="footer-text">
+                                Спасибо за покупку! Приходите ещё!
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

@@ -305,6 +305,16 @@
   background: #e87a30;
 }
 
+/* Ссылка "Забыли пароль?" */
+.forgot-password-link {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: #ff6b35;
+  text-decoration: none;
+  display: inline-block;
+}
+
 @media (max-width: 1150px) {
   .visitor-content {
     width: 100% !important;

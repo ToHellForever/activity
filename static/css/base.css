@@ -4,6 +4,10 @@
 html {
   height: 100%;
 }
+/* для всех шрифтов на сайте сделать font-style: normal */
+* {
+  font-style: normal;
+}
 
 body {
   min-height: 100vh !important;

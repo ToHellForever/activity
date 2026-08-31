@@ -74,12 +74,11 @@
                     <input type="password" name="old_password" id="id_old_password" placeholder="Введите текущий пароль" required>
                     <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
+                <a href="{% url 'forgot_password' %}" class="forgot-password-link">Забыли пароль?</a>
                 {% if form.old_password.errors %}
                 <span class="error-text">{{ form.old_password.errors|join:", " }}</span>
                 {% endif %}
-            </div>
-
-            <div class="form-group">
+                            <div class="form-group">
                 <span class="label">НОВЫЙ ПАРОЛЬ</span>
                 <div class="editable-field password-field">
                     <input type="password" name="new_password1" id="id_new_password1" placeholder="Введите новый пароль" required>
@@ -104,6 +103,11 @@
             <button type="submit" name="change_password" class="btn-submit-modal">
                 СОХРАНИТЬ ИЗМЕНЕНИЯ
             </button>
+            </div>
+                {% if form.old_password.errors %}
+                <span class="error-text">{{ form.old_password.errors|join:", " }}</span>
+                {% endif %}
+            </div>
         </form>
     </div>
 </div>

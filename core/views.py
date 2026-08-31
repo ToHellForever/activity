@@ -22,7 +22,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .models import EmailVerificationCode
 from django.views.decorators.http import require_POST
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
@@ -168,23 +168,20 @@ def forgot_password(request):
 
             # Отправляем письмо с временным паролем и ссылкой на вход
             subject = "Восстановление пароля"
+            html_content = render_to_string(
+                "emails/password_reset.html",
+                {"temp_password": temp_password, "login_url": login_url},
+            )
+            plain_message = f"Здравствуйте!\n\nВаш временный пароль: {temp_password}.\n\nВы можете войти по ссылке: {login_url}\n\nПожалуйста, измените пароль после входа в систему."
 
-            message = f"""
-                Здравствуйте!
-
-                Ваш временный пароль: {temp_password}.
-
-                Вы можете войти, используя этот пароль, по следующей ссылке: {login_url}
-
-                Пожалуйста, измените пароль после входа в систему.
-            """
-            send_mail(
+            email_message = EmailMultiAlternatives(
                 subject,
-                message,
+                plain_message,
                 settings.DEFAULT_FROM_EMAIL,
                 [user.email],
-                fail_silently=False,
             )
+            email_message.attach_alternative(html_content, "text/html")
+            email_message.send(fail_silently=False)
             return render(
                 request, "registration/forgot_password_success.html", {"email": email}
             )

@@ -3,70 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <title>Отмена бронирования билета</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .event-info {
-            background-color: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .warning {
-            color: #dc3545;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #6c757d;
-            border-top: 1px solid #dee2e6;
-            padding-top: 15px;
-        }
-    </style>
 </head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.email-wrapper {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.email-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.greeting {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 10px;
+}
+
+.message-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 30px;
+}
+
+.details-card {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    padding-left: 15px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+}
+
+.details-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.8;
+}
+
+.detail-label {
+    color: rgba(119, 122, 141, 1);
+    width: 130px;
+    vertical-align: top;
+    font-size: 15px;
+}
+
+.detail-value {
+    font-size: 15px;
+}
+
+.detail-value-bold {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.warning-text {
+    color: rgb(255, 0, 0);
+    font-weight: bold;
+    font-size: 15px;
+    line-height: 1.6;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.footer-text {
+    margin: 0;
+    font-size: 15px;
+    color: #888888;
+}
+
+.footer-spacer {
+    padding-top: 30px;
+    padding-bottom: 10px;
+}
+
+.event-name {
+    color: rgba(2, 54, 156, 1);
+}
+</style>
 <body>
-    <div class="header">
-        <h2>Отмена бронирования билета</h2>
-    </div>
+    <table role="presentation" class="email-wrapper" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table role="presentation" class="email-container">
 
-    <p>Здравствуйте, {{ order.participant_data.first_name }}!</p>
+                    <!-- Приветствие -->
+                    <tr>
+                        <td class="greeting">
+                            Здравствуйте, {{ order.participant_data.first_name }}!
+                        </td>
+                    </tr>
 
-    <p>К сожалению, мы вынуждены отменить вашу бронь на мероприятие "{{ event.title }}", так как оплата не была произведена в установленный срок.</p>
+                    <!-- Текст сообщения -->
+                    <tr>
+                        <td class="message-text">
+                            К сожалению, мы вынуждены отменить вашу бронь на мероприятие
+                            <strong class="event-name">"{{ event.title }}"</strong>,
+                            так как оплата не была произведена в установленный срок.
+                        </td>
+                    </tr>
 
-    <div class="event-info">
-        <p><strong>Мероприятие:</strong> {{ event.title }}</p>
-        <p><strong>Дата и время:</strong> {{ event.date_time|date:"d.m.Y H:i" }}</p>
-        <p><strong>Тип билета:</strong> {{ order.ticket.name }}</p>
-        <p><strong>Количество:</strong> {{ order.quantity }}</p>
-        <p><strong>Сумма:</strong> {{ order.total_price }} ₽</p>
-    </div>
+                    <!-- Карточка с деталями -->
+                    <tr>
+                        <td>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">Мероприятие:</td>
+                                                <td class="detail-value-bold">{{ event.title }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Дата и время:</td>
+                                                <td class="detail-value">{{ event.date_time|date:"d.m.Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Тип билета:</td>
+                                                <td class="detail-value">{{ order.ticket.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Количество:</td>
+                                                <td class="detail-value">{{ order.quantity }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">Сумма:</td>
+                                                <td class="detail-value">{{ order.total_price }} ₽</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-    <div class="warning">
-        Ваша бронь отменена. Билеты больше недействительны.
-    </div>
+                    <!-- Предупреждение -->
+                    <tr>
+                        <td class="warning-text">
+                            Ваша бронь отменена. Билеты больше недействительны.
+                        </td>
+                    </tr>
 
-    <p>Если вы все еще хотите посетить мероприятие, пожалуйста, приобретите новые билеты на нашем сайте.</p>
+                    <!-- Текст перед подвалом -->
+                    <tr>
+                        <td class="message-text">
+                            Если вы все еще хотите посетить мероприятие, пожалуйста, приобретите новые билеты на нашем сайте.
+                        </td>
+                    </tr>
 
-    <p>Если у вас возникли вопросы, пожалуйста, свяжитесь с нашей службой поддержки.</p>
+                    <!-- Кнопка покупки новых билетов (только для неоплаченных/отменённых) -->
+                    {% if order.payment_status != 'succeeded' %}
+                    <tr>
+                        <td align="center" style="padding-top: 20px; padding-bottom: 24px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="border-radius: 50px; background-color: #ff8c42;">
+                                        <a href="{{ event.url|default:'#' }}" target="_blank" class="cta-button">
+                                            КУПИТЬ БИЛЕТ
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
 
-    <div class="footer">
-        <p>С уважением, команда {{ site_name }}</p>
-        <p>Это автоматическое сообщение, пожалуйста, не отвечайте на него.</p>
-    </div>
+                    <!-- Подвал -->
+                    <tr>
+                        <td>
+                            <div class="footer-spacer"></div>
+                            <p class="footer-text">
+                                Если у вас возникли вопросы, пожалуйста, свяжитесь с нашей службой поддержки.
+                            </p>
+                            <div class="footer-spacer"></div>
+                            <p class="footer-text">
+                                С уважением, команда {{ site_name }}
+                            </p>
+                            <p class="footer-text">
+                                Это автоматическое сообщение, пожалуйста, не отвечайте на него.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

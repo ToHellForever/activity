@@ -348,51 +348,63 @@
             </div>
 
             <!-- ===== Modal: Change password ===== -->
-            <div id="password-modal" class="modal-overlay" style="display:none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <span class="modal-title">ИЗМЕНИТЬ ПАРОЛЬ</span>
-                        <button type="button" class="modal-close" id="close-password-modal">&times;</button>
-                    </div>
+ <div id="password-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">ИЗМЕНИТЬ ПАРОЛЬ</span>
+            <button type="button" class="modal-close" id="close-password-modal">&times;</button>
+        </div>
+        
+        <form method="post" class="password-modal-form">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="form-error">{{ form.non_field_errors|join:", " }}</div>
+            {% endif %}
 
-                    <form id="passwordModalForm" class="password-modal-form">
-                        {% csrf_token %}
-
-                        <div class="form-group">
-                            <span class="label">ТЕКУЩИЙ ПАРОЛЬ</span>
-                            <div class="editable-field password-field">
-                                <input type="password" name="old_password" id="id_old_password" placeholder="Введите текущий пароль" required>
-                                <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                            </div>
-                            <span class="error-text" id="error_old_password" style="display:none;"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <span class="label">НОВЫЙ ПАРОЛЬ</span>
-                            <div class="editable-field password-field">
-                                <input type="password" name="new_password1" id="id_new_password1" placeholder="Введите новый пароль" required>
-                                <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                            </div>
-                            <span class="error-text" id="error_new_password1" style="display:none;"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <span class="label">ПОДТВЕРЖДЕНИЕ НОВОГО ПАРОЛЯ</span>
-                            <div class="editable-field password-field">
-                                <input type="password" name="new_password2" id="id_new_password2" placeholder="Повторите новый пароль" required>
-                                <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                            </div>
-                            <span class="error-text" id="error_new_password2" style="display:none;"></span>
-                        </div>
-
-                        <span class="error-text" id="error_non_field" style="display:none;"></span>
-
-                        <button type="submit" class="btn-submit-modal">
-                            СОХРАНИТЬ ИЗМЕНЕНИЯ
-                        </button>
-                    </form>
+            <div class="form-group">
+                <span class="label">ТЕКУЩИЙ ПАРОЛЬ</span>
+                <div class="editable-field password-field">
+                    <input type="password" name="old_password" id="id_old_password" placeholder="Введите текущий пароль" required>
+                    <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
+                <a href="{% url 'forgot_password' %}" class="forgot-password-link">Забыли пароль?</a>
+                {% if form.old_password.errors %}
+                <span class="error-text">{{ form.old_password.errors|join:", " }}</span>
+                {% endif %}
+                            <div class="form-group">
+                <span class="label">НОВЫЙ ПАРОЛЬ</span>
+                <div class="editable-field password-field">
+                    <input type="password" name="new_password1" id="id_new_password1" placeholder="Введите новый пароль" required>
+                    <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
+                {% if form.new_password1.errors %}
+                <span class="error-text">{{ form.new_password1.errors|join:", " }}</span>
+                {% endif %}
             </div>
+
+            <div class="form-group">
+                <span class="label">ПОДТВЕРЖДЕНИЕ НОВОГО ПАРОЛЯ</span>
+                <div class="editable-field password-field">
+                    <input type="password" name="new_password2" id="id_new_password2" placeholder="Повторите новый пароль" required>
+                    <button type="button" class="password-toggle" aria-label="Показать пароль"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
+                {% if form.new_password2.errors %}
+                <span class="error-text">{{ form.new_password2.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+
+            <button type="submit" name="change_password" class="btn-submit-modal">
+                СОХРАНИТЬ ИЗМЕНЕНИЯ
+            </button>
+            </div>
+                {% if form.old_password.errors %}
+                <span class="error-text">{{ form.old_password.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
 
         </div><!-- /partner-main -->
     </div><!-- /row -->

@@ -9,63 +9,119 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.parent  # D:\python\activity	emplates
-PROJECT_DIR = BASE_DIR.parent  # D:\python\activity
+BASE_DIR = Path(__file__).parent.parent
+PROJECT_DIR = BASE_DIR.parent
 TEMPLATES_DIR = BASE_DIR / "emails"
 
-# Статические папки для раздачи
 STATIC_DIRS = [
     PROJECT_DIR / "static",
     PROJECT_DIR / "staticfiles",
 ]
 
 MOCK = {
+    # booking_notification.html
+    "{{ booking.name }}": "Иванов Иван",
+    "{{ booking.phone }}": "+7 (999) 123-45-67",
+    "{{ booking.email }}": "ivan@example.com",
+    "{{ event.title }}": "Форум Цифровая экономика 2026",
+    "{{ event_date }}": "25.09.2026 18:00",
+    "{{ booking.participants_count }}": "150",
+    "{{ formats }}": "Конференция",
+    "{{ booking.comment }}": "Хочу разместить презентацию",
+
+    # email_verification.html
+    "{{ code }}": "847293",
+
+    # order_canceled.html
+    "{{ event.date }}": "25.09.2026",
+    "{{ event.time }}": "18:00",
+    "{{ ticket.type }}": "Взрослый",
+    "{{ ticket.price }}": "2250",
+    "{{ ticket.quantity }}": "2",
+    "{{ event.url }}": "https://example.com/event/123",
+    "{{ order.payment_status }}": "canceled",
+
+    # order_confirmation.html
     "{{ order.id }}": "12847",
+    "{{ ticket.name }}": "Взрослый",
+    "{{ ticket.event.title }}": "Форум Цифровая экономика 2026",
     "{{ order.quantity }}": "2",
     "{{ order.total_price }}": "4500",
     "{{ order.created_at }}": "25.08.2026 14:30",
-    "{{ ticket.name }}": "Взрослый",
-    "{{ ticket.event.title }}": "Форум Цифровая экономика 2026",
-    "{{ ticket.event.date_time|date:'d.m.Y H:i' }}": "25.09.2026 18:00",
-    "{{ ticket.event.place }}": "г. Новосибирск, ул. Красный проспект, 1",
-    "{{ order.ticket.name }}": "Взрослый",
-    "{{ order.ticket.event.title }}": "Форум Цифровая экономика 2026",
-    "{{ order.ticket.event.date_time|date:'d.m.Y H:i' }}": "25.09.2026 18:00",
-    "{{ order.ticket.event.place }}": "г. Новосибирск, ул. Красный проспект, 1",
-    "{{ order.payment_deadline|date:'d.m.Y H:i' }}": "27.08.2026 12:00",
-    "{{ payment_link }}": "https://example.com/pay/12847",
+    "{{ order.payment_status }}": "reserved",
     "{{ participant_data.name }}": "Иванов Иван Иванович",
     "{{ participant_data.email }}": "ivan@example.com",
     "{{ participant_data.phone }}": "+7 (999) 123-45-67",
     "{{ qr_codes }}": "yes",
+    "{{ forloop.counter }}": "1",
     "{{ qr.qr_base64 }}": "",
     "{{ qr.qr_text }}": "TICKET-12847-001",
     "{{ payment_url }}": "https://pay.example.com/pay/12847",
-    "{{ order.participant_data.first_name }}": "Иван",
-    "{{ event.title }}": "Форум Цифровая экономика 2026",
-    "{{ order.ticket.name }}": "Взрослый",
-    "{{ site_name }}": "БИЗНЕС АФИША",
+
+    # package_purchase_confirmation.html
     "{{ user.first_name }}": "Иван",
     "{{ package.name }}": "Про Starter",
     "{{ subscription.get_subscription_type_display }}": "Базовая",
     "{{ subscription.start_date|date:'d.m.Y H:i' }}": "01.08.2026 00:00",
     "{{ subscription.end_date|date:'d.m.Y H:i' }}": "01.09.2026 00:00",
-    "{{ event.date_time|date:'d.m.Y H:i' }}": "25.09.2026 18:00",
     "{{ request.get_host }}": "127.0.0.1:8080",
-    "{{ forloop.counter }}": "1",
-}
 
-DJANGO_TAGS = re.compile(r"\{%.*?%\}", re.DOTALL)
+    # reservation_canceled.html
+    "{{ order.participant_data.first_name }}": "Иван",
+    "{{ event.date_time|date:'d.m.Y H:i' }}": "25.09.2026 18:00",
+    "{{ order.ticket.name }}": "Взрослый",
+    "{{ order.payment_status }}": "canceled",
 
+    # reservation_reminder.html
+    "{{ hours_until_event }}": "24",
+    "{{ order.payment_status }}": "reserved",
 
-def replace_context_vars(t):
-    # Сначала заменяем переменные
+    # booking_cancellation.html
+    "{{ ticket.name }}": "Взрослый",
+    "{{ order.quantity }}": "2",
+    "{{ order.total_price }}": "4500",
+    "{{ order.payment_status }}": "canceled",
+
+    # password_reset.html
+    "{{ temp_password }}": "Xk9mP2vL",
+    "{{ login_url }}": "http://127.0.0.1:8080/login/",
+
+    # booking_notification.html
+
+}def replace_context_vars(t):
+    # 1. Сначала заменяем все переменные
     for var, val in MOCK.items():
         t = t.replace(var, val)
-    # Удаляем все Django-теги (включая for/if/url)
-    t = DJANGO_TAGS.sub("", t)
-    # Удаляем оставшиеся пустые { }
-    t = re.sub(r"\{\s*\}", "", t)
+
+    # 2. Обработка {% if condition %}...\n{% else %}\n...\n{% endif %}
+    # Оставляем содержимое ДО {% else %}, удаляем else и endif
+    t = re.sub(
+        r'\{%\s*if\s+[^%]+%\}\s*([\s\S]*?)(?:\{%\s*else\s*%\})[\s\S]*?\{%\s*endif\s*%\}',
+        lambda m: m.group(1).strip(),
+        t
+    )
+
+    # Обработка inline {% if condition %}text{% else %}text{% endif %}
+    t = re.sub(
+        r'\{%\s*if\s+[^%]+%\}(.*?)\{%\s*else\s*%\}(.*?)\{%\s*endif\s*%\}',
+        lambda m: m.group(1).strip(),
+        t
+    )
+
+    # 3. Обработка {% if condition %}...\n...\n{% endif %} (без else)
+    t = re.sub(
+        r'\{%\s*if\s+[^%]+%\}([\s\S]*?)\{%\s*endif\s*%\}',
+        lambda m: m.group(1).strip(),
+        t
+    )
+
+    # 4. Удаляем все оставшиеся Django-теги
+    t = re.sub(r'\{%\s*[^%]*?%\}', '', t)
+
+    # 5. Удаляем оставшиеся пустые {{ }}
+    t = re.sub(r'\{\{[^}]*\}\}', '', t)
+    t = re.sub(r'\{\s*\}', '', t)
+
     return t
 
 
@@ -132,9 +188,17 @@ if (links.length > 0) {{
             self.wfile.write(html.encode("utf-8"))
 
         elif parsed.path.startswith("/preview/"):
-            filename = parsed.path[len("/preview/") :]
+            filename = parsed.path[len("/preview/"):]
+            if not filename or filename.endswith("/"):
+                filename = filename.rstrip("/")
+            if not filename or filename.endswith("/"):
+                self.send_response(404)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"Template not found")
+                return
             filepath = TEMPLATES_DIR / filename
-            if not filepath.exists():
+            if not filepath.exists() or not filepath.is_file():
                 self.send_response(404)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
@@ -146,13 +210,13 @@ if (links.length > 0) {{
             qr_stub = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjZGRkIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI3NSIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UVItY29kZTwvdGV4dD48L3N2Zz4="
             rendered = rendered.replace("data:image/png;base64,[данные]", f'src="{qr_stub}"')
             rendered = rendered.replace("src=\"data:image/png;base64,[данные]\"", f'src="{qr_stub}"')
+            rendered = rendered.replace("data:image/png;base64,", f'src="{qr_stub}"')
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(rendered.encode("utf-8"))
 
         elif parsed.path.startswith("/static/"):
-            # Раздача статических файлов из static/ и staticfiles/
             static_path = parsed.path[len("/static/"):]
             for static_dir in STATIC_DIRS:
                 target = static_dir / static_path
