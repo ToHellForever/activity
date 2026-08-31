@@ -305,6 +305,13 @@
                 </div>
                 <span id="video-file-name"></span>
             </div>
+            <!-- Плейсхолдер загрузки — всегда в DOM, показывается когда видео нет -->
+            <div class="media-upload-placeholder" id="video-upload-placeholder" style="display:none;" onclick="document.getElementById('id_video_url').click()">
+                <div class="media-upload-icon">
+                    <img src="/media/icon/carbon_play-filled.svg" alt="" class='inner-icon'>
+                </div>
+                <div class="media-upload-text">+ ваш пакет позволяет загрузить видео. Загрузите видео в формате MP4, AVI, MOV</div>
+            </div>
             {% if form.instance.video_url and form.instance.video_processing_status == 'completed' %}
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
@@ -335,8 +342,31 @@
                         }
                     });
                 </script>
+            {% elif form.instance.video_url and form.instance.video_processing_status == 'failed' %}
+                <!-- Ошибка обработки: показываем плейсхолдер для повторной загрузки -->
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var placeholder = document.getElementById('video-upload-placeholder');
+                        var container = document.getElementById('video-upload-container');
+                        if (placeholder) {
+                            placeholder.style.display = 'flex';
+                            var existingMsg = placeholder.querySelector('.video-error-msg');
+                            if (!existingMsg) {
+                                var msg = document.createElement('div');
+                                msg.className = 'video-error-msg';
+                                msg.style.cssText = 'font-size: 13px; color: #d9534f; margin-top: 6px;';
+                                msg.textContent = 'Не удалось обработать видео. Загрузите его заново.';
+                                placeholder.appendChild(msg);
+                            }
+                        }
+                        if (container) {
+                            container.classList.add('has-no-photos');
+                            container.classList.remove('has-photos');
+                        }
+                    });
+                </script>
             {% elif form.instance.video_url %}
-                <!-- Видео обрабатывается -->
+                <!-- Видео обрабатывается: плейсхолдер виден, но загрузка заблокирована -->
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         var display = document.getElementById('video-file-display');
@@ -347,27 +377,38 @@
                         }
                         if (placeholder) {
                             placeholder.style.display = 'block';
+                            // Блокируем загрузку нового видео во время обработки
+                            placeholder.onclick = null;
+                            placeholder.style.cursor = 'not-allowed';
                             var existingMsg = placeholder.querySelector('.text-muted');
                             if (!existingMsg) {
                                 var msg = document.createElement('div');
                                 msg.className = 'text-muted';
                                 msg.style.fontSize = '13px';
-                                msg.textContent = 'Видео обрабатывается...';
+                                msg.textContent = 'Видео обрабатывается... Загрузка нового видео недоступна до завершения.';
                                 placeholder.appendChild(msg);
                             }
                         }
+                        var videoInput = document.getElementById('id_video_url');
+                        if (videoInput) videoInput.disabled = true;
                         if (container) {
                             container.classList.add('has-no-photos');
                         }
                     });
                 </script>
             {% else %}
-                <div class="media-upload-placeholder" id="video-upload-placeholder" onclick="document.getElementById('id_video_url').click()">
-                    <div class="media-upload-icon">
-                        <img src="/media/icon/carbon_play-filled.svg" alt="" class='inner-icon'>
-                    </div>
-                    <div class="media-upload-text">+ ваш пакет позволяет загрузить видео. Загрузите видео в формате MP4, AVI, MOV</div>
-                </div>
+                <!-- Видео отсутствует: показываем плейсхолдер -->
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var placeholder = document.getElementById('video-upload-placeholder');
+                        var container = document.getElementById('video-upload-container');
+                        if (placeholder) placeholder.style.display = 'block';
+                        if (container) {
+                            container.classList.add('has-no-photos');
+                            container.classList.remove('has-photos');
+                        }
+                    });
+                </script>
             {% endif %}
         </div>
         <input type="file" name="video_url" id="id_video_url" class="custom-media-input" data-media-type="video_url" style="display: none;" accept="video/mp4,video/mov,video/avi">
@@ -1167,6 +1208,8 @@
                 const placeholder = document.getElementById('program-upload-placeholder');
                 const container = document.getElementById('program-upload-container');
                 const fileNameSpan = document.getElementById('program-file-name');
+                // Выбран новый файл — он ещё не в БД, удаление будет только клиентским
+                newProgramSelected = !!file;
                 if (file) {
                     // Краткое имя файла — только basename без расширения
                     const name = file.name || '';
@@ -1212,6 +1255,8 @@
                 const placeholder = document.getElementById('video-upload-placeholder');
                 const container = document.getElementById('video-upload-container');
                 const fileNameSpan = document.getElementById('video-file-name');
+                // Выбран новый файл — он ещё не в БД, удаление будет только клиентским
+                newVideoSelected = !!file;
                 if (file) {
                     const name = file.name || '';
                     const base = name.replace(/.*[\/]/, '');
@@ -1333,20 +1378,8 @@
                 });
                 placeDataInput.value = JSON.stringify({
                     coordinates: coords, address: address, additional_info: additionalInfo
-        });
-
-        // Replace media button (замена файла/видео)
-        document.querySelectorAll('.media-program-button').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const mediaType = this.dataset.mediaType;
-                const fileInputId = mediaType === 'video_url' ? 'id_video_url' : 'id_program_file';
-                const fileInput = document.getElementById(fileInputId);
-                if (fileInput) {
-                    fileInput.click();
-                }
+                });
             });
-        });
-    });
         }
 
         function updateMapFromData(data) {
@@ -1374,13 +1407,18 @@
         {% endif %}
 
 
-         // Remove program/video file button (крестик — удаление файла)
-         document.querySelectorAll('.program-remove-btn').forEach(function(btn) {
+         // Флаги: пользователь выбрал новый файл, но форма ещё не сохранена —
+         // файла нет в БД, удалять на сервере нечего, чистим только превью.
+         let newVideoSelected = false;
+         let newProgramSelected = false;
+
+         // Remove program/video file button (крестик — удаление файла, включая видео)
+         document.querySelectorAll('.program-remove-btn, .video-delete-btn').forEach(function(btn) {
              btn.addEventListener('click', function(e) {
                  e.stopPropagation();
                  const mediaType = this.dataset.mediaType;
                  const mediaId = this.dataset.mediaId || '';
-                 
+
                  // Определяем, к какому контейнеру относится кнопка
                  const isVideo = mediaType === 'video_url';
                  const display = document.getElementById(isVideo ? 'video-file-display' : 'program-file-display');
@@ -1397,6 +1435,21 @@
                      }
                  }
 
+                 function clearFileInput() {
+                     // Очищаем input файла, чтобы при повторном выборе того же файла сработало change
+                     const fileInput = document.getElementById(isVideo ? 'id_video_url' : 'id_program_file');
+                     if (fileInput) fileInput.value = '';
+                 }
+
+                 // Файл выбран, но форма не сохранена — на сервере его нет
+                 const isNewFile = isVideo ? newVideoSelected : newProgramSelected;
+                 if (isNewFile) {
+                     if (isVideo) newVideoSelected = false; else newProgramSelected = false;
+                     setFileState(false);
+                     clearFileInput();
+                     return;
+                 }
+
                  // Если это новый файл (ещё не на сервере) — просто скрываем превью
                  if (!mediaId) {
                      setFileState(false);
@@ -1411,46 +1464,56 @@
                  .then(data => {
                      if (data.status === 'success') {
                          setFileState(false);
-                         // Очищаем input файла, чтобы при повторном выборе того же файла сработало change
-                         const fileInput = document.getElementById(isVideo ? 'id_video_url' : 'id_program_file');
-                         if (fileInput) fileInput.value = '';
+                         clearFileInput();
                      } else {
                          showToast('Ошибка удаления', true);
                      }
                  })
                  .catch(err => showToast('Ошибка: ' + err.message, true));
-        });
+             });
+         });
 
-        // Replace video button (заменить видео — иконка загрузки)
-        document.querySelectorAll('.video-upload-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const fileInput = document.getElementById('id_video_url');
-                if (fileInput) fileInput.click();
-            });
-        });
-    });
+         // Replace video button (заменить видео — иконка загрузки)
+         document.querySelectorAll('.video-upload-btn').forEach(function(btn) {
+             btn.addEventListener('click', function(e) {
+                 e.preventDefault();
+                 const fileInput = document.getElementById('id_video_url');
+                 if (fileInput) fileInput.click();
+             });
+         });
 
-        // Remove media buttons (video и др.)
-        document.querySelectorAll('.remove-media-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const mediaType = this.dataset.mediaType;
-                const mediaId = this.dataset.mediaId || '';
-                if (!mediaType) return;
+         // Replace media button (замена файла/видео)
+         document.querySelectorAll('.media-program-button').forEach(function(btn) {
+             btn.addEventListener('click', function() {
+                 const mediaType = this.dataset.mediaType;
+                 const fileInputId = mediaType === 'video_url' ? 'id_video_url' : 'id_program_file';
+                 const fileInput = document.getElementById(fileInputId);
+                 if (fileInput) {
+                     fileInput.click();
+                 }
+             });
+         });
 
-                fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.status === 'success') location.reload();
-                    else showToast('Ошибка удаления', true);
-                })
-                .catch(err => showToast('Ошибка: ' + err.message, true));
-            });
-        });
-    });
+         // Remove media buttons (video и др.)
+         document.querySelectorAll('.remove-media-btn').forEach(function(btn) {
+             btn.addEventListener('click', function() {
+                 const mediaType = this.dataset.mediaType;
+                 const mediaId = this.dataset.mediaId || '';
+                 if (!mediaType) return;
+
+                 fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
+                     method: 'POST',
+                     headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                 })
+                 .then(r => r.json())
+                 .then(data => {
+                     if (data.status === 'success') location.reload();
+                     else showToast('Ошибка удаления', true);
+                 })
+                 .catch(err => showToast('Ошибка: ' + err.message, true));
+             });
+         });
+     });
 
     // ============================================================
     // CLOSE ALL DROPDOWNS

@@ -35,6 +35,11 @@ urlpatterns = [
         views.remove_media,
         name="remove_media",
     ),
+    path(
+        "check_video_status/<int:event_id>/",
+        views.check_video_status,
+        name="check_video_status",
+    ),
     path("request_payout/", views.request_payout, name="request_payout"),
     path("payout-details/", views.payout_details, name="payout_details"),
     path("payout-details/set-default/", views.set_default_payout_detail, name="set_default_payout_detail"),

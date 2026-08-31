@@ -844,6 +844,20 @@ def bulk_delete_events(request):
 
 
 @login_required
+def check_video_status(request, event_id):
+    """
+    AJAX: возвращает статус обработки видео мероприятия.
+    Используется фронтендом для polling во время обработки.
+    """
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    return JsonResponse({
+        "status": event.video_processing_status,
+        "status_display": event.get_video_processing_status_display(),
+    })
+
+
+@login_required
 def remove_media(request, media_type, media_id):
     """
     View для удаления медиафайлов через AJAX.

@@ -23,7 +23,12 @@ class YandexVideoProcessingStorage(FileSystemStorage):
         self.subdirectory = kwargs.pop('subdirectory', 'event_videos')
         temp_dir = getattr(settings, 'MEDIA_TEMP_DIR', os.path.join(settings.BASE_DIR, 'media_temp'))
         super().__init__(location=temp_dir, base_url=None)
-        
+        # Запрещаем перезапись: каждое видео получает уникальное имя.
+        # Иначе два мероприятия с одинаковым именем файла делят один ключ
+        # в облаке (удаление одного удаляет видео другого), а параллельные
+        # задачи обработки гоняются за одним и тем же локальным файлом.
+        self.file_overwrite = False
+
         # Создаём Yandex Cloud хранилище для получения URL после загрузки
         if getattr(settings, 'USE_YANDEX_CLOUD', False):
             self.cloud_storage = YandexCloudWithProcessingStorage()

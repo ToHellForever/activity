@@ -185,8 +185,13 @@ def process_video_task(
 
         if not os.path.exists(video_path):
             logger.error(f"Файл видео не найден: {video_path}")
-            setattr(instance, status_field_name, 'failed')
-            instance.save(update_fields=[status_field_name])
+            # Перечитываем из БД: возможно, другая задача уже обработала видео
+            fresh_instance = model.objects.get(pk=instance_id)
+            if getattr(fresh_instance, status_field_name) == 'completed':
+                logger.info(f"CELERY TASK: {model_name} {instance_id} already completed by another task, skipping")
+                return f"Видео уже обработано другой задачей: {instance_id}"
+            setattr(fresh_instance, status_field_name, 'failed')
+            fresh_instance.save(update_fields=[status_field_name])
             logger.error(f"CELERY TASK: Set status to failed - file not found: {video_path}")
             return f"Файл не найден: {video_path}"
 
@@ -208,6 +213,8 @@ def process_video_task(
         from .utils import compress_video
         if not compress_video(video_path, compressed_video_path):
             logger.error(f"Ошибка при сжатии видео: {video_path}")
+            setattr(instance, status_field_name, 'failed')
+            instance.save(update_fields=[status_field_name])
             return f"Ошибка при сжатии видео: {video_path}"
         logger.info(f"CELERY TASK: Video compressed to {compressed_video_path}")
 
@@ -284,6 +291,8 @@ def process_video_task(
                             os.remove(p)
                         except Exception:
                             pass
+                setattr(instance, status_field_name, 'failed')
+                instance.save(update_fields=[status_field_name])
                 return f"Ошибка при загрузке в Cloud: {e}"
         else:
             # Локальный режим - перемещаем обработанный файл
@@ -324,12 +333,21 @@ def process_video_task(
         return f"Видео успешно обработано: {instance_id}"
     except Exception as e:
         logger.error(f"Исключение при обработке видео: {str(e)}", exc_info=True)
-        # Устанавливаем статус failed при ошибке
+        # Устанавливаем статус failed при ошибке.
+        # ВАЖНО: перечитываем инстанс из БД — к этому моменту другая задача
+        # могла уже успешно обработать видео, и нельзя перезаписать
+        # 'completed' на 'failed' устаревшим объектом.
         try:
-            setattr(instance, status_field_name, 'failed')
-            instance.save(update_fields=[status_field_name])
+            fresh_instance = model.objects.get(pk=instance_id)
+            if getattr(fresh_instance, status_field_name) == 'completed':
+                logger.info(
+                    f"CELERY TASK: {model_name} {instance_id} already completed by another task, not downgrading to failed"
+                )
+                return f"Видео уже обработано другой задачей: {instance_id}"
+            setattr(fresh_instance, status_field_name, 'failed')
+            fresh_instance.save(update_fields=[status_field_name])
             logger.error(f"CELERY TASK: Set status to failed for {model_name} {instance_id}")
-        except:
+        except Exception:
             pass
         return f"Исключение при обработке видео: {str(e)}"
 

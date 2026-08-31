@@ -27,6 +27,7 @@ from .events import (
     remove_event_image,
     set_primary_image,
     send_partner_all_tickets_sold_notification,
+    check_video_status,
 )
 from .reports import (
     reports,
@@ -82,6 +83,7 @@ __all__ = [
     "remove_event_image",
     "set_primary_image",
     "send_partner_all_tickets_sold_notification",
+    "check_video_status",
     # reports
     "reports",
     "participant_list",

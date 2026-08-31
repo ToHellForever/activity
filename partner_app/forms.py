@@ -113,6 +113,18 @@ class EventForm(forms.ModelForm):
                     "Ваш пакет не поддерживает загрузку видео."
                 )
 
+            # Пока предыдущее видео обрабатывается — новое загружать нельзя
+            if (
+                video_url
+                and self.instance and self.instance.pk
+                and self.instance.video_url
+                and self.instance.video_processing_status in ('pending', 'processing')
+            ):
+                self.add_error(
+                    'video_url',
+                    "Предыдущее видео ещё обрабатывается. Дождитесь завершения обработки."
+                )
+
             # Проверка на наличие программы
             if not package.has_program_and_speakers and program_file:
                 self.add_error(
