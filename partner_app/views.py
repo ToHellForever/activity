@@ -1,27 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse
 from django.core.files.base import ContentFile
-from django.forms.models import model_to_dict
 from django.core.mail import send_mail, EmailMessage
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import TruncDate
 from django.contrib import messages
 from django.conf import settings
-from django.shortcuts import redirect
 import logging
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime, timedelta
 import os
 import json
 import tempfile
 from moviepy import VideoFileClip
-from PIL import Image
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from core.models import (
     Event,
     Ticket,
@@ -41,8 +39,6 @@ from .forms import EventForm, DocumentUploadForm, ReportScheduleForm, PayoutDeta
 from core.forms import PartnerProfileForm
 from .models import SalesReport, ReportSchedule, PartnerProfile, PortfolioItem, PortfolioImage
 from .utils import generate_sales_report
-from core.forms import PartnerProfileForm, PasswordChangeForm
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -414,7 +410,7 @@ def create_event(request):
                     # Восстанавливаем указатель файла после проверки
                     video_file.file.seek(0)
                 except Exception as e:
-                    logger.error(f"Ошибка при проверке длительности видео: {str(e)}")
+                    logger.error("Ошибка при проверке длительности видео: %s", e, exc_info=True)
                     # Очищаем временный файл при ошибке
                     if temp_file_path and os.path.exists(temp_file_path):
                         try:
@@ -655,7 +651,7 @@ def create_event(request):
             "has_active_subscription": (active_subscription if 'active_subscription' in locals() else None) is not None,
             "has_free_tickets": False,
             "packages": EventPackage.objects.all(),
-            "primary_event_image": primary_event_image,
+            "primary_event_image": None,
         },
     )
 
@@ -791,7 +787,7 @@ def create_event(request):
 def notify_organizer(event):
     subject = f"Ваше мероприятие '{event.title}' одобрено!"
     message = f"Привет, {event.organizer.first_name}!\n\nВаше мероприятие '{event.title}' успешно добавлено на сайт."
-    send_mail(subject, message, "settings.DEFAULT_FROM_EMAIL", [event.organizer.email])
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [event.organizer.email])
 
 @login_required
 @check_partner_status('can_create_events')

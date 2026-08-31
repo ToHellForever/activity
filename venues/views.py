@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from .models import EquipmentItem
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -427,34 +426,8 @@ def process_booking_request(request):
     # Обрабатываем данные
     success, errors = _process_booking_request(request)
 
-    # Возвращаем результат (хотя он не будет использоваться в UI)
+    # Возвращаем результат
     return JsonResponse({"success": success, "errors": errors})
-    if not venue_id:
-        return JsonResponse(
-            {"success": False, "errors": {"__all__": "Площадка не указана"}}
-        )
-
-    try:
-        venue = Venue.objects.get(pk=venue_id)
-    except Venue.DoesNotExist:
-        return JsonResponse(
-            {"success": False, "errors": {"__all__": "Указанная площадка не найдена"}}
-        )
-
-    form = BookingRequestForm(request.POST)
-
-    if form.is_valid():
-        booking_request = form.save(commit=False)
-        booking_request.venue = venue
-        booking_request.status = "new"
-        booking_request.save()
-
-        # Отправляем уведомление владельцу площадки
-        _send_booking_notification(booking_request)
-
-        return JsonResponse({"success": True})
-
-    return JsonResponse({"success": False, "errors": form.errors})
 
 
 class VenueDetailView(DetailView):

@@ -84,6 +84,9 @@ class VideoWatermarkMixin:
 
     def delete_old_video(self, video_field_name, hash_field_name):
         """Удаляет старый файл видео и обнуляет хэш."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         video_field = getattr(self, video_field_name)
         if video_field:
             try:
@@ -91,7 +94,7 @@ class VideoWatermarkMixin:
                     try:
                         os.remove(video_field.path)
                     except Exception as e:
-                        print(f"Ошибка удаления файла: {e}")
+                        logger.error("Ошибка удаления файла: %s", e)
             except NotImplementedError:
                 # Storage не поддерживает absolute paths (облачное хранилище)
                 # Используем метод .delete() у FileField для удаления

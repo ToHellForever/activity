@@ -11,6 +11,31 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
+class _OrderSyncContext:
+    """Потокобезопасный контекст для предотвращения рекурсии в сигналах Order."""
+    def __init__(self):
+        import threading
+        self._local = threading.local()
+
+    @property
+    def syncing(self):
+        return getattr(self._local, 'active', False)
+
+    @syncing.setter
+    def syncing(self, value):
+        self._local.active = value
+
+    def __enter__(self):
+        self.syncing = True
+
+    def __exit__(self, *args):
+        self.syncing = False
+
+
+_order_sync = _OrderSyncContext()
+
+
 def wait_for_file(file_path, max_attempts=20, delay=1):
     for _ in range(max_attempts):
         if os.path.exists(file_path):
@@ -18,61 +43,85 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
         time.sleep(delay)
     return False
 
+
+@receiver(post_save, sender=Order)
+def create_order_tickets(sender, instance, created, **kwargs):
+    """Автоматически создаёт OrderTicket для каждого билета в заказе."""
+    with _order_sync:
+        if _order_sync.syncing:
+            return
+
+        if created:
+            quantity = instance.quantity or 1
+            # Создаём билеты
+            tickets_to_create = []
+            for i in range(1, quantity + 1):
+                tickets_to_create.append(
+                    OrderTicket(order=instance, ticket_number=i, attended=False)
+                )
+            if tickets_to_create:
+                OrderTicket.objects.bulk_create(tickets_to_create)
+                logger.info("Created %d OrderTicket(s) for Order %s", quantity, instance.id)
+
+        # Синхронизируем quantity при изменении
+        current_count = instance.tickets.count()
+        if current_count != instance.quantity:
+            if current_count < instance.quantity:
+                # Нужно добавить билеты
+                for i in range(current_count + 1, instance.quantity + 1):
+                    OrderTicket.objects.create(order=instance, ticket_number=i)
+                logger.info("Added %d ticket(s) to Order %s", instance.quantity - current_count, instance.id)
+            elif current_count > instance.quantity:
+                # Удаляем лишние билеты (оставляем первые quantity)
+                instance.tickets.filter(ticket_number__gt=instance.quantity).delete()
+                logger.info("Removed %d excess ticket(s) from Order %s", current_count - instance.quantity, instance.id)
+
+
 @receiver(post_save, sender=Event)
 def process_event_video(sender, instance, **kwargs):
-    logger.info(f"SIGNAL: process_event_video triggered for Event {instance.id}")
+    logger.info("SIGNAL: process_event_video triggered for Event %s", instance.id)
     
-    # Проверяем, не вызвано ли это обновлением хэша или статуса после обработки
     update_fields = kwargs.get('update_fields', None)
     if update_fields:
         if 'processed_video_url_hash' in update_fields:
-            logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_url_hash for Event {instance.id}")
+            logger.info("SIGNAL: Skipping - processed_video_url_hash for Event %s", instance.id)
             return
         if 'video_processing_status' in update_fields:
-            logger.info(f"SIGNAL: Skipping - update_fields contains video_processing_status for Event {instance.id}")
+            logger.info("SIGNAL: Skipping - video_processing_status for Event %s", instance.id)
             return
         if 'video_url' in update_fields:
-            # Если статус уже processing или completed — таск уже работает или завершён
             status = instance.video_processing_status
             if status in ('processing', 'completed', 'failed'):
-                logger.info(f"SIGNAL: Skipping - status is '{status}' for Event {instance.id}")
+                logger.info("SIGNAL: Skipping - status is '%s' for Event %s", status, instance.id)
                 return
 
     if not instance.video_url:
-        logger.info(f"SIGNAL: No video_url for Event {instance.id}")
+        logger.info("SIGNAL: No video_url for Event %s", instance.id)
         return
 
-    # Если статус processing — таск уже работает, пропускаем
     status = instance.video_processing_status
     if status == 'processing':
-        logger.info(f"SIGNAL: Skipping - status is '{status}' for Event {instance.id}")
+        logger.info("SIGNAL: Skipping - status is '%s' for Event %s", status, instance.id)
         return
 
-    # Получаем текущий хэш видео для логирования
     current_hash = instance._get_video_hash(instance.video_url)
     stored_hash = instance.processed_video_url_hash
-    logger.info(f"SIGNAL: Event {instance.id} - current_hash={current_hash}, stored_hash={stored_hash}")
+    logger.info("SIGNAL: Event %s - current_hash=%s, stored_hash=%s", instance.id, current_hash, stored_hash)
 
-    # Запускаем задачу если:
-    # 1) stored_hash=None (новое видео или видео ещё не обработано)
-    # 2) current_hash != stored_hash (хэш изменился)
     should_process = False
     if stored_hash is None and instance.video_url:
-        # Новое видео или видео ещё не обработано
         should_process = True
-        logger.info(f"SIGNAL: Event {instance.id} - new video (stored_hash=None), processing")
+        logger.info("SIGNAL: Event %s - new video, processing", instance.id)
     elif current_hash is not None and stored_hash is not None and current_hash != stored_hash:
-        # Хэш изменился - видео заменено
         should_process = True
-        logger.info(f"SIGNAL: Event {instance.id} - hash changed from {stored_hash} to {current_hash}, processing")
+        logger.info("SIGNAL: Event %s - hash changed, processing", instance.id)
     elif current_hash is not None and stored_hash is not None:
-        # Хэш совпадает - видео уже обработано
-        logger.info(f"SIGNAL: Event {instance.id} - hash unchanged, skipping")
+        logger.info("SIGNAL: Event %s - hash unchanged, skipping", instance.id)
     else:
-        logger.info(f"SIGNAL: Event {instance.id} - hash mismatch or invalid, skipping")
+        logger.info("SIGNAL: Event %s - hash mismatch, skipping", instance.id)
 
     if should_process:
-        logger.info(f"SIGNAL: Sending process_video_task.delay for Event {instance.id}")
+        logger.info("SIGNAL: Sending process_video_task.delay for Event %s", instance.id)
         result = process_video_task.delay(
             model_name='Event',
             instance_id=instance.id,
@@ -80,34 +129,31 @@ def process_event_video(sender, instance, **kwargs):
             hash_field_name='processed_video_url_hash',
             status_field_name='video_processing_status'
         )
-        logger.info(f"SIGNAL: Task sent with ID: {result.id}")
+        logger.info("SIGNAL: Task sent with ID: %s", result.id)
         
 @receiver(post_save, sender=PartnerProfile)
 def process_video_business_card(sender, instance, **kwargs):
-    logger.info(f"SIGNAL: process_video_business_card triggered for PartnerProfile {instance.id}")
+    logger.info("SIGNAL: process_video_business_card triggered for PartnerProfile %s", instance.id)
     
-    # Проверяем, не вызвано ли это обновлением хэша или статуса после обработки
     update_fields = kwargs.get('update_fields', None)
     if update_fields:
         if 'processed_video_business_card_hash' in update_fields:
-            logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_business_card_hash for PartnerProfile {instance.id}")
+            logger.info("SIGNAL: Skipping - hash for PartnerProfile %s", instance.id)
             return
         if 'video_business_card_processing_status' in update_fields:
-            logger.info(f"SIGNAL: Skipping - update_fields contains video_business_card_processing_status for PartnerProfile {instance.id}")
+            logger.info("SIGNAL: Skipping - status for PartnerProfile %s", instance.id)
             return
         if 'video_business_card' in update_fields:
-            # Если статус уже processing или completed — не запускаем повторно
             status = instance.video_business_card_processing_status
             if status in ('processing', 'completed'):
-                logger.info(f"SIGNAL: Skipping - status is '{status}' for PartnerProfile {instance.id}")
+                logger.info("SIGNAL: Skipping - status '%s' for PartnerProfile %s", status, instance.id)
                 return
 
     if not instance.video_business_card:
         return
 
-     # Запускаем задачу только если хэш не совпадает или отсутствует (видео новое/заменено)
     if instance._should_process_video(instance.video_business_card, instance.processed_video_business_card_hash):
-        logger.info(f"SIGNAL: Sending process_video_task.delay for PartnerProfile {instance.id}")
+        logger.info("SIGNAL: Sending process_video_task.delay for PartnerProfile %s", instance.id)
         process_video_task.delay(
             model_name='PartnerProfile',
             instance_id=instance.id,
@@ -116,41 +162,4 @@ def process_video_business_card(sender, instance, **kwargs):
             status_field_name='video_business_card_processing_status'
         )
     else:
-        logger.info(f"SIGNAL: Video business card already processed for PartnerProfile {instance.id}, skipping")
-
-
-@receiver(post_save, sender=Order)
-def create_order_tickets(sender, instance, created, **kwargs):
-    """Автоматически создаёт OrderTicket для каждого билета в заказе."""
-    if created:
-        quantity = instance.quantity or 1
-        # Создаём билеты
-        tickets_to_create = []
-        for i in range(1, quantity + 1):
-            tickets_to_create.append(
-                OrderTicket(order=instance, ticket_number=i, attended=False)
-            )
-        if tickets_to_create:
-            OrderTicket.objects.bulk_create(tickets_to_create)
-            logger.info(f"SIGNAL: Created {quantity} OrderTicket(s) for Order {instance.id}")
-
-    # Синхронизируем quantity при изменении
-    elif hasattr(create_order_tickets, '_syncing'):
-        return
-
-    current_count = instance.tickets.count()
-    if current_count != instance.quantity:
-        # Помечаем, чтобы избежать рекурсии
-        create_order_tickets._syncing = True
-        try:
-            if current_count < instance.quantity:
-                # Нужно добавить билеты
-                for i in range(current_count + 1, instance.quantity + 1):
-                    OrderTicket.objects.create(order=instance, ticket_number=i)
-                logger.info(f"SIGNAL: Added {instance.quantity - current_count} ticket(s) to Order {instance.id}")
-            elif current_count > instance.quantity:
-                # Удаляем лишние билеты (оставляем первые quantity)
-                instance.tickets.filter(ticket_number__gt=instance.quantity).delete()
-                logger.info(f"SIGNAL: Removed {current_count - instance.quantity} excess ticket(s) from Order {instance.id}")
-        finally:
-            del create_order_tickets._syncing
+        logger.info("SIGNAL: Video business card already processed for PartnerProfile %s, skipping", instance.id)

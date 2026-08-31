@@ -1,52 +1,25 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
-from core.models import Order, Ticket
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import update_session_auth_hash
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.clickjacking import xframe_options_exempt
 from core.models import (
     Event,
     Ticket,
-    Tag,
     SupportTicket,
-    SupportMessage,
-    SupportAttachment,
-    CustomUser,
     Order,
-    OrderTicket,
     EventPackage,
     UserPackageSubscription,
 )
-
-from django.db import models, transaction, IntegrityError
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 import logging
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-import uuid
-import random
-import string
-import requests
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.clickjacking import xframe_options_exempt
 import json
 import base64
 import qrcode
 import io
-from django.core.mail import send_mail
-from django.shortcuts import (
-    render,
-    redirect,
-    get_object_or_404,
-    HttpResponseRedirect,
-    reverse,
-)
-from django.utils import timezone
-from core.tasks import generate_payment_link
-from django.contrib.sites.shortcuts import get_current_site
-from core.tasks import generate_payment_link
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +243,7 @@ def save_field(request):
             request.user.save(update_fields=["phone"])
         return JsonResponse({"status": "success"})
     except Exception as e:
-        logger.error(f"Ошибка сохранения поля {field_name}: {e}")
+        logger.error("Ошибка сохранения поля %s: %s", field_name, e, exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 

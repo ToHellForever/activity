@@ -5,46 +5,33 @@ from django.shortcuts import (
     reverse,
 )
 from django.conf import settings
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
-from django.contrib.auth import login, authenticate, logout
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.core.files.base import ContentFile
+from django.contrib.auth import login, logout
 from django.contrib.auth import logout as auth_logout
 from .forms import CustomAuthenticationForm, CustomUserCreationForm, PartnerRegistrationForm
 from django.views.decorators.cache import never_cache
-from django.contrib.auth import login, authenticate
-from .models import Event, Ticket, Tag, MainTag
+from .models import Event, MainTag
 from django.contrib.auth.decorators import login_required, user_passes_test
-from core.forms import SupportTicketForm
 from django.utils import timezone
-from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order, MainTag
+from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
 from partner_app.models import PartnerProfile
-from django import forms
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import update_session_auth_hash
 from .models import EmailVerificationCode
-from django.views.decorators.http import require_POST
-from django.core.mail import send_mail, EmailMultiAlternatives
-from django.contrib.auth.hashers import make_password
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods
+from django.core.mail import EmailMultiAlternatives
 from django.contrib import messages
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-import uuid
-from django.utils import timezone
 import logging
 import random
 import string
-import requests
-import json
 import base64
-import qrcode
-import io
-import datetime
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count, Q
-from django.db.models.functions import Coalesce
+from datetime import datetime, timedelta
+from django.db.models import Q
 from django.contrib.admin.views.decorators import staff_member_required
-# transaction
 from django.db import transaction
 from venues.models import Venue
+from core.utils import generate_sales_register
+
 logger = logging.getLogger(__name__)
 
 
@@ -147,32 +134,40 @@ def login_view(request):
     return render(request, "registration/login.html", {"form": form})
 
 def generate_temporary_password(length=10):
-    """Генерация временного пароля."""
+    """Генерация временного пароля (остается для обратной совместимости)."""
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(length))
 
+
 @never_cache
 def forgot_password(request):
-    """Обработка запроса на восстановление пароля."""
+    """Обработка запроса на восстановление пароля — отправляет ссылку с токеном."""
     if request.method == "POST":
         email = request.POST.get("email")
         try:
             user = CustomUser.objects.get(email=email)
-            # Генерируем временный пароль
-            temp_password = generate_temporary_password()
-            # Устанавливаем временный пароль
-            user.set_password(temp_password)
+            # Генерируем токен восстановления
+            reset_token = generate_temporary_password(32)
+            # Сохраняем токен (будет проверен на странице reset_password)
+            user.password_reset_token = reset_token
             user.save()
-            # Формируем ссылку на страницу входа
-            login_url = request.build_absolute_uri(reverse("login"))
+            
+            # Формируем ссылку на страницу сброса пароля
+            reset_url = request.build_absolute_uri(
+                reverse("reset_password", kwargs={"token": reset_token})
+            )
 
-            # Отправляем письмо с временным паролем и ссылкой на вход
+            # Отправляем письмо со ссылкой
             subject = "Восстановление пароля"
             html_content = render_to_string(
                 "emails/password_reset.html",
-                {"temp_password": temp_password, "login_url": login_url},
+                {"reset_url": reset_url, "site_name": "Платформа мероприятий"},
             )
-            plain_message = f"Здравствуйте!\n\nВаш временный пароль: {temp_password}.\n\nВы можете войти по ссылке: {login_url}\n\nПожалуйста, измените пароль после входа в систему."
+            plain_message = (
+                f"Здравствуйте!\n\n"
+                f"Для восстановления пароля перейдите по ссылке:\n{reset_url}\n\n"
+                f"Ссылка действительна в течение 1 часа."
+            )
 
             email_message = EmailMultiAlternatives(
                 subject,
@@ -191,6 +186,44 @@ def forgot_password(request):
                 request, "registration/forgot_password_success.html", {"email": email}
             )
     return render(request, "registration/forgot_password.html")
+
+
+@never_cache
+def reset_password(request, token):
+    """Страница сброса пароля по токену."""
+    # Находим пользователя с этим токеном
+    user = get_object_or_404(CustomUser, password_reset_token=token)
+    
+    if request.method == "POST":
+        password1 = request.POST.get("password1")
+        password2 = request.POST.get("password2")
+        
+        if not password1 or not password2:
+            return render(request, "registration/reset_password.html", {
+                "error": "Заполните оба поля.",
+                "token": token,
+            })
+        
+        if password1 != password2:
+            return render(request, "registration/reset_password.html", {
+                "error": "Пароли не совпадают.",
+                "token": token,
+            })
+        
+        if len(password1) < 8:
+            return render(request, "registration/reset_password.html", {
+                "error": "Пароль должен быть не менее 8 символов.",
+                "token": token,
+            })
+        
+        # Устанавливаем новый пароль
+        user.set_password(password1)
+        user.password_reset_token = None  # Очищаем токен
+        user.save()
+        
+        return redirect("login")
+    
+    return render(request, "registration/reset_password.html", {"token": token})
 
 @never_cache
 def register_view(request):
@@ -425,19 +458,19 @@ def send_support_message(request):
         try:
             ticket = SupportTicket.objects.get(id=ticket_id)
             
-            # Создаем сообщение (предполагаем, что у вас есть модель Message)
+            # Создаем сообщение
             message = SupportMessage.objects.create(
                 ticket=ticket,
                 user=request.user, 
                 text=text,
-                is_from_user=True # Участник пишет сам себе/своему организатору
+                is_from_user=True
             )
             
-            # Если есть файлы
+            # Если есть файлы — используем SupportAttachment
             for f in request.FILES.getlist('attachment'):
-                Attachment.objects.create(message=message, file=f)
+                SupportAttachment.objects.create(message=message, file=f)
 
-            # Формируем ОДИНАКОВЫЙ формат ответа, как мы делали в visitor_chats
+            # Формируем ОДИНАКОВЫЙ формат ответа
             created_dt = timezone.localtime(message.created_at)
             
             response_data = {
@@ -448,9 +481,7 @@ def send_support_message(request):
                     'is_from_user': True,
                     'user_first_name': request.user.first_name or '',
                     'user_email': request.user.email or '',
-                    # КРИТИЧЕСКИ ВАЖНО: передаем полное ISO время (дата + время)
                     'full_created_at': created_dt.isoformat(), 
-                    # Для отображения в пузыре сообщения
                     'created_at': created_dt.strftime('%H:%M'), 
                 }
             }
@@ -471,7 +502,8 @@ def upload_image(request):
         data = ContentFile(base64.b64decode(imgstr), name=f"image.{ext}")
 
         # Создаем вложение и возвращаем его ID
-        attachment = Attachment.objects.create(file=data)
+        from core.models import SupportAttachment
+        attachment = SupportAttachment.objects.create(file=data)
         return JsonResponse({"attachment_id": attachment.id})
 
     return HttpResponseBadRequest("Некорректный запрос")
@@ -823,7 +855,7 @@ def send_event_request(request, event_id, question=""):
                 return redirect("event_detail", event_id=event_id)
 
     except Exception as e:
-        logger.error(f"Ошибка при создании заявки: {str(e)}")
+        logger.error("Ошибка при создании заявки: %s", e, exc_info=True)
         if is_ajax:
             return JsonResponse(
                 {
@@ -839,18 +871,26 @@ def send_event_request(request, event_id, question=""):
             )
             return redirect("event_detail", event_id=event_id)
 
-def activate_account(request, pk):
+@never_cache
+def activate_account(request, token):
     '''
-    Представление для активации аккаунта.
+    Представление для активации аккаунта по токену.
+    Токен генерируется при регистрации и отправляется на email.
     '''
-    user = get_object_or_404(CustomUser, pk=pk)
+    user = get_object_or_404(CustomUser, password_reset_token=token)
     if request.method == "POST":
         password = request.POST.get("password")
+        if not password or len(password) < 8:
+            return render(
+                request,
+                "activate_account.html",
+                {"error": "Пароль должен быть не менее 8 символов."},
+            )
         user.set_password(password)
-        user.user_type = "visitor"  # Меняем статус на посетителя
+        user.password_reset_token = None  # Очищаем токен
         user.save()
         return redirect("login")
-    return render(request, "activate_account.html")
+    return render(request, "activate_account.html", {"token": token})
 
 @staff_member_required
 def sales_register(request):
@@ -878,22 +918,23 @@ def sales_register(request):
         for partner in partners:
             # Формируем реестр продаж для каждого партнёра
             sales_register = generate_sales_register(partner, start_date, end_date)
-            print(
-                f"Partner: {partner.email}, Sales: {sales_register['total_sales']}"
-            )  # Отладочный вывод
+            logger.info(
+                "sales_register: Partner=%s, Sales=%s",
+                partner.email, sales_register['total_sales']
+            )
             if sales_register["total_sales"] > 0:  # Только если есть продажи
                 register_data.append(
                     {
                         "partner": partner,
-                        "total_sales": sales_register["total_sales"],
-                        "total_commission": sales_register["total_commission"],
-                        "total_refunds": sales_register["total_refunds"],
-                        "net_amount": sales_register["net_amount"],
-                        "orders": sales_register["orders"],
+                        "total_sales": sales_register['total_sales'],
+                        "total_commission": sales_register['total_commission'],
+                        "total_refunds": sales_register['total_refunds'],
+                        "net_amount": sales_register['net_amount'],
+                        "orders": sales_register['orders'],
                     }
                 )
 
-        print(f"Total partners with sales: {len(register_data)}")  # Отладочный вывод
+        logger.info("sales_register: Total partners with sales: %s", len(register_data))
         context = {
             "register_data": register_data,
             "start_date": start_date,
@@ -931,71 +972,6 @@ def check_ticket(request, order_id):
         "is_organizer": is_organizer,
     }
     return render(request, "partner/ticket_check.html", context)
-
-def generate_sales_register(partner, start_date, end_date):
-    """
-    Формирует реестр продаж для партнёра за указанный период.
-
-    Args:
-        partner: Объект пользователя (CustomUser), для которого формируется реестр.
-        start_date: Начальная дата периода (datetime).
-        end_date: Конечная дата периода (datetime).
-
-    Returns:
-        dict: Словарь с данными реестра:
-            - total_sales: Общая сумма продаж (без учёта комиссии).
-            - total_commission: Общая сумма удержанной комиссии.
-            - total_refunds: Общая сумма возвратов.
-            - net_amount: Чистая сумма к выплате (total_sales - total_commission - total_refunds).
-            - orders: Список заказов с детализацией.
-    """
-    # Получаем все мероприятия партнёра
-    partner_events = Event.objects.filter(organizer=partner)
-
-    # Получаем все заказы для этих мероприятий за указанный период
-    orders = Order.objects.filter(
-        ticket__event__in=partner_events,
-        created_at__gte=start_date,
-        created_at__lte=end_date,
-        is_paid=True,  # Только оплаченные заказы
-    ).select_related("ticket__event")
-
-    # Рассчитываем общие суммы (исключаем возвраты из выручки и комиссии)
-    non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
-
-    total_sales = non_refunded_orders.aggregate(
-        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
-    )["total"]
-
-    total_commission = non_refunded_orders.aggregate(
-        total=Coalesce(Sum("platform_commission"), 0, output_field=DecimalField())
-    )["total"]
-
-    # Рассчитываем сумму возвратов: учитываем заказы, которые были оплачены, но потом возвращены или отменены
-    refunded_orders = Order.objects.filter(
-        ticket__event__in=partner_events,
-        created_at__gte=start_date,
-        created_at__lte=end_date,
-        payment_status__in=["canceled", "refunded"],
-    )
-
-    total_refunds = refunded_orders.aggregate(
-        total=Coalesce(Sum("total_price"), 0, output_field=DecimalField())
-    )["total"]
-
-    # Чистая сумма к выплате (возвраты уже исключены из выручки и комиссии)
-    net_amount = total_sales - total_commission
-
-    return {
-        "total_sales": total_sales,
-        "total_commission": total_commission,
-        "total_refunds": total_refunds,
-        "net_amount": net_amount,
-        "orders": orders,
-        "start_date": start_date,
-        "end_date": end_date,
-    }
-
 
 # ─── Статические страницы ─────────────────────────────────────────────
 

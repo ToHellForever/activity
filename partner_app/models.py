@@ -278,7 +278,7 @@ class PartnerProfile(models.Model):
                             if s3_storage.exists(str(file_field)):
                                 s3_storage.delete(str(file_field))
                         except Exception as e:
-                            print(f"Ошибка удаления из облака: {e}")
+                            logger.error("Ошибка удаления из облака: %s", e, exc_info=True)
                     else:
                         try:
                             if os.path.exists(file_field.path):

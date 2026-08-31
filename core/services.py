@@ -46,7 +46,7 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
         lock = redis_lock(f"ticket_{ticket_id}_lock", timeout=30, blocking_timeout=5)
         lock.__enter__()
     except Exception as e:
-        logger.warning(f"[reserve_tickets] Redis-блокировка недоступна: {e}")
+        logger.warning("[reserve_tickets] Redis-блокировка недоступна: %s", e)
     
     try:
         with transaction.atomic():
@@ -86,13 +86,15 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
                 order.delete()
                 raise TicketReservationError("Билеты закончились. Попробуйте позже.")
             
+            # Считаем реальное remaining после update, а не из старого значения
+            remaining = Ticket.objects.filter(pk=ticket_id).values_list('available_quantity', flat=True).first()
             logger.info(
                 "[reserve_tickets] Билеты успешно забронированы",
                 extra={
                     'order_id': order.id,
                     'ticket_id': ticket_id,
                     'quantity': quantity,
-                    'remaining': ticket.available_quantity - quantity
+                    'remaining': remaining
                 }
             )
             
@@ -103,7 +105,7 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
             try:
                 lock.__exit__(None, None, None)
             except Exception as e:
-                logger.warning(f"[reserve_tickets] Ошибка освобождения блокировки: {e}")
+                logger.warning("[reserve_tickets] Ошибка освобождения блокировки: %s", e)
 
 
 def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_status, **extra_fields):
@@ -140,7 +142,7 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
             lock.__enter__()
             locks.append(lock)
     except Exception as e:
-        logger.warning(f"[bulk_reserve_tickets] Redis-блокировки недоступны: {e}")
+        logger.warning("[bulk_reserve_tickets] Redis-блокировки недоступны: %s", e)
     
     try:
         with transaction.atomic():
@@ -211,4 +213,4 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
             try:
                 lock.__exit__(None, None, None)
             except Exception as e:
-                logger.warning(f"[bulk_reserve_tickets] Ошибка освобождения блокировки: {e}")
+                logger.warning("[bulk_reserve_tickets] Ошибка освобождения блокировки: %s", e)

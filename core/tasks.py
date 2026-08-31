@@ -1,7 +1,6 @@
 
 from celery import shared_task
-from django.db.models import Count
-from core.models import Ticket, Order
+from core.models import Ticket, Order, Event
 import logging
 from django.apps import apps
 import os
@@ -9,11 +8,10 @@ import time
 import hashlib
 from django.utils import timezone
 from django.conf import settings
-from core.models import Event, Ticket
-from venues.models import Venue
-from partner_app.models import PartnerProfile
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 from django.core.management import call_command
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +29,7 @@ def check_race_conditions_task():
         logger.info("Scheduled race condition check completed successfully")
         return "Success: No race condition issues detected"
     except Exception as e:
-        logger.error(f"Error during scheduled race condition check: {str(e)}")
+        logger.error("Error during scheduled race condition check: %s", e, exc_info=True)
         return f"Error: {str(e)}"
 
 @shared_task

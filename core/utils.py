@@ -12,6 +12,8 @@ from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from io import BytesIO
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 def generate_sales_register(partner, start_date, end_date):
     """
@@ -105,7 +107,7 @@ def resize_image_to_800px(input_image_path, output_image_path=None):
 
         return True
     except Exception as e:
-        print(f"Ошибка при изменении размера изображения: {e}")
+        logger.error("Ошибка при изменении размера изображения: %s", e)
         return False
 
 def add_watermark_to_image(
@@ -161,7 +163,7 @@ def add_watermark_to_image(
 
         return True
     except Exception as e:
-        print(f"Ошибка при добавлении водяного знака на изображение: {e}")
+        logger.error("Ошибка при добавлении водяного знака на изображение: %s", e)
         return False
 
 
@@ -173,6 +175,7 @@ def compress_image(
 ):
     """
     Сжимает изображение с заданным качеством и максимальным размером.
+    Сохраняет пропорции изображения.
 
     Args:
         input_image_path: путь к исходному изображению.
@@ -183,19 +186,20 @@ def compress_image(
     try:
         image = Image.open(input_image_path)
 
-        # Изменяем размер, если изображение больше заданного
+        # Изменяем размер, если изображение больше заданного, сохраняя пропорции
         if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
             image.thumbnail(max_size, Image.LANCZOS)
 
         # Сохраняем с заданным качеством
+        save_kwargs = {"quality": quality, "optimize": True}
         if output_image_path:
-            image.save(output_image_path, quality=quality, optimize=True)
+            image.save(output_image_path, **save_kwargs)
         else:
-            image.save(input_image_path, quality=quality, optimize=True)
+            image.save(input_image_path, **save_kwargs)
 
         return True
     except Exception as e:
-        print(f"Ошибка при сжатии изображения: {e}")
+        logger.error("Ошибка при сжатии изображения: %s", e)
         return False
 
 

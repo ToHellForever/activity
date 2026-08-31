@@ -1,9 +1,10 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models, transaction
+from django.db import models
 import os
+import logging
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, FileExtensionValidator
-from taggit.managers import TaggableManager
+from django.core.validators import FileExtensionValidator
+from django.db.models import Sum
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
 try:
@@ -12,7 +13,8 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 class CustomUser(AbstractUser, VideoWatermarkMixin):
@@ -72,6 +74,15 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         verbose_name="Причина отказа",
         help_text="Причина, по которой заявка партнёра была отклонена",
     )
+    
+    # Токен для восстановления пароля (временно, удаляется после использования)
+    password_reset_token = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        verbose_name="Токен восстановления пароля",
+        help_text="Временный токен для сброса пароля по ссылке из письма",
+    )
 
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""
@@ -115,6 +126,10 @@ class PartnerDocument(models.Model):
         status = "подтверждён" if self.is_approved else ("отклонён" if self.rejection_reason else "на проверке")
         return f"Документ {self.user.get_full_name()} - {status}"
 
+    def get_user_name(self):
+        """Возвращает имя пользователя для админки."""
+        return self.user.get_full_name() or self.user.email
+    
     class Meta:
         verbose_name = "Документ партнёра"
         verbose_name_plural = "Документы партнёров"
@@ -260,9 +275,15 @@ class UserPackageSubscription(models.Model):
             else:  # one_time
                 self.end_date = timezone.now() + timezone.timedelta(days=365)
 
-        if self.end_date < timezone.now():
+        # Обновляем is_active, если подписка просрочена
+        if self.end_date and self.end_date < timezone.now():
             self.is_active = False
+            
         super().save(*args, **kwargs)
+
+    def is_expired(self):
+        """Проверяет, истекла ли подписка."""
+        return self.end_date and self.end_date < timezone.now()
 
     def can_change_package(self):
         """Проверяет, может ли пользователь изменить пакет."""
@@ -317,7 +338,6 @@ class Tag(models.Model):
         related_name="subtags",
         verbose_name="Основной тег",
         help_text="Основной тег, к которому относится этот подтег",
-        default=1  # Временно, для миграции
     )
 
     def __str__(self):
@@ -519,33 +539,26 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Автоматически завершаем прошедшие мероприятия
-        if self.pk and self.status == "active":
-            try:
-                old = Event.objects.get(pk=self.pk)
-                if old.status == "active" and old.date_time < timezone.now():
-                    self.status = "completed"
-            except Event.DoesNotExist:
-                pass
-        
-        # Сохраняем старые значения для проверки замены файлов
+        # Сохраняем старые значения для проверки замены файлов — ОДИН запрос
         old_image = None
         old_video_url = None
         old_video_hash = None
         old_program_file = None
         
         if self.pk:
-            old = Event.objects.get(pk=self.pk)
+            old = Event.objects.only('image', 'video_url', 'processed_video_url_hash', 'program_file', 'status', 'date_time').get(pk=self.pk)
             old_image = old.image
             old_video_url = old.video_url
             old_video_hash = old.processed_video_url_hash
             old_program_file = old.program_file
 
+            # Автоматически завершаем прошедшие мероприятия
+            if self.status == "active" and old.status == "active" and old.date_time < timezone.now():
+                self.status = "completed"
+        
         # Проверяем, было ли заменено видео ДО сохранения
         if self.pk and old_video_url != self.video_url and self.video_url:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info(f"Event {self.pk}: Video changed! old={old_video_url}, new={self.video_url}")
+            logger.info("Event %s: Video changed! old=%s, new=%s", self.pk, old_video_url, self.video_url)
             # Обнуляем хэш ДО сохранения, чтобы сигнал post_save увидел None и запустил задачу
             self.processed_video_url_hash = None
 
@@ -813,12 +826,15 @@ class Ticket(models.Model):
                 with get_lock(self.pk, use_redis=True):
                     return self._check_availability(quantity)
             else:
-                # Локальная блокировка через транзакции
+                # Локальная блокировка через транзакции и SELECT FOR UPDATE
                 with transaction.atomic():
-                    ticket = Ticket.objects.select_for_update().get(pk=self.pk)
+                    ticket = Ticket.objects.select_for_update().filter(pk=self.pk).first()
+                    if ticket is None:
+                        return False
                     available = ticket._check_availability(quantity)
-                    print(
-                        f"Checking availability for ticket {ticket.id}: available_quantity={ticket.available_quantity}, quantity={quantity}, available={available}"
+                    logger.debug(
+                        "Checking availability for ticket %s: available_quantity=%s, quantity=%s, available=%s",
+                        ticket.id, ticket.available_quantity, quantity, available
                     )
                     return available
         except Ticket.DoesNotExist:
@@ -832,20 +848,23 @@ class Ticket(models.Model):
                 hours=self.event.auto_close_sales_hours
             )
             if timezone.now() >= close_time:
-                print(f"Sales are closed for event {self.event.id}")
+                logger.warning(
+                    "Sales closed for event %s (auto_close_sales_hours=%s)",
+                    self.event.id, self.event.auto_close_sales_hours
+                )
                 return False
 
-        sold = sum(
-            order.quantity
-            for order in self.orders.exclude(
-                payment_status__in=["refunded", "canceled"]
-            )
-        )
-        print(
-            f"Ticket {self.id}: available_quantity={self.available_quantity}, sold={sold}, quantity={quantity}"
-        )
+        # Используем aggregate вместо цикла по Python — намного быстрее
+        sold_aggregated = self.orders.exclude(
+            payment_status__in=["refunded", "canceled"]
+        ).aggregate(total=Sum("quantity"))["total"]
+        sold = sold_aggregated or 0
+        
         available = self.available_quantity >= sold + quantity
-        print(f"Availability check result: {available}")
+        logger.debug(
+            "Ticket %s: available_quantity=%s, sold=%s, quantity=%s, result=%s",
+            self.id, self.available_quantity, sold, quantity, available
+        )
         return available
 
     def get_available_count(self):
@@ -934,13 +953,17 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         # Логирование изменения статуса платежа
         if self.pk:
-            original = Order.objects.get(pk=self.pk)
-            if original.payment_status != self.payment_status:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                admin_users = User.objects.filter(is_superuser=True)
-                for admin in admin_users:
-                    print(f"Уведомление для {admin.email}: Статус заказа #{self.id} изменён с {original.payment_status} на {self.payment_status}")
+            try:
+                original = Order.objects.only('payment_status').get(pk=self.pk)
+                if original.payment_status != self.payment_status:
+                    admin_users = CustomUser.objects.filter(is_superuser=True)
+                    for admin in admin_users:
+                        logger.warning(
+                            'Order #%s status changed: %s -> %s',
+                            self.id, original.payment_status, self.payment_status
+                        )
+            except Order.DoesNotExist:
+                pass  # Новый заказ — пропускаем
 
         super().save(*args, **kwargs)
 
@@ -1215,10 +1238,10 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
         return f"Фото для мероприятия: {self.event.title}"
 
     def save(self, *args, **kwargs):
-            # Обработка водяного знака теперь выполняется на уровне хранилища
-            # (YandexImageProcessingStorage или локальная обработка)
-            # Не нужно добавлять водяной знак здесь
-            super().save(*args, **kwargs)
+        # Обработка водяного знака теперь выполняется на уровне хранилища
+        # (YandexImageProcessingStorage или локальная обработка)
+        # Не нужно добавлять водяной знак здесь
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """Удаляет файл изображения при удалении записи."""

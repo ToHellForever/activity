@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 from .models import ReportSchedule, SalesReport
 from .utils import generate_sales_report
 from core.models import Order
+import logging
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def send_scheduled_reports():
@@ -93,7 +96,6 @@ def send_scheduled_reports():
                 file_name,
                 report_file.getvalue(),
                 f"application/{schedule.report_format}",
-                cid='report_file'
             )
             email.send()
 
@@ -102,8 +104,10 @@ def send_scheduled_reports():
             schedule.save()
 
         except Exception as e:
-            # Логируем ошибку и продолжаем со следующим расписанием
-            print(f"Ошибка при отправке отчёта для {schedule.partner.email}: {str(e)}")
+            logger.error(
+                "Ошибка при отправке отчёта для %s: %s",
+                schedule.partner.email, str(e), exc_info=True
+            )
 
 
 def should_send_today(schedule, today):
