@@ -1,16 +1,14 @@
 import csv
 import io
 import qrcode
-from datetime import datetime
-from django.http import HttpResponse
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from core.models import Order, Ticket, Event
+from core.models import Order
 
 
 def generate_sales_report(partner, period_start, period_end, report_type):

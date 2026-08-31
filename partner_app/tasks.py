@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.conf import settings
-from datetime import datetime, timedelta
+from datetime import timedelta
 from .models import ReportSchedule, SalesReport
 from .utils import generate_sales_report
 from core.models import Order

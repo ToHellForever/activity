@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from core.models import Event, PartnerDocument, PayoutDetails, EventPackage, Tag
+from core.models import Event, PartnerDocument, PayoutDetails
 from .models import ReportSchedule, PortfolioItem
 
 User = get_user_model()
@@ -159,7 +159,6 @@ class EventForm(forms.ModelForm):
         
         # Для редактирования: проверяем, что осталось хотя бы одно фото
         if self.instance.pk:
-            from core.models import EventImage
             existing_ids = list(self.instance.images.values_list('id', flat=True))
             remaining = [eid for eid in existing_ids if eid not in deleted_ids]
             
