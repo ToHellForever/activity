@@ -1,7 +1,9 @@
 from celery import shared_task
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.core.files.base import ContentFile
+from django.conf import settings
 from datetime import datetime, timedelta
 from .models import ReportSchedule, SalesReport
 from .utils import generate_sales_report
@@ -48,17 +50,50 @@ def send_scheduled_reports():
                 ContentFile(report_file.getvalue()),
             )
 
-            # Отправляем email
-            email = EmailMessage(
+            # Получаем статистику для письма
+            orders = Order.objects.filter(
+                ticket__event__organizer=schedule.partner,
+                created_at__date__range=[period_start, period_end],
+            )
+            refunded_orders = orders.filter(payment_status__in=["canceled", "refunded"])
+            non_refunded_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
+            
+            total_sales = sum(o.total_price for o in non_refunded_orders)
+            total_tickets = sum(o.quantity for o in non_refunded_orders)
+            total_refunds = sum(o.total_price for o in refunded_orders)
+            total_refunded_tickets = sum(o.quantity for o in refunded_orders)
+
+            # Рендерим HTML-шаблон
+            html_context = {
+                "period_start": period_start.strftime("%d.%m.%Y"),
+                "period_end": period_end.strftime("%d.%m.%Y"),
+                "report_format": schedule.report_format,
+                "attachment_name": file_name,
+                "total_sales": f"{total_sales:,.0f}".replace(",", " "),
+                "total_tickets": total_tickets,
+                "total_refunds": f"{total_refunds:,.0f}".replace(",", " "),
+                "total_refunded_tickets": total_refunded_tickets,
+                "dashboard_url": f"{settings.SITE_URL}/partner/reports/",
+            }
+            html_message = render_to_string(
+                "emails/sales_report.html",
+                html_context
+            )
+            plain_message = f"Добрый день!\n\nПрикрепляем отчёт о продажах за период с {period_start} по {period_end}.\n\nС уважением, ваша платформа мероприятий."
+
+            # Отправляем email с HTML-телом
+            email = EmailMultiAlternatives(
                 subject=f"Отчёт о продажах с {period_start} по {period_end}",
-                body=f"Добрый день!\n\nПрикрепляем отчёт о продажах за период с {period_start} по {period_end}.\n\nС уважением, ваша платформа мероприятий.",
-                from_email=None,
+                body=plain_message,
+                from_email=settings.EMAIL_HOST_USER,
                 to=[schedule.email],
             )
+            email.attach_alternative(html_message, "text/html")
             email.attach(
                 file_name,
                 report_file.getvalue(),
-                f"application/{schedule.report_format}"
+                f"application/{schedule.report_format}",
+                cid='report_file'
             )
             email.send()
 

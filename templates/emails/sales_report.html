@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчёт о продажах</title>
+</head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.email-wrapper {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.email-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.report-title {
+    margin: 0 0 20px 0;
+    font-size: 15px;
+    color: #333333;
+    font-weight: bold;
+}
+
+.greeting {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 10px;
+}
+
+.message-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 30px;
+}
+
+.details-card {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    padding-left: 15px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+}
+
+.details-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.8;
+}
+
+.detail-label {
+    color: rgba(119, 122, 141, 1);
+    width: 130px;
+    vertical-align: top;
+    font-size: 15px;
+}
+
+.detail-value {
+    font-size: 15px;
+}
+
+.detail-value-bold {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.section-title {
+    font-size: 15px;
+    color: #333333;
+    font-weight: bold;
+    margin-bottom: 12px;
+    margin-top: 0;
+}
+
+.attachment-box {
+    background-color: #fff3e0;
+    border: 2px solid #ff8c42;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.attachment-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.attachment-text {
+    font-size: 14px;
+    color: #333333;
+    margin: 0;
+}
+
+.attachment-name {
+    font-weight: bold;
+    color: #ff8c42;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 10px 30px;
+    font-size: 15px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 50px;
+    letter-spacing: 1px;
+    background-color: #ff8c42;
+}
+
+.footer-text {
+    margin: 0;
+    font-size: 15px;
+    color: #888888;
+}
+
+.footer-spacer {
+    padding-top: 30px;
+    padding-bottom: 10px;
+}
+
+.stats-card {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    padding-left: 15px;
+    box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+}
+
+.stats-row {
+    display: inline-block;
+    width: 48%;
+    vertical-align: top;
+    margin-bottom: 10px;
+}
+
+.stats-number {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff8c42;
+}
+
+.stats-label {
+    font-size: 13px;
+    color: #777a8d;
+}
+</style>
+<body>
+    <table role="presentation" class="email-wrapper" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table role="presentation" class="email-container">
+
+                    <!-- Заголовок -->
+                    <tr>
+                        <td class="report-title">
+                            Отчёт о продажах
+                        </td>
+                    </tr>
+
+                    <!-- Приветствие -->
+                    <tr>
+                        <td>
+                            <p class="greeting">Добрый день!</p>
+                            <p class="message-text">
+                                Прикрепляем ваш отчёт о продажах за указанный период. 
+                                Ниже представлена краткая сводка, а полный отчёт находится во вложении.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Карточка с периодом -->
+                    <tr>
+                        <td>
+                            <div class="section-title">Период отчёта</div>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">С:</td>
+                                                <td class="detail-value-bold">{{ period_start }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="detail-label">По:</td>
+                                                <td class="detail-value-bold">{{ period_end }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Статистика (если есть данные) -->
+                    {% if total_sales > 0 or total_tickets > 0 %}
+                    <tr>
+                        <td>
+                            <div class="section-title">Сводка</div>
+                            <table role="presentation" class="stats-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="stats-row">
+                                        <div class="stats-number">{{ total_sales|default:"0" }} ₽</div>
+                                        <div class="stats-label">Выручка</div>
+                                    </td>
+                                    <td class="stats-row" style="text-align: right;">
+                                        <div class="stats-number">{{ total_tickets|default:"0" }}</div>
+                                        <div class="stats-label">Билетов продано</div>
+                                    </td>
+                                </tr>
+                                {% if total_refunds > 0 %}
+                                <tr>
+                                    <td class="stats-row">
+                                        <div class="stats-number" style="color: #f44336;">{{ total_refunds|default:"0" }} ₽</div>
+                                        <div class="stats-label">Возвраты</div>
+                                    </td>
+                                    <td class="stats-row" style="text-align: right;">
+                                        <div class="stats-number" style="color: #f44336;">{{ total_refunded_tickets|default:"0" }}</div>
+                                        <div class="stats-label">Возвращено билетов</div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Блок со вложением -->
+                    <tr>
+                        <td>
+                            <div class="attachment-box">
+                                <a href="cid:report_file" style="text-decoration: none; color: inherit; display: block; cursor: pointer;">
+                                    <div class="attachment-icon">📎</div>
+                                    <p class="attachment-text">
+                                        Полный отчёт в формате <span class="attachment-name">{{ report_format|upper }}</span><br>
+                                        Файл: <span class="attachment-name">{{ attachment_name }}</span>
+                                    </p>
+                                    <p style="color: #ff8c42; font-weight: bold; margin-top: 8px; margin-bottom: 0;">
+                                        СКАЧАТЬ ФАЙЛ
+                                    </p>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Запасная ссылка (на случай если cid не сработает в почтовике) -->
+                    <tr>
+                        <td style="padding-top: 10px; padding-bottom: 20px;">
+                            <p style="font-size: 13px; color: #888888; text-align: center; margin: 0;">
+                                Если ссылка на файл не работает, скачайте отчёт в личном кабинете: 
+                                <a href="{{ dashboard_url }}" style="color: #ff8c42; text-decoration: underline;">Перейти к отчётам</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Кнопка -->
+                    <tr>
+                        <td align="center" style="padding-top: 20px; padding-bottom: 24px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="border-radius: 50px; background-color: #ff8c42;">
+                                        <a href="{{ dashboard_url|default:'#' }}" target="_blank" class="cta-button">
+                            Личный кабинет
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
