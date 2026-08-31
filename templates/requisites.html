@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Реквизиты организации{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/requisites.css' %}">
+<div class="requisites-page">
+    <div class="requisites-container">
+        <h1 class="requisites-title">Реквизиты организации</h1>
+        <div class="requisites-content">
+            <div class="requisites-card">
+                <h2>Информация о юридическом лице</h2>
+                <div class="requisites-table">
+                    <div class="requisites-row">
+                        <span class="requisites-label">Полное наименование:</span>
+                        <span class="requisites-value">Общество с ограниченной ответственностью «БИЗНЕС АФИША»</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">Сокращённое наименование:</span>
+                        <span class="requisites-value">ООО «БИЗНЕС АФИША»</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">ИНН:</span>
+                        <span class="requisites-value">5401234567</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">КПП:</span>
+                        <span class="requisites-value">540101001</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">ОГРН:</span>
+                        <span class="requisites-value">1234567890123</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">ОКВЭД:</span>
+                        <span class="requisites-value">63.12 — Деятельность по информационной агентурной</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requisites-card">
+                <h2>Реквизиты для расчетов</h2>
+                <div class="requisites-table">
+                    <div class="requisites-row">
+                        <span class="requisites-label">Банк:</span>
+                        <span class="requisites-value">ПАО «Сбербанк»</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">Расчетный счет:</span>
+                        <span class="requisites-value">40702810000000012345</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">Корреспондентский счет:</span>
+                        <span class="requisites-value">30101810100000000601</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">БИК:</span>
+                        <span class="requisites-value">045004641</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requisites-card">
+                <h2>Руководство</h2>
+                <div class="requisites-table">
+                    <div class="requisites-row">
+                        <span class="requisites-label">Генеральный директор:</span>
+                        <span class="requisites-value">Иванов Иван Иванович</span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">Контактный телефон:</span>
+                        <span class="requisites-value"><a href="tel:+70001234567" class="requisites-link">+7 (000) 123-45-67</a></span>
+                    </div>
+                    <div class="requisites-row">
+                        <span class="requisites-label">Электронная почта:</span>
+                        <span class="requisites-value"><a href="mailto:info@business-africa.ru" class="requisites-link">info@business-africa.ru</a></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requisites-card">
+                <h2>Юридический адрес</h2>
+                <div class="requisites-table">
+                    <div class="requisites-row">
+                        <span class="requisites-label">Адрес:</span>
+                        <span class="requisites-value">630000, Новосибирская область, г. Новосибирск, ул. Красный проспект, д. 1, офис 100</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+/* Стили для страницы «Контакты» */
+
+.contacts-page {
+  background: #f8f9fa;
+}
+
+.contacts-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.contacts-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  color: #1a1a2e;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+/* === Блок контактов (синий фон) === */
+.contacts-hero {
+  background: #0a1a7a;
+  border-radius: 20px;
+  padding: 40px 32px;
+
+}
+
+.contacts-hero-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 32px;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+}
+
+.contacts-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  justify-content: center;
+}
+
+.contact-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+
+.contact-item-icon {
+  width: 56px;
+  height: 56px;
+  background: #ff8c42;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.contact-item-label {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.85rem, 1vw, 1rem);
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.contact-item-link {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.8rem, 0.9vw, 0.95rem);
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s;
+  word-break: break-word;
+}
+
+.contact-item-link:hover {
+  color: #ffffff;
+}
+
+/* Форма обратной связи */
+.contact-form-section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.contact-form-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  color: #1a1a2e;
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.form-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  background: #fafafa;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-input:focus {
+  border-color: #02369c;
+  box-shadow: 0 0 0 3px rgba(2, 54, 156, 0.1);
+  background: #fff;
+}
+
+.form-select {
+  appearance: auto;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.contact-submit-btn {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  padding: 14px 40px;
+  background: #02369c;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: block;
+  margin: 8px auto 0;
+}
+
+.contact-submit-btn:hover {
+  background: #021b54;
+}
+
+/* Мобильные */
+@media (max-width: 768px) {
+  .contacts-hero {
+    padding: 32px 20px;
+  }
+
+  .contacts-grid {
+    gap: 28px;
+  }
+
+  .contact-item {
+    text-align: left;
+    gap: 8px;
+  }
+
+  .contact-item-icon {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .contact-form-section {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+    .contacts-grid {
+      flex-direction: column;
+      gap: 28px;
+  }
+  .contact-item-label {
+    margin-bottom: 0px !important;
+  }
+}

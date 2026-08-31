@@ -998,3 +998,35 @@ def generate_sales_register(partner, start_date, end_date):
         "start_date": start_date,
         "end_date": end_date,
     }
+
+
+# ─── Статические страницы ─────────────────────────────────────────────
+
+def privacy_policy_view(request):
+    """Политика конфиденциальности"""
+    return render(request, "privacy_policy.html")
+
+
+def offer_view(request):
+    """Публичная оферта"""
+    return render(request, "offer.html")
+
+
+def requisites_view(request):
+    """Реквизиты организации"""
+    return render(request, "requisites.html")
+
+
+def faq_view(request):
+    """FAQ — часто задаваемые вопросы"""
+    return render(request, "faq.html")
+
+
+def contacts_view(request):
+    """Контакты"""
+    return render(request, "contacts.html")
+
+
+def about_view(request):
+    """О платформе"""
+    return render(request, "about.html")

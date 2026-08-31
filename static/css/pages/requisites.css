@@ -1,0 +1,104 @@
+/* Стили для страницы «Реквизиты организации» */
+
+.requisites-page {
+  background: #f8f9fa;
+}
+
+.requisites-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.requisites-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  color: #1a1a2e;
+  margin: 0 0 32px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.requisites-card h2 {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  color: #1a1a2e;
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.requisites-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: #888;
+  min-width: 220px;
+  flex-shrink: 0;
+}
+
+.requisites-value {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  color: #333;
+  font-weight: 500;
+}
+
+.requisites-card {
+  background: #fff;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.requisites-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.requisites-row {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+  gap: 16px;
+}
+
+.requisites-row:last-child {
+  border-bottom: none;
+}
+
+.requisites-link {
+  color: #02369c;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.requisites-link:hover {
+  color: #021b54;
+}
+
+/* Планшеты */
+@media (max-width: 992px) {
+
+  .requisites-label {
+    min-width: 180px;
+  }
+}
+
+/* Мобильные */
+@media (max-width: 640px) {
+
+  .requisites-card {
+    border-radius: 12px;
+  }
+
+  .requisites-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .requisites-label {
+    min-width: auto;
+  }
+}

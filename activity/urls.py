@@ -21,6 +21,12 @@ from core.views import (
     verify_email_view,
     resend_verification_code,
     check_ticket,
+    privacy_policy_view,
+    offer_view,
+    requisites_view,
+    faq_view,
+    contacts_view,
+    about_view,
 )
 from partner_app.views import (
     scanner_view,
@@ -77,6 +83,13 @@ urlpatterns = [
     path("scanner/<str:access_code>/", scanner_view, name="scanner_view"),
     path("scanner/<str:access_code>/scan/", scanner_scan, name="scanner_scan"),
     path("scanner/<str:access_code>/end-shift/", scanner_end_shift, name="scanner_end_shift"),
+    # Статические страницы
+    path("privacy-policy/", privacy_policy_view, name="privacy_policy"),
+    path("offer/", offer_view, name="offer"),
+    path("requisites/", requisites_view, name="requisites"),
+    path("faq/", faq_view, name="faq"),
+    path("contacts/", contacts_view, name="contacts"),
+    path("about/", about_view, name="about"),
     # DEV: локальные страницы для просмотра стилей
     path("dev/refund-error/", _dev_refund_error, name="dev_refund_error"),
     path("dev/refund-success/", _dev_refund_success, name="dev_refund_success"),

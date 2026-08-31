@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Часто задаваемые вопросы (FAQ){% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/faq.css' %}">
+<div class="faq-page">
+    <div class="faq-container">
+        <h1 class="faq-title">ЧАСТО ЗАДАВАЕМЫЕ ВОПРОСЫ</h1>
+        <p class="faq-subtitle">В этом разделе собраны ответы на самые популярные вопросы о платформе «БИЗНЕС АФИША»</p>
+
+        <div class="faq-categories">
+            <!-- Вопросы для участников -->
+            <div class="faq-section">
+                <div class="faq-section-header">
+                    <div class="faq-section-icon"><img src="/media/icon/solar_ticket-bold.svg" alt="" class="faq-icon"></div>
+                    <h2 class="faq-section-title">Вопросы для участников</h2>
+                </div>
+
+                <div class="faq-accordion">
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Как купить билет?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Выберите интересующее мероприятие, ознакомьтесь с описанием и нажмите кнопку «Купить билет». Далее следуйте инструкциям на странице оформления заказа.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Нужно ли регистрироваться на платформе для покупки билета?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Регистрация не обязательна для покупки билета. Вы можете оформить покупку, указав только email и имя. Однако регистрация даёт доступ к личному кабинету и истории заказов.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Где найти купленный билет?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>После покупки билет придёт на указанную электронную почту. Также вы можете найти его в личном кабинете в разделе «Мои билеты».</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вопросы для организаторов -->
+            <div class="faq-section">
+                <div class="faq-section-header">
+                    <div class="faq-section-icon"><img src="/media/icon/ix_work-case-filled.svg" alt="" class="faq-icon"></div>
+                    <h2 class="faq-section-title">Вопросы для организаторов</h2>
+                </div>
+
+                <div class="faq-accordion">
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Кто может размещать мероприятия на БизнесАфише?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Размещать мероприятия могут юридические лица, индивидуальные предприниматели, специалисты, образовательные организации, бизнес-сообщества и другие организаторы, проводящие реальные офлайн-мероприятия деловой тематики.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Как зарегистрировать организацию?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Зарегистрируйтесь на платформе, выберите роль «Организатор», заполните профиль организации и отправьте документы для верификации.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Какие данные организации нужно указать?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Укажите наименование организации, ИНН, контактное лицо, телефон, email и реквизиты для расчетов. Все данные проверяются перед модерацией.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Как получить отметку «Надёжный организатор»?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Отметка «Надёжный организатор» присваивается за высокую оценку мероприятий участниками, быструю реакцию на вопросы и соблюдение всех условий платформы.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Сколько длится проверка документов?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Проверка документов занимает от 1 до 3 рабочих дней. После успешной проверки вы получите уведомление на email.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Какие мероприятия нельзя размещать?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>На платформе запрещено размещать мероприятия, связанные с незаконной деятельностью, наркотическими веществами, оружием, а также мероприятия, нарушающие законодательство РФ.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Общие вопросы -->
+            <div class="faq-section">
+                <div class="faq-section-header">
+                    <div class="faq-section-icon"><img src="/media/icon/_.svg" alt="" class="faq-icon"></div>
+                    <h2 class="faq-section-title">Общие вопросы</h2>
+                </div>
+
+                <div class="faq-accordion">
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Что такое БизнесАфиша?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>БизнесАфиша — это платформа деловой жизни города, где собраны офлайн-мероприятия, организаторы и площадки деловой тематики. Здесь можно найти конференции, семинары, тренинги, мастер-классы, бизнес-завтраки, презентации и другие полезные события.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Какие мероприятия размещаются на платформе?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>На платформе размещаются деловые мероприятия: конференции, семинары, мастер-классы, бизнес-завтраки, презентации, тренинги, выставки и другие события деловой направленности.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Можно ли разместить онлайн-мероприятие?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>На данный момент платформа фокусируется на офлайн-мероприятиях. Возможность размещения онлайн-мероприятий будет добавлена в будущем.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-accordion-item">
+                        <button class="faq-accordion-btn" onclick="toggleAccordion(this)">
+                            <span>Как найти подходящее мероприятие?</span>
+                            <span class="faq-accordion-arrow"></span>
+                        </button>
+                        <div class="faq-accordion-answer">
+                            <p>Используйте каталог мероприятий с фильтрами по дате, категории, городу и ключевым словам. Также вы можете подписаться на уведомления от интересующих вас организаторов.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAccordion(button) {
+    var item = button.parentElement;
+    var answer = item.querySelector('.faq-accordion-answer');
+    var arrow = item.querySelector('.faq-accordion-arrow');
+    var isOpen = item.classList.contains('active');
+
+    // Закрываем все остальные вопросы в этом аккордеоне
+    var accordion = item.parentElement;
+    accordion.querySelectorAll('.faq-accordion-item').forEach(function(i) {
+        i.classList.remove('active');
+        i.querySelector('.faq-accordion-answer').style.maxHeight = null;
+        i.querySelector('.faq-accordion-arrow').classList.remove('open');
+    });
+
+    // Открываем текущий, если он был закрыт
+    if (!isOpen) {
+        item.classList.add('active');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        arrow.classList.add('open');
+    }
+}
+</script>
+{% endblock %}

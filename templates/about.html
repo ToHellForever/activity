@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}О платформе{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/pages/about.css' %}">
+<div class="about-page">
+    <div class="about-container">
+        <h1 class="about-title">О платформе «БИЗНЕС АФИША»</h1>
+
+        <div class="about-hero">
+            <p class="about-hero-text">Платформа деловой жизни города, где собраны проверенные события, обучение, организаторы и площадки в одном месте.</p>
+        </div>
+
+        <div class="about-section">
+            <h2 class="about-section-title">Что мы делаем</h2>
+            <p class="about-text">«БИЗНЕС АФИША» — это онлайн-платформа, которая объединяет деловую жизнь Новосибирска. Мы помогаем людям находить полезные мероприятия, а организаторам — привлекать целевую аудиторию и продавать билеты.</p>
+            <p class="about-text">Наша цель — сделать деловую жизнь города доступной, прозрачной и удобной для каждого.</p>
+        </div>
+
+        <div class="about-section">
+            <h2 class="about-section-title">Наши принципы</h2>
+            <div class="about-principles">
+                <div class="principle-card">
+                    <div class="principle-number">1</div>
+                    <div class="principle-content">
+                        <h3>Только деловая тематика</h3>
+                        <p>На платформе размещаются мероприятия, направленные на развитие бизнеса, управления и профессиональных навыков. Никакой развлекательной программы — только полезный контент.</p>
+                    </div>
+                </div>
+
+                <div class="principle-card">
+                    <div class="principle-number">2</div>
+                    <div class="principle-content">
+                        <h3>Только офлайн-формат</h3>
+                        <p>Мы верим в силу живого общения. На нашей платформе — только очные мероприятия с возможностью практики, нетворкинга и обмена опытом.</p>
+                    </div>
+                </div>
+
+                <div class="principle-card">
+                    <div class="principle-number">3</div>
+                    <div class="principle-content">
+                        <h3>Проверенные участники</h3>
+                        <p>Все организаторы проходят проверку документов и получают статус подтверждённого партнёра. Мы гарантируем качество и надёжность каждого мероприятия.</p>
+                    </div>
+                </div>
+
+                <div class="principle-card">
+                    <div class="principle-number">4</div>
+                    <div class="principle-content">
+                        <h3>Всё в одном месте</h3>
+                        <p>События, обучение, организаторы и площадки — собраны в единой системе. Не нужно искать информацию на разных ресурсах.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2 class="about-section-title">Для кого наша платформа</h2>
+            <div class="about-audience">
+                <div class="audience-card">
+                    <div class="audience-icon">👥</div>
+                    <h3>Для участников</h3>
+                    <p>Находите и покупайте билеты на деловые мероприятия, семинары, воркшопы и конференции. Получайте уведомления о новых событиях и следите за интересующими вас организаторами.</p>
+                </div>
+
+                <div class="audience-card">
+                    <div class="audience-icon">🎯</div>
+                    <h3>Для организаторов</h3>
+                    <p>Создавайте мероприятия, управляйте продажами билетов, получайте аналитику и привлекайте аудиторию, которая уже ищет обучение и профессиональное развитие.</p>
+                </div>
+
+                <div class="audience-card">
+                    <div class="audience-icon">🏢</div>
+                    <h3>Для площадок</h3>
+                    <p>Размещайте информацию о свободных датах, управляйте бронированием и привлекайте организаторов, которым нужны качественные площадки для мероприятий.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2 class="about-section-title">Наша миссия</h2>
+            <p class="about-text">Мы верим, что деловые мероприятия — это мощный инструмент развития. Они помогают обмениваться опытом, находить партнёров, получать новые знания и расти профессионально. Наша задача — сделать так, чтобы нужное мероприятие нашло нужного человека.</p>
+        </div>
+
+        <div class="about-section about-cta">
+            <h2 class="about-section-title">Присоединяйтесь</h2>
+            <p class="about-text">Станьте частью деловой жизни города. Найдите своё следующее мероприятие или разместите своё — мы поможем каждому.</p>
+            <div class="about-buttons">
+                <a href="{% url 'event_list' %}" class="about-btn about-btn-primary">Найти мероприятие</a>
+                <a href="{% url 'register' %}" class="about-btn about-btn-secondary">Стать организатором</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

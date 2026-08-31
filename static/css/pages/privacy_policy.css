@@ -1,0 +1,81 @@
+/* Стили для страницы «Политика конфиденциальности» */
+
+.policy-page {
+  background: #f8f9fa;
+}
+
+.policy-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.policy-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  color: #1a1a2e;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.policy-date {
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: #888;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.policy-content h2 {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  color: #1a1a2e;
+  margin: 32px 0 16px;
+}
+
+.policy-content p {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  line-height: 1.7;
+  color: #444;
+  margin: 0 0 12px;
+}
+
+.policy-content strong {
+  color: #1a1a2e;
+}
+
+.policy-list {
+  margin: 0 0 16px 20px;
+  padding: 0;
+}
+
+.policy-list li {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.policy-link {
+  color: #02369c;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.policy-link:hover {
+  color: #021b54;
+}
+
+/* Мобильные */
+@media (max-width: 640px) {
+
+  .policy-container {
+    border-radius: 12px;
+  }
+}

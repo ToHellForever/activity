@@ -23,9 +23,9 @@
             <a href="{% url 'event_list' %}" class="nav-link">Каталог мероприятий</a>
             <a href="{% url 'venues:venue_list' %}" class="nav-link">Каталог залов</a>
             <a href="#" class="nav-link">Для организаторов</a>
-            <a href="#" class="nav-link">О платформе</a>
-            <a href="#" class="nav-link">FAQ</a>
-            <a href="#" class="nav-link">Контакты</a>
+            <a href="{% url 'about' %}" class="nav-link">О платформе</a>
+            <a href="{% url 'faq' %}" class="nav-link">FAQ</a>
+            <a href="{% url 'contacts' %}" class="nav-link">Контакты</a>
         </div>
     </div>
 
@@ -86,18 +86,18 @@
                 <a href="{% url 'event_list' %}" class="burger-nav-link">Каталог мероприятий</a>
                 <a href="{% url 'venues:venue_list' %}" class="burger-nav-link">Каталог залов</a>
                 <a href="#" class="burger-nav-link">Для организаторов</a>
-                <a href="#" class="burger-nav-link">О платформе</a>
-                <a href="#" class="burger-nav-link">FAQ</a>
-                <a href="#" class="burger-nav-link">Контакты</a>
+                <a href="{% url 'about' %}" class="burger-nav-link">О платформе</a>
+                <a href="{% url 'faq' %}" class="burger-nav-link">FAQ</a>
+                <a href="{% url 'contacts' %}" class="burger-nav-link">Контакты</a>
             </div>
             <div class="burger-icons">
                 <i><img src="/media/icon/phone.png" alt="" class="nav-icon-1"></i>
                 <i><img src="/media/icon/tg.png" alt="" class="nav-icon-2" style='margin-top: 2px;'></i>
             </div>
             <div class="burger-footer">
-                <a href="#" class="burger-footer-link">Публичная оферта</a>
-                <a href="#" class="burger-footer-link">Политика конфиденциальности</a>
-                <a href="#" class="burger-footer-link">Реквизиты организации</a>
+                <a href="{% url 'offer' %}" class="burger-footer-link">Публичная оферта</a>
+                <a href="{% url 'privacy_policy' %}" class="burger-footer-link">Политика конфиденциальности</a>
+                <a href="{% url 'requisites' %}" class="burger-footer-link">Реквизиты организации</a>
             </div>
         </div>
     </div>
