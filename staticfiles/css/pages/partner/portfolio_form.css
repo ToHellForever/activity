@@ -64,7 +64,6 @@
   cursor: pointer;
 }
 
-
 .portfolio-form-row--inline {
   display: flex;
   flex-wrap: wrap;
@@ -86,7 +85,7 @@
   border-radius: 20px;
   border: 1px solid rgba(217, 217, 217, 1);
   padding: 6px 12px;
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-size: clamp(0.7rem, 0.9vw, 0.9rem);
   font-weight: 500;
   color: black;
@@ -97,20 +96,20 @@
 input:focus,
 textarea:focus,
 select:focus {
-    border-color: rgba(255, 140, 66, 1) !important;
-    outline: none !important;
-    box-shadow: none !important;
+  border-color: rgba(255, 140, 66, 1) !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .portfolio-form-label {
   color: rgba(154, 154, 154, 1);
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-size: clamp(0.7rem, 0.9vw, 0.9rem);
   font-weight: 500;
 }
 .photo-upload-label {
-    color: rgba(154, 154, 154, 1);
-  font-family: 'Montserrat';
+  color: rgba(154, 154, 154, 1);
+  font-family: "Montserrat";
   font-size: clamp(0.7rem, 0.8vw, 1rem);
   font-weight: 500;
 }
@@ -140,8 +139,8 @@ select:focus {
   border-radius: 19.28px;
   border: none;
   color: black;
-  font-family: 'Montserrat';
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-family: "Montserrat";
+  font-size: clamp(0.7rem, 1vw, 1rem);
   font-weight: 500;
   padding: 7px 40px;
 }

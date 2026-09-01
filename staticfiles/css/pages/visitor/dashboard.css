@@ -364,7 +364,7 @@
   border-radius: 20px;
   font-family: "Montserrat";
   font-weight: 500;
-  font-size: clamp(0.7rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 1rem);
   padding: 10px 10px 10px 10px;
   text-decoration: none;
   width: 100%;

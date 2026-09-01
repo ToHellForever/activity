@@ -291,6 +291,16 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
                 
     def get_absolute_url(self):
         return reverse("venue_detail", kwargs={"slug": self.slug})
+
+    @property
+    def badge_text(self):
+        """Текст бейджа на карточке в зависимости от тарифа (для Free — пусто)."""
+        return self.TARIFF_LIMITS.get(self.tariff, {}).get("badge_text", "")
+
+    @property
+    def contacts_level(self):
+        """Уровень доступности контактов по тарифу: only_request / request_or_show / direct."""
+        return self.TARIFF_LIMITS.get(self.tariff, {}).get("contacts_level", "only_request")
                 
     def __str__(self):
         return self.title
@@ -378,6 +388,18 @@ class BookingRequest(models.Model):
     venue = models.ForeignKey(
         Venue, on_delete=models.CASCADE, related_name="booking_requests"
     )
+
+    # Аккаунт, с которого отправлена заявка (для лимита "1 заявка в сутки на площадку")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="venue_booking_requests",
+        verbose_name="Пользователь",
+    )
+    # Ключ сессии для анонимных посетителей (тот же суточный лимит)
+    session_key = models.CharField(max_length=40, blank=True, default="")
 
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=30)

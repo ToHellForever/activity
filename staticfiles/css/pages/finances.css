@@ -19,7 +19,7 @@
 }
 .finance-card__title {
   margin: 0;
-  font-size: clamp(1.2rem, 2vw, 0.9rem);
+  font-size: clamp(1.2rem, 1vw, 0.9rem);
   color: black;
   font-family: "Verdana";
   font-weight: 400;

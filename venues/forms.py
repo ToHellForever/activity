@@ -143,10 +143,11 @@ class BookingRequestForm(forms.ModelForm):
             "comment",
         ]
         widgets = {
-            "email": forms.EmailInput(attrs={"required": "required"}),
             "name": forms.TextInput(attrs={"required": "required"}),
             "phone": forms.TextInput(attrs={"required": "required"}),
-            "event_date": forms.DateTimeInput(attrs={"required": "required"}),
+            "event_date": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "required": "required"}
+            ),
             "participants_count": forms.NumberInput(attrs={"required": "required"}),
             "event_format": forms.TextInput(attrs={"required": "required"}),
         }

@@ -179,7 +179,10 @@
 <div class="row row-cards-list">
     {% for venue in venues %}
     <div class="col-6 col-md-6 col-lg-4 col-xl-3 venue-list-col mb-4">
-        <div class="card">
+        <div class="card venue-card-wrapper">
+            {% if venue.badge_text %}
+            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+            {% endif %}
             {% if venue.images.all %}
             <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
             {% endif %}

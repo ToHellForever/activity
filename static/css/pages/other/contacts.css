@@ -23,7 +23,6 @@
   background: #0a1a7a;
   border-radius: 20px;
   padding: 40px 32px;
-
 }
 
 .contacts-hero-title {
@@ -96,7 +95,7 @@
 .contact-form-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   color: #1a1a2e;
   margin: 0 0 24px;
   text-align: center;
@@ -201,9 +200,9 @@
 }
 
 @media (max-width: 480px) {
-    .contacts-grid {
-      flex-direction: column;
-      gap: 28px;
+  .contacts-grid {
+    flex-direction: column;
+    gap: 28px;
   }
   .contact-item-label {
     margin-bottom: 0px !important;

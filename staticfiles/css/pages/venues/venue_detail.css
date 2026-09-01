@@ -27,7 +27,7 @@
 
 .venue-title {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(1rem, 1vw, 1.5rem);
   font-weight: 400;
   color: #333;
   margin: 0 0 15px 0;
@@ -207,7 +207,7 @@
   width: 100%;
   text-align: center;
   padding: 12px 20px;
-    font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 @media (max-width: 1024px) {

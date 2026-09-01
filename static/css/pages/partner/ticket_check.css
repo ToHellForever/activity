@@ -7,7 +7,7 @@
   background: #fff;
   border: none;
   border-radius: 20px;
-box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -36,7 +36,7 @@ box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 .ticket-check-title {
   font-family: "Verdana", sans-serif;
   font-weight: 700;
-  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-size: clamp(1.1rem, 1vw, 1.5rem);
   margin-bottom: 0.75rem;
 }
 
@@ -56,7 +56,7 @@ box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 /* --- Текст описания --- */
 .ticket-check-text {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   color: #555;
   line-height: 1.6;
   margin-bottom: 1rem;
@@ -75,7 +75,7 @@ box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 /* --- Информация о билете --- */
 .ticket-check-info {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   color: #333;
   line-height: 1.8;
   text-align: center;
@@ -85,7 +85,7 @@ box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 
 .ticket-check-info div {
   margin-bottom: 4px;
-    font-family: "Verdana", sans-serif;
+  font-family: "Verdana", sans-serif;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #333;
   line-height: 1.5;

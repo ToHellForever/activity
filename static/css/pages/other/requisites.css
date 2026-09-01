@@ -22,7 +22,7 @@
 .requisites-card h2 {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   color: #1a1a2e;
   margin: 0 0 20px;
   padding-bottom: 12px;
@@ -80,7 +80,6 @@
 
 /* Планшеты */
 @media (max-width: 992px) {
-
   .requisites-label {
     min-width: 180px;
   }
@@ -88,7 +87,6 @@
 
 /* Мобильные */
 @media (max-width: 640px) {
-
   .requisites-card {
     border-radius: 12px;
   }

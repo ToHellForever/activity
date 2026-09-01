@@ -298,6 +298,9 @@
     {% for venue in active_venues_mobile %}
     <div class="col-6 venue-col">
         <div class="card venue-card">
+            {% if venue.badge_text %}
+            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+            {% endif %}
             {% if venue.images.all %}
             <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
             {% endif %}
@@ -326,6 +329,9 @@
     {% for venue in active_venues_tablet %}
     <div class="col-4 venue-col">
         <div class="card venue-card">
+            {% if venue.badge_text %}
+            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+            {% endif %}
             {% if venue.images.all %}
             <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
             {% endif %}
@@ -354,6 +360,9 @@
     {% for venue in active_venues_desktop %}
     <div class="col-md-3 venue-col">
         <div class="card venue-card">
+            {% if venue.badge_text %}
+            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+            {% endif %}
             {% if venue.images.all %}
             <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
             {% endif %}

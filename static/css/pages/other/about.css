@@ -45,7 +45,7 @@
 .about-section-title {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   color: #1a1a2e;
   margin: 0 0 20px;
 }
@@ -92,7 +92,7 @@
 .principle-content h3 {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   color: #1a1a2e;
   margin: 0 0 8px;
 }
@@ -133,7 +133,7 @@
 .audience-card h3 {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
   color: #1a1a2e;
   margin: 0 0 10px;
 }
@@ -203,7 +203,6 @@
 
 /* Мобильные */
 @media (max-width: 640px) {
-
   .about-hero {
     padding: 28px 20px;
     border-radius: 12px;

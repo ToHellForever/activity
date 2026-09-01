@@ -5,9 +5,12 @@ from .models import EquipmentItem
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 from django.template.loader import render_to_string
-from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem, VenueFormat
 from .forms import BookingRequestForm
 import json
 from django.db import models
@@ -379,16 +382,71 @@ def _send_booking_notification(booking_request):
     email.send()
 
 
+def _send_admin_booking_notification(booking_request):
+    """Отправляет уведомление администратору платформы о новой заявке"""
+    venue = booking_request.venue
+    event_date = booking_request.event_date.strftime("%d.%m.%Y %H:%M")
+    subject = f"Новая заявка на площадку {venue.title}"
+    message = (
+        f"Новая заявка на бронирование площадки.\n\n"
+        f"Площадка: {venue.title} ({venue.address})\n"
+        f"Тариф площадки: {venue.get_tariff_display()}\n"
+        f"Имя: {booking_request.name}\n"
+        f"Телефон: {booking_request.phone}\n"
+        f"E-mail: {booking_request.email or '-'}\n"
+        f"Дата мероприятия: {event_date}\n"
+        f"Количество участников: {booking_request.participants_count}\n"
+        f"Формат мероприятия: {booking_request.event_format}\n"
+        f"Комментарий: {booking_request.comment or '-'}\n"
+        f"Статус заявки: {booking_request.get_status_display()}\n"
+    )
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.DEFAULT_FROM_EMAIL],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+
+
+def _check_booking_rate_limit(venue, request):
+    """Проверяет лимит: не более 1 заявки в сутки на 1 площадку с 1 аккаунта."""
+    day_ago = timezone.now() - timedelta(days=1)
+    qs = BookingRequest.objects.filter(venue=venue, created_at__gte=day_ago)
+
+    if request.user.is_authenticated:
+        qs = qs.filter(user=request.user)
+    else:
+        session_key = request.session.session_key or ""
+        qs = qs.filter(session_key=session_key)
+
+    return qs.exists()
+
+
 def _process_booking_request(request):
     """Обрабатывает данные формы и сохраняет заявку"""
     venue_id = request.POST.get("venue_id")
     if not venue_id:
-        return False, {"__all__": "Площадка не указана"}
+        return False, {"__all__": "Площадка не указана"}, None
 
     try:
         venue = Venue.objects.get(pk=venue_id)
     except Venue.DoesNotExist:
-        return False, {"__all__": "Указанная площадка не найдена"}
+        return False, {"__all__": "Указанная площадка не найдена"}, None
+
+    # Лимит: 1 заявка в сутки на 1 площадку с 1 аккаунта
+    if _check_booking_rate_limit(venue, request):
+        return (
+            False,
+            {
+                "__all__": "Вы уже отправляли заявку на эту площадку за последние сутки. "
+                           "Пожалуйста, дождитесь ответа."
+            },
+            None,
+        )
 
     form = BookingRequestForm(request.POST, venue=venue)
 
@@ -396,13 +454,23 @@ def _process_booking_request(request):
         booking_request = form.save(commit=False)
         booking_request.venue = venue
         booking_request.status = "new"
+        if request.user.is_authenticated:
+            booking_request.user = request.user
+        booking_request.session_key = request.session.session_key or ""
         booking_request.save()
 
-        # Отправляем уведомление владельцу площадки
+        # Отправляем уведомления владельцу площадки и администратору
         _send_booking_notification(booking_request)
-        return True, None
+        _send_admin_booking_notification(booking_request)
 
-    return False, form.errors
+        # Контакты в ответе — в зависимости от тарифа площадки
+        contacts = None
+        if venue.contacts_level in ("direct", "request_or_show"):
+            contacts = venue.contact_info
+
+        return True, None, contacts
+
+    return False, form.errors, None
 
 
 @require_POST
@@ -410,24 +478,23 @@ def send_booking_request(request):
     """
     Обработка формы заявки через AJAX.
     """
-    # Сразу возвращаем успех, чтобы форма закрылась
-    # Обработка будет продолжаться в фоновом режиме
-    return JsonResponse({"success": True})
+    success, errors, contacts = _process_booking_request(request)
+    response = {"success": success, "errors": errors}
+    if success and contacts:
+        response["contacts"] = contacts
+    return JsonResponse(response)
 
 
 @require_POST
 def process_booking_request(request):
     """
-    Фактическая обработка формы заявки в фоновом режиме
+    Фактическая обработка формы заявки (совместимость со старым эндпоинтом).
     """
-    # Создаем копию POST данных, чтобы не модифицировать оригинал
-    post_data = request.POST.copy()
-
-    # Обрабатываем данные
-    success, errors = _process_booking_request(request)
-
-    # Возвращаем результат
-    return JsonResponse({"success": success, "errors": errors})
+    success, errors, contacts = _process_booking_request(request)
+    response = {"success": success, "errors": errors}
+    if success and contacts:
+        response["contacts"] = contacts
+    return JsonResponse(response)
 
 
 class VenueDetailView(DetailView):
@@ -443,7 +510,10 @@ class VenueDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         venue = self.object
         context["limits"] = venue.TARIFF_LIMITS.get(venue.tariff, {})
-        
+
+        # Полный список форматов для выпадающего списка в форме бронирования
+        context["booking_formats"] = list(VenueFormat.objects.all())
+
         # Получаем другие площадки (те же типы или форматы, кроме текущей)
         # Берем достаточно много (например, 4 или больше), чтобы было что раздать
         all_other_venues = list(Venue.objects.filter(

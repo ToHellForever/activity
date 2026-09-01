@@ -3,12 +3,17 @@
 {% load format_filters %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/pages/venues/venue_detail.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static '/css/pages/venues/venue_detail.css' %}">
+<link rel="stylesheet" href="{% static '/css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static '/css/calendar.css' %}">
+<script src="{% static 'js/pages/calendar.js' %}" defer></script>
 <div class="venue-detail-container">
     <div class="venue-detail-content">
         <!-- Фото площадки -->
         <div class="venue-image-wrapper">
+            {% if venue.badge_text %}
+            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+            {% endif %}
             {% if venue.images.all %}
                 <img src="{{ venue.images.all.0.image.url }}" alt="{{ venue.title }}">
             {% endif %}
@@ -53,9 +58,116 @@
         {% endif %}
             </div>
 
-            <a href="#booking" class="book-button">ЗАБРОНИРОВАТЬ</a>
+            <button type="button" class="book-button" data-bs-toggle="modal" data-bs-target="#bookingModal">ЗАБРОНИРОВАТЬ</button>
+
+            {% if venue.contacts_level == 'direct' and venue.contact_info %}
+            <div class="venue-contacts mt-3">
+                <strong>Контакты:</strong> {{ venue.contact_info|linebreaksbr }}
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Модальное окно бронирования -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingModalLabel">Заявка на бронирование: {{ venue.title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="booking-form" method="post" action="{% url 'venues:send_booking_request' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="venue_id" value="{{ venue.id }}">
+                        <div class="mb-1">
+                            <label for="booking-name" class="form-label">Имя </label>
+                            <input type="text" name="name" id="booking-name" class="form-control" required>
+                        </div>
+                        <div class="mb-1">
+                            <label for="booking-phone" class="form-label">Телефон  </label>
+                            <input type="tel" name="phone" id="booking-phone" class="form-control" placeholder="+7XXXXXXXXXX" required>
+                        </div>
+                        <div class="mb-1">
+                            <label for="booking-email" class="form-label">E-mail</label>
+                            <input type="email" name="email" id="booking-email" class="form-control">
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Формат мероприятия  </label>
+                            <div class="input-with-button dropdown-container">
+                                <input type="text" class="form-control filter-input filter-input-dropdown"
+                                       placeholder="Выберите формат"
+                                       value=""
+                                       readonly
+                                       id="bookingFormatInput"
+                                       data-placeholder="Выберите формат">
+                                <div class="dropdown-menu-custom" id="bookingFormatDropdown">
+                                    {% for fmt in booking_formats %}
+                                    <div class="dropdown-option" data-value="{{ fmt.name }}">{{ fmt.name }}</div>
+                                    {% empty %}
+                                    <div class="dropdown-option" data-value="">Форматы не указаны</div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="event_format" id="booking_event_format" value="">
+                            </div>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Дата и время мероприятия  </label>
+                            <div class="input-with-button date-container">
+                                <input type="text" class="form-control filter-input"
+                                       placeholder="ДД.ММ.ГГГГ ЧЧ:ММ"
+                                       value=""
+                                       id="bookingDateInput"
+                                       readonly>
+                                <input type="hidden" name="event_date" id="booking_event_date" value="">
+                                <div class="calendar-popup" id="bookingCalendar">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calendar-prev-month">&lt;</button>
+                                        <span class="calendar-month-year"></span>
+                                        <button type="button" class="calendar-next-month">&gt;</button>
+                                    </div>
+                                    <div class="calendar-grid"></div>
+                                    <div class="calendar-time-row">
+                                        <span class="calendar-time-label">Время:</span>
+                                        <div class="calendar-time-pickers">
+                                            <input type="number" id="bookingTimeHours" min="0" max="23" value="12" class="calendar-time-input">
+                                            <span class="calendar-time-sep">:</span>
+                                            <input type="number" id="bookingTimeMinutes" min="0" max="59" value="00" class="calendar-time-input">
+                                        </div>
+                                    </div>
+                                    <div class="calendar-footer">
+                                        <button type="button" class="calendar-clear">Очистить</button>
+                                        <button type="button" class="calendar-close">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-1">
+                            <label for="booking-participants" class="form-label">Количество участников  </label>
+                            <input type="number" name="participants_count" id="booking-participants" class="form-control no-spinners" min="1" max="{{ venue.max_capacity }}" required>
+                        </div>
+                        <div class="mb-1">
+                            <label for="booking-comment" class="form-label">Комментарий</label>
+                            <textarea name="comment" id="booking-comment" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div id="booking-errors" class="alert alert-danger d-none"></div>
+                        <button type="submit" class="book-button w-100 mt-3" id="booking-submit">ОТПРАВИТЬ ЗАЯВКУ</button>
+                    </form>
+                    <div id="booking-success" class="d-none text-center">
+                        <h5>Заявка отправлена!</h5>
+                        <p>Мы свяжемся с вами в ближайшее время.</p>
+                        <div id="booking-success-contacts" class="alert alert-info d-none">
+                            <strong>Контакты площадки:</strong>
+                            <div id="booking-contacts-text"></div>
+                        </div>
+                        <button type="button" class="book-button" data-bs-dismiss="modal">ЗАКРЫТЬ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/venue_booking.js' %}"></script>
     
     <!-- Другие залы — мобильные: 2 карточки -->
     <div class="other-venues-section">
@@ -66,6 +178,9 @@
             {% for other_venue in other_venues_mobile %}
             <div class="col-6 mb-4">
                 <div class="venue-card">
+                    {% if other_venue.badge_text %}
+                    <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
+                    {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     {% endif %}
@@ -101,6 +216,9 @@
             {% for other_venue in other_venues_tablet %}
             <div class="col-4 mb-4">
                 <div class="venue-card">
+                    {% if other_venue.badge_text %}
+                    <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
+                    {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     {% endif %}
@@ -136,6 +254,9 @@
             {% for other_venue in other_venues_desktop %}
             <div class="col-md-3 mb-4">
                 <div class="venue-card">
+                    {% if other_venue.badge_text %}
+                    <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
+                    {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     {% endif %}

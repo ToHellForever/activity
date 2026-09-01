@@ -188,7 +188,7 @@
 }
 
 .stat-value {
-  font-size: clamp(0.8rem, 2vw, 1.2rem);
+  font-size: clamp(0.8rem, 1vw, 1.2rem);
   font-weight: 700;
   font-family: "Verdana";
   color: #1a1a1a;
@@ -430,7 +430,6 @@
    RESPONSIVE
    ============================================ */
 @media (max-width: 768px) {
-
   .period-filters {
     gap: 6px;
   }

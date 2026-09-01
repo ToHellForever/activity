@@ -261,8 +261,11 @@ class VenueImageAdmin(admin.ModelAdmin):
 
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):
-    list_display = ("id", "venue", "name", "event_date", "status", "created_at")
-    list_filter = ("status", "created_at")
+    list_display = ("id", "venue", "name", "phone", "user", "event_date", "status", "created_at")
+    list_filter = ("status", "created_at", "venue")
+    search_fields = ("name", "phone", "email", "venue__title")
+    readonly_fields = ("created_at",)
+    list_select_related = ("venue", "user")
 
 
 @admin.register(VenueFormat)

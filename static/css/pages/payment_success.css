@@ -21,7 +21,7 @@
 
 /* ===== Зелёный хедер ===== */
 .payment-success-header {
-  background: #4CAF50;
+  background: #4caf50;
   padding: 40px 24px;
   text-align: center;
   color: #fff;
@@ -45,14 +45,14 @@
 }
 
 .payment-success-header h2 {
-  font-size: clamp(1rem, 2vw, 2rem);
+  font-size: clamp(1rem, 1vw, 2rem);
   font-weight: 700;
   margin: 0 0 8px;
   color: #fff;
 }
 
 .payment-success-order-id {
-  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
@@ -85,7 +85,7 @@
 .order-details-list .detail-label {
   color: #888;
   font-weight: 400;
-  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   flex-shrink: 0;
   margin-right: 16px;
 }
@@ -94,13 +94,13 @@
   color: #333;
   font-weight: 600;
   text-align: right;
-  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   word-break: break-word;
 }
 
 .order-details-list .detail-value.price {
   font-size: 20px;
-  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 700;
   color: #333;
 }
@@ -135,7 +135,7 @@
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 24px;
-  font-size: clamp(0.8rem, 2vw, 1rem);
+  font-size: clamp(0.8rem, 1vw, 1rem);
   color: #333;
 }
 
@@ -143,13 +143,13 @@
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .qr-alert-icon svg {
   width: 24px;
   height: 24px;
-  fill: #4CAF50;
+  fill: #4caf50;
 }
 
 .qr-alert-text strong {
@@ -162,11 +162,11 @@
   width: 100%;
   text-align: center;
   padding: 10px 24px;
-  background: #FF8348;
+  background: #ff8348;
   color: #fff;
   border: none;
   border-radius: 14px;
-  font-size: clamp(0.8rem, 2vw, 1rem);
+  font-size: clamp(0.8rem, 1vw, 1rem);
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s ease;

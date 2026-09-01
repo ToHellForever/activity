@@ -50,7 +50,7 @@
 .event-title {
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(1rem, 1vw, 1.5rem);
   color: #000000;
   line-height: 1.2;
 }

@@ -466,6 +466,29 @@ class PriceSlider {
     }
 }
 
+/**
+ * Обновляет скрытое поле даты/времени в форме бронирования площадки
+ */
+function updateBookingEventDate() {
+    const cal = window.bookingCalendar;
+    const hidden = document.getElementById('booking_event_date');
+    if (!cal || !hidden) return;
+
+    if (!cal.selectedDate) {
+        hidden.value = '';
+        return;
+    }
+
+    const hoursInput = document.getElementById('bookingTimeHours');
+    const minutesInput = document.getElementById('bookingTimeMinutes');
+    const h = hoursInput ? String(parseInt(hoursInput.value || 12, 10)).padStart(2, '0') : '12';
+    const min = minutesInput ? String(parseInt(minutesInput.value || 0, 10)).padStart(2, '0') : '00';
+    const y = cal.selectedDate.getFullYear();
+    const m = String(cal.selectedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(cal.selectedDate.getDate()).padStart(2, '0');
+    hidden.value = `${y}-${m}-${d} ${h}:${min}`;
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Calendar JS loaded and initializing...');
@@ -511,6 +534,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         );
+    }
+
+    // Инициализация календаря в форме бронирования площадки
+    if (document.getElementById('bookingDateInput')) {
+        // Минимальная дата — завтрашний день (прошедшие и сегодня недоступны)
+        const minBookingDate = new Date();
+        minBookingDate.setHours(0, 0, 0, 0);
+        minBookingDate.setDate(minBookingDate.getDate() + 1);
+
+        window.bookingCalendar = new CustomCalendar(
+            'bookingDateInput',
+            'bookingCalendar',
+            'booking_event_date',
+            {
+                minDate: minBookingDate,
+                onSelectDate: function(date) {
+                    updateBookingEventDate();
+                }
+            }
+        );
+
+        // Обновляем скрытое поле при изменении времени
+        ['bookingTimeHours', 'bookingTimeMinutes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', updateBookingEventDate);
+            }
+        });
+    }
+
+    // Инициализация dropdown формата в форме бронирования площадки
+    if (document.getElementById('bookingFormatInput')) {
+        new CustomDropdown('bookingFormatInput', 'bookingFormatDropdown', 'booking_event_format');
     }
 
     // Инициализация dropdown для категории

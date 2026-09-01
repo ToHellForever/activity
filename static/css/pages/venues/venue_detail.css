@@ -24,10 +24,66 @@
 .venue-info {
   flex: 0 0 42%;
 }
-
+.modal-content {
+  padding: 15px;
+}
+.form-control,
+.filter-input {
+  width: 100%;
+  padding: 7px 16px;
+  border: 1px solid #777a8d !important;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  outline: none !important;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.modal-header {
+  border-bottom: none;
+}
+.modal-dialog {
+  margin-top: -30px !important;
+}
+.form-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 2px;
+}
+.modal-title {
+    font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 1.5rem);
+  font-weight: 400;
+  color: #333;
+  line-height: 1.2;
+}
+.modal-header {
+  padding-bottom: 0;
+}
+.modal-header .btn-close {
+  width: 15px !important;
+  height: 15px !important;
+  padding: 0;
+  margin: 0;
+  border: none
+}
+.modal-header .btn-close:focus {
+  box-shadow: none;
+}
+@media (max-width: 1024px) {
+  .modal-content {
+    padding: 10px;
+  }
+}
 .venue-title {
   font-family: "Verdana", sans-serif;
-  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(1rem, 1vw, 1.5rem);
   font-weight: 400;
   color: #333;
   margin: 0 0 15px 0;
@@ -135,7 +191,7 @@
 }
 
 .section-title {
-  font-size: 28px;
+  font-size: clamp(1rem, 1vw, 1.5rem);
   font-weight: 700;
   color: #333;
   margin: 0 0 30px 0;
@@ -207,7 +263,7 @@
   width: 100%;
   text-align: center;
   padding: 12px 20px;
-    font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 @media (max-width: 1024px) {
@@ -260,5 +316,26 @@
 
   .d-1300-flex {
     display: flex !important;
+  }
+}
+
+/* Убираем синюю тень (outline) у инпутов в модалке бронирования */
+#bookingModal .form-control:focus,
+#bookingModal input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #e6743c !important;
+}
+
+
+@media(max-width: 768px) {
+    .section-title {
+    margin: 0 0 10px 0;
+  }
+  .other-venues-section {
+    margin-top: 20px;
+  }
+  .venue-detail-content {
+    margin-bottom: 0;
   }
 }
