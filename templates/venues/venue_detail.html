@@ -3,19 +3,63 @@
 {% load format_filters %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static '/css/pages/venues/venue_detail.css' %}">
-<link rel="stylesheet" href="{% static '/css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/venues/venue_detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static '/css/calendar.css' %}">
+<link rel="stylesheet" href="{% static 'css/carousel.css' %}">
 <script src="{% static 'js/pages/calendar.js' %}" defer></script>
 <div class="venue-detail-container">
     <div class="venue-detail-content">
         <!-- Фото площадки -->
         <div class="venue-image-wrapper">
-            {% if venue.badge_text %}
-            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
-            {% endif %}
-            {% if venue.images.all %}
-                <img src="{{ venue.images.all.0.image.url }}" alt="{{ venue.title }}">
+            {% if venue.images.count > 1 %}
+                <!-- Карусель: если фото больше одного -->
+                <div id="venueCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
+                    {% if venue.badge_text %}
+                    <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+                    {% endif %}
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#venueCarousel" data-bs-slide-to="0" 
+                            class="active" aria-current="true" aria-label="Фото 1">
+                        </button>
+                        {% for img in venue.images.all %}
+                        <button type="button" data-bs-target="#venueCarousel" data-bs-slide-to="{{ forloop.counter }}" 
+                            aria-label="Фото {{ forloop.counter|add:1 }}">
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        </div>
+                        {% for img in venue.images.all %}
+                        <div class="carousel-item">
+                            <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
+                    <img src="/media/icon/arrow_carousel.png" alt="Previous" class="carousel-arrow">
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#venueCarousel" data-bs-slide="next">
+                    <img src='/media/icon/arrow_carousel.png' alt="Next" class="carousel-arrow carousel-arrow-right">
+                    <span class="visually-hidden">Next</span>
+                </button>
+                </div>
+            {% elif venue.images.count == 1 %}
+                <!-- Одиночное фото — без карусели -->
+                <div class="image-wrapper">
+                    {% if venue.badge_text %}
+                    <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+                    {% endif %}
+                    <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                </div>
+            {% else %}
+                <!-- Нет фото -->
+                {% if venue.badge_text %}
+                <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+                {% endif %}
             {% endif %}
         </div>
 
@@ -73,7 +117,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="bookingModalLabel">Заявка на бронирование: {{ venue.title }}</h5>
+                    <h5 class="modal-title" id="bookingModalLabel">Заявка на бронирование</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">

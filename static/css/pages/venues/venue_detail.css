@@ -9,20 +9,17 @@
 
 /* Обертка для фото */
 .venue-image-wrapper {
-  flex: 0 0 55%;
+  flex: 0 0 40%;
 }
 
 .venue-image-wrapper img {
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
   object-fit: cover;
   display: block;
 }
 
 /* Информация о площадке */
 .venue-info {
-  flex: 0 0 42%;
+  flex: 0 0 52%;
 }
 .modal-content {
   padding: 15px;
@@ -33,7 +30,7 @@
   padding: 7px 16px;
   border: 1px solid #777a8d !important;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.85rem);
   color: #333;
   background: #fff;
   transition:
@@ -57,7 +54,7 @@
   margin-bottom: 2px;
 }
 .modal-title {
-    font-family: "Verdana", sans-serif;
+  font-family: "Verdana", sans-serif;
   font-size: clamp(0.8rem, 1vw, 1.5rem);
   font-weight: 400;
   color: #333;
@@ -71,7 +68,7 @@
   height: 15px !important;
   padding: 0;
   margin: 0;
-  border: none
+  border: none;
 }
 .modal-header .btn-close:focus {
   box-shadow: none;
@@ -262,7 +259,7 @@
 .venue-card-body .book-button {
   width: 100%;
   text-align: center;
-  padding: 12px 20px;
+  padding: 8px 10px;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
@@ -324,12 +321,32 @@
 #bookingModal input:focus {
   outline: none !important;
   box-shadow: none !important;
-  border-color: #e6743c !important;
+  border-color: #777a8d !important;
 }
 
+/* Бейдж на странице детали площадки — на фото */
+.venue-image-wrapper {
+  position: relative;
+}
 
-@media(max-width: 768px) {
-    .section-title {
+.venue-badge--detail {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  z-index: 10;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 768px) {
+  .section-title {
     margin: 0 0 10px 0;
   }
   .other-venues-section {

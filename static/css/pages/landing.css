@@ -314,44 +314,6 @@
   font-size: clamp(0.7rem, 1vw, 1rem);
 }
 
-/* Стили для кнопок навигации карусели */
-.carousel-control-prev,
-.carousel-control-next {
-  width: auto;
-  color: gray;
-  background: none;
-  opacity: 1;
-}
-
-.carousel-control-prev:hover,
-.carousel-control-next:hover {
-  opacity: 0.8;
-}
-
-.carousel-arrow {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  margin-left: 15px;
-}
-
-.carousel-arrow-right {
-  transform: rotate(180deg);
-  margin-right: 15px;
-}
-
-.arrow-right {
-  width: 0;
-  height: 0;
-  border-top: 15px solid transparent;
-  border-bottom: 15px solid transparent;
-  border-left: 25px solid rgba(38, 37, 37, 1);
-  margin-left: 10px;
-  display: inline-block;
-  vertical-align: middle;
-  margin-top: -4px;
-}
-
 .card {
   border-radius: 23.14px;
   box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
@@ -530,27 +492,6 @@
 
 .venue-col {
   margin-bottom: 0.5rem !important;
-}
-
-.book-button {
-  background: #ff8348;
-  text-align: center;
-  color: #ffffff;
-  border-radius: 20px;
-  font-family: "Montserrat";
-  font-weight: 500;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
-  padding: 10px 20px;
-  text-decoration: none;
-  margin-top: auto;
-  display: block;
-  width: 100%;
-}
-
-.book-button:hover {
-  background: #e6743c;
-  color: #ffffff;
-  text-decoration: none;
 }
 
 .text-and-button {
@@ -732,7 +673,7 @@
     border: none;
     outline: none;
     box-shadow: none;
-    font-size: 0.9rem;
+    font-size: clamp(0.7rem, 1vw, 0.9rem);
   }
 
   .input-button {

@@ -506,6 +506,9 @@ class VenueDetailView(DetailView):
     template_name = "venues/venue_detail.html"
     context_object_name = "venue"
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('images', 'formats')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         venue = self.object

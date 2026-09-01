@@ -1,0 +1,36 @@
+/* Стили для кнопок навигации карусели */
+.carousel-control-prev,
+.carousel-control-next {
+  width: auto;
+  color: gray;
+  background: none;
+  opacity: 1;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 0.8;
+}
+
+.carousel-arrow {
+  height: 28px;
+  object-fit: contain;
+  margin-left: 15px;
+}
+
+.carousel-arrow-right {
+  transform: rotate(180deg);
+  margin-right: 15px;
+}
+
+.arrow-right {
+  width: 0;
+  height: 0;
+  border-top: 15px solid transparent;
+  border-bottom: 15px solid transparent;
+  border-left: 25px solid rgba(38, 37, 37, 1);
+  margin-left: 10px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: -4px;
+}

@@ -4,9 +4,11 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
+<link rel="stylesheet" href="{% static '/css/carousel.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% include "includes/modal_buy_ticket.html" %}
 {% include "includes/modal_question.html" %}
+
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
 <script>
     window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
@@ -49,12 +51,12 @@
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Предыдущая</span>
+                    <img src="/media/icon/arrow_carousel.png" alt="Previous" class="carousel-arrow">
+                    <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Следующая</span>
+                    <img src='/media/icon/arrow_carousel.png' alt="Next" class="carousel-arrow carousel-arrow-right">
+                    <span class="visually-hidden">Next</span>
                 </button>
             </div>
         {% elif event.images.count > 1 %}
@@ -82,12 +84,12 @@
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Предыдущая</span>
+                    <img src="media/icon/arrow_carousel.png" alt="Previous" class="carousel-arrow">
+                    <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Следующая</span>
+                    <img src='media/icon/arrow_carousel.png' alt="Next" class="carousel-arrow carousel-arrow-right">
+                    <span class="visually-hidden">Next</span>
                 </button>
             </div>
         {% elif event.image %}
