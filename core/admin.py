@@ -469,6 +469,7 @@ class EventAdmin(admin.ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
 
         form.base_fields['description'].required = False
+        form.base_fields['city'].required = False
 
         # Если редактируется существующее мероприятие, оптимизируем загрузку связанных данных
         if obj:

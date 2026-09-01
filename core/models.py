@@ -594,13 +594,15 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
             elif isinstance(self.place_data, dict):
                 place_data = self.place_data.copy()
 
-            # Обновляем адрес и координаты
-            if hasattr(self, "address") and self.address:
-                place_data["address"] = self.address
-            if hasattr(self, "latitude") and self.latitude:
-                place_data["latitude"] = float(self.latitude)
-            if hasattr(self, "longitude") and self.longitude:
-                place_data["longitude"] = float(self.longitude)
+            # Синхронизируем адрес и координаты: пустые значения удаляются из place_data
+            for field in ("address", "latitude", "longitude"):
+                value = getattr(self, field, None)
+                if value in (None, ""):
+                    place_data.pop(field, None)
+                else:
+                    place_data[field] = (
+                        float(value) if field in ("latitude", "longitude") else value
+                    )
 
             self.place_data = place_data
 
