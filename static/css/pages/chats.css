@@ -7,7 +7,7 @@
   gap: 14px;
   align-items: flex-start;
 }
-
+ 
 /* --- Карточка мероприятия (для заголовка чата) --- */
 .chat-header-event-card {
   position: relative;
