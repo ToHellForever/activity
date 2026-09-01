@@ -9,7 +9,7 @@
 
 /* Обертка для фото */
 .venue-image-wrapper {
-  flex: 0 0 40%;
+  flex: 0 0 50%;
 }
 
 .venue-image-wrapper img {
@@ -19,7 +19,7 @@
 
 /* Информация о площадке */
 .venue-info {
-  flex: 0 0 52%;
+  flex: 0 0 50%;
 }
 .modal-content {
   padding: 15px;
@@ -337,7 +337,7 @@
   z-index: 10;
   padding: 6px 16px;
   border-radius: 20px;
-  font-size: 0.8rem;
+font-size: clamp(0.6rem, 1vw, 0.8rem);
   font-weight: 600;
   color: #fff;
   text-transform: uppercase;
