@@ -48,6 +48,12 @@ urlpatterns = [
     path("remove_event_image/<int:image_id>/", views.remove_event_image, name="remove_event_image"),
     path("set_primary_image/<int:image_id>/", views.set_primary_image, name="set_primary_image"),
     path("save_field/", views.save_field, name="save_field"),
+    # Заявки на изменение мероприятия
+    path(
+        "event_change_request/<int:event_id>/",
+        views.request_event_change,
+        name="request_event_change",
+    ),
     # Портфолио
     path("portfolio/", views.portfolio_list, name="portfolio_list"),
     path("portfolio/create/", views.portfolio_create, name="portfolio_create"),

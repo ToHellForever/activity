@@ -684,3 +684,399 @@ class EventAccessLink(models.Model):
         verbose_name = "Ссылка контроля входа"
         verbose_name_plural = "Ссылки контроля входа"
         ordering = ["-created_at"]
+
+
+class EventChangeRequestImage(models.Model):
+    """
+    Дополнительное фото, предложенное партнёром в заявке на изменение.
+    После одобрения заявки копируется в EventImage мероприятия.
+    """
+    change_request = models.ForeignKey(
+        "EventChangeRequest",
+        on_delete=models.CASCADE,
+        related_name="new_gallery_images",
+        verbose_name="Заявка на изменение",
+    )
+    image = models.ImageField(
+        upload_to="change_requests/gallery/",
+        verbose_name="Фото",
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="Основное фото",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
+
+    class Meta:
+        verbose_name = "Фото заявки на изменение"
+        verbose_name_plural = "Фото заявок на изменение"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Фото заявки #{self.change_request_id}"
+
+    def delete(self, *args, **kwargs):
+        if self.image:
+            self.image.delete(save=False)
+        super().delete(*args, **kwargs)
+
+
+class EventChangeRequest(models.Model):
+    """
+    Заявка на изменение мероприятия.
+
+    Когда у мероприятия есть проданные билеты, прямое редактирование партнёру
+    недоступно: он заполняет форму изменений, они сохраняются здесь как
+    предложение (diff), а админ одобряет или отклоняет заявку. Изменения
+    применяются к мероприятию только при одобрении.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "На рассмотрении"),
+        ("approved", "Одобрена"),
+        ("rejected", "Отклонена"),
+    ]
+
+    event = models.ForeignKey(
+        "core.Event",
+        on_delete=models.CASCADE,
+        related_name="change_requests",
+        verbose_name="Мероприятие",
+    )
+    partner = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="event_change_requests",
+        verbose_name="Партнёр",
+    )
+
+    # === Предлагаемые изменения ===
+    # Изменения обычных полей: {имя_поля: новое значение} (только отличающиеся)
+    changes = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Изменения полей",
+    )
+    # Полный список билетов, предложенный партнёром
+    tickets_data = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Предложенные билеты",
+    )
+    tag_ids = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="ID тегов",
+    )
+
+    # === Файлы-заменители ===
+    new_image = models.ImageField(
+        upload_to="change_requests/images/",
+        blank=True,
+        null=True,
+        verbose_name="Новое основное изображение",
+    )
+    new_video_url = models.FileField(
+        upload_to="change_requests/videos/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(["mp4", "mov", "avi"])],
+        verbose_name="Новое видео",
+        # Используем YandexVideoProcessingStorage, чтобы видео сохранялось локально
+        # и Celery-задача могла его обработать. Если использовать default storage
+        # (YandexCloudWithProcessingStorage), файл загружается в облако и локальная
+        # копия удаляется — Celery-задача не может найти файл для обработки.
+    )
+    new_program_file = models.FileField(
+        upload_to="change_requests/programs/",
+        blank=True,
+        null=True,
+        verbose_name="Новая программа (PDF)",
+    )
+
+    # === Флаги очистки медиа ===
+    clear_image = models.BooleanField(default=False, verbose_name="Удалить основное фото")
+    clear_video_url = models.BooleanField(default=False, verbose_name="Удалить видео")
+    clear_program_file = models.BooleanField(default=False, verbose_name="Удалить программу")
+
+    # === Галерея ===
+    delete_image_ids = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="ID фото галереи к удалению",
+    )
+    primary_image_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="ID фото галереи, которое сделать основным",
+    )
+    primary_new_image_index = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Индекс нового фото, которое сделать основным",
+    )
+
+    # === Модерация ===
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус",
+    )
+    admin_comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Комментарий администратора",
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_event_change_requests",
+        verbose_name="Кто рассмотрел",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата рассмотрения")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создана")
+
+    class Meta:
+        verbose_name = "Заявка на изменение мероприятия"
+        verbose_name_plural = "Заявки на изменение мероприятий"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Заявка #{self.pk} на изменение «{self.event.title}» ({self.get_status_display()})"
+
+    def clean(self):
+        """Только одна активная заявка на мероприятие."""
+        from django.core.exceptions import ValidationError
+
+        if self.status == "pending" and self.event_id:
+            qs = EventChangeRequest.objects.filter(event_id=self.event_id, status="pending")
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError(
+                    "По этому мероприятию уже есть заявка на рассмотрении."
+                )
+
+    @property
+    def has_changes(self):
+        """Есть ли в заявке хоть какие-то изменения."""
+        return bool(
+            self.changes
+            or self.tickets_data
+            or self.tag_ids
+            or self.new_image
+            or self.new_video_url
+            or self.new_program_file
+            or self.clear_image
+            or self.clear_video_url
+            or self.clear_program_file
+            or self.delete_image_ids
+            or self.primary_image_id
+            or self.primary_new_image_index is not None
+            or self.new_gallery_images.exists()
+        )
+
+    def get_field_diff_rows(self):
+        """
+        Возвращает список кортежей (название поля, текущее значение, предложенное)
+        для отображения diff в админке.
+        """
+        from core.models import Event, Category, Format, EventPackage
+
+        labels = {
+            f.name: f.verbose_name for f in Event._meta.fields
+        }
+        rows = []
+        for field_name, new_value in (self.changes or {}).items():
+            current_value = getattr(self.event, field_name, None)
+            if field_name in ("category", "format", "package"):
+                model = {"category": Category, "format": Format, "package": EventPackage}[field_name]
+                current = model.objects.filter(pk=current_value).first() if current_value else None
+                proposed = model.objects.filter(pk=new_value).first() if new_value else None
+                current_value = str(current) if current else "—"
+                new_value = str(proposed) if proposed else "—"
+            elif field_name == "date_time":
+                fmt = "%d.%m.%Y %H:%M"
+                current_value = timezone.localtime(current_value).strftime(fmt) if current_value else "—"
+                new_value = timezone.localtime(new_value).strftime(fmt) if new_value else "—"
+            rows.append((labels.get(field_name, field_name), current_value, new_value))
+        return rows
+
+    def apply_to_event(self, admin_user):
+        """
+        Применяет предложенные изменения к мероприятию.
+        Вызывать только при одобрении заявки (внутри transaction.atomic()).
+        """
+        from django.db import transaction
+        from django.core.files.base import File
+        from django.utils.dateparse import parse_datetime as django_parse_datetime
+        from core.models import EventImage, Ticket
+
+        event = self.event
+
+        with transaction.atomic():
+            # 1. Обычные поля
+            for field_name, value in (self.changes or {}).items():
+                # Дата приходит из JSON в виде ISO-строки — парсим обратно
+                if field_name == "date_time" and isinstance(value, str):
+                    parsed = django_parse_datetime(value)
+                    value = timezone.make_aware(parsed) if parsed and timezone.is_naive(parsed) else (parsed or value)
+                setattr(event, field_name, value)
+
+            # 2. Основные медиафайлы
+            if self.clear_image and event.image:
+                event.image = None
+            if self.clear_video_url and event.video_url:
+                event.video_url = None
+            if self.clear_program_file and event.program_file:
+                event.program_file = None
+
+            if self.new_image:
+                with self.new_image.open("rb") as f:
+                    event.image.save(os.path.basename(self.new_image.name), File(f), save=False)
+            video_was_updated = False
+            if self.new_video_url:
+                with self.new_video_url.open("rb") as f:
+                    event.video_url.save(os.path.basename(self.new_video_url.name), File(f), save=False)
+                # save=False не сохраняет в БД — обновляем вручную
+                event.video_url.name = os.path.basename(self.new_video_url.name)
+                # Сбрасываем статус обработки видео
+                event.video_processing_status = "pending"
+                event.processed_video_url_hash = None
+                video_was_updated = True
+            if self.new_program_file:
+                with self.new_program_file.open("rb") as f:
+                    event.program_file.save(os.path.basename(self.new_program_file.name), File(f), save=False)
+
+            # Сохраняем event — video_url сохранится через update_fields
+            if video_was_updated:
+                event.save(update_fields=[
+                    "video_url", "video_processing_status", "processed_video_url_hash"
+                ])
+            else:
+                event.save()
+
+            # Если было новое видео — запускаем обработку синхронно
+            if video_was_updated:
+                logger.info("APPLY_TO_EVENT: Processing video for Event %s", event.id)
+                from core.tasks import process_video_task
+                process_video_task(
+                    model_name='Event',
+                    instance_id=event.id,
+                    video_field_name='video_url',
+                    hash_field_name='processed_video_url_hash',
+                    status_field_name='video_processing_status'
+                )
+                # Удаляем старую копию new_video_url после успешного копирования
+                self.new_video_url.delete(save=False)
+
+            # 3. Теги
+            if self.tag_ids:
+                event.tags.set(self.tag_ids[:5])
+
+            # 4. Галерея: удаление отмеченных фото
+            delete_ids = [i for i in (self.delete_image_ids or [])]
+            if delete_ids:
+                for img in EventImage.objects.filter(event=event, id__in=delete_ids):
+                    img.delete()
+
+            # 5. Галерея: добавление новых фото
+            created_images = []
+            for req_image in self.new_gallery_images.all():
+                with req_image.image.open("rb") as f:
+                    new_img = EventImage(event=event)
+                    new_img.image.save(os.path.basename(req_image.image.name), File(f), save=False)
+                    new_img.is_primary = req_image.is_primary
+                    new_img.save()
+                    created_images.append(new_img)
+
+            # 6. Основное фото галереи
+            if self.primary_image_id:
+                EventImage.objects.filter(event=event).update(is_primary=False)
+                img = EventImage.objects.filter(event=event, id=self.primary_image_id).first()
+                if img:
+                    img.is_primary = True
+                    img.save(update_fields=["is_primary"])
+            elif self.primary_new_image_index is not None and created_images:
+                idx = self.primary_new_image_index
+                if 0 <= idx < len(created_images):
+                    EventImage.objects.filter(event=event).update(is_primary=False)
+                    created_images[idx].is_primary = True
+                    created_images[idx].save(update_fields=["is_primary"])
+            elif created_images:
+                # Новые фото есть, основное не выбрано — первое новое становится основным
+                EventImage.objects.filter(event=event).update(is_primary=False)
+                created_images[0].is_primary = True
+                created_images[0].save(update_fields=["is_primary"])
+
+            # Синхронизируем Event.image с основным EventImage
+            event.set_primary_from_event_images()
+
+            # 7. Билеты: обновляем существующие по названию, создаём новые.
+            # Билеты с проданными заказами не удаляем и не пересоздаём —
+            # обновляем их поля на месте, чтобы не потерять историю заказов.
+            for row in self.tickets_data or []:
+                try:
+                    price = float(str(row.get("price", "0")).replace(",", "."))
+                    quantity = int(row.get("quantity", 0))
+                except (TypeError, ValueError):
+                    continue
+                if not row.get("name") or quantity <= 0:
+                    continue
+                ticket = event.tickets.filter(name__iexact=row["name"]).first()
+                ticket_kwargs = {
+                    "price": price,
+                    "available_quantity": quantity,
+                    "ticket_description": row.get("description") or "",
+                    "is_per_person": bool(row.get("is_per_person")),
+                    "min_quantity": int(row.get("min_quantity") or 1),
+                }
+                if ticket:
+                    for field, val in ticket_kwargs.items():
+                        setattr(ticket, field, val)
+                    ticket.save()
+                else:
+                    event.tickets.create(name=row["name"], color=Ticket().get_random_color(), **ticket_kwargs)
+
+            # 8. Помечаем заявку одобренной
+            self.status = "approved"
+            self.reviewed_by = admin_user
+            self.reviewed_at = timezone.now()
+            self.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+
+    def reject(self, admin_user, comment=""):
+        """Отклоняет заявку."""
+        self.status = "rejected"
+        self.admin_comment = comment or ""
+        self.reviewed_by = admin_user
+        self.reviewed_at = timezone.now()
+        self.save(update_fields=["status", "admin_comment", "reviewed_by", "reviewed_at"])
+
+    def notify_partner(self):
+        """Отправляет партнёру письмо о результате рассмотрения заявки."""
+        from django.core.mail import send_mail
+        from django.conf import settings as dj_settings
+
+        if self.status == "approved":
+            subject = f"Заявка на изменение мероприятия «{self.event.title}» одобрена"
+            message = (
+                f"Здравствуйте, {self.partner.first_name or self.partner.email}!\n\n"
+                f"Ваша заявка на изменение мероприятия «{self.event.title}» одобрена. "
+                f"Изменения применены к мероприятию.\n\n"
+                f"С уважением,\nАдминистрация платформы"
+            )
+        else:
+            subject = f"Заявка на изменение мероприятия «{self.event.title}» отклонена"
+            message = (
+                f"Здравствуйте, {self.partner.first_name or self.partner.email}!\n\n"
+                f"К сожалению, ваша заявка на изменение мероприятия «{self.event.title}» отклонена.\n"
+                + (f"Комментарий администратора: {self.admin_comment}\n" if self.admin_comment else "")
+                + "\nС уважением,\nАдминистрация платформы"
+            )
+        try:
+            send_mail(subject, message, dj_settings.DEFAULT_FROM_EMAIL, [self.partner.email])
+        except Exception as e:
+            logger.error("Не удалось отправить письмо о заявке #%s: %s", self.pk, e)

@@ -20,13 +20,22 @@
 </div>
 
 <div class="partner-main">
+{% if is_change_request %}
+<div class='warning-block'>
+    <strong class='text-warning-h'>Заявка на изменение мероприятия</strong><br>
+    <span class='text-warning-p'>
+        На мероприятие уже проданы билеты, поэтому прямое редактирование недоступно.
+        Заполните новые значения и отправьте заявку — администратор рассмотрит её
+        и применит изменения при одобрении. Ничего не изменится без одобрения.
+    </span>
+</div>
+{% endif %}
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="hidden" name="deleted_image_ids" id="deleted_image_ids" value="">
     <input type="hidden" name="delete_main_image" id="delete_main_image" value="">
     <input type="hidden" name="primary_image_id" id="primary_image_id" value="">
     <input type="hidden" name="primary_new_photo_file_index" id="primary_new_photo_file_index" value="">
-    <input type="hidden" name="requires_strict_moderation" value="off">
     {% if form.instance.pk %}
     <input type="hidden" name="event_id" value="{{ form.instance.id }}">
     {% endif %}
@@ -594,7 +603,7 @@
         <small class="form-text text-muted-small">Выберите до 5 тегов (необязательно)</small>
     </div>
     <div style="display: flex; justify-content: center;">
-    <button type="submit" class="submit-btn">ОТПРАВИТЬ НА МОДЕРАЦИЮ</button>
+    <button type="submit" class="submit-btn">{% if is_change_request %}ОТПРАВИТЬ ЗАЯВКУ НА ИЗМЕНЕНИЕ{% else %}ОТПРАВИТЬ НА МОДЕРАЦИЮ{% endif %}</button>
 </div>
 </form>
 </div>
@@ -627,7 +636,7 @@
 </div>
 
 <!-- ===== Package change modal ===== -->
-<div id="package-change-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; justify-content:center; align-items:center;">
+<div id="package-change-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:20000; justify-content:center; align-items:center;">
     <div style="background:#fff; padding:24px; border-radius:12px; width:500px; max-width:90%;">
         <h4 style="margin-bottom:16px;">Смена пакета</h4>
         <p style="font-size:13px; color:#555; margin-bottom:16px;">

@@ -1,3 +1,21 @@
+.text-warning-h {
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+}
+.text-warning-p {
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+}
+.warning-block {
+  background:#fff7ed; 
+  border:1px solid rgba(255, 131, 72, 1); 
+  border-radius:12px; 
+  padding:14px 18px; 
+  margin-bottom:18px;
+  line-height: 1.1 !important;
+}
 .text-danger {
   color: #dc3545;
   margin-left: 3px;

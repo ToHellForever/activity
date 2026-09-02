@@ -13,6 +13,10 @@ from django.utils.html import mark_safe
 from django.db.models import F, Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
+from partner_app.models import EventChangeRequest
+
+import logging
+logger = logging.getLogger(__name__)
 
 CustomUser = get_user_model()
 
@@ -1228,5 +1232,316 @@ class FormatAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     ordering = ('name',)
+
+
+# === Заявки на изменение мероприятия ===
+
+@admin.register(EventChangeRequest)
+class EventChangeRequestAdmin(admin.ModelAdmin):
+    """
+    Админка заявок на изменение мероприятий.
+
+    Партнёр предлагает изменения к мероприятию с проданными билетами,
+    администратор одобряет (изменения применяются) или отклоняет заявку.
+    """
+
+    list_display = (
+        "id",
+        "event",
+        "partner",
+        "status_badge",
+        "changes_summary",
+        "created_at",
+        "reviewed_at",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = (
+        "event__title",
+        "partner__email",
+        "partner__company_name",
+    )
+    readonly_fields = (
+        "event",
+        "partner",
+        "status",
+        "changes",
+        "tickets_data",
+        "tag_ids",
+        "new_image",
+        "new_video_url",
+        "new_program_file",
+        "clear_image",
+        "clear_video_url",
+        "clear_program_file",
+        "delete_image_ids",
+        "primary_image_id",
+        "primary_new_image_index",
+        "diff_display",
+        "tickets_diff_display",
+        "created_at",
+        "reviewed_at",
+        "reviewed_by",
+    )
+    fieldsets = (
+        ("Заявка", {"fields": ("event", "partner", "status", "created_at")}),
+        (
+            "Предложенные изменения",
+            {"fields": ("diff_display", "tickets_diff_display", "new_image", "new_video_url", "new_program_file")},
+        ),
+        (
+            "Решение",
+            {"fields": ("admin_comment", "reviewed_by", "reviewed_at")},
+        ),
+    )
+    actions = ("approve_requests", "reject_requests")
+
+    change_form_template = "admin/event_change_request_change_form.html"
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("event", "partner")
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Отклонённые и одобренные заявки можно удалять, pending — нет
+        if obj and obj.status == "pending":
+            return False
+        return True
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(self.readonly_fields)
+        if obj and obj.status != "pending":
+            # Рассмотренную заявку больше нельзя менять
+            readonly.append("admin_comment")
+        return readonly
+
+    # --- Отображение ---
+
+    def status_badge(self, obj):
+        colors = {
+            "pending": "rgba(255, 131, 72, 1)",
+            "approved": "#28a745",
+            "rejected": "#dc3545",
+        }
+        return mark_safe(
+            f'<span style="color:#fff; background:{colors.get(obj.status, "#6c757d")};'
+            f' padding:2px 10px; border-radius:10px; font-size:12px;">'
+            f"{obj.get_status_display()}</span>"
+        )
+    status_badge.short_description = "Статус"
+
+    def changes_summary(self, obj):
+        parts = []
+        if obj.changes:
+            parts.append(f"полей: {len(obj.changes)}")
+        if obj.tickets_data:
+            parts.append("билеты")
+        if obj.tag_ids:
+            parts.append("теги")
+        if obj.new_image or obj.clear_image:
+            parts.append("фото")
+        if obj.new_video_url or obj.clear_video_url:
+            parts.append("видео")
+        if obj.new_program_file or obj.clear_program_file:
+            parts.append("программа")
+        if obj.new_gallery_images.exists():
+            parts.append(f"новых фото: {obj.new_gallery_images.count()}")
+        if obj.delete_image_ids:
+            parts.append(f"удалить фото: {len(obj.delete_image_ids)}")
+        return ", ".join(parts) or "—"
+    changes_summary.short_description = "Состав изменений"
+
+    def diff_display(self, obj):
+        """Таблица diff: текущее значение поля vs предложенное."""
+        if not obj or not obj.pk:
+            return "—"
+
+        rows = obj.get_field_diff_rows()
+        has_field_changes = bool(rows)
+
+        html = []
+        if has_field_changes:
+            html.append(
+                '<table style="width:100%; border-collapse:collapse;">'
+                '<tr style="background:#f8f9fa;">'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Поле</th>'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Текущее</th>'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Предложено</th>'
+                '</tr>'
+            )
+            for label, current, proposed in rows:
+                html.append(
+                    f'<tr>'
+                    f'<td style="border:1px solid #ddd; padding:6px;">{label}</td>'
+                    f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{current}</td>'
+                    f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{proposed}</td>'
+                    f'</tr>'
+                )
+            html.append('</table>')
+        else:
+            html.append('<p style="color:#888; margin: 4px 0;">Изменений обычных полей нет</p>')
+
+        # Медиафлаги (показываем всегда, даже если нет изменений обычных полей)
+        flags = []
+        if obj.clear_image:
+            flags.append("удалить основное фото")
+        if obj.clear_video_url:
+            flags.append("удалить видео")
+        if obj.clear_program_file:
+            flags.append("удалить программу")
+        if obj.delete_image_ids:
+            flags.append(f"удалить фото галереи: {', '.join(map(str, obj.delete_image_ids))}")
+        if obj.tag_ids:
+            tag_names = list(obj.event.tags.filter(id__in=obj.tag_ids).values_list("name", flat=True))
+            flags.append(f"теги: {', '.join(tag_names) or obj.tag_ids}")
+        if flags:
+            html.append('<p style="margin-top:8px; color:#b45309;">' + "; ".join(flags) + "</p>")
+
+        # Новые фото галереи
+        gallery = obj.new_gallery_images.all()
+        if gallery:
+            html.append('<p style="margin-top:8px; font-weight:bold;">Новые фото галереи:</p>')
+            html.append('<div style="display:flex; flex-wrap:wrap; gap:5px;">')
+            for img in gallery:
+                primary = " (основное)" if img.is_primary else ""
+                html.append(
+                    f'<div style="text-align:center;"><img src="{img.image.url}" '
+                    f'style="max-width:120px; max-height:120px; border:1px solid #ddd; padding:3px;">'
+                    f"<div style='font-size:11px;'>{primary}</div></div>"
+                )
+            html.append("</div>")
+
+        return mark_safe("".join(html))
+    diff_display.short_description = "Изменения полей"
+
+    def tickets_diff_display(self, obj):
+        """Сравнение текущих билетов мероприятия с предложенными."""
+        if not obj or not obj.pk:
+            return "—"
+        if not obj.tickets_data:
+            return mark_safe('<span style="color:#888;">Изменений билетов нет</span>')
+
+        current = {
+            t.name.lower(): t for t in obj.event.tickets.all()
+        }
+        proposed_names = {row["name"].lower() for row in obj.tickets_data}
+
+        html = [
+            '<table style="width:100%; border-collapse:collapse;">',
+            '<tr style="background:#f8f9fa;">'
+            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Билет</th>'
+            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Текущий</th>'
+            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Предложено</th>'
+            "</tr>",
+        ]
+        for row in obj.tickets_data:
+            ticket = current.get(row["name"].lower())
+            if ticket:
+                current_str = (
+                    f"{ticket.price} руб., мест: {ticket.available_quantity}, "
+                    f"продано: {ticket.orders.exclude(payment_status__in=['refunded', 'canceled']).count()}"
+                )
+                action = "изменение"
+            else:
+                current_str = "—"
+                action = "новый"
+            proposed_str = f"{row['price']} руб., мест: {row['quantity']}"
+            html.append(
+                f"<tr>"
+                f'<td style="border:1px solid #ddd; padding:6px;">{row["name"]} <em>({action})</em></td>'
+                f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{current_str}</td>'
+                f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{proposed_str}</td>'
+                f"</tr>"
+            )
+        # Билеты, которые партнёр убрал из списка (останутся без изменений)
+        removed = [t.name for name, t in current.items() if name not in proposed_names]
+        if removed:
+            html.append(
+                '<tr><td colspan="3" style="border:1px solid #ddd; padding:6px; color:#888;">'
+                f"Билеты, отсутствующие в заявке (останутся без изменений): {', '.join(removed)}"
+                "</td></tr>"
+            )
+        html.append("</table>")
+        return mark_safe("".join(html))
+    tickets_diff_display.short_description = "Изменения билетов"
+
+    # --- Действия ---
+
+    def approve_requests(self, request, queryset):
+        """Одобрить выбранные заявки и применить изменения."""
+        approved = 0
+        for change_request in queryset.filter(status="pending"):
+            try:
+                change_request.apply_to_event(request.user)
+                change_request.notify_partner()
+                approved += 1
+            except Exception as e:
+                logger.error(
+                    "Ошибка применения заявки #%s: %s", change_request.pk, e, exc_info=True
+                )
+                self.message_user(
+                    request,
+                    f"Не удалось применить заявку #{change_request.pk}: {e}",
+                    level=messages.ERROR,
+                )
+        if approved:
+            self.message_user(request, f"Одобрено и применено заявок: {approved}.")
+    approve_requests.short_description = "Одобрить и применить изменения"
+
+    def reject_requests(self, request, queryset):
+        """Отклонить выбранные заявки (с комментарием)."""
+        pending = queryset.filter(status="pending")
+        if not pending.exists():
+            self.message_user(request, "Нет заявок на рассмотрении.", level=messages.WARNING)
+            return None
+        if "apply" in request.POST:
+            comment = request.POST.get("admin_comment", "")
+            for change_request in pending:
+                change_request.reject(request.user, comment)
+                change_request.notify_partner()
+            self.message_user(request, f"Отклонено заявок: {pending.count()}.")
+            return None
+        # Промежуточная форма ввода комментария
+        selected = "".join(
+            f'<input type="hidden" name="_selected_action" value="{cr.pk}">'
+            for cr in pending
+        )
+        form = f"""
+        <form method="post">
+            <input type="hidden" name="action" value="reject_requests">
+            <input type="hidden" name="action_check" value="1">
+            {selected}
+            <div style="margin: 10px 0;">
+                <label for="admin_comment">Комментарий партнёру (причина отклонения):</label><br>
+                <textarea id="admin_comment" name="admin_comment" rows="4" cols="60"></textarea>
+            </div>
+            <input type="submit" name="apply" value="Отклонить заявки">
+        </form>
+        """
+        return mark_safe(form)
+    reject_requests.short_description = "Отклонить заявки"
+
+    def response_change(self, request, obj):
+        """Кнопки 'Одобрить'/'Отклонить' внизу страницы заявки."""
+        if "_approve" in request.POST and obj.status == "pending":
+            try:
+                obj.apply_to_event(request.user)
+                obj.notify_partner()
+                self.message_user(request, f"Заявка #{obj.pk} одобрена, изменения применены.")
+            except Exception as e:
+                logger.error("Ошибка применения заявки #%s: %s", obj.pk, e, exc_info=True)
+                self.message_user(request, f"Не удалось применить заявку: {e}", level=messages.ERROR)
+            return redirect(request.path)
+        if "_reject" in request.POST and obj.status == "pending":
+            obj.reject(request.user, request.POST.get("admin_comment_review", ""))
+            obj.notify_partner()
+            self.message_user(request, f"Заявка #{obj.pk} отклонена.")
+            return redirect(request.path)
+        return super().response_change(request, obj)
 
 

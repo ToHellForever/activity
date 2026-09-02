@@ -93,17 +93,28 @@
                                      {% else %}
                                      <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                                      {% endif %}
-                                    {% if not item.event.has_sold_tickets %}
+                                    {% if item.event.status == 'on_moderation' %}
+                                    <button type="button" class="card-edit-btn card-edit-btn--disabled"
+                                            onclick="showToast('Мероприятие на модерации. Редактирование станет доступно после одобрения или отклонения администратором.'); return false;"
+                                            title="Редактировать">
+                                        <img src="/media/icon/tdesign_edit-filled.svg" alt="">
+                                    </button>
+                                    {% elif item.pending_change_request %}
+                                    <button type="button" class="card-edit-btn card-edit-btn--disabled"
+                                            onclick="showToast('По мероприятию отправлена заявка на изменение. Она находится на рассмотрении администратора.', false); return false;"
+                                            title="Заявка на рассмотрении">
+                                        <img src="/media/icon/tdesign_edit-filled.svg" alt="">
+                                    </button>
+                                    {% elif item.event.has_sold_tickets %}
+                                    <a href="{% url 'partner:request_event_change' item.event.id %}"
+                                       class="card-edit-btn" title="Заявка на изменение">
+                                        <img src="/media/icon/tdesign_edit-filled.svg" alt="">
+                                    </a>
+                                    {% else %}
                                     <a href="{% url 'partner:edit_event' item.event.id %}"
                                        class="card-edit-btn" title="Редактировать">
                                         <img src="/media/icon/tdesign_edit-filled.svg" alt="">
                                     </a>
-                                    {% else %}
-                                    <button type="button" class="card-edit-btn card-edit-btn--disabled"
-                                            onclick="showToast('Редактирование невозможно, так как на мероприятие продан хотя бы 1 билет. Обратитесь в поддержку.'); return false;"
-                                            title="Редактировать">
-                                        <img src="/media/icon/tdesign_edit-filled.svg" alt="">
-                                    </button>
                                     {% endif %}
                                     <label class="card-check">
                                         <input type="checkbox" name="event_ids"
@@ -115,6 +126,15 @@
                                 </div>
                                 <div class="card-body">
                                     <h5 class="card-title">{{ item.event.title }}</h5>
+                                    {% if item.event.status == 'on_moderation' %}
+                                    <p class="card-label" style="margin-top:-6px;">
+                                        <span class="card-edit-request">На модерации</span>
+                                    </p>
+                                    {% elif item.pending_change_request %}
+                                    <p class="card-label" style="margin-top:-6px;">
+                                        <span class="card-edit-request">На рассмотрении</span>
+                                    </p>
+                                    {% endif %}
                                     {% if item.event.organizer.is_verified %}
                                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class="arrow-card"><span class="card-verified">Проверенный организатор</span></p>
                                     {% endif %}

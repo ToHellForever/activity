@@ -29,6 +29,15 @@ class PartnerAppConfig(AppConfig):
             from partner_app.models import PortfolioImage
             PortfolioImage._meta.get_field('image').storage = YandexImageProcessingStorage()
             
+            # Применяем хранилище к полю new_video_url модели EventChangeRequest
+            # Это нужно, чтобы видео сохранялось локально для обработки Celery-задачей.
+            # Если использовать YandexCloudWithProcessingStorage (default), файл загружается
+            # в облако и локальная копия удаляется — Celery-задача не может найти файл.
+            from partner_app.models import EventChangeRequest
+            EventChangeRequest._meta.get_field('new_video_url').storage = YandexVideoProcessingStorage(
+                subdirectory='change_request_videos'
+            )
+            
         except ImportError as e:
             import logging
             logger = logging.getLogger(__name__)

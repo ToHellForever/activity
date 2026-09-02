@@ -63,6 +63,9 @@ from .entry_control import (
     scanner_scan,
     scanner_end_shift,
 )
+from .event_change_requests import (
+    request_event_change,
+)
 
 __all__ = [
     # decorators
@@ -117,4 +120,6 @@ __all__ = [
     "scanner_view",
     "scanner_scan",
     "scanner_end_shift",
+    # event_change_requests
+    "request_event_change",
 ]

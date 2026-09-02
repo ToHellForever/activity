@@ -1,0 +1,17 @@
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+  {% if original.status == 'pending' %}
+    <div class="submit-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <input type="submit" name="_approve" value="Одобрить и применить изменения"
+             style="background:#28a745; color:#fff;">
+      <input type="submit" name="_reject" value="Отклонить"
+             style="background:#dc3545; color:#fff;">
+      <input type="text" name="admin_comment_review" placeholder="Комментарий партнёру (при отклонении)"
+             style="flex:1; min-width:200px;">
+    </div>
+  {% else %}
+    <p style="padding:10px;">Заявка уже рассмотрена: {{ original.get_status_display }}.</p>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

@@ -235,6 +235,21 @@ def create_event(request):
         # Если это редактирование существующего мероприятия
         if 'event_id' in request.POST:
             event = Event.objects.filter(id=request.POST['event_id'], organizer=request.user).first()
+            # Те же блокировки, что и в edit_event: модерация и проданные билеты
+            if event and event.status == "on_moderation":
+                messages.error(
+                    request,
+                    "Мероприятие находится на модерации. Редактирование станет доступно "
+                    "после того, как администратор одобрит или отклонит его.",
+                )
+                return redirect("partner:partner_event_list")
+            if event and event.has_sold_tickets:
+                messages.warning(
+                    request,
+                    "На мероприятие уже проданы билеты — прямое редактирование закрыто. "
+                    "Отправьте заявку на изменение.",
+                )
+                return redirect("partner:request_event_change", event_id=event.id)
             if event and event.package:
                 # Если у события уже есть пакет, используем его
                 package = event.package
@@ -444,6 +459,15 @@ def edit_event(request, event_id):
 
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
+    # Мероприятие на модерации — редактирование закрыто до решения администратора
+    if event.status == "on_moderation":
+        messages.error(
+            request,
+            "Мероприятие находится на модерации. Редактирование станет доступно "
+            "после того, как администратор одобрит или отклонит его.",
+        )
+        return redirect("partner:partner_event_list")
+
     # Проверяем, существует ли файл event.image, и если нет — сбрасываем
     if event.image:
         try:
@@ -459,11 +483,13 @@ def edit_event(request, event_id):
     request.primary_event_image = primary_event_image
 
     if event.has_sold_tickets:
-        messages.error(
+        # Прямое редактирование закрыто — отправляем партнёра на форму заявки
+        messages.warning(
             request,
-            "Редактирование этого мероприятия запрещено, так как на него уже проданы билеты.",
+            "Редактирование этого мероприятия запрещено, так как на него уже проданы билеты. "
+            "Вы можете отправить заявку на изменение — администратор её рассмотрит.",
         )
-        return redirect("partner:partner_event_list")
+        return redirect("partner:request_event_change", event_id=event.id)
 
     if request.method == "POST":
         # Передаем request.FILES, чтобы обработать загрузку нового видео
@@ -576,16 +602,24 @@ def edit_event(request, event_id):
             primary_new_index = request.POST.get("primary_new_photo_file_index", "")
             new_images = request.FILES.getlist("images")
 
-            EventImage.objects.filter(event=event).update(is_primary=False)
+            # Получаем текущее основное фото ДО изменений
+            current_primary_id = event.images.filter(is_primary=True).values_list("id", flat=True).first()
 
-            # Если выбрано существующее фото как основное
-            if primary_image_id:
-                try:
-                    img = EventImage.objects.get(id=int(primary_image_id), event=event)
-                    img.is_primary = True
-                    img.save(update_fields=["is_primary"])
-                except (EventImage.DoesNotExist, ValueError):
-                    pass
+            # Если пользователь не менял галочку — не трогаем is_primary
+            if primary_image_id and str(primary_image_id) == str(current_primary_id):
+                pass  # Галочка не изменилась, ничего не делаем
+            else:
+                # Снимаем is_primary со всех фото
+                EventImage.objects.filter(event=event).update(is_primary=False)
+
+                # Если выбрано существующее фото как основное
+                if primary_image_id:
+                    try:
+                        img = EventImage.objects.get(id=int(primary_image_id), event=event)
+                        img.is_primary = True
+                        img.save(update_fields=["is_primary"])
+                    except (EventImage.DoesNotExist, ValueError):
+                        pass
 
             # Если выбрано новое загруженное фото как основное
             used_primary_index = None
@@ -749,10 +783,18 @@ def partner_event_list(request):
                 sold_tickets += sold
                 total += sold + ticket.available_quantity
 
+            # Есть ли активная (pending) заявка на изменение по мероприятию
+            pending_change_request = (
+                event.change_requests.filter(status="pending").first()
+                if event.has_sold_tickets
+                else None
+            )
+
             result.append({
                 "event": event,
                 "sold": sold_tickets,
                 "total": total,
+                "pending_change_request": pending_change_request,
             })
         return result
 
@@ -857,6 +899,31 @@ def check_video_status(request, event_id):
     })
 
 
+def _event_edit_blocked_response(event):
+    """
+    Проверяет, заблокировано ли изменение мероприятия (модерация или проданные билеты).
+    Возвращает JsonResponse с ошибкой или None, если изменение разрешено.
+    """
+    if event.status == "on_moderation":
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Мероприятие на модерации — изменение недоступно.",
+            },
+            status=403,
+        )
+    if event.has_sold_tickets:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "На мероприятие проданы билеты — изменение недоступно. "
+                           "Отправьте заявку на изменение.",
+            },
+            status=403,
+        )
+    return None
+
+
 @login_required
 def remove_media(request, media_type, media_id):
     """
@@ -873,6 +940,10 @@ def remove_media(request, media_type, media_id):
 
         if media_type in ["image", "video_url", "program_file"]:
             event = Event.objects.get(id=media_id, organizer=request.user)
+
+            blocked = _event_edit_blocked_response(event)
+            if blocked:
+                return blocked
 
             field = media_type
             current_file = getattr(event, field, None)
@@ -922,6 +993,10 @@ def remove_event_image(request, image_id):
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
         event = image.event
 
+        blocked = _event_edit_blocked_response(event)
+        if blocked:
+            return blocked
+
         # Если удаляемое фото было основным и совпадало с event.image — сбрасываем
         if image.is_primary and event.image and event.image.name == image.image.name:
             event.image = None
@@ -953,6 +1028,11 @@ def set_primary_image(request, image_id):
 
     try:
         image = EventImage.objects.get(id=image_id, event__organizer=request.user)
+
+        blocked = _event_edit_blocked_response(image.event)
+        if blocked:
+            return blocked
+
         # Снимаем is_primary у всех фото этого мероприятия
         EventImage.objects.filter(event=image.event).update(is_primary=False)
         image.is_primary = True

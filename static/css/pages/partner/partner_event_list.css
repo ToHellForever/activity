@@ -1,7 +1,14 @@
 /* ============================================================
    PARTNER EVENTS PAGE
    ============================================================ */
-
+.card-label {
+  font-family: clamp(0.6rem, 1vw, 0.8rem) !important;
+}
+.card-edit-request {
+  font-size: clamp(0.7rem, 1vw, 0.8rem) !important;
+  color: #666;
+  font-family: "Verdana", sans-serif;
+}
 .partner-main {
   background: #f5f6f8;
   min-height: 100vh;

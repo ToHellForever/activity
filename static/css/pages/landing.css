@@ -366,13 +366,12 @@
   font-size: clamp(0.6rem, 1vw, 0.8rem);
   margin-left: 2px;
 }
-
 .badge {
   color: #070707;
   border-radius: 20px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   margin-left: -5px;
   padding: 3px 8px;
   display: inline-block;
