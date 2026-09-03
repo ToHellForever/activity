@@ -98,6 +98,26 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
                 }
             )
             
+            # Проверяем, все ли билеты мероприятия проданы.
+            # Уведомление отправляем ПОСЛЕ коммита транзакции.
+            event = ticket.event
+            if event.has_all_tickets_sold:
+                def _notify_all_sold(event_id=event.id):
+                    try:
+                        from partner_app.views.events import send_partner_all_tickets_sold_notification
+                        ev = Event.objects.get(id=event_id)
+                        send_partner_all_tickets_sold_notification(ev)
+                        logger.info(
+                            "[reserve_tickets] Отправлено уведомление о продаже всех билетов: event_id=%s",
+                            event_id
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "[reserve_tickets] Ошибка отправки уведомления о продаже всех билетов: %s",
+                            e, exc_info=True
+                        )
+                transaction.on_commit(_notify_all_sold)
+            
             return order
     
     finally:
@@ -125,10 +145,7 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
     Raises:
         TicketReservationError: Если каких-то билетов недостаточно
     """
-    from core.models import Ticket, Order
-    
-    # Собираем все ticket_id для блокировки
-    ticket_ids = [item['id'] for item in tickets_data if item.get('quantity', 0) > 0]
+    from core.models import Ticket, Order, Event
     
     if not ticket_ids:
         raise TicketReservationError("Нет билетов для бронирования")
@@ -205,6 +222,27 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
                     'ticket_ids': ticket_ids
                 }
             )
+            
+            # Проверяем, все ли билеты мероприятия проданы.
+            # Уведомление отправляем ПОСЛЕ коммита транзакции.
+            def _notify_all_sold_bulk(event_id=event_id):
+                try:
+                    from partner_app.views.events import send_partner_all_tickets_sold_notification
+                    ev = Event.objects.get(id=event_id)
+                    if ev.has_all_tickets_sold:
+                        send_partner_all_tickets_sold_notification(ev)
+                        logger.info(
+                            "[bulk_reserve_tickets] Отправлено уведомление о продаже всех билетов: event_id=%s",
+                            event_id
+                        )
+                except Event.DoesNotExist:
+                    pass
+                except Exception as e:
+                    logger.error(
+                        "[bulk_reserve_tickets] Ошибка отправки уведомления: %s",
+                        e, exc_info=True
+                    )
+            transaction.on_commit(_notify_all_sold_bulk)
             
             return orders
     

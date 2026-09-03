@@ -499,6 +499,19 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     def has_sold_tickets(self, value):
         """Сеттер для совместимости с существующим кодом."""
         pass  # Игнорируем, так как это вычисляемое свойство
+
+    @property
+    def has_all_tickets_sold(self):
+        """Проверяет, проданы ли ВСЕ места на мероприятии.
+
+        available_quantity — живой счётчик (декрементируется при покупке,
+        восстанавливается при отмене/возврате), поэтому "все проданы"
+        означает, что у каждого типа билетов счётчик достиг нуля.
+        """
+        tickets = list(self.tickets.all())
+        if not tickets:
+            return False
+        return all(ticket.available_quantity == 0 for ticket in tickets)
     package = models.ForeignKey(
         EventPackage,
         on_delete=models.SET_NULL,
@@ -856,31 +869,22 @@ class Ticket(models.Model):
                 )
                 return False
 
-        # Используем aggregate вместо цикла по Python — намного быстрее
-        sold_aggregated = self.orders.exclude(
-            payment_status__in=["refunded", "canceled"]
-        ).aggregate(total=Sum("quantity"))["total"]
-        sold = sold_aggregated or 0
-        
-        available = self.available_quantity >= sold + quantity
+        # available_quantity — живой счётчик: уменьшается при покупке
+        # (reserve_tickets / bulk_reserve_tickets) и восстанавливается
+        # при отмене/возврате. Поэтому сравниваем напрямую, БЕЗ вычитания
+        # проданного из заказов (иначе двойной учёт — продажи останавливаются
+        # на половине мест).
+        available = self.available_quantity >= quantity
         logger.debug(
-            "Ticket %s: available_quantity=%s, sold=%s, quantity=%s, result=%s",
-            self.id, self.available_quantity, sold, quantity, available
+            "Ticket %s: available_quantity=%s, quantity=%s, result=%s",
+            self.id, self.available_quantity, quantity, available
         )
         return available
 
     def get_available_count(self):
         """Возвращает количество доступных билетов данного типа (без блокировки)."""
-        try:
-            sold = sum(
-                order.quantity
-                for order in self.orders.exclude(
-                    payment_status__in=["refunded", "canceled", "reserved"]
-                )
-            )
-            return max(0, self.available_quantity - sold)
-        except Exception:
-            return 0
+        # available_quantity — живой счётчик (см. _check_availability)
+        return max(0, self.available_quantity)
 
     class Meta:
         verbose_name = "Билет"

@@ -196,9 +196,12 @@ class TicketInline(admin.TabularInline):
         return 0
 
     def get_available_count(self, obj):
-        """Возвращает количество доступных билетов."""
-        sold = sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
-        return obj.available_quantity - sold
+        """Возвращает количество доступных билетов.
+
+        available_quantity — живой счётчик (декрементируется при покупке),
+        поэтому доступно = available_quantity. "Всего мест" = продано + доступно.
+        """
+        return obj.available_quantity
 
     get_available_count.short_description = "Доступно"
 
