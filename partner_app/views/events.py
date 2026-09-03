@@ -658,6 +658,14 @@ def edit_event(request, event_id):
                     first_remaining.is_primary = True
                     first_remaining.save(update_fields=["is_primary"])
 
+            # Fallback: если основного фото нет ни после смен, ни после добавления —
+            # назначаем первое оставшееся фото как основное (на случай если предыдущая логика не сработала)
+            if not event.images.filter(is_primary=True).exists():
+                first_available = event.images.first()
+                if first_available:
+                    first_available.is_primary = True
+                    first_available.save(update_fields=["is_primary"])
+
             # Синхронизируем Event.image с primary EventImage
             event.set_primary_from_event_images()
 
