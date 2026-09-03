@@ -240,34 +240,26 @@
         <label>Фото (не более {{ form.current_package.max_photos|default:10 }})</label>
         <div class="photo-gallery-hint">Нажмите на фото, чтобы сделать его основным</div>
         <div class="media-upload-container" id="photo-upload-container">
-            {% if form.instance.pk %}
-                {% if form.instance.image or form.instance.images.exists %}
-                    <!-- Существующие фото -->
-                    <div class="photo-gallery" id="photo-gallery">
-{% if request.primary_event_image %}
-                        <div class="photo-gallery-item is-primary" data-image-id="{{ request.primary_event_image.id }}" data-is-new="" data-is-main="true">
-                            <img src="{{ request.primary_event_image.image.url }}" alt="Основное фото">
-                            <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ request.primary_event_image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
-                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
-                        </div>
-                        {% elif form.instance.image and form.instance.image.name %}
-                        <div class="photo-gallery-item is-primary" data-image-id="" data-is-new="" data-is-main="true">
-                            <img src="{{ form.instance.image.url }}" alt="Основное фото">
-                            <button type="button" class="remove-btn remove-main-photo" data-image-id="" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
-                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
-                        </div>
-                        {% endif %}
+                {% if form.instance.pk %}
+                    {% if form.instance.image or form.instance.images.exists %}
+                        <!-- Существующие фото -->
+                        <div class="photo-gallery" id="photo-gallery">
                         {% for image in form.instance.images.all %}
-                        {% if not request.primary_event_image or request.primary_event_image.id != image.id %}
-                        <div class="photo-gallery-item{% if image.is_primary %} is-primary{% endif %}" data-image-id="{{ image.id }}" data-is-primary="{{ image.is_primary|lower }}">
+                        <div class="photo-gallery-item{% if image.is_primary %} is-primary{% endif %}" data-image-id="{{ image.id }}" data-is-new="" data-is-primary="{{ image.is_primary|lower }}">
                             <img src="{{ image.image.url }}" alt="Фото">
                             <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
                             {% if image.is_primary %}
                             <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
                             {% endif %}
                         </div>
-                        {% endif %}
                         {% endfor %}
+                        {% if form.instance.image and not form.instance.images.exists %}
+                        <div class="photo-gallery-item is-primary" data-image-id="" data-is-new="" data-is-main="true">
+                            <img src="{{ form.instance.image.url }}" alt="Основное фото">
+                            <button type="button" class="remove-btn remove-main-photo" data-image-id="" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
+                            <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
+                        </div>
+                        {% endif %}
                         <!-- Серый квадрат с плюсом для добавления фото -->
                         <div class="add-photo-placeholder" id="add-photo-placeholder" title="Добавить фото">
                             <span class="plus-icon">+</span>
