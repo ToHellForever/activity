@@ -453,8 +453,8 @@
     </div>
 
     <!-- Заявки через платформу -->
-    <div class="form-group">
-        <label>Заявки через платформу (может ли пользователь оставить заявку с вопросом?)</label>
+    <div class="form-group" style="display: flex; align-items: center;">
+        <label style='margin-right: 5px;'>Заявки через платформу (может ли пользователь оставить заявку с вопросом?)</label>
         <div class="toggle-switch" style="margin-top:0;">
             <input type="checkbox" name="allow_platform_requests" id="id_allow_platform_requests" {% if form.instance.allow_platform_requests %}checked{% endif %}>
             <span class="toggle-slider" onclick="var cb=this.previousElementSibling;if(!cb.disabled)cb.checked=!cb.checked">
@@ -465,8 +465,8 @@
     </div>
 
     <!-- Разрешить бронирование без оплаты -->
-    <div class="form-group">
-        <label>Разрешить бронирование без оплаты</label>
+    <div class="form-group" style="display: flex; align-items: center;">
+        <label style='margin-right: 5px;'>Разрешить бронирование без оплаты</label>
         <div class="toggle-switch" style="margin-top:0;">
             <input type="checkbox" name="allow_booking_without_payment" id="id_allow_booking_without_payment" {% if form.instance.allow_booking_without_payment %}checked{% endif %} {% if has_free_tickets %}disabled{% endif %}>
             <span class="toggle-slider" onclick="var cb=this.previousElementSibling;if(!cb.disabled)cb.checked=!cb.checked">
