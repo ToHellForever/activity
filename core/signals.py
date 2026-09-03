@@ -81,6 +81,11 @@ def create_order_tickets(sender, instance, created, **kwargs):
 def process_event_video(sender, instance, **kwargs):
     logger.info("SIGNAL: process_event_video triggered for Event %s", instance.id)
     
+    # Пропускаем сигнал, если файл ещё не сохранён (внутренняя синхронизация)
+    if getattr(instance, '_avoid_file_deletion', False):
+        logger.info("SIGNAL: Skipping - _avoid_file_deletion is set for Event %s", instance.id)
+        return
+    
     update_fields = kwargs.get('update_fields', None)
     if update_fields:
         if 'processed_video_url_hash' in update_fields:

@@ -181,7 +181,11 @@ def process_video_task(
 
         # Получаем путь к временному файлу
         video_path = video_field.path
-        logger.info(f"CELERY TASK: Processing video for {model_name} {instance_id}, video_path={video_path}")
+        logger.info(f"CELERY TASK: Processing video for {model_name} {instance_id}")
+        logger.info(f"CELERY TASK: video_field={video_field}")
+        logger.info(f"CELERY TASK: video_field.name={video_field.name}")
+        logger.info(f"CELERY TASK: video_path={video_path}")
+        logger.info(f"CELERY TASK: file exists={os.path.exists(video_path)}")
 
         if not os.path.exists(video_path):
             logger.error(f"Файл видео не найден: {video_path}")

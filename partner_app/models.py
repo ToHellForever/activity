@@ -937,20 +937,33 @@ class EventChangeRequest(models.Model):
             if self.new_image:
                 with self.new_image.open("rb") as f:
                     event.image.save(os.path.basename(self.new_image.name), File(f), save=False)
+
             video_was_updated = False
             if self.new_video_url:
+                # Читаем файл ОДИН раз и сохраняем
                 with self.new_video_url.open("rb") as f:
-                    event.video_url.save(os.path.basename(self.new_video_url.name), File(f), save=False)
-                # save=False не сохраняет в БД — обновляем вручную
-                event.video_url.name = os.path.basename(self.new_video_url.name)
+                    file_content = f.read()
+                
+                # Сохраняем файл напрямую через storage
+                from django.core.files.base import ContentFile
+                unique_name = event.video_url.storage.save(
+                    os.path.join('event_videos', os.path.basename(self.new_video_url.name)),
+                    ContentFile(file_content)
+                )
+                event.video_url.name = unique_name
+                
                 # Сбрасываем статус обработки видео
                 event.video_processing_status = "pending"
                 event.processed_video_url_hash = None
                 video_was_updated = True
+
             if self.new_program_file:
                 with self.new_program_file.open("rb") as f:
                     event.program_file.save(os.path.basename(self.new_program_file.name), File(f), save=False)
 
+            # ВАЖНО: Устанавливаем флаг, чтобы сигнал не сработал раньше времени
+            event._avoid_file_deletion = True
+            
             # Сохраняем event — video_url сохранится через update_fields
             if video_was_updated:
                 event.save(update_fields=[
@@ -958,20 +971,55 @@ class EventChangeRequest(models.Model):
                 ])
             else:
                 event.save()
+            
+            # Сбрасываем флаг после сохранения
+            del event._avoid_file_deletion
 
-            # Если было новое видео — запускаем обработку синхронно
+            # Если было новое видео — запускаем обработку асинхронно через Celery.
+            # ВАЖНО: задачу отправляем только ПОСЛЕ коммита транзакции
+            # (transaction.on_commit), иначе воркер Celery может прочитать Event
+            # до коммита и не увидеть новый video_url ("No video for Event").
             if video_was_updated:
-                logger.info("APPLY_TO_EVENT: Processing video for Event %s", event.id)
                 from core.tasks import process_video_task
-                process_video_task(
-                    model_name='Event',
-                    instance_id=event.id,
-                    video_field_name='video_url',
-                    hash_field_name='processed_video_url_hash',
-                    status_field_name='video_processing_status'
-                )
-                # Удаляем старую копию new_video_url после успешного копирования
-                self.new_video_url.delete(save=False)
+
+                def _dispatch_video_processing():
+                    # Перечитываем event из БД, чтобы убедиться, что video_url загружен правильно
+                    event.refresh_from_db()
+
+                    # Проверяем, что файл физически существует
+                    try:
+                        video_path = event.video_url.path
+                        video_exists = os.path.exists(video_path)
+                        logger.info("APPLY_TO_EVENT: video_path=%s, exists=%s", video_path, video_exists)
+
+                        if not video_exists:
+                            logger.error("APPLY_TO_EVENT: Файл видео НЕ найден по пути %s, пропуск обработки", video_path)
+                            # Пробуем найти файл в ожидаемой директории
+                            from django.conf import settings
+                            import glob
+                            temp_dir = getattr(settings, 'MEDIA_TEMP_DIR', os.path.join(settings.BASE_DIR, 'media_temp'))
+                            event_videos_dir = os.path.join(temp_dir, 'event_videos')
+                            if os.path.exists(event_videos_dir):
+                                files = glob.glob(os.path.join(event_videos_dir, '*'))
+                                logger.error("APPLY_TO_EVENT: Файлы в %s: %s", event_videos_dir, files)
+                        else:
+                            logger.info("APPLY_TO_EVENT: Файл найден, размер=%s байт", os.path.getsize(video_path))
+                    except ValueError as e:
+                        logger.error("APPLY_TO_EVENT: Ошибка получения пути к видео: %s", e)
+                        logger.error("APPLY_TO_EVENT: event.video_url=%s, event.video_url.name=%s", event.video_url, event.video_url.name if event.video_url else "None")
+
+                    task = process_video_task.delay(
+                        model_name='Event',
+                        instance_id=event.id,
+                        video_field_name='video_url',
+                        hash_field_name='processed_video_url_hash',
+                        status_field_name='video_processing_status'
+                    )
+                    logger.info("APPLY_TO_EVENT: Задача process_video_task отправлена для Event %s, task_id=%s", event.id, task.id)
+                    # Удаляем старую копию new_video_url после успешного копирования
+                    self.new_video_url.delete(save=False)
+
+                transaction.on_commit(_dispatch_video_processing)
 
             # 3. Теги
             if self.tag_ids:
@@ -1061,6 +1109,19 @@ class EventChangeRequest(models.Model):
         self.admin_comment = comment or ""
         self.reviewed_by = admin_user
         self.reviewed_at = timezone.now()
+        
+        # Удаляем видеофайл при отклонении заявки
+        if self.new_video_url:
+            print(f"[DEBUG REJECT] Request {self.id}: удаляю видео {self.new_video_url.name}")
+            try:
+                self.new_video_url.delete(save=False)
+                print(f"[DEBUG REJECT] Видео удалено для Request {self.id}")
+            except Exception as e:
+                print(f"[DEBUG REJECT] ОШИБКА удаления видео для Request {self.id}: {e}")
+                import traceback
+                traceback.print_exc()
+            self.new_video_url = None
+        
         self.save(update_fields=["status", "admin_comment", "reviewed_by", "reviewed_at"])
 
     def notify_partner(self):

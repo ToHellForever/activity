@@ -385,6 +385,25 @@ class EventAdmin(admin.ModelAdmin):
             rejection_reason = request.POST.get("rejection_reason", "")
             updated = 0
             for event in queryset:
+                # Удаляем видеофайл при отклонении (он больше не нужен)
+                print(f"[DEBUG] Event {event.id}: video_url={event.video_url}, status={event.status}")
+                if event.video_url:
+                    video_path = event.video_url.path
+                    video_name = event.video_url.name
+                    print(f"[DEBUG] УДАЛЯЮ ВИДЕО: path={video_path}, name={video_name}")
+                    try:
+                        event.video_url.delete(save=False)
+                        print(f"[DEBUG] Видео удалено для Event {event.id}")
+                    except Exception as e:
+                        print(f"[DEBUG] ОШИБКА удаления видео для Event {event.id}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    event.video_url = None
+                    event.video_processing_status = None
+                    event.processed_video_url_hash = None
+                else:
+                    print(f"[DEBUG] video_url пустой для Event {event.id}")
+
                 event.status = "rejected"
                 event.rejection_reason = rejection_reason
                 event.save()
@@ -454,8 +473,19 @@ class EventAdmin(admin.ModelAdmin):
 
     # Действие для установки статуса "Активно"
     def to_active(self, request, queryset):
+        from core.tasks import process_video_task
         for event in queryset:
             self._check_active_events_limit(request, event, is_activating=True)
+            # Запускаем обработку видео, если оно есть и статус pending/processing
+            if event.video_url and event.video_processing_status in ('pending', 'processing'):
+                logger.info(f"to_active: Запуск обработки видео для Event {event.id}")
+                process_video_task.delay(
+                    model_name='Event',
+                    instance_id=event.id,
+                    video_field_name='video_url',
+                    hash_field_name='processed_video_url_hash',
+                    status_field_name='video_processing_status'
+                )
         updated = queryset.update(status="active")
         self.message_user(request, f"{updated} мероприятий активировано.")
 
@@ -495,6 +525,21 @@ class EventAdmin(admin.ModelAdmin):
         if change and obj.pk:
             original_event = Event.objects.get(pk=obj.pk)
             original_status = original_event.status
+            
+            # Удаляем видеофайл при отклонении мероприятия
+            if original_status != "rejected" and obj.status == "rejected":
+                if obj.video_url:
+                    print(f"[DEBUG SAVE_MODEL] Event {obj.id}: удаляю видео {obj.video_url.name}")
+                    try:
+                        obj.video_url.delete(save=False)
+                        print(f"[DEBUG SAVE_MODEL] Видео удалено для Event {obj.id}")
+                    except Exception as e:
+                        print(f"[DEBUG SAVE_MODEL] ОШИБКА удаления видео для Event {obj.id}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    obj.video_url = None
+                    obj.video_processing_status = None
+                    obj.processed_video_url_hash = None
 
         # Проверяем ограничение на количество активных мероприятий только при изменении статуса
         if (obj.status in ["active", "on_moderation"] and
@@ -1530,14 +1575,37 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         """Кнопки 'Одобрить'/'Отклонить' внизу страницы заявки."""
         if "_approve" in request.POST and obj.status == "pending":
             try:
+                # Если есть видео — логирование перед обработкой
+                if obj.new_video_url:
+                    logger.info(f"APPROVE: Заявка #{obj.pk} имеет видео {obj.new_video_url.name}, будет запущена обработка")
+                
                 obj.apply_to_event(request.user)
                 obj.notify_partner()
-                self.message_user(request, f"Заявка #{obj.pk} одобрена, изменения применены.")
+                
+                # Проверка статуса видео после применения
+                obj.event.refresh_from_db()
+                if obj.event.video_url and obj.event.video_processing_status == 'pending':
+                    logger.info(f"APPROVE: Видео для Event {obj.event.id} установлено в статус pending, Celery должен обработать")
+                
+                self.message_user(request, f"Заявка #{obj.pk} одобрена, изменения применены. Видео будет обработано.")
             except Exception as e:
                 logger.error("Ошибка применения заявки #%s: %s", obj.pk, e, exc_info=True)
                 self.message_user(request, f"Не удалось применить заявку: {e}", level=messages.ERROR)
             return redirect(request.path)
         if "_reject" in request.POST and obj.status == "pending":
+            # Удаляем видеофайл при отклонении через форму
+            if obj.new_video_url:
+                print(f"[DEBUG RESPONSE_CHANGE] Request {obj.id}: удаляю видео {obj.new_video_url.name}")
+                try:
+                    obj.new_video_url.delete(save=False)
+                    print(f"[DEBUG RESPONSE_CHANGE] Видео удалено для Request {obj.id}")
+                except Exception as e:
+                    print(f"[DEBUG RESPONSE_CHANGE] ОШИБКА удаления видео для Request {obj.id}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                obj.new_video_url = None
+                obj.save(update_fields=["new_video_url"])
+            
             obj.reject(request.user, request.POST.get("admin_comment_review", ""))
             obj.notify_partner()
             self.message_user(request, f"Заявка #{obj.pk} отклонена.")

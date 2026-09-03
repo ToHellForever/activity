@@ -71,19 +71,26 @@ class YandexVideoProcessingStorage(FileSystemStorage):
     def delete(self, name):
         """Удаляет файл из локального temp-хранилища и из Yandex Cloud, если он там есть."""
         if not name:
+            logger.warning(f"delete: name is empty, skipping")
             return
 
+        logger.info(f"delete: удаляю файл {name}")
         try:
             if self.cloud_storage and getattr(settings, 'USE_YANDEX_CLOUD', False):
                 try:
-                    self.cloud_storage.delete(name)
+                    if self.cloud_storage.exists(name):
+                        self.cloud_storage.delete(name)
+                        logger.info(f"delete: файл {name} удалён из облака")
+                    else:
+                        logger.info(f"delete: файл {name} не найден в облаке, пропускаем")
                 except Exception as exc:
                     logger.warning(f"Не удалось удалить файл {name} из облака: {exc}")
 
             try:
                 super().delete(name)
+                logger.info(f"delete: файл {name} удалён локально")
             except FileNotFoundError:
-                pass
+                logger.info(f"delete: файл {name} не найден локально, пропускаем")
             except Exception as exc:
                 logger.warning(f"Не удалось удалить локальную копию файла {name}: {exc}")
         except Exception as exc:
