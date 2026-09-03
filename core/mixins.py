@@ -170,6 +170,12 @@ class VideoWatermarkMixin:
                         logger.error(f"delete_file_field: ошибка удаления локального файла {e}")
             except NotImplementedError:
                 logger.info(f"delete_file_field: storage не поддерживает path (облачное хранилище)")
+                # Для облачного хранилища используем метод delete() у файлового поля
+                try:
+                    file_field.delete(save=False)
+                    logger.info(f"delete_file_field: файл {field_name} удалён через file_field.delete()")
+                except Exception as e:
+                    logger.error(f"delete_file_field: ошибка при удалении через file_field.delete(): {e}", exc_info=True)
         except Exception as e:
             logger.error(f"delete_file_field: ошибка при работе с локальным файлом: {e}", exc_info=True)
 

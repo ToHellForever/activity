@@ -413,6 +413,8 @@
             {% endif %}
         </div>
         <input type="file" name="video_url" id="id_video_url" class="custom-media-input" data-media-type="video_url" style="display: none;" accept="video/mp4,video/mov,video/avi">
+        <!-- Скрытый флаг для заявки на изменение: удаление видео -->
+        <input type="hidden" name="clear_video_url" id="clear_video_url" value="0">
     </div>
     {% endif %}
 
@@ -450,6 +452,8 @@
             {% endif %}
         </div>
         <input type="file" name="program_file" id="id_program_file" class="custom-media-input" data-media-type="program_file" style="display: none;" accept=".pdf">
+        <!-- Скрытый флаг для заявки на изменение: удаление программы -->
+        <input type="hidden" name="clear_program_file" id="clear_program_file" value="0">
     </div>
 
     <!-- Заявки через платформу -->
@@ -1413,66 +1417,86 @@
          let newVideoSelected = false;
          let newProgramSelected = false;
 
-         // Remove program/video file button (крестик — удаление файла, включая видео)
-         document.querySelectorAll('.program-remove-btn, .video-delete-btn').forEach(function(btn) {
-             btn.addEventListener('click', function(e) {
-                 e.stopPropagation();
-                 const mediaType = this.dataset.mediaType;
-                 const mediaId = this.dataset.mediaId || '';
+        // Remove program/video file button (крестик — удаление файла, включая видео)
+        document.querySelectorAll('.program-remove-btn, .video-delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const mediaType = this.dataset.mediaType;
+                const mediaId = this.dataset.mediaId || '';
 
-                 // Определяем, к какому контейнеру относится кнопка
-                 const isVideo = mediaType === 'video_url';
-                 const display = document.getElementById(isVideo ? 'video-file-display' : 'program-file-display');
-                 const placeholder = document.getElementById(isVideo ? 'video-upload-placeholder' : 'program-upload-placeholder');
-                 const container = document.getElementById(isVideo ? 'video-upload-container' : 'program-upload-container');
-                 const fileNameSpan = document.getElementById(isVideo ? 'video-file-name' : 'program-file-name');
+                // Определяем, к какому контейнеру относится кнопка
+                const isVideo = mediaType === 'video_url';
+                const display = document.getElementById(isVideo ? 'video-file-display' : 'program-file-display');
+                const placeholder = document.getElementById(isVideo ? 'video-upload-placeholder' : 'program-upload-placeholder');
+                const container = document.getElementById(isVideo ? 'video-upload-container' : 'program-upload-container');
+                const fileNameSpan = document.getElementById(isVideo ? 'video-file-name' : 'program-file-name');
 
-                 function setFileState(hasFile) {
-                     if (display) display.style.display = hasFile ? 'flex' : 'none';
-                     if (placeholder) placeholder.style.display = hasFile ? 'none' : 'block';
-                     if (container) {
-                         container.classList.toggle('has-photos', hasFile);
-                         container.classList.toggle('has-no-photos', !hasFile);
-                     }
-                 }
+                function setFileState(hasFile) {
+                    if (display) display.style.display = hasFile ? 'flex' : 'none';
+                    if (placeholder) placeholder.style.display = hasFile ? 'none' : 'block';
+                    if (container) {
+                        container.classList.toggle('has-photos', hasFile);
+                        container.classList.toggle('has-no-photos', !hasFile);
+                    }
+                }
 
-                 function clearFileInput() {
-                     // Очищаем input файла, чтобы при повторном выборе того же файла сработало change
-                     const fileInput = document.getElementById(isVideo ? 'id_video_url' : 'id_program_file');
-                     if (fileInput) fileInput.value = '';
-                 }
+                function clearFileInput() {
+                    // Очищаем input файла, чтобы при повторном выборе того же файла сработало change
+                    const fileInput = document.getElementById(isVideo ? 'id_video_url' : 'id_program_file');
+                    if (fileInput) fileInput.value = '';
+                }
 
-                 // Файл выбран, но форма не сохранена — на сервере его нет
-                 const isNewFile = isVideo ? newVideoSelected : newProgramSelected;
-                 if (isNewFile) {
-                     if (isVideo) newVideoSelected = false; else newProgramSelected = false;
-                     setFileState(false);
-                     clearFileInput();
-                     return;
-                 }
+                // Файл выбран, но форма не сохранена — на сервере его нет
+                const isNewFile = isVideo ? newVideoSelected : newProgramSelected;
+                if (isNewFile) {
+                    if (isVideo) newVideoSelected = false; else newProgramSelected = false;
+                    setFileState(false);
+                    clearFileInput();
+                    return;
+                }
 
-                 // Если это новый файл (ещё не на сервере) — просто скрываем превью
-                 if (!mediaId) {
-                     setFileState(false);
-                     return;
-                 }
+                // Если это новый файл (ещё не на сервере) — просто скрываем превью
+                if (!mediaId) {
+                    setFileState(false);
+                    return;
+                }
 
-                 fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
-                     method: 'POST',
-                     headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-                 })
-                 .then(r => r.json())
-                 .then(data => {
-                     if (data.status === 'success') {
-                         setFileState(false);
-                         clearFileInput();
-                     } else {
-                         showToast('Ошибка удаления', true);
-                     }
-                 })
-                 .catch(err => showToast('Ошибка: ' + err.message, true));
-             });
-         });
+                // === В режиме заявки на изменение — просто скрываем и отмечаем флаг очистки ===
+                // Файл будет удалён при одобрении заявки (clear_image/clear_video_url/clear_program_file)
+                // или останется в мероприятии при отклонении
+                {% if is_change_request %}
+                    // Отмечаем флаг очистки
+                    if (mediaType === 'video_url') {
+                        const vf = document.getElementById('clear_video_url');
+                        if (vf) vf.value = '1';
+                    } else if (mediaType === 'program_file') {
+                        const pf = document.getElementById('clear_program_file');
+                        if (pf) pf.value = '1';
+                    } else if (mediaType === 'image') {
+                        const df = document.getElementById('delete_main_image');
+                        if (df) df.value = '1';
+                    }
+                    setFileState(false);
+                    clearFileInput();
+                    return;
+                {% endif %}
+
+                fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        setFileState(false);
+                        clearFileInput();
+                    } else {
+                        showToast('Ошибка удаления', true);
+                    }
+                })
+                .catch(err => showToast('Ошибка: ' + err.message, true));
+            });
+        });
 
          // Replace video button (заменить видео — иконка загрузки)
          document.querySelectorAll('.video-upload-btn').forEach(function(btn) {

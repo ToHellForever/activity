@@ -928,18 +928,30 @@ class EventChangeRequest(models.Model):
 
             # 2. Основные медиафайлы
             if self.clear_image and event.image:
+                event.image.delete(save=False)
                 event.image = None
             if self.clear_video_url and event.video_url:
+                event.video_url.delete(save=False)
                 event.video_url = None
             if self.clear_program_file and event.program_file:
+                event.program_file.delete(save=False)
                 event.program_file = None
 
             if self.new_image:
+                # Удаляем старое изображение, если оно было
+                if event.image:
+                    event.image.delete(save=False)
                 with self.new_image.open("rb") as f:
                     event.image.save(os.path.basename(self.new_image.name), File(f), save=False)
+                # Удаляем исходный файл заявки после копирования
+                self.new_image.delete(save=False)
 
             video_was_updated = False
             if self.new_video_url:
+                # Удаляем старое видео, если оно было
+                if event.video_url:
+                    event.video_url.delete(save=False)
+                
                 # Читаем файл ОДИН раз и сохраняем
                 with self.new_video_url.open("rb") as f:
                     file_content = f.read()
@@ -958,8 +970,14 @@ class EventChangeRequest(models.Model):
                 video_was_updated = True
 
             if self.new_program_file:
+                # Удаляем старую программу, если она была
+                if event.program_file:
+                    event.program_file.delete(save=False)
+                    
                 with self.new_program_file.open("rb") as f:
                     event.program_file.save(os.path.basename(self.new_program_file.name), File(f), save=False)
+                # Удаляем исходный файл заявки после копирования
+                self.new_program_file.delete(save=False)
 
             # ВАЖНО: Устанавливаем флаг, чтобы сигнал не сработал раньше времени
             event._avoid_file_deletion = True
@@ -1040,6 +1058,8 @@ class EventChangeRequest(models.Model):
                     new_img.is_primary = req_image.is_primary
                     new_img.save()
                     created_images.append(new_img)
+                # Удаляем исходный файл заявки после копирования
+                req_image.image.delete(save=False)
 
             # 6. Основное фото галереи
             if self.primary_image_id:
@@ -1110,17 +1130,34 @@ class EventChangeRequest(models.Model):
         self.reviewed_by = admin_user
         self.reviewed_at = timezone.now()
         
-        # Удаляем видеофайл при отклонении заявки
+        # Удаляем медиафайлы при отклонении заявки
         if self.new_video_url:
-            print(f"[DEBUG REJECT] Request {self.id}: удаляю видео {self.new_video_url.name}")
             try:
                 self.new_video_url.delete(save=False)
-                print(f"[DEBUG REJECT] Видео удалено для Request {self.id}")
-            except Exception as e:
-                print(f"[DEBUG REJECT] ОШИБКА удаления видео для Request {self.id}: {e}")
-                import traceback
-                traceback.print_exc()
+            except Exception:
+                pass
             self.new_video_url = None
+        
+        if self.new_image:
+            try:
+                self.new_image.delete(save=False)
+            except Exception:
+                pass
+            self.new_image = None
+        
+        if self.new_program_file:
+            try:
+                self.new_program_file.delete(save=False)
+            except Exception:
+                pass
+            self.new_program_file = None
+        
+        # Удаляем файлы новых фото галереи
+        for req_image in self.new_gallery_images.all():
+            try:
+                req_image.image.delete(save=False)
+            except Exception:
+                pass
         
         self.save(update_fields=["status", "admin_comment", "reviewed_by", "reviewed_at"])
 

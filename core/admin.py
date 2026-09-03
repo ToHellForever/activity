@@ -1593,19 +1593,6 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 self.message_user(request, f"Не удалось применить заявку: {e}", level=messages.ERROR)
             return redirect(request.path)
         if "_reject" in request.POST and obj.status == "pending":
-            # Удаляем видеофайл при отклонении через форму
-            if obj.new_video_url:
-                print(f"[DEBUG RESPONSE_CHANGE] Request {obj.id}: удаляю видео {obj.new_video_url.name}")
-                try:
-                    obj.new_video_url.delete(save=False)
-                    print(f"[DEBUG RESPONSE_CHANGE] Видео удалено для Request {obj.id}")
-                except Exception as e:
-                    print(f"[DEBUG RESPONSE_CHANGE] ОШИБКА удаления видео для Request {obj.id}: {e}")
-                    import traceback
-                    traceback.print_exc()
-                obj.new_video_url = None
-                obj.save(update_fields=["new_video_url"])
-            
             obj.reject(request.user, request.POST.get("admin_comment_review", ""))
             obj.notify_partner()
             self.message_user(request, f"Заявка #{obj.pk} отклонена.")

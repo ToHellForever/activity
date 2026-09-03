@@ -344,8 +344,8 @@ def request_event_change(request, event_id):
                 change_request.new_program_file = program_file
 
             change_request.clear_image = request.POST.get("delete_main_image") == "1"
-            change_request.clear_video_url = "video_url-clear" in request.POST
-            change_request.clear_program_file = "program_file-clear" in request.POST
+            change_request.clear_video_url = request.POST.get("clear_video_url") == "1" or "video_url-clear" in request.POST
+            change_request.clear_program_file = request.POST.get("clear_program_file") == "1" or "program_file-clear" in request.POST
 
             # Галерея: заполняем поля ДО save() — иначе не сохранятся в БД
             deleted_image_ids = request.POST.get("deleted_image_ids", "")

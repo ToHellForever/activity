@@ -947,7 +947,13 @@ def remove_media(request, media_type, media_id):
         logger.info("remove_media: media_type=%s, media_id=%s, user=%s", media_type, media_id, request.user)
 
         if media_type in ["image", "video_url", "program_file"]:
-            event = Event.objects.get(id=media_id, organizer=request.user)
+            try:
+                event = Event.objects.get(id=media_id, organizer=request.user)
+            except Event.DoesNotExist:
+                logger.error("remove_media: мероприятие %s не найдено", media_id)
+                return JsonResponse(
+                    {"status": "error", "message": "Event not found"}, status=404
+                )
 
             blocked = _event_edit_blocked_response(event)
             if blocked:
@@ -959,7 +965,7 @@ def remove_media(request, media_type, media_id):
                 logger.info("remove_media: удаляем %s=%s", field, current_file)
                 event.delete_file_field(field)
                 setattr(event, field, None)
-                event.save()
+                event.save(update_fields=[field])
                 logger.info("remove_media: %s успешно удалён", field)
                 return JsonResponse({"status": "success"})
 
