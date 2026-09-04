@@ -1474,47 +1474,165 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         if not obj.tickets_data:
             return mark_safe('<span style="color:#888;">Изменений билетов нет</span>')
 
-        current = {
-            t.name.lower(): t for t in obj.event.tickets.all()
-        }
-        proposed_names = {row["name"].lower() for row in obj.tickets_data}
+        from django.db.models import Sum, Q
 
-        html = [
-            '<table style="width:100%; border-collapse:collapse;">',
-            '<tr style="background:#f8f9fa;">'
-            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Билет</th>'
-            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Текущий</th>'
-            '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Предложено</th>'
-            "</tr>",
-        ]
+        event = obj.event
+        current_by_name = {}
+        for t in event.tickets.all():
+            # Считаем реально проданные билеты: заказы с оплаченным статусом
+            sold = t.orders.filter(
+                payment_status__in=["succeeded", "reserved"]
+            ).aggregate(total=Sum("quantity"))["total"] or 0
+            has_paid = t.orders.filter(
+                payment_status__in=["succeeded"]
+            ).exists()
+            current_by_name[t.name.lower()] = {
+                "obj": t,
+                "price": str(t.price),
+                "quantity": t.available_quantity,
+                "sold": sold,
+                "color": t.color,
+                "has_paid": has_paid,
+            }
+
+        proposed_by_name = {}
         for row in obj.tickets_data:
-            ticket = current.get(row["name"].lower())
-            if ticket:
-                current_str = (
-                    f"{ticket.price} руб., мест: {ticket.available_quantity}, "
-                    f"продано: {ticket.orders.exclude(payment_status__in=['refunded', 'canceled']).count()}"
-                )
-                action = "изменение"
+            name_lower = row["name"].strip().lower()
+            try:
+                price = float(str(row.get("price", "0")).replace(",", "."))
+                quantity = int(row.get("quantity", 0))
+            except (TypeError, ValueError):
+                continue
+            proposed_by_name[name_lower] = {
+                "name": row["name"].strip(),
+                "price": price,
+                "quantity": quantity,
+            }
+
+        all_names = list(dict.fromkeys(
+            list(current_by_name.keys()) + list(proposed_by_name.keys())
+        ))
+
+        html = []
+
+        # Предупреждение о билетах, которые нельзя удалить
+        blocked_tickets = [
+            name for name, cur in current_by_name.items()
+            if cur["has_paid"] and name not in proposed_by_name
+        ]
+        if blocked_tickets:
+            html.append(
+                '<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:4px; '
+                'padding:10px 14px; margin-bottom:10px; font-size:13px; color:#856404;">'
+                '⚠️ <strong>Внимание:</strong> следующие билеты нельзя удалить, так как на них '
+                'уже есть оплаченные заказы. Билеты останутся без изменений: '
+                f'{", ".join(blocked_tickets)}'
+                '</div>'
+            )
+
+        html.append(
+            '<div style="margin-top:8px;">'
+            '<table style="width:100%; border-collapse:collapse; font-size:13px;">'
+            '<tr style="background:#f1f3f5;">'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:left; min-width:160px; color:#000; font-weight:600;">Статус</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:left; min-width:140px; color:#000; font-weight:600;">Название</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:center; width:80px; color:#000; font-weight:600;">Цвет</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:right; width:110px; color:#000; font-weight:600;">Цена</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:right; width:100px; color:#000; font-weight:600;">Всего мест</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:right; width:100px; color:#000; font-weight:600;">Продано</th>'
+            '<th style="border:1px solid #dee2e6; padding:8px; text-align:right; width:100px; color:#000; font-weight:600;">Доступно</th>'
+            "</tr>"
+        )
+
+        for name_lower in all_names:
+            cur = current_by_name.get(name_lower)
+            prop = proposed_by_name.get(name_lower)
+
+            if cur and prop:
+                # Изменение существующего билета
+                action_class = "background:#fff3cd; color:#856404;"
+                action_label = "✏️ Изменение"
+                name_style = "font-weight:bold;"
+            elif prop and not cur:
+                # Новый билет
+                action_class = "background:#d4edda; color:#155724;"
+                action_label = "➕ Новый"
+                name_style = "font-weight:bold;"
+            elif cur and not prop:
+                # Билет без оплаченных заказов — будет удалён
+                action_class = "background:#f8d7da; color:#721c24;"
+                action_label = "❌ Удалён"
+                name_style = "text-decoration:line-through; color:#999;"
+            elif cur and prop and cur["has_paid"]:
+                # Билет с оплаченными заказами — нельзя удалить, остаётся как есть
+                action_class = "background:#e2e3e5; color:#383d41;"
+                action_label = "🔒 Нельзя удалить"
+                name_style = "color:#666;"
             else:
-                current_str = "—"
-                action = "новый"
-            proposed_str = f"{row['price']} руб., мест: {row['quantity']}"
+                continue
+
+            # Форматируем значения
+            if cur and prop:
+                cur_price = f"{float(cur['price']):.2f} ₽"
+                prop_price = f"{prop['price']:.2f} ₽"
+                price_changed = abs(float(cur['price']) - prop['price']) > 0.01
+                price_style = f"color:#b45309; font-weight:bold;" if price_changed else ""
+                cur_sold = cur['sold']
+                prop_sold = "—"
+            elif prop:
+                cur_price = "—"
+                prop_price = f"{prop['price']:.2f} ₽"
+                price_style = ""
+                cur_sold = "—"
+                prop_sold = "—"
+            elif cur and cur["has_paid"]:
+                # Билет нельзя удалить — показываем текущее состояние
+                cur_price = f"{float(cur['price']):.2f} ₽"
+                prop_price = "—"
+                price_style = ""
+                cur_sold = cur['sold']
+                prop_sold = "—"
+            else:
+                cur_price = f"{float(cur['price']):.2f} ₽"
+                prop_price = "—"
+                price_style = ""
+                cur_sold = cur['sold']
+                prop_sold = "—"
+
+            cur_qty = cur['quantity'] if cur else "—"
+            prop_qty = prop['quantity'] if prop else "—"
+
+            # Считаем доступные места
+            if cur and prop:
+                avail_str = str(prop['quantity'] - cur['sold'])
+            elif cur:
+                avail_str = str(cur['quantity'] - cur['sold'])
+            else:
+                avail_str = str(prop['quantity'])
+
+            # Цветовая ячейка
+            color_cell = ""
+            if cur:
+                color_cell = f'<td style="border:1px solid #dee2e6; padding:8px; text-align:center;">' \
+                             f'<span style="display:inline-block; width:24px; height:24px; ' \
+                             f'background:{cur["color"]}; border-radius:4px; vertical-align:middle;"></span>' \
+                             f"</td>"
+            elif prop:
+                color_cell = '<td style="border:1px solid #dee2e6; padding:8px; text-align:center; color:#aaa;">—</td>'
+
             html.append(
-                f"<tr>"
-                f'<td style="border:1px solid #ddd; padding:6px;">{row["name"]} <em>({action})</em></td>'
-                f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{current_str}</td>'
-                f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{proposed_str}</td>'
-                f"</tr>"
+                f'<tr style="{action_class}">'
+                f'<td style="border:1px solid #dee2e6; padding:8px; font-size:12px;">{action_label}</td>'
+                f'<td style="border:1px solid #dee2e6; padding:8px; {name_style}">{prop["name"] if prop else cur["obj"].name}</td>'
+                f'{color_cell}'
+                f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right; {price_style}">{cur_price} → {prop_price}</td>'
+                f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{cur_qty} → {prop_qty}</td>'
+                f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{cur_sold}</td>'
+                f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{avail_str}</td>'
+                "</tr>"
             )
-        # Билеты, которые партнёр убрал из списка (останутся без изменений)
-        removed = [t.name for name, t in current.items() if name not in proposed_names]
-        if removed:
-            html.append(
-                '<tr><td colspan="3" style="border:1px solid #ddd; padding:6px; color:#888;">'
-                f"Билеты, отсутствующие в заявке (останутся без изменений): {', '.join(removed)}"
-                "</td></tr>"
-            )
-        html.append("</table>")
+
+        html.append("</table></div>")
         return mark_safe("".join(html))
     tickets_diff_display.short_description = "Изменения билетов"
 

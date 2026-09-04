@@ -149,3 +149,19 @@ def format_duration(value):
         
     except (ValueError, AttributeError):
         return value
+
+
+@register.filter(name='dict_get')
+def dict_get(dictionary, key):
+    """
+    Получает значение из словаря по ключу в шаблоне Django.
+    
+    Пример:
+        {{ ticket_sold_counts|dict_get:item.pk }}
+    """
+    if not dictionary:
+        return 0
+    try:
+        return dictionary.get(key, 0)
+    except (AttributeError, TypeError):
+        return 0

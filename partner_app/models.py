@@ -1092,8 +1092,11 @@ class EventChangeRequest(models.Model):
             event.set_primary_from_event_images()
 
             # 7. Билеты: обновляем существующие по названию, создаём новые.
-            # Билеты с проданными заказами не удаляем и не пересоздаём —
+            # Билеты с оплаченными заказами не удаляем и не пересоздаём —
             # обновляем их поля на месте, чтобы не потерять историю заказов.
+            proposed_names = set()
+            updated_tickets = []
+            created_tickets = []
             for row in self.tickets_data or []:
                 try:
                     price = float(str(row.get("price", "0")).replace(",", "."))
@@ -1102,7 +1105,9 @@ class EventChangeRequest(models.Model):
                     continue
                 if not row.get("name") or quantity <= 0:
                     continue
-                ticket = event.tickets.filter(name__iexact=row["name"]).first()
+                ticket_name = row["name"].strip()
+                proposed_names.add(ticket_name.lower())
+                ticket = event.tickets.filter(name__iexact=ticket_name).first()
                 ticket_kwargs = {
                     "price": price,
                     "available_quantity": quantity,
@@ -1114,8 +1119,67 @@ class EventChangeRequest(models.Model):
                     for field, val in ticket_kwargs.items():
                         setattr(ticket, field, val)
                     ticket.save()
+                    updated_tickets.append(ticket.name)
+                    logger.info(
+                        "APPLY_TO_EVENT: обновлён билет '%s' (id=%s) в заявке #%s: "
+                        "price=%s, quantity=%s",
+                        ticket.name, ticket.pk, self.pk, price, quantity,
+                    )
                 else:
-                    event.tickets.create(name=row["name"], color=Ticket().get_random_color(), **ticket_kwargs)
+                    new_ticket = event.tickets.create(
+                        name=ticket_name,
+                        color=Ticket().get_random_color(),
+                        **ticket_kwargs
+                    )
+                    created_tickets.append(ticket_name)
+                    logger.info(
+                        "APPLY_TO_EVENT: создан новый билет '%s' (id=%s) в заявке #%s",
+                        ticket_name, new_ticket.pk, self.pk,
+                    )
+
+            logger.info(
+                "APPLY_TO_EVENT: заявки #%s — Proposed tickets: %s, Updated: %s, Created: %s",
+                self.pk, list(proposed_names), updated_tickets, created_tickets,
+            )
+
+            # Удаляем билеты, которые партнёр убрал из заявки.
+            # Билеты с ОПЛАЧЕННЫМИ заказами не удаляем — каскад стёр бы
+            # историю покупок; обновляем их поля на месте.
+            # Билеты только с отменёнными/возвращёнными заказами — удаляем.
+            deleted_tickets = []
+            locked_tickets = []
+            for ticket in list(event.tickets.all()):
+                if ticket.name.strip().lower() not in proposed_names:
+                    # Проверяем, есть ли оплаченные заказы (не отменённые и не возвращённые)
+                    has_paid_orders = ticket.orders.filter(
+                        payment_status__in=["succeeded"]
+                    ).exists()
+                    if has_paid_orders:
+                        locked_tickets.append(ticket.name)
+                        logger.info(
+                            "APPLY_TO_EVENT: билет '%s' (id=%s) убран в заявке #%s, "
+                            "но по нему есть ОПЛАЧЕННЫЕ заказы — обновляем поля на месте "
+                            "(цена, количество и т.д. не меняются, билет остаётся как был).",
+                            ticket.name, ticket.pk, self.pk,
+                        )
+                        continue
+                    logger.info(
+                        "APPLY_TO_EVENT: удаляем билет '%s' (id=%s), убранный в заявке #%s",
+                        ticket.name, ticket.pk, self.pk,
+                    )
+                    ticket.delete()
+                    deleted_tickets.append(ticket.name)
+
+            if deleted_tickets:
+                logger.info(
+                    "APPLY_TO_EVENT: заявки #%s — удалены билеты: %s",
+                    self.pk, deleted_tickets,
+                )
+            if locked_tickets:
+                logger.info(
+                    "APPLY_TO_EVENT: заявки #%s — заблокированы (нельзя удалить, есть заказы): %s",
+                    self.pk, locked_tickets,
+                )
 
             # 8. Помечаем заявку одобренной
             self.status = "approved"
@@ -1159,7 +1223,15 @@ class EventChangeRequest(models.Model):
             except Exception:
                 pass
         
-        self.save(update_fields=["status", "admin_comment", "reviewed_by", "reviewed_at"])
+        # Сбрасываем поля галереи — они не должны влиять на следующую заявку
+        self.delete_image_ids = []
+        self.primary_image_id = None
+        self.primary_new_image_index = None
+        
+        self.save(update_fields=[
+            "status", "admin_comment", "reviewed_by", "reviewed_at",
+            "delete_image_ids", "primary_image_id", "primary_new_image_index",
+        ])
 
     def notify_partner(self):
         """Отправляет партнёру письмо о результате рассмотрения заявки."""

@@ -388,6 +388,24 @@ def create_event(request):
         # Обрабатываем данные о билетах из таблицы
         rows = _parse_ticket_rows(request)
 
+        # Хотя бы один заполненный билет обязателен
+        if not any(n and p and q for n, p, q in zip(rows["names"], rows["prices"], rows["quantities"])):
+            messages.error(
+                request,
+                "Добавьте хотя бы один билет — мероприятие не может существовать без билетов.",
+            )
+            return render(
+                request,
+                "partner/event_form.html",
+                {
+                    "form": form,
+                    "is_edit": False,
+                    "ticket_data": _ticket_data_from_post(request),
+                    "rejection_messages": get_rejection_messages(request),
+                    "all_tags": Tag.objects.all(),
+                },
+            )
+
         # Если есть и бесплатные, и платные билеты одновременно
         if rows["has_free"] and rows["has_paid"]:
             messages.error(
@@ -678,6 +696,24 @@ def edit_event(request, event_id):
             # Билеты
             event.tickets.all().delete()
             rows = _parse_ticket_rows(request)
+
+            # Хотя бы один заполненный билет обязателен
+            if not any(n and p and q for n, p, q in zip(rows["names"], rows["prices"], rows["quantities"])):
+                messages.error(
+                    request,
+                    "Добавьте хотя бы один билет — мероприятие не может существовать без билетов.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": True,
+                        "ticket_data": _ticket_data_from_post(request),
+                        "rejection_messages": get_rejection_messages(request),
+                        "all_tags": Tag.objects.all(),
+                    },
+                )
 
             if rows["has_free"] and rows["has_paid"]:
                 messages.error(

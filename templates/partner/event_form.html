@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load format_filters %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pages/partner/dashboard.css' %}">
@@ -523,7 +524,7 @@
             <tbody id="ticket-tbody">
                 {% if ticket_data %}
                     {% for ticket in ticket_data %}
-                    <tr>
+                    <tr data-ticket-id="">
                         <td class="color-cell"><div class="ticket-color-preview" style="background: #4A7CF7;"></div></td>
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
@@ -540,7 +541,7 @@
                     {% endfor %}
                 {% elif form.instance.pk and form.instance.tickets.exists %}
                     {% for ticket in form.instance.tickets.all %}
-                    <tr>
+                    <tr data-ticket-id="{{ ticket.pk }}" data-ticket-sold="{{ ticket_sold_counts|dict_get:ticket.pk|default:0 }}">
                         <td class="color-cell"><div class="ticket-color-preview" style="background: {{ ticket.color|default:'#4A7CF7' }};"></div></td>
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
@@ -550,6 +551,9 @@
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
                         <td class="actions-cell">
+                            {% if is_change_request and ticket_sold_counts|dict_get:ticket.pk|default:0 > 0 %}
+                                <span style="color:#856404; background:#fff3cd; padding:3px 8px; border-radius:4px; font-size:12px; white-space:nowrap; display:block; margin-bottom:4px;">🔒 Продано: {{ ticket_sold_counts|dict_get:ticket.pk|default:0 }}</span>
+                            {% endif %}
                             <button type="button" class="remove-ticket-btn">✕</button>
                             <button type="button" class="remove-ticket-btn-mobile">Удалить</button>
                         </td>
@@ -907,6 +911,14 @@
     }
 
     // ============================================================
+    // SOLD COUNTS — данные о проданных билетах (только для change request)
+    // ============================================================
+    {% if is_change_request and ticket_sold_counts %}
+    const ticketSoldCounts = {{ ticket_sold_counts|default:"{}"|safe }};
+    {% else %}
+    const ticketSoldCounts = {};
+    {% endif %}
+
     // TICKET TABLE
     // ============================================================
     function getRandomColor() {
@@ -938,6 +950,30 @@
             perPersonCb.checked = (parseInt(minInput.value, 10) > 1);
         }
     }
+
+    // Ограничитель: хотя бы один заполненный билет обязателен
+    document.querySelector('form[method="post"][enctype="multipart/form-data"]').addEventListener('submit', function(e) {
+        const tbody = document.getElementById('ticket-tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        let hasValidTicket = false;
+        rows.forEach(function(tr) {
+            const name = tr.querySelector('input[name="ticket_name[]"]');
+            const price = tr.querySelector('input[name="ticket_price[]"]');
+            const qty = tr.querySelector('input[name="ticket_quantity[]"]');
+            if (name && price && qty && name.value.trim() && price.value.trim() && qty.value && parseInt(qty.value, 10) > 0) {
+                hasValidTicket = true;
+            }
+        });
+        if (!hasValidTicket) {
+            e.preventDefault();
+            if (typeof showToast === 'function') {
+                showToast('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.', true);
+            } else {
+                alert('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.');
+            }
+        }
+    });
 
     // ============================================================
     // TAGS
@@ -1192,7 +1228,19 @@
         // Remove ticket row (delegation)
         document.getElementById('ticket-tbody').addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-ticket-btn') || e.target.classList.contains('remove-ticket-btn-mobile')) {
-                e.target.closest('tr').remove();
+                const tr = e.target.closest('tr');
+                const ticketId = tr.dataset.ticketId;
+
+                // Если это заявка на изменение и билет продан — блокируем удаление
+                {% if is_change_request %}
+                if (ticketId && ticketSoldCounts[ticketId] > 0) {
+                    const sold = ticketSoldCounts[ticketId];
+                    alert('Нельзя удалить этот билет — на него уже куплено ' + sold + ' ' + (sold === 1 ? 'билет' : (sold < 5 ? 'билета' : 'билетов')) + '. Билет останется без изменений.');
+                    return;
+                }
+                {% endif %}
+
+                tr.remove();
             }
         });
 

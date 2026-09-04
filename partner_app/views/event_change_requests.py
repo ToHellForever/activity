@@ -252,6 +252,24 @@ def request_event_change(request, event_id):
                 )
 
             rows = _parse_ticket_rows(request)
+
+            # Хотя бы один заполненный билет обязателен
+            if not any(n and p and q for n, p, q in zip(rows["names"], rows["prices"], rows["quantities"])):
+                messages.error(
+                    request,
+                    "Добавьте хотя бы один билет — мероприятие не может существовать без билетов.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    _change_request_context(
+                        request,
+                        event,
+                        form,
+                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                    ),
+                )
+
             if rows["has_free"] and rows["has_paid"]:
                 messages.error(
                     request,
@@ -290,10 +308,15 @@ def request_event_change(request, event_id):
                 is_per_person = rows["is_per_person"][i] if i < len(rows["is_per_person"]) else ""
                 min_quantity = rows["min_quantities"][i] if i < len(rows["min_quantities"]) else ""
                 if name and price and quantity:
+                    # Нормализуем цену: строка -> float -> round до 2 знаков -> str
+                    try:
+                        normalized_price = str(round(float(str(price).replace(",", ".")), 2))
+                    except (ValueError, TypeError):
+                        normalized_price = str(price)
                     proposed_tickets.append(
                         {
                             "name": name,
-                            "price": str(price),
+                            "price": normalized_price,
                             "quantity": str(quantity),
                             "description": description,
                             "is_per_person": "on" if is_per_person else "",
@@ -303,7 +326,8 @@ def request_event_change(request, event_id):
             current_tickets = [
                 {
                     "name": t.name,
-                    "price": str(int(float(str(t.price)))),  # Нормализуем: Decimal -> int -> str
+                    # Нормализуем Decimal -> float -> round -> str для консистентности
+                    "price": str(round(float(str(t.price)), 2)),
                     "quantity": str(t.available_quantity),
                     "description": t.ticket_description or "",
                     "is_per_person": "on" if t.is_per_person else "",
@@ -329,6 +353,30 @@ def request_event_change(request, event_id):
             # Сравниваем как отсортированные кортежи для надёжности
             proposed_sorted = sorted([tuple(sorted(d.items())) for d in proposed_tickets])
             current_sorted = sorted([tuple(sorted(d.items())) for d in current_tickets])
+
+            # Защита от дубликатов названий в proposed_tickets
+            proposed_name_counts = {}
+            for pt in proposed_tickets:
+                name_lower = pt["name"].strip().lower()
+                proposed_name_counts[name_lower] = proposed_name_counts.get(name_lower, 0) + 1
+            duplicate_names = [n for n, c in proposed_name_counts.items() if c > 1]
+            if duplicate_names:
+                messages.error(
+                    request,
+                    f"Обнаружены билеты с одинаковыми названиями: {', '.join(duplicate_names)}. "
+                    "Пожалуйста, дайте билетам уникальные названия.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    _change_request_context(
+                        request,
+                        event,
+                        form,
+                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                    ),
+                )
+
             if proposed_sorted != current_sorted:
                 change_request.tickets_data = proposed_tickets
 
@@ -437,6 +485,16 @@ def request_event_change(request, event_id):
 
 def _change_request_context(request, event, form, ticket_data=None):
     """Контекст для рендера event_form.html в режиме заявки на изменение."""
+    from django.db.models import Sum
+
+    # Считаем проданные билеты для каждого типа — чтобы заблокировать удаление
+    sold_counts = {}
+    for ticket in event.tickets.all():
+        sold = ticket.orders.filter(
+            payment_status__in=["succeeded", "reserved"]
+        ).aggregate(total=Sum("quantity"))["total"] or 0
+        sold_counts[ticket.pk] = sold
+
     context = _event_form_context(
         request,
         form,
@@ -447,5 +505,6 @@ def _change_request_context(request, event, form, ticket_data=None):
     )
     context["is_change_request"] = True
     context["change_request_event"] = event
+    context["ticket_sold_counts"] = sold_counts
     return context
 
