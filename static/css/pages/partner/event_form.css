@@ -9,11 +9,11 @@
   font-family: "Montserrat", sans-serif;
 }
 .warning-block {
-  background:#fff7ed; 
-  border:1px solid rgba(255, 131, 72, 1); 
-  border-radius:12px; 
-  padding:14px 18px; 
-  margin-bottom:18px;
+  background: #fff7ed;
+  border: 1px solid rgba(255, 131, 72, 1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
   line-height: 1.1 !important;
 }
 .text-danger {
@@ -994,10 +994,6 @@
   #ticketTable thead {
     display: none;
   }
-  #ticket-tbody td.min-qty-cell,
-  #ticketTable th.min-qty-cell {
-    display: none;
-  }
   #ticket-tbody tr {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -1080,6 +1076,20 @@
   }
   #ticket-tbody td:nth-child(5)::before {
     content: "ОПИСАНИЕ";
+    display: block;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: "Montserrat", sans-serif;
+  }
+  /* Мин. кол-во — на всю ширину (100%) */
+  #ticket-tbody td.min-qty-cell {
+    grid-column: 1 / 11;
+    grid-row: 4;
+  }
+  #ticket-tbody td.min-qty-cell::before {
+    content: "МИН. КОЛ-ВО";
     display: block;
     font-size: 11px;
     color: #999;

@@ -927,6 +927,14 @@
 
     function addTicketRow() {
         const tbody = document.getElementById('ticket-tbody');
+        const rows = tbody.querySelectorAll('tr');
+
+        // Ограничение: не больше 3 типов билетов
+        if (rows.length >= 3) {
+            alert('Максимум 3 типа билетов для вашего пакета.');
+            return;
+        }
+
         const tr = document.createElement('tr');
 
         const color = getRandomColor();
@@ -971,6 +979,21 @@
                 showToast('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.', true);
             } else {
                 alert('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.');
+            }
+        }
+    });
+
+    // Ограничение на сервере: максимум 3 типа билетов — проверяем при submit
+    document.querySelector('form[method="post"][enctype="multipart/form-data"]').addEventListener('submit', function(e) {
+        const tbody = document.getElementById('ticket-tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length > 3) {
+            e.preventDefault();
+            if (typeof showToast === 'function') {
+                showToast('Максимум 3 типа билетов для вашего пакета.', true);
+            } else {
+                alert('Максимум 3 типа билетов для вашего пакета.');
             }
         }
     });
