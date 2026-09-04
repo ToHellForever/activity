@@ -5,8 +5,7 @@ function openBuyPackageModal(packageId, packageName, price) {
         return;
     }
     pendingPackageChange.packageId = packageId;
-    pendingPackageChange.isChange = true; // Это смена пакета
-    // Сначала показываем модалку выбора смены пакета
+    pendingPackageChange.isChange = true;
     showPackageChangeModal('', '', packageName, price);
 }
 
@@ -17,13 +16,15 @@ function openBuyNewPackageModal(packageId, packageName, price) {
         return;
     }
     pendingPackageChange.packageId = packageId;
-    pendingPackageChange.isChange = false; // Новая покупка
+    pendingPackageChange.isChange = false;
     document.getElementById('modal-package-id').value = packageId;
-    document.getElementById('buy-package-modal').style.display = 'flex';
+    var modalEl = document.getElementById('buy-package-modal');
+    if (modalEl) modalEl.style.display = 'flex';
 }
 
 function closeBuyPackageModal() {
-    document.getElementById('buy-package-modal').style.display = 'none';
+    var modalEl = document.getElementById('buy-package-modal');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
 var paymentMethodSelect = document.getElementById('payment-method');
@@ -94,7 +95,7 @@ if (buyForm) {
         .then(r => r.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('Заявка на выставление счёта отправлена.');
+                alert('Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.');
                 closeBuyPackageModal();
                 window.location.reload();
             } else {
@@ -119,31 +120,40 @@ let pendingPackageChange = {
 };
 
 function showPackageChangeModal(currentName, endDate, newName, price) {
-    document.getElementById('current-package-name').textContent = currentName || '—';
-    document.getElementById('current-package-end-date').textContent = endDate || '—';
-    document.getElementById('new-package-name').textContent = newName;
-    document.getElementById('new-package-price').textContent = price + ' руб.';
-    document.getElementById('package-change-modal').style.display = 'flex';
+    var textEl = document.getElementById('package-change-text');
+    var btnSchedule = document.getElementById('btn-schedule-change');
+
+    if (!textEl) return;
+
+    if (!currentName || currentName === '') {
+        textEl.innerHTML = 'Вы хотите приобрести пакет <strong>' + newName + '</strong> за <strong>' + price + ' руб.</strong>';
+        if (btnSchedule) btnSchedule.style.display = 'none';
+    } else {
+        textEl.innerHTML = 'У вас есть активная подписка на пакет <strong>' + currentName + '</strong> до <strong>' + endDate + '</strong>.<br>Вы хотите перейти на пакет <strong>' + newName + '</strong> за <strong>' + price + ' руб.</strong>.';
+        if (btnSchedule) btnSchedule.style.display = 'block';
+    }
+
+    var modalEl = document.getElementById('package-change-modal');
+    if (modalEl) modalEl.style.display = 'flex';
 }
 
 function closePackageChangeModal() {
-    document.getElementById('package-change-modal').style.display = 'none';
+    var modalEl = document.getElementById('package-change-modal');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
 function changePackageImmediate() {
-    // Запоминаем тип смены и показываем модалку выбора оплаты
     pendingPackageChange.changeType = 'immediate';
     closePackageChangeModal();
-    document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
-    document.getElementById('buy-package-modal').style.display = 'flex';
+    var modalEl = document.getElementById('buy-package-modal');
+    if (modalEl) modalEl.style.display = 'flex';
 }
 
 function changePackageScheduled() {
-    // Запоминаем тип смены и показываем модалку выбора оплаты
     pendingPackageChange.changeType = 'scheduled';
     closePackageChangeModal();
-    document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
-    document.getElementById('buy-package-modal').style.display = 'flex';
+    var modalEl = document.getElementById('buy-package-modal');
+    if (modalEl) modalEl.style.display = 'flex';
 }
 
 function changePackage(changeType) {
@@ -163,11 +173,9 @@ function changePackage(changeType) {
     .then(data => {
         if (data.status === 'success') {
             if (data.payment_url) {
-                // Немедленная смена с оплатой
                 closePackageChangeModal();
                 window.location.href = data.payment_url;
             } else {
-                // Запланированная смена
                 closePackageChangeModal();
                 alert(data.message + ': ' + data.scheduled_change.new_package + ' с ' + data.scheduled_change.change_date);
                 window.location.reload();
@@ -178,6 +186,18 @@ function changePackage(changeType) {
     })
     .catch(err => alert('Ошибка: ' + err));
 }
+
+// Обработчики кнопок в модальном окне смены пакета
+document.addEventListener('DOMContentLoaded', function() {
+    var btnImmediate = document.getElementById('btn-immediate-change');
+    var btnSchedule = document.getElementById('btn-schedule-change');
+    if (btnImmediate) {
+        btnImmediate.addEventListener('click', changePackageImmediate);
+    }
+    if (btnSchedule) {
+        btnSchedule.addEventListener('click', changePackageScheduled);
+    }
+});
 
 function removeFile(type) {
     if (confirm('Удалить файл?')) {

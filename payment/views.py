@@ -283,7 +283,8 @@ def handle_package_change_choice(request):
 
 def create_invoice(request, package_id):
     """
-    Создание счета для юридических лиц.
+    Создание счёта для юридических лиц.
+    Создаёт подписку со статусом 'ожидает оплаты по счёту'.
     """
     if request.method != "POST":
         return JsonResponse({"error": "Метод не поддерживается"}, status=405)
@@ -291,48 +292,88 @@ def create_invoice(request, package_id):
     try:
         package = get_object_or_404(EventPackage, id=package_id)
         user = request.user
-        admin_email = request.POST.get("admin_email")
 
-        # Проверка, что пользователь авторизован
         if not user.is_authenticated:
             return JsonResponse({"error": "Пользователь не авторизован"}, status=403)
 
-        # Проверка, что пакет доступен для покупки
         if not package:
             return JsonResponse({"error": "Пакет не найден"}, status=404)
 
-        # Проверка, что указан email администратора
+        admin_email = request.POST.get("admin_email")
         if not admin_email:
             return JsonResponse({"error": "Не указан email администратора"}, status=400)
 
-        # Здесь должна быть логика создания счета для юридического лица
-        # Например, сохранение заявки в базу данных или отправка уведомления администратору
+        # Отменяем текущую подписку если есть
+        active_subscription = UserPackageSubscription.objects.filter(
+            user=user, is_active=True
+        ).first()
+        if active_subscription:
+            active_subscription.is_active = False
+            active_subscription.save()
 
-        # Отправка уведомления администратору
+        # Создаём новую подписку — неактивную, ждём оплату по счёту
+        new_subscription = UserPackageSubscription.objects.create(
+            user=user,
+            package=package,
+            subscription_type='monthly' if package.is_monthly else 'one_time',
+            is_active=False,  # Ждёт оплаты по счёту
+        )
+
+        # Создаём платёж со статусом 'ожидает оплаты'
+        payment = Payment.create(
+            {
+                "amount": {"value": str(package.price), "currency": "RUB"},
+                "confirmation": {
+                    "type": "bank_card",
+                    "return_url": request.build_absolute_uri(
+                        f"/payment/package_success/{package_id}/"
+                    ),
+                },
+                "capture": False,  # Не захватываем деньги — ждём счёт
+                "description": f"Счёт на оплату пакета {package.name} для пользователя {user.email}",
+                "metadata": {
+                    "package_id": package_id,
+                    "user_id": user.id,
+                    "payment_type": "invoice",
+                    "admin_email": admin_email,
+                },
+            },
+            uuid.uuid4(),
+        )
+
+        # Отправляем уведомление
         from django.core.mail import send_mail
         from django.conf import settings
 
-        subject = f"Заявка на выставление счета для пакета {package.name}"
+        subject = f"Заявка на выставление счёта для пакета {package.name}"
         message = f"""
-        Пользователь {user.email} запросил выставление счета для покупки пакета {package.name}.
+Пользователь {user.email} запросил выставление счёта для покупки пакета {package.name}.
 
-        Детали:
-        - Пакет: {package.name}
-        - Цена: {package.price} RUB
-        - Пользователь: {user.email} ({user.first_name} {user.last_name})
-        - Email для связи: {admin_email}
+Детали:
+- Пакет: {package.name}
+- Цена: {package.price} RUB
+- Пользователь: {user.email} ({user.first_name} {user.last_name})
+- Email для связи: {admin_email}
+- ID подписки: {new_subscription.id}
+- ID платежа: {payment.id}
 
-        Пожалуйста, свяжитесь с пользователем и выставите счет вручную.
-        """
+Пожалуйста, выставите счёт и сообщите пользователю о готовности оплаты.
+"""
 
-        # Отправка письма администратору
         send_mail(
             subject=subject,
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[admin_email, settings.DEFAULT_FROM_EMAIL],  # Отправляем и администратору, и на основной email
+            recipient_list=[admin_email, settings.DEFAULT_FROM_EMAIL],
             fail_silently=False,
         )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.",
+            "package_id": package_id,
+            "subscription_id": new_subscription.id,
+        })
 
         return JsonResponse(
             {

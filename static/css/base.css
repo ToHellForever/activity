@@ -9,6 +9,21 @@ html {
   font-style: normal;
 }
 
+/* =========================================
+   Global modal z-index override
+   ========================================= */
+.modal-backdrop {
+  z-index: 10499 !important;
+}
+
+.modal {
+  z-index: 10500 !important;
+}
+
+.modal-dialog {
+  z-index: 10501 !important;
+}
+
 body {
   min-height: 100vh !important;
   display: flex;
@@ -26,7 +41,7 @@ footer.footer-header {
 
 @media (max-width: 768px) {
   main.container-fluid {
-  flex: 1 0 auto;
-  min-height: 60vh;
-}
+    flex: 1 0 auto;
+    min-height: 60vh;
+  }
 }

@@ -941,7 +941,7 @@
   font-family: Montserrat;
   font-weight: 500;
   font-style: Medium;
-  font-size: clamp(0.8rem, 1vw, 1rem);
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   text-transform: uppercase;
 }
 
