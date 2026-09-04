@@ -416,7 +416,7 @@
 {% block extra_js %}
 <!-- ===== Buy package modal ===== -->
 <!-- ===== Modal: Buy package ===== -->
-<div id="buy-package-modal" class="modal package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:10500; justify-content:center; align-items:center;">
+<div id="buy-package-modal" class="modal package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10500; justify-content:center; align-items:center; overflow-y:auto;">
     <div class="modal-content" style="background:#fff; border-radius:16px; width:480px; max-width:90%; max-height:90vh; overflow-y:auto; padding:28px 32px; position:relative;">
         <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
             <span class="modal-title" style="font-size:16px; font-weight:700; color:#333; text-transform:uppercase; letter-spacing:0.5px;">Покупка пакета</span>
@@ -426,14 +426,14 @@
             {% csrf_token %}
             <input type="hidden" id="modal-package-id" name="package_id">
             <div style="margin-bottom:20px;">
-                <label for="payment-method" class="form-label">Способ оплаты</label>
+                <label for="payment-method" style="font-family:'Montserrat',sans-serif; font-size:12px; font-weight:600; color:#9a9a9a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:block;">Способ оплаты</label>
                 <select id="payment-method" name="payment_method" required style="width:100%; padding:10px 16px; border:1px solid rgba(119,122,141,1); border-radius:20px; font-size:14px; color:#333; background:#fff; cursor:pointer; font-family:'Montserrat',sans-serif; transition:border-color 0.2s ease,box-shadow 0.2s ease;">
                     <option value="yookassa">ЮКасса</option>
                     <option value="invoice">Счёт (для юр. лиц)</option>
                 </select>
             </div>
             <div id="invoice-admin-field" style="display:none; margin-bottom:20px;">
-                <label for="admin-email" class="form-label">Email администратора</label>
+                <label for="admin-email" style="font-family:'Montserrat',sans-serif; font-size:12px; font-weight:600; color:#9a9a9a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:block;">Email администратора</label>
                 <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" style="width:100%; padding:10px 16px; border:1px solid rgba(119,122,141,1); border-radius:20px; font-size:14px; color:#333; background:#fff; font-family:'Montserrat',sans-serif; transition:border-color 0.2s ease,box-shadow 0.2s ease;">
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:24px;">
@@ -445,7 +445,7 @@
 </div>
 
 <!-- ===== Modal: Package change ===== -->
-<div id="package-change-modal" class="modal package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:10500; justify-content:center; align-items:center;">
+<div id="package-change-modal" class="modal package-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10500; justify-content:center; align-items:center; overflow-y:auto;">
     <div class="modal-content" style="background:#fff; border-radius:16px; width:480px; max-width:90%; max-height:90vh; overflow-y:auto; padding:28px 32px; position:relative;">
         <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
             <span class="modal-title" style="font-size:16px; font-weight:700; color:#333; text-transform:uppercase; letter-spacing:0.5px;">Смена пакета</span>
