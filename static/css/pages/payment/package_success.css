@@ -1,0 +1,162 @@
+/* ============================================
+   PACKAGE SUCCESS PAGE - Стили
+   ============================================ */
+
+.package-success-wrapper {
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.package-success-card {
+  max-width: 520px;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+/* === елёный хедер === */
+.package-success-header {
+  background: #4caf50;
+  padding: 40px 24px;
+  text-align: center;
+  color: #fff;
+}
+
+.package-success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.package-success-icon svg {
+  width: 36px;
+  height: 36px;
+  fill: #fff;
+}
+.package-success-description {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 500;
+  margin: 0 0 8px;
+  color: #888;
+  text-align: center;
+}
+.package-success-header h2 {
+    font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1rem, 1vw, 2rem);
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.package-success-subtitle {
+    font-family: 'Montserrat', sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* === Тело карточки === */
+.package-success-body {
+  padding: 32px 24px;
+}
+
+/* === етали пакета === */
+.package-details-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+}
+
+.package-details-list li {
+    font-family: 'Montserrat', sans-serif;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+}
+
+.package-details-list li:last-child {
+  border-bottom: none;
+}
+
+.package-details-list .detail-label {
+    font-family: 'Montserrat', sans-serif;
+  color: #888;
+  font-weight: 400;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  flex-shrink: 0;
+  margin-right: 16px;
+}
+
+.package-details-list .detail-value {
+      font-family: 'Montserrat', sans-serif;
+  color: #333;
+  font-weight: 600;
+  text-align: right;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  word-break: break-word;
+}
+
+.package-details-list .detail-value.price {
+      font-family: 'Montserrat', sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* === Статус-бейдж === */
+.status-badge--paid {
+  background: #d4f4dd !important;
+  color: #1e7c3a !important;
+}
+
+.status-badge {
+  font-family: 'Montserrat', sans-serif;
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* === CTA кнопка === */
+.package-success-btn {
+    font-family: 'Montserrat', sans-serif;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 24px;
+  background: #ff8348;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.package-success-btn:hover {
+  background: #e6733d;
+  color: #fff;
+}
+
+.package-success-btn i {
+  margin-right: 8px;
+}

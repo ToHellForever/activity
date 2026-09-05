@@ -1,14 +1,50 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/payment/package_success.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-    <h1 style="text-align: center; color: #4CAF50;">Пакет успешно оплачен!</h1>
-    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin-top: 20px;">
-        <h2 style="text-align: center;">Поздравляем!</h2>
-        <p style="text-align: center; font-size: 18px;">Вы успешно приобрели пакет "{{ package.name }}".</p>
-        <p style="text-align: center;">Теперь вы можете создавать мероприятия с выбранным пакетом.</p>
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="{% url 'partner:dashboard' %}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Перейти в кабинет</a>
+<div class="package-success-wrapper">
+    <div class="package-success-card">
+        <!-- Хедер -->
+        <div class="package-success-header">
+            <div class="package-success-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+            </div>
+            <h2>Пакет успешно оплачен!</h2>
+            <p class="package-success-subtitle">Поздравляем!</p>
+        </div>
+
+        <!-- Тело -->
+        <div class="package-success-body">
+            <ul class="package-details-list">
+                <li>
+                    <span class="detail-label">Пакет:</span>
+                    <span class="detail-value">{{ package.name }}</span>
+                </li>
+                <li>
+                    <span class="detail-label">Стоимость:</span>
+                    <span class="detail-value price">{{ package.price|floatformat:0 }} ₽</span>
+                </li>
+                <li>
+                    <span class="detail-label">Статус:</span>
+                    <span class="detail-value">
+                        <span class="status-badge status-badge--paid">Активен</span>
+                    </span>
+                </li>
+            </ul>
+
+            <p class="package-success-description">
+                Теперь вы можете создавать мероприятия с выбранным пакетом.
+            </p>
+
+            <a href="{% url 'partner:dashboard' %}" class="package-success-btn">
+                <i class="bi bi-arrow-left"></i> ПЕРЕЙТИ В КАБИНЕТ
+            </a>
         </div>
     </div>
 </div>
