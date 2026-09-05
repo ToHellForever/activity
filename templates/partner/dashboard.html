@@ -428,10 +428,24 @@
             <input type="hidden" id="modal-package-id" name="package_id">
             <div style="margin-bottom:20px;">
                 <label for="payment-method" class="form-label">Способ оплаты</label>
-                <select id="payment-method" name="payment_method" required class="form-select">
-                    <option value="yookassa">ЮКасса</option>
-                    <option value="invoice">Счёт (для юр. лиц)</option>
-                </select>
+                <div class="input-with-button dropdown-container">
+                    <input type="text" class="form-control filter-input filter-input-dropdown" 
+                           placeholder="Способ оплаты" 
+                           value="ЮКасса"
+                           readonly 
+                           id="paymentDisplay"
+                           data-placeholder="Способ оплаты">
+                        <span class="triangle-down"></span>
+                    <div class="dropdown-menu-custom" id="paymentDropdown">
+                        <div class="dropdown-option active" data-value="yookassa">
+                            ЮКасса
+                        </div>
+                        <div class="dropdown-option" data-value="invoice">
+                            Счёт (для юр. лиц)
+                        </div>
+                    </div>
+                    <input type="hidden" id="payment-method" name="payment_method" value="yookassa">
+                </div>
             </div>
             <div id="invoice-admin-field" style="display:none; margin-bottom:20px;">
                 <label for="admin-email" class="form-label">Email администратора</label>
@@ -465,6 +479,48 @@
 </div>
 
 <script src="{% static 'js/pages/dashboard.js' %}?v=6"></script>
+
+<!-- Dropdown handler for payment modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment dropdown in buy package modal
+    var paymentDisplay = document.getElementById('paymentDisplay');
+    var paymentDropdown = document.getElementById('paymentDropdown');
+    var paymentInput = document.getElementById('payment-method');
+    
+    if (paymentDisplay && paymentDropdown) {
+        paymentDisplay.addEventListener('click', function() {
+            paymentDropdown.classList.toggle('show');
+        });
+        
+        var options = paymentDropdown.querySelectorAll('.dropdown-option');
+        options.forEach(function(option) {
+            option.addEventListener('click', function() {
+                paymentDisplay.value = this.textContent.trim();
+                paymentInput.value = this.getAttribute('data-value');
+                paymentDropdown.classList.remove('show');
+                
+                // Update active state
+                options.forEach(function(opt) { opt.classList.remove('active'); });
+                this.classList.add('active');
+                
+                // Show/hide admin email field based on payment method
+                var invoiceField = document.getElementById('invoice-admin-field');
+                if (invoiceField) {
+                    invoiceField.style.display = this.getAttribute('data-value') === 'invoice' ? 'block' : 'none';
+                }
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-container')) {
+                paymentDropdown.classList.remove('show');
+            }
+        });
+    }
+});
+</script>
 
 <!-- Inline save script -->
 <script>

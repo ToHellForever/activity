@@ -38,7 +38,9 @@ main.container-fluid {
 footer.footer-header {
   flex-shrink: 0;
 }
-
+.form-control {
+  font-size: clamp(0.8rem, 1vw, 1rem);
+}
 @media (max-width: 768px) {
   main.container-fluid {
     flex: 1 0 auto;
