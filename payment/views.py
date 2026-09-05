@@ -220,16 +220,13 @@ def handle_package_change_choice(request):
             return JsonResponse({"error": "Активная подписка не найдена"}, status=404)
 
         if change_type == "immediate":
-            # Немедленная смена пакета - отменяем текущую подписку
-            active_subscription.is_active = False
-            active_subscription.save()
-
-            # Создаем новую подписку с выбранным пакетом
+            # Немедленная смена пакета — создаём неактивную подписку,
+            # активируем после успешной оплаты через webhook
             new_subscription = UserPackageSubscription.objects.create(
                 user=user,
                 package=package,
                 subscription_type='monthly' if package.is_monthly else 'one_time',
-                is_active=True
+                is_active=False  # Ждёт оплаты
             )
 
             # Создаем платеж в ЮКассе для новой подписки
@@ -961,20 +958,25 @@ def yookassa_webhook(request):
                     package_id = metadata["package_id"]
                     user_id = metadata["user_id"]
 
-                    # Используем filter() вместо get()
-                    subscriptions = UserPackageSubscription.objects.filter(
+                    # Сначала ищем неактивную подписку (ожидает оплаты)
+                    pending_subscription = UserPackageSubscription.objects.filter(
                         user_id=user_id,
                         package_id=package_id,
-                        is_active=True
-                    )
+                        is_active=False
+                    ).first()
 
-                    if subscriptions.exists():
-                        # Если подписка уже существует, обновляем её
-                        subscription = subscriptions.first()
-                        subscription.end_date = timezone.now() + timezone.timedelta(days=30 if subscription.package.is_monthly else 365)
-                        subscription.save()
+                    if pending_subscription:
+                        # Активируем ожидающую подписку
+                        pending_subscription.is_active = True
+                        # Пересчитываем end_date
+                        if pending_subscription.package.is_monthly:
+                            pending_subscription.end_date = timezone.now() + timezone.timedelta(days=30)
+                        else:
+                            pending_subscription.end_date = timezone.now() + timezone.timedelta(days=365)
+                        pending_subscription.save()
+                        subscription = pending_subscription
                     else:
-                        # Если подписки нет, создаем новую
+                        # Подписки нет — создаём новую активную
                         package = EventPackage.objects.get(id=package_id)
                         user = CustomUser.objects.get(id=user_id)
 
@@ -986,7 +988,6 @@ def yookassa_webhook(request):
                             end_date = timezone.now() + timezone.timedelta(days=365)
                             subscription_type = "one_time"
 
-                        # Создаем новую подписку
                         subscription = UserPackageSubscription.objects.create(
                             user=user,
                             package=package,
@@ -1103,7 +1104,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
         if order.payment_status != "succeeded" or not order.is_paid:
             return render(
                 request,
-                "refund_error.html",
+                "/payment/refund_error.html",
                 {"error": "Заказ не оплачен или билет не был оплачен"},
             )
 
@@ -1132,13 +1133,13 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                 order.save()
                 logger.info("[refund] Заказ #%s помечен как возвращённый", order.id)
 
-            return render(request, "refund_success_free.html")
+            return render(request, "/payment/refund_success_free.html")
 
         # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ ===
         if not order.yookassa_payment_id:
             return render(
                 request,
-                "refund_error.html",
+                "/payment/refund_error.html",
                 {"error": "Отсутствует ID платежа в ЮКассе (невозможно выполнить возврат)"},
             )
 
@@ -1197,7 +1198,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
 
     except Exception as e:
         logger.error("Ошибка при возврате заказа: %s", e, exc_info=True)
-        return render(request, "refund_error.html", {"error": str(e)})
+        return render(request, "/payment/refund_error.html", {"error": str(e)})
 
 
 def payment_success(request, order_id):
@@ -1250,7 +1251,7 @@ def payment_success(request, order_id):
                 'error': str(e)
             }, exc_info=True)
 
-    return render(request, "payment_success.html", {"order": order})
+    return render(request, "/payment/payment_success.html", {"order": order})
 
 def pay_reserved_order(request, order_id):
     """
@@ -1264,7 +1265,7 @@ def pay_reserved_order(request, order_id):
         if order.payment_status not in ["reserved", "pending"]:
             return render(
                 request,
-                "refund_error.html",
+                "/payment/refund_error.html",
                 {"error": "Этот заказ не может быть оплачен"},
             )
 
@@ -1303,7 +1304,7 @@ def pay_reserved_order(request, order_id):
 
     except Exception as e:
         logger.error("Ошибка при оплате забронированного заказа: %s", e, exc_info=True)
-        return render(request, "refund_error.html", {"error": str(e)})
+        return render(request, "/payment/refund_error.html", {"error": str(e)})
 
 def package_success(request, package_id):
     """

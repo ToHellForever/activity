@@ -38,9 +38,7 @@
   background: #f8f9fa;
   border-bottom: none;
   margin-bottom: 10px !important;
-}
-.modal-header {
-  padding: 0;
+  padding: 0 !important;
 }
 
 .package-modal .modal-title {
@@ -52,7 +50,6 @@
   letter-spacing: 0.5px;
 }
 
-.package-modal .btn-close,
 .package-modal .modal-close {
   background: none;
   border: none;
@@ -65,7 +62,6 @@
   transition: color 0.2s;
 }
 
-.package-modal .btn-close:hover,
 .package-modal .modal-close:hover {
   color: #333;
 }
@@ -107,7 +103,7 @@
   padding: 10px 16px;
   border: 1px solid rgba(119, 122, 141, 1);
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #333;
   background: #fff;
   font-family: "Montserrat", sans-serif;
@@ -120,6 +116,33 @@
   outline: none;
   border-color: rgba(119, 122, 141, 1);
   box-shadow: none;
+}
+
+/* Override dashboard.css .modal-content / .modal-header / .modal-title / .modal-close */
+.package-modal .modal-content {
+  border-radius: 16px !important;
+  padding: 28px 32px !important;
+  width: 480px !important;
+}
+
+.package-modal .modal-header {
+  margin-bottom: 10px !important;
+  padding: 0 !important;
+}
+
+.package-modal .modal-close {
+  font-size: 28px !important;
+  color: #999 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  border: none !important;
+  background: none !important;
+  cursor: pointer !important;
+}
+
+.package-modal .modal-close:hover {
+  color: #333 !important;
 }
 /* Dropdown styles (like landing.html) */
 .input-with-button {
@@ -146,9 +169,9 @@
 }
 .filter-input-dropdown:focus {
   border-radius: 20px 20px 0 0 !important;
-    border: 1px solid rgba(119, 122, 141, 1) !important;
+  border: 1px solid rgba(119, 122, 141, 1) !important;
   outline: none;
-    box-shadow: none !important;
+  box-shadow: none !important;
 }
 .input-button {
   position: absolute;
@@ -250,7 +273,7 @@
   padding: 12px 24px;
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #fff;
   text-transform: uppercase;
   cursor: pointer;
@@ -267,7 +290,7 @@
   border-radius: 20px;
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #999;
   text-transform: uppercase;
   cursor: pointer;
@@ -286,7 +309,7 @@
   padding: 12px 24px;
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #fff;
   text-transform: uppercase;
   cursor: pointer;
@@ -308,7 +331,7 @@
   padding: 12px 24px;
   border: none;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
@@ -345,7 +368,7 @@
 .buy-modal-footer .btn {
   padding: 12px 24px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
@@ -377,7 +400,8 @@
 
 /* Package change text */
 .package-change-text {
-  font-size: 14px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #555;
   margin-bottom: 24px;
   line-height: 1.6;

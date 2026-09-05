@@ -36,15 +36,15 @@ from partner_app.views import (
 
 
 def _dev_refund_error(request):
-    return render(request, "refund_error.html", {"error": "Произошла ошибка при обработке возврата. Попробуйте ещё раз или свяжитесь с нашей службой поддержки."})
+    return render(request, "/payment/refund_error.html", {"error": "Произошла ошибка при обработке возврата. Попробуйте ещё раз или свяжитесь с нашей службой поддержки."})
 
 
 def _dev_refund_success(request):
-    return render(request, "refund_success.html", {})
+    return render(request, "/payment/refund_success.html", {})
 
 
 def _dev_refund_success_free(request):
-    return render(request, "refund_success_free.html", {})
+    return render(request, "/payment/refund_success_free.html", {})
 
 app_name = "venues"
 
