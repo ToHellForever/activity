@@ -152,7 +152,9 @@ function changePackageImmediate() {
     // Запоминаем тип смены и показываем модалку выбора оплаты
     pendingPackageChange.changeType = 'immediate';
     closePackageChangeModal();
-    document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
+    // Записываем packageId в hidden input формы
+    var hiddenInput = document.getElementById('modal-package-id');
+    if (hiddenInput) hiddenInput.value = pendingPackageChange.packageId;
     document.getElementById('buy-package-modal').style.display = 'flex';
 }
 
@@ -160,7 +162,9 @@ function changePackageScheduled() {
     // Запоминаем тип смены и показываем модалку выбора оплаты
     pendingPackageChange.changeType = 'scheduled';
     closePackageChangeModal();
-    document.getElementById('modal-package-id').value = pendingPackageChange.packageId;
+    // Записываем packageId в hidden input формы
+    var hiddenInput = document.getElementById('modal-package-id');
+    if (hiddenInput) hiddenInput.value = pendingPackageChange.packageId;
     document.getElementById('buy-package-modal').style.display = 'flex';
 }
 

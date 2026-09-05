@@ -15,7 +15,7 @@ import json
 import uuid
 import hmac
 import hashlib
-from yookassa import Configuration, Payment
+from yookassa import Configuration, Payment, Invoice
 from datetime import timedelta
 # Настройка ЮКассы
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
@@ -320,26 +320,35 @@ def create_invoice(request, package_id):
         )
 
         # Создаём платёж со статусом 'ожидает оплаты'
-        payment = Payment.create(
-            {
-                "amount": {"value": str(package.price), "currency": "RUB"},
-                "confirmation": {
-                    "type": "bank_card",
-                    "return_url": request.build_absolute_uri(
-                        f"/payment/package_success/{package_id}/"
-                    ),
+        # Тестовый аккаунт ЮКассы не поддерживает /v3/invoices,
+        # поэтому используем Payment.create с capture=False
+        try:
+            payment = Payment.create(
+                {
+                    "amount": {"value": str(package.price), "currency": "RUB"},
+                    "confirmation": {
+                        "type": "redirect",
+                        "return_url": request.build_absolute_uri(
+                            f"/payment/package_success/{package_id}/"
+                        ),
+                    },
+                    "capture": False,  # Не захватываем деньги — ждём оплату по счёту
+                    "description": f"Счёт на оплату пакета {package.name} для пользователя {user.email}",
+                    "metadata": {
+                        "package_id": package_id,
+                        "user_id": user.id,
+                        "payment_type": "invoice",
+                        "admin_email": admin_email,
+                    },
                 },
-                "capture": False,  # Не захватываем деньги — ждём счёт
-                "description": f"Счёт на оплату пакета {package.name} для пользователя {user.email}",
-                "metadata": {
-                    "package_id": package_id,
-                    "user_id": user.id,
-                    "payment_type": "invoice",
-                    "admin_email": admin_email,
-                },
-            },
-            uuid.uuid4(),
-        )
+                uuid.uuid4(),
+            )
+        except Exception as e:
+            logger.error("Ошибка при создании счёта в ЮКассе: %s", e, exc_info=True)
+            return JsonResponse({"error": f"Ошибка при создании счёта: {str(e)}"}, status=500)
+
+        if not payment:
+            return JsonResponse({"error": "Не удалось создать счёт в ЮКассе"}, status=500)
 
         # Отправляем уведомление
         from django.core.mail import send_mail
@@ -374,14 +383,6 @@ def create_invoice(request, package_id):
             "package_id": package_id,
             "subscription_id": new_subscription.id,
         })
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Заявка на выставление счета успешно отправлена администратору",
-                "package_id": package_id,
-            }
-        )
 
     except Exception as e:
         logger.error("Ошибка при создании счёта: %s", e, exc_info=True)

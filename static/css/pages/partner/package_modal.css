@@ -39,6 +39,9 @@
   border-bottom: none;
   margin-bottom: 10px !important;
 }
+.modal-header {
+  padding: 0;
+}
 
 .package-modal .modal-title {
   font-family: "Montserrat", sans-serif;
@@ -297,7 +300,7 @@
 /* Package change buttons container */
 .package-change-buttons {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 10px;
 }
 

@@ -29,6 +29,7 @@ function openBuyPackageModal(packageId, packageName, price) {
 }
 
 function openBuyNewPackageModal(packageId, packageName, price) {
+    console.log('openBuyNewPackageModal:', { packageId, packageName, price });
     var statusEl = document.querySelector('[data-verification-status]');
     if (statusEl && statusEl.dataset.verificationStatus !== 'approved') {
         alert('Для покупки пакета аккаунт должен быть одобрен.');
@@ -36,7 +37,9 @@ function openBuyNewPackageModal(packageId, packageName, price) {
     }
     pendingPackageChange.packageId = packageId;
     pendingPackageChange.isChange = false;
-    document.getElementById('modal-package-id').value = packageId;
+    var hiddenInput = document.getElementById('modal-package-id');
+    console.log('Setting modal-package-id to:', packageId, 'element:', hiddenInput);
+    if (hiddenInput) hiddenInput.value = packageId;
     var modalEl = document.getElementById('buy-package-modal');
     if (modalEl) modalEl.style.display = 'flex';
 }
@@ -63,6 +66,8 @@ if (buyForm) {
     const formData = new FormData(this);
     const packageId = formData.get('package_id');
     const paymentMethod = formData.get('payment_method');
+    console.log('Form submit - packageId:', packageId, 'paymentMethod:', paymentMethod);
+    console.log('formData entries:', Array.from(formData.entries()));
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Обработка…';
@@ -100,25 +105,31 @@ if (buyForm) {
         }
     } else {
         const adminEmail = formData.get('admin_email');
+        const pkgId = formData.get('package_id');
+        console.log('create_invoice called with packageId:', pkgId, 'adminEmail:', adminEmail);
         if (!adminEmail) {
             alert('Укажите email администратора для выставления счёта.');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Купить';
             return;
         }
-        fetch('/payment/create_invoice/' + packageId + '/', {
+        fetch('/payment/create_invoice/' + pkgId + '/', {
             method: 'POST',
             body: formData,
             headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
         })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'success') {
+        .then(r => {
+            console.log('create_invoice response status:', r.status);
+            return r.json().then(data => ({ status: r.status, data }));
+        })
+        .then(({ status, data }) => {
+            console.log('create_invoice response:', status, data);
+            if (status === 200 && data.status === 'success') {
                 alert('Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.');
                 closeBuyPackageModal();
                 window.location.reload();
             } else {
-                alert('Ошибка: ' + (data.error || ''));
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
             }
         })
         .catch(err => alert('Ошибка: ' + err))
@@ -175,6 +186,9 @@ document.addEventListener('click', function(e) {
 function changePackageImmediate() {
     pendingPackageChange.changeType = 'immediate';
     closePackageChangeModal();
+    // Записываем packageId в hidden input формы
+    var hiddenInput = document.getElementById('modal-package-id');
+    if (hiddenInput) hiddenInput.value = pendingPackageChange.packageId;
     var modalEl = document.getElementById('buy-package-modal');
     if (modalEl) modalEl.style.display = 'flex';
 }
@@ -182,6 +196,9 @@ function changePackageImmediate() {
 function changePackageScheduled() {
     pendingPackageChange.changeType = 'scheduled';
     closePackageChangeModal();
+    // Записываем packageId в hidden input формы
+    var hiddenInput = document.getElementById('modal-package-id');
+    if (hiddenInput) hiddenInput.value = pendingPackageChange.packageId;
     var modalEl = document.getElementById('buy-package-modal');
     if (modalEl) modalEl.style.display = 'flex';
 }

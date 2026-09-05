@@ -244,7 +244,7 @@
   padding: 12px 15px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: clamp(0.7rem, 1vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: #777a8d;
   overflow: hidden;
   text-overflow: ellipsis;
