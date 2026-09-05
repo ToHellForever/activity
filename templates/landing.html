@@ -101,7 +101,7 @@
                                 <img src="/media/icon/logo-card.svg" class="card-logo-placeholder" alt="">
                             {% endif %}
 
-                            <div class="carousel-caption d-none d-md-block">
+                            <div class="carousel-caption">
                                 <div class="active-event-info">
                                     <a href="{% url 'event_detail' ev.id %}" class="text-decoration-none">
                                         {{ ev.title }} | {{ ev.organizer.get_full_name|default:ev.organizer.username }}
@@ -111,7 +111,7 @@
                         </div>
                     {% empty %}
                         <div class="carousel-item active">
-                            <div class="carousel-caption d-none d-md-block">
+                            <div class="carousel-caption">
                                 Нет активных мероприятий
                             </div>
                         </div>
