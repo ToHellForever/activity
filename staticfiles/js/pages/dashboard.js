@@ -1,13 +1,20 @@
 function openBuyPackageModal(packageId, packageName, price) {
+    console.log('staticfiles openBuyPackageModal called:', { packageId, packageName, price });
     var statusEl = document.querySelector('[data-verification-status]');
     if (statusEl && statusEl.dataset.verificationStatus !== 'approved') {
         alert('Для покупки пакета аккаунт должен быть одобрен.');
         return;
     }
     pendingPackageChange.packageId = packageId;
-    pendingPackageChange.isChange = true; // Это смена пакета
-    // Сначала показываем модалку выбора смены пакета
-    showPackageChangeModal('', '', packageName, price);
+    pendingPackageChange.isChange = true;
+    // Читаем данные из data-атрибутов кнопки
+    var btn = event && event.target;
+    var currentName = btn ? (btn.getAttribute('data-current-package') || '') : '';
+    var endDate = btn ? (btn.getAttribute('data-current-end-date') || '') : '';
+    pendingPackageChange.currentPackageName = currentName;
+    pendingPackageChange.currentPackageEndDate = endDate;
+    console.log('Data from button:', { currentName, endDate });
+    showPackageChangeModal(pendingPackageChange.currentPackageName, pendingPackageChange.currentPackageEndDate, packageName, price);
 }
 
 function openBuyNewPackageModal(packageId, packageName, price) {
@@ -119,6 +126,7 @@ let pendingPackageChange = {
 };
 
 function showPackageChangeModal(currentName, endDate, newName, price) {
+    console.log('staticfiles showPackageChangeModal called:', { currentName, endDate, newName, price });
     document.getElementById('current-package-name').textContent = currentName || '—';
     document.getElementById('current-package-end-date').textContent = endDate || '—';
     document.getElementById('new-package-name').textContent = newName;
@@ -129,6 +137,16 @@ function showPackageChangeModal(currentName, endDate, newName, price) {
 function closePackageChangeModal() {
     document.getElementById('package-change-modal').style.display = 'none';
 }
+
+// Закрытие по клику на оверлей
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'package-change-modal') {
+        closePackageChangeModal();
+    }
+    if (e.target.id === 'buy-package-modal') {
+        closeBuyPackageModal();
+    }
+});
 
 function changePackageImmediate() {
     // Запоминаем тип смены и показываем модалку выбора оплаты

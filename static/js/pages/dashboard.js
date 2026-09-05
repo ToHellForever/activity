@@ -1,12 +1,31 @@
 function openBuyPackageModal(packageId, packageName, price) {
+    console.log('openBuyPackageModal called:', { packageId, packageName, price });
     var statusEl = document.querySelector('[data-verification-status]');
     if (statusEl && statusEl.dataset.verificationStatus !== 'approved') {
         alert('Для покупки пакета аккаунт должен быть одобрен.');
         return;
     }
+    
+    // Читаем данные из data-атрибутов кнопки
+    var activeBtn = document.querySelector('.package-card .btn-buy:not([disabled]):not(.btn-buy--active)');
+    var currentName = '';
+    var endDate = '';
+    
+    // Находим нажатую кнопку через event
+    var btn = event && event.target;
+    if (btn) {
+        currentName = btn.getAttribute('data-current-package') || '';
+        endDate = btn.getAttribute('data-current-end-date') || '';
+    }
+    
+    console.log('Data from button:', { currentName, endDate });
+    
     pendingPackageChange.packageId = packageId;
     pendingPackageChange.isChange = true;
-    showPackageChangeModal('', '', packageName, price);
+    pendingPackageChange.currentPackageName = currentName;
+    pendingPackageChange.currentPackageEndDate = endDate;
+    console.log('pendingPackageChange:', pendingPackageChange);
+    showPackageChangeModal(pendingPackageChange.currentPackageName, pendingPackageChange.currentPackageEndDate, packageName, price);
 }
 
 function openBuyNewPackageModal(packageId, packageName, price) {
@@ -120,6 +139,7 @@ let pendingPackageChange = {
 };
 
 function showPackageChangeModal(currentName, endDate, newName, price) {
+    console.log('showPackageChangeModal called:', { currentName, endDate, newName, price });
     var textEl = document.getElementById('package-change-text');
     var btnSchedule = document.getElementById('btn-schedule-change');
 
@@ -129,7 +149,7 @@ function showPackageChangeModal(currentName, endDate, newName, price) {
         textEl.innerHTML = 'Вы хотите приобрести пакет <strong>' + newName + '</strong> за <strong>' + price + ' руб.</strong>';
         if (btnSchedule) btnSchedule.style.display = 'none';
     } else {
-        textEl.innerHTML = 'У вас есть активная подписка на пакет <strong>' + currentName + '</strong> до <strong>' + endDate + '</strong>.<br>Вы хотите перейти на пакет <strong>' + newName + '</strong> за <strong>' + price + ' руб.</strong>.';
+        textEl.innerHTML = 'У вас есть активная подписка на пакет <strong>' + currentName + '</strong>.<br>Вы хотите перейти на пакет <strong>' + newName + '</strong> за <strong>' + price + ' руб.</strong>';
         if (btnSchedule) btnSchedule.style.display = 'block';
     }
 
@@ -141,6 +161,16 @@ function closePackageChangeModal() {
     var modalEl = document.getElementById('package-change-modal');
     if (modalEl) modalEl.style.display = 'none';
 }
+
+// Закрытие по клику на оверлей
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'package-change-modal') {
+        closePackageChangeModal();
+    }
+    if (e.target.id === 'buy-package-modal') {
+        closeBuyPackageModal();
+    }
+});
 
 function changePackageImmediate() {
     pendingPackageChange.changeType = 'immediate';

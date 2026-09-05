@@ -1,16 +1,45 @@
 ﻿/* ===== Package modals ===== */
 
+/* Overlay */
+.package-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10500;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.package-modal.show {
+  display: flex;
+}
+
 .package-modal .modal-content {
   border: none;
   border-radius: 16px;
   overflow: hidden;
-  width: 100%;
+  width: 480px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  padding: 28px 32px;
+  position: relative;
 }
 
 .package-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: #f8f9fa;
   border-bottom: none;
+  margin-bottom: 10px !important;
 }
+
 .package-modal .modal-title {
   font-family: "Montserrat", sans-serif;
   font-size: 16px;
@@ -20,10 +49,11 @@
   letter-spacing: 0.5px;
 }
 
-.package-modal .btn-close {
+.package-modal .btn-close,
+.package-modal .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   color: #999;
   cursor: pointer;
   line-height: 1;
@@ -32,7 +62,8 @@
   transition: color 0.2s;
 }
 
-.package-modal .btn-close:hover {
+.package-modal .btn-close:hover,
+.package-modal .modal-close:hover {
   color: #333;
 }
 
@@ -44,6 +75,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
+  display: block;
 }
 
 .package-modal .form-select {
@@ -86,9 +118,6 @@
   border-color: rgba(255, 131, 72, 1);
   box-shadow: 0 0 0 2px rgba(233, 92, 4, 0.3);
 }
-.modal-body {
-  padding: 0;
-}
 
 .package-modal .btn-primary {
   width: 100%;
@@ -98,7 +127,7 @@
   padding: 12px 24px;
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.8rem, 1vw, 0.8rem);
+  font-size: 14px;
   color: #fff;
   text-transform: uppercase;
   cursor: pointer;
@@ -115,7 +144,7 @@
   border-radius: 20px;
   font-family: "Montserrat", sans-serif;
   font-weight: 500;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-size: 14px;
   color: #999;
   text-transform: uppercase;
   cursor: pointer;
@@ -145,87 +174,129 @@
   background: #1976d2;
 }
 
-/* Footer buttons — desktop: row, 50% each */
-.package-modal .modal-footer {
-  background: #f8f9fa;
-  border-top: none;
-  padding: 16px 24px 20px;
+/* Package change buttons container */
+.package-change-buttons {
   display: flex;
   flex-direction: row;
   gap: 10px;
 }
 
-.package-modal .modal-footer .btn {
-  flex: 1;
-  width: auto;
+.package-change-buttons button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: "Montserrat", sans-serif;
+  transition: background 0.2s;
 }
 
-.package-modal .modal-footer .btn {
-  flex: 1;
-  width: auto;
+.package-change-buttons .btn-immediate {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
 }
 
-/* Mobile: stack vertically */
-@media (max-width: 576px) {
-  .package-modal .modal-content {
-    margin: 10px;
-  }
-
-  .package-modal .modal-footer {
-    flex-direction: column;
-  }
-
-  .package-modal .modal-footer .btn {
-    width: 100%;
-  }
+.package-change-buttons .btn-immediate:hover {
+  background: #e67a35;
 }
 
-.package-modal .btn-secondary:hover {
+.package-change-buttons .btn-schedule {
+  background: #2196f3;
+  color: #fff;
+}
+
+.package-change-buttons .btn-schedule:hover {
+  background: #1976d2;
+}
+
+/* Buy modal footer */
+.buy-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.buy-modal-footer .btn {
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: "Montserrat", sans-serif;
+  transition: background 0.2s;
+}
+
+.buy-modal-footer .btn-buy-now {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  border: none;
+}
+
+.buy-modal-footer .btn-buy-now:hover {
+  background: #e67a35;
+}
+
+.buy-modal-footer .btn-cancel {
+  background: transparent;
+  color: #999;
+  border: 1px solid #ddd;
+  font-weight: 500;
+}
+
+.buy-modal-footer .btn-cancel:hover {
   background: #f5f5f5;
   color: #666;
 }
 
-.package-modal .btn-schedule {
-  width: 100%;
-  background: #2196f3;
-  border: none;
-  border-radius: 20px;
-  padding: 12px 24px;
-  font-family: "Montserrat", sans-serif;
-  font-weight: 600;
+/* Package change text */
+.package-change-text {
   font-size: 14px;
-  color: #fff;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.package-modal .btn-schedule:hover {
-  background: #1976d2;
-}
-
-.package-modal .package-info-text {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 500;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
   color: #555;
-  margin-bottom: 0;
+  margin-bottom: 24px;
   line-height: 1.6;
 }
 
-.package-modal .package-info-text strong {
+.package-change-text strong {
   color: #333;
 }
 
-.package-modal .modal-dialog {
+/* Animation */
+.package-modal .modal-content {
   transform: translateY(20px);
-  opacity: 0;
   transition:
     transform 0.3s ease,
     opacity 0.3s ease;
 }
 
-.package-modal.show .modal-dialog {
+.package-modal.show .modal-content {
   transform: translateY(0);
   opacity: 1;
+}
+
+/* Mobile: stack buttons vertically */
+@media (max-width: 576px) {
+  .package-modal .modal-content {
+    margin: 10px;
+    padding: 20px 16px;
+  }
+
+  .package-change-buttons {
+    flex-direction: column !important;
+  }
+
+  .package-change-buttons button {
+    width: 100% !important;
+  }
+
+  .buy-modal-footer {
+    flex-direction: column;
+  }
+
+  .buy-modal-footer .btn {
+    width: 100%;
+  }
 }
