@@ -44,7 +44,12 @@
   letter-spacing: 0.5px;
   margin-left: 2px;
 }
-
+.event-description {
+  font-family: "Verdana";
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 400;
+  color: rgb(7, 7, 7);
+}
 .event-title {
   font-family: "Verdana";
   font-weight: 400;

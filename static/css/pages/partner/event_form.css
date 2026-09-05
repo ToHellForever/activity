@@ -17,6 +17,8 @@
   line-height: 1.1 !important;
 }
 .text-danger {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
   color: #dc3545;
   margin-left: 3px;
 }
