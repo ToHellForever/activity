@@ -178,6 +178,41 @@ class EventForm(forms.ModelForm):
             if not remaining and not new_images:
                 raise forms.ValidationError("Нельзя удалить все фото. Загрузите хотя бы одно новое фото.")
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Извлекаем данные из place_data и сохраняем в отдельные поля модели
+        place_data = instance.place_data or {}
+        if isinstance(place_data, str):
+            import json
+            try:
+                place_data = json.loads(place_data)
+            except json.JSONDecodeError:
+                place_data = {}
+        
+        if isinstance(place_data, dict):
+            # Адрес
+            if place_data.get('address'):
+                instance.address = place_data['address']
+            # Координаты
+            if place_data.get('latitude'):
+                instance.latitude = float(place_data['latitude'])
+            if place_data.get('longitude'):
+                instance.longitude = float(place_data['longitude'])
+            # Город
+            if place_data.get('city'):
+                instance.city = place_data['city']
+            # Район
+            if place_data.get('district'):
+                instance.district = place_data['district']
+            # Метро
+            if place_data.get('metro'):
+                instance.metro = place_data['metro']
+        
+        if commit:
+            instance.save()
+        return instance
+
     class Meta:
         model = Event
         fields = [

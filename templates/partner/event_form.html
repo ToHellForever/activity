@@ -1439,9 +1439,15 @@ document.addEventListener('DOMContentLoaded', function() {
         initDurationPicker();
 
         // Map
-        const placeAdditionalInfoInput = document.getElementById('id_additional_adress');
-        const placeDataInput = document.getElementById('id_place_data');
+        let placeAdditionalInfoInput = document.getElementById('id_additional_adress');
+        let placeDataInput = document.getElementById('id_place_data');
         const addressDisplayInput = document.getElementById('id_place_address');
+        let savedPlaceDataValue = '';
+
+        // Сохраняем значение place_data до очистки контейнера карты
+        if (placeDataInput) {
+            savedPlaceDataValue = placeDataInput.value;
+        }
 
         function loadYandexMapsAPI() {
             if (window.ymaps && window.ymaps.ready) {
@@ -1480,6 +1486,17 @@ document.addEventListener('DOMContentLoaded', function() {
             window.eventMap.events.add('click', function(e) {
                 placePlacemark(e.get('coords'));
             });
+            
+            // Восстанавливаем скрытое поле place_data после очистки контейнера
+            if (savedPlaceDataValue !== '') {
+                var hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'id_place_data';
+                hiddenInput.name = 'place_data';
+                hiddenInput.value = savedPlaceDataValue;
+                mapContainer.appendChild(hiddenInput);
+                placeDataInput = hiddenInput;
+            }
         }
 
         function placePlacemark(coords) {
@@ -1490,16 +1507,123 @@ document.addEventListener('DOMContentLoaded', function() {
             }, { preset: 'islands#blueStretchyIcon' });
             window.eventMap.geoObjects.add(placemark);
             window.eventMap.setCenter(coords, 15);
-            ymaps.geocode(coords, { results: 1 }).then(function(res) {
+            
+            console.log('[Map] Click on coords:', coords);
+            
+            // Сначала пробуем геокодер с kind: 'house' для точного адреса
+            ymaps.geocode(coords, { results: 1, kind: 'house' }).then(function(res) {
                 var firstGeoObject = res.geoObjects.get(0);
-                var address = firstGeoObject ? firstGeoObject.getAddressLine() : coords.join(', ');
+                var address = '';
+                var placeData = {};
+                
+                if (firstGeoObject) {
+                    console.log('[Map] GeoObject props:', firstGeoObject.properties._prefixedValues);
+                    
+                    // Собираем адрес из компонентов
+                    var streetName = firstGeoObject.properties.get('Premise');
+                    var houseNumber = firstGeoObject.properties.get('HouseNumber');
+                    var district = firstGeoObject.properties.get('District');
+                    var locality = firstGeoObject.properties.get('Locality');
+                    var adminDistrict = firstGeoObject.properties.get('AdminDistrict');
+                    
+                    // Полный адрес из getAddressLine()
+                    var fullAddressLine = firstGeoObject.getAddressLine();
+                    console.log('[Map] fullAddressLine:', fullAddressLine);
+                    
+                    // Собираем адрес — используем Premise + HouseNumber если есть
+                    if (streetName && houseNumber) {
+                        address = streetName + ', ' + houseNumber;
+                    } else if (streetName) {
+                        address = streetName;
+                    } else {
+                        address = fullAddressLine;
+                    }
+                    
+                    // Город: сначала пытаемся получить из свойств, если нет — парсим из fullAddressLine
+                    var city = locality || adminDistrict;
+                    if (!city) {
+                        // Парсим город из fullAddressLine: "Новосибирск, улица Никитина, 15"
+                        var parts = fullAddressLine.split(',').map(function(p) { return p.trim(); });
+                        if (parts.length > 0) {
+                            city = parts[0]; // Первый элемент — обычно город
+                        }
+                    }
+                    
+                    // Заполняем placeData
+                    placeData.coordinates = coords;
+                    placeData.address = address;
+                    placeData.additional_info = additionalInfo;
+                    placeData.latitude = coords[0];
+                    placeData.longitude = coords[1];
+                    
+                    if (city) placeData.city = city;
+                    if (district) placeData.district = district;
+                    
+                    console.log('[Map] placeData before metro:', JSON.stringify(placeData));
+                    
+                    // Ищем ближайшие станции метро
+                    var bounds = firstGeoObject.properties.get('boundedBy');
+                    if (bounds) {
+                        ymaps.geocode(bounds, { results: 10, kind: 'metro' }).then(function(metroRes) {
+                            var metroObjects = metroRes.geoObjects;
+                            if (metroObjects.getLength() > 0) {
+                                var nearestMetro = metroObjects.get(0);
+                                var metro = nearestMetro.getAddressLine();
+                                placeData.metro = metro;
+                                console.log('[Map] Metro found:', metro);
+                            }
+                            console.log('[Map] Final place_data:', JSON.stringify(placeData));
+                            if (placeDataInput) {
+                                placeDataInput.value = JSON.stringify(placeData);
+                            }
+                        }).catch(function(err) {
+                            console.log('[Map] Metro search failed:', err);
+                            console.log('[Map] Final place_data (no metro):', JSON.stringify(placeData));
+                            if (placeDataInput) {
+                                placeDataInput.value = JSON.stringify(placeData);
+                            }
+                        });
+                    } else {
+                        console.log('[Map] Final place_data (no bounds):', JSON.stringify(placeData));
+                        if (placeDataInput) {
+                            placeDataInput.value = JSON.stringify(placeData);
+                        }
+                    }
+                } else {
+                    // Геокодер не вернул результат — используем координаты
+                    address = coords.join(', ');
+                    placeData.coordinates = coords;
+                    placeData.address = address;
+                    placeData.additional_info = additionalInfo;
+                    placeData.latitude = coords[0];
+                    placeData.longitude = coords[1];
+                    
+                    console.log('[Map] No geocode result, saved coords:', JSON.stringify(placeData));
+                    if (placeDataInput) {
+                        placeDataInput.value = JSON.stringify(placeData);
+                    }
+                }
+                
                 addressDisplayInput.value = address;
                 placemark.properties.set({
                     balloonContent: address + (additionalInfo ? '<br>Дополнительно: ' + additionalInfo : '')
                 });
-                placeDataInput.value = JSON.stringify({
-                    coordinates: coords, address: address, additional_info: additionalInfo
-                });
+                
+                console.log('[Map] Address set:', address);
+            }).catch(function(err) {
+                console.error('[Map] Geocode error:', err);
+                // При ошибке сохраняем хотя бы координаты
+                var fallbackData = {
+                    coordinates: coords,
+                    address: coords.join(', '),
+                    additional_info: additionalInfo,
+                    latitude: coords[0],
+                    longitude: coords[1]
+                };
+                addressDisplayInput.value = fallbackData.address;
+                if (placeDataInput) {
+                    placeDataInput.value = JSON.stringify(fallbackData);
+                }
             });
         }
 
@@ -1513,6 +1637,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     balloonContent: data.address + (data.additional_info ? '<br>Доп: ' + data.additional_info : '')
                 }, { preset: 'islands#blueStretchyIcon' });
                 window.eventMap.geoObjects.add(placemark);
+                
+                // Сохраняем place_data при загрузке существующих данных
+                if (placeDataInput) {
+                    placeDataInput.value = JSON.stringify({
+                        coordinates: coords,
+                        address: data.address || '',
+                        additional_info: data.additional_info || ''
+                    });
+                }
             }
         }
 

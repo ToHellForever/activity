@@ -13,6 +13,23 @@
 <script>
     window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
     window.IS_PARTNER = {% if request.user.is_authenticated and request.user.user_type == "partner" %}true{% else %}false{% endif %};
+    
+    // Debug: логирование данных карты для страницы деталей
+    (function() {
+        console.log('=== EVENT DETAIL MAP DEBUG ===');
+        console.log('event.latitude:', {{ event.latitude|default:'null'|safe }});
+        console.log('event.longitude:', {{ event.longitude|default:'null'|safe }});
+        console.log('event.address:', '{{ event.address|default:""|escapejs }}');
+        console.log('event.place_data:', {{ event.place_data|default:'{}'|safe }});
+        console.log('event.city:', '{{ event.city|default:""|escapejs }}');
+        console.log('event.metro:', '{{ event.metro|default:""|escapejs }}');
+        
+        var debugEl = document.getElementById('event-map-debug');
+        if (debugEl) {
+            console.log('Raw debug element text:', debugEl.textContent);
+        }
+        console.log('=============================');
+    })();
 </script>
 <script src="{% static 'js/pages/event_detail.js' %}"></script>
 <!-- Контейнер для toast-уведомлений -->
@@ -235,23 +252,45 @@
     </div>
 </div>
 
-{% if event.latitude and event.longitude %}
+{% if event.latitude and event.longitude or event.place_data %}
 <div class="map-section mt-2">
     <div class="sticky-top" style="top: 2rem;">
     <div class='row'>
     <div class='col-6'>
+            <!-- Debug: показываем данные для отладки -->
+            <div style="display:none;" id="event-map-debug">
+                {"latitude": "{{ event.latitude|default:'' }}", "longitude": "{{ event.longitude|default:'' }}", "address": "{{ event.address|default:'' }}", "place_data": {{ event.place_data|default:'{}'|safe }} }
+            </div>
             <!-- Статическая карта Яндекс -->
             <div class="map-fallback-wrapper" style="margin: 15px 0;">
+                {% if event.latitude and event.longitude %}
                 <img src="https://static-maps.yandex.ru/1.x/?ll={{ event.longitude|format_coordinate }},{{ event.latitude|format_coordinate }}&z=14&l=map&pt={{ event.longitude|format_coordinate }},{{ event.latitude|format_coordinate }},pm2rdm"
                         style="height: 250px; border-radius: 8px; width: 100%; object-fit: cover; display: block;"
                         alt="Карта"
                         referrerpolicy="no-referrer-when-downgrade"
                         loading="lazy"
                         onerror="this.style.display='none'; this.parentElement.querySelector('.map-fallback').style.display='flex';">
+                {% else %}
+                <!-- Fallback: пытаемся извлечь координаты из place_data -->
+                {% with place_data=event.place_data|default:'' %}
+                {% if place_data and place_data != '{}' %}
+                <img src="https://static-maps.yandex.ru/1.x/?ll={{ place_data.coordinates.1|default:'' }},{{ place_data.coordinates.0|default:'' }}&z=14&l=map&pt={{ place_data.coordinates.1|default:'' }},{{ place_data.coordinates.0|default:'' }},pm2rdm"
+                        style="height: 250px; border-radius: 8px; width: 100%; object-fit: cover; display: block;"
+                        alt="Карта"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.parentElement.querySelector('.map-fallback').style.display='flex';">
+                {% else %}
+                <div class="map-fallback" style="height:250px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                    <span>Адрес указан, карта недоступна</span>
+                </div>
+                {% endif %}
+                {% endwith %}
+                {% endif %}
                 <div class="map-fallback">
                     <div>
                         <div class="map-fallback-title">Карта временно недоступна</div>
-                        <div class="map-fallback-address">{{ event.address }}</div>
+                        <div class="map-fallback-address">{{ event.address|default:"Адрес не указан" }}</div>
                     </div>
                 </div>
             </div>
