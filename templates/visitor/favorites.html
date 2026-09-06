@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Избранное{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static '/css/pages/landing.css' %}">
+<div class="visitor-layout">
+    {% include 'visitor/visitor_sidebar.html' %}
+        <main class="visitor-content">
+        {% if events %}
+            <div class="row mt-3">
+                {% for event in events %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        {% if event.has_real_image %}
+                            <img src="{{ event.primary_image_url }}" class="card-img-top" alt="{{ event.title }}">
+                        {% elif event.images.all %}
+                            <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                        {% else %}
+                            <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.title }}</h5>
+                            <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+                            <a href="{% url 'event_detail' event.id %}" class="buy-button mt-2">Подробнее</a>
+                            <a href="#" class="remove-favorite btn-remove-fav" data-event-id="{{ event.id }}">Удалить из избранного</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state" style="text-align: center;">
+                <img src="/media/icon/favourites.png" alt="">
+                <p>У вас пока нет избранных мероприятий</p>
+                <p>Нажмите на сердечко на странице мероприятия, чтобы добавить его сюда</p>
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.remove-favorite').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var eventId = this.dataset.eventId;
+        fetch('{% url "visitor:toggle_favorite" 0 %}'.replace('0', eventId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        }).then(function(response) {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

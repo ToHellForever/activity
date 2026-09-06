@@ -544,4 +544,77 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('map-canvas')) {
         initMap();
     }
+    
+    // === ИЗБРАННОЕ ===
+    var favLink = document.querySelector('.favourites-link');
+    if (favLink) {
+        favLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            var eventId = this.dataset.eventId;
+            var url = this.href;
+            
+            // Проверяем, партнёр ли это
+            if (typeof window.IS_PARTNER !== 'undefined' && window.IS_PARTNER) {
+                showToast('Для партнёров эта функция недоступна', true);
+                return;
+            }
+            
+            // Проверяем, авторизован ли пользователь
+            // Если IS_PARTNER не определён или false — это может быть гость или visitor
+            // Пробуем сделать запрос — если 403/401/redirect, значит не авторизован
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken') || '{{ csrf_token }}',
+                }
+            })
+            .then(function(response) {
+                // Если ответ не JSON (статус 3xx или 4xx с HTML) — не авторизован
+                var contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json') || response.status >= 400) {
+                    // Не авторизован — гость
+                    showToast('Для добавления в избранное нужно войти в аккаунт. Перенаправляем...', true);
+                    setTimeout(function() {
+                        var loginUrl = (typeof window.LOGIN_URL !== 'undefined' && window.LOGIN_URL) ? window.LOGIN_URL : '/login/';
+                        window.location.href = loginUrl;
+                    }, 2000);
+                    return;
+                }
+                
+                return response.json().then(function(data) {
+                    if (data.status === 'added') {
+                        showToast('Добавлено в избранное', false);
+                        favLink.querySelector('img').src = '/media/icon/favourites_active.png';
+                    } else if (data.status === 'removed') {
+                        showToast('Удалено из избранного');
+                        favLink.querySelector('img').src = '/media/icon/favourites.png';
+                    } else {
+                        showToast(data.message || 'Ошибка', true);
+                    }
+                });
+            })
+            .catch(function(err) {
+                console.error('Favorite error:', err);
+                // Ошибка сети — значит не авторизован
+                showToast('Для добавления в избранное нужно войти в аккаунт. Перенаправляем...', true);
+                setTimeout(function() {
+                    var loginUrl = (typeof window.LOGIN_URL !== 'undefined' && window.LOGIN_URL) ? window.LOGIN_URL : '/login/';
+                    window.location.href = loginUrl;
+                }, 2000);
+            });
+        });
+    }
+    
+    // === КНОПКА ЗАДАТЬ ВОПРОС — для партнёров недоступна ===
+    var questionBtn = document.querySelector('.question-organizator');
+    if (questionBtn) {
+        questionBtn.addEventListener('click', function(e) {
+            if (window.IS_PARTNER) {
+                showToast('Задать вопрос организатору недоступно для партнёров.');
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
 });

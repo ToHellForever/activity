@@ -236,7 +236,8 @@
     <!-- Описание -->
     <div class="form-group">
         <label for="id_description">Описание</label>
-        <textarea id="id_description" name="description" rows="4" maxlength="1500" class="form-control" style='padding: 15px'>{{ form.instance.description }}</textarea>
+        <textarea id="id_description" name="description" rows="8" maxlength="3000" class="form-control" style='padding: 15px' placeholder="Вставьте текст с форматированием: **жирный**, *курив*, - списки, заголовки с :...">{{ form.instance.description }}</textarea>
+        <small class="form-text text-muted-small">Поддерживается: **жирный**, *курсив*, - маркированные списки, 1. нумерованные, заголовки с : (жирный текст:)</small>
         {% if form.description.errors %}{% for error in form.description.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
     </div>
     <!-- Фото мероприятия -->

@@ -13,8 +13,10 @@ from core.models import (
 )
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from visitor_app.models import Favorite
 import logging
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.clickjacking import xframe_options_exempt
 import json
 import base64
@@ -438,4 +440,57 @@ def ticket_qr(request, order_id):
     response = HttpResponse(buffer.getvalue(), content_type="image/png")
     response["Content-Disposition"] = f'inline; filename="qr_{order.id}.png"'
     return response
+
+
+@require_http_methods(["POST"])
+@login_required
+def toggle_favorite(request, event_id):
+    """Добавить/удалить мероприятие из избранного."""
+    user = request.user
+    
+    # Проверяем тип пользователя
+    if user.user_type == "partner":
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Для партнёров эта функция недоступна'
+        }, status=403)
+    
+    if user.user_type != "visitor":
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Необходимо войти в аккаунт'
+        }, status=403)
+    
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Проверяем, есть ли уже в избранном
+    favorite, created = Favorite.objects.get_or_create(user=user, event=event)
+    
+    if not created:
+        # Уже есть — удаляем
+        favorite.delete()
+        return JsonResponse({
+            'status': 'removed',
+            'message': 'Удалено из избранного'
+        })
+    
+    return JsonResponse({
+        'status': 'added',
+        'message': 'Добавлено в избранное'
+    })
+
+
+@login_required
+def favorites(request):
+    """Страница избранных мероприятий."""
+    if request.user.user_type != "visitor":
+        return redirect('visitor:dashboard')
+    
+    favorites = Favorite.objects.filter(user=request.user).select_related('event').order_by('-created_at')
+    events = [f.event for f in favorites]
+    
+    return render(request, 'visitor/favorites.html', {
+        'favorites': favorites,
+        'events': events,
+    })
 

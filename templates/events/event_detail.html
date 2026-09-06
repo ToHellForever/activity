@@ -3,6 +3,9 @@
 {% load format_filters %}
 
 {% block content %}
+<script>
+window.LOGIN_URL = "{% url 'login' %}";
+</script>
 <link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
 <link rel="stylesheet" href="{% static '/css/carousel.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
@@ -221,7 +224,7 @@
                 <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
                 <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
-                <a href="#"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
+                <a href="{% url 'visitor:toggle_favorite' event.id %}" class="favourites-link" data-event-id="{{ event.id }}"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
             </div>
         </div>
     </div>
@@ -231,13 +234,13 @@
 </div>
     </div>
     <div class='row mt-5'>
-        <div class='col-6'>
+        <div class='col-12 col-md-6'>
             <h2 class='event_detail-h mb-3'>О МЕРОПРИЯТИИ</h2>
             <div class="event-description">
-                {{ event.description|linebreaks }}
+                {{ event.description|auto_format }}
             </div>
         </div>
-        <div class='col-6'>
+        <div class='col-12 col-md-6'>
             {% if event.program_file %}
             <div class="program-section">
                 <h2 class='event_detail-h mb-3'>ПРОГРАММА</h2>
@@ -256,7 +259,7 @@
 <div class="map-section mt-2">
     <div class="sticky-top" style="top: 2rem;">
     <div class='row'>
-    <div class='col-6'>
+    <div class='col-12 col-md-6'>
             <!-- Debug: показываем данные для отладки -->
             <div style="display:none;" id="event-map-debug">
                 {"latitude": "{{ event.latitude|default:'' }}", "longitude": "{{ event.longitude|default:'' }}", "address": "{{ event.address|default:'' }}", "place_data": {{ event.place_data|default:'{}'|safe }} }
@@ -295,7 +298,7 @@
                 </div>
             </div>
     </div>
-        <div class='col-6 mt-1'>
+        <div class='col-12 col-md-6 mt-1'>
             <h2 class='event_detail-h mt-2'>Адрес</h2>
             <p class='adress-detail-p mt-2'> {{ event.address }}</p>
             {% if  event.additional_adress %}
@@ -429,3 +432,5 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block extra_js %}{% endblock %}

@@ -11,6 +11,10 @@
        class="mobile-nav-item {% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
         История заказов
     </a>
+    <a href="{% url 'visitor:favorites' %}"
+       class="mobile-nav-item {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}">
+        Избранное
+    </a>
     <a href="{% url 'visitor:chats_list' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
         Чаты
@@ -50,6 +54,10 @@
         <a href="{% url 'visitor:order_history' %}"
            class="{% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
             <img src="/media/icon/material-symbols_history-rounded.svg" alt="" class="sidebar-icon"> История заказов
+        </a>
+        <a href="{% url 'visitor:favorites' %}"
+           class="{% if request.resolver_match.url_name == 'favorites' %}active{% endif %}">
+            <img src="/media/icon/favourites.png" alt="" class="sidebar-icon"> Избранное
         </a>
         <a href="{% url 'visitor:chats_list' %}"
            class="{% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">

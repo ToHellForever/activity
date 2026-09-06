@@ -16,4 +16,6 @@ urlpatterns = [
     path("ticket/<int:order_id>/display/", views.display_ticket, name="display_ticket"),
     path("ticket/<int:order_id>/qr/", views.ticket_qr, name="ticket_qr"),
     path("save_field/", views.save_field, name="save_field"),
+    path("toggle-favorite/<int:event_id>/", views.toggle_favorite, name="toggle_favorite"),
+    path("favorites/", views.favorites, name="favorites"),
 ]

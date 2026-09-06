@@ -3,6 +3,7 @@
 """
 Темплейт теги для форматирования чисел и цен
 """
+import re
 from django import template
 
 register = template.Library()
@@ -165,3 +166,127 @@ def dict_get(dictionary, key):
         return dictionary.get(key, 0)
     except (AttributeError, TypeError):
         return 0
+
+
+@register.filter(name='auto_format')
+def auto_format(text):
+    """
+    Автоматически форматирует обычный текст в HTML:
+    - Если есть **жирный**, - списки, заголовки с : → применяем продвинутое форматирование
+    - Иначе → просто оборачиваем в <p> с переносами строк
+    """
+    if not text:
+        return ''
+    
+    from django.utils.html import escape as html_escape
+    from django.utils.safestring import mark_safe
+    from django.template.defaultfilters import linebreaks
+    
+    text = html_escape(text)
+    
+    # Проверяем, есть ли продвинутое форматирование
+    has_advanced = ('**' in text or '__' in text or 
+                    re.search(r'^[-*]\s+', text, re.MULTILINE) or
+                    re.search(r'^\d+\.\s+', text, re.MULTILINE))
+    
+    if has_advanced:
+        return _advanced_format(text, mark_safe, re, apply_inline_formatting)
+    
+    # Простой текст — оборачиваем в абзацы
+    return mark_safe(linebreaks(text))
+
+
+def _advanced_format(text, mark_safe, re, apply_inline_formatting):
+    """Продвинутое форматирование: заголовки, списки, жирный/курсив."""
+    lines = text.split('\n')
+    result = []
+    in_list = None
+    in_paragraph = False
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        # Пустая строка — закрываем текущий блок
+        if not stripped:
+            if in_list:
+                result.append(f'</{in_list}>')
+                in_list = None
+            if in_paragraph:
+                result.append('</p>')
+                in_paragraph = False
+            continue
+        
+        # Разделитель
+        if re.match(r'^[-*_]{3,}$', stripped):
+            if in_list:
+                result.append(f'</{in_list}>')
+                in_list = None
+            if in_paragraph:
+                result.append('</p>')
+                in_paragraph = False
+            result.append('<hr>')
+            continue
+        
+        # Заголовок: жирный текст + двоеточие
+        if re.match(r'^\*\*[^*]+\*\*:$', stripped) or re.match(r'^__[^_]+__:$', stripped):
+            if in_list:
+                result.append(f'</{in_list}>')
+                in_list = None
+            if in_paragraph:
+                result.append('</p>')
+                in_paragraph = False
+            heading = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', stripped)
+            heading = re.sub(r'__([^_]+)__', r'<b>\1</b>', heading)
+            result.append(f'<h3>{heading}</h3>')
+            continue
+        
+        # Маркированный список
+        bullet_match = re.match(r'^[-*]\s+(.+)$', stripped)
+        if bullet_match:
+            if in_list is None:
+                result.append('<ul>')
+                in_list = 'ul'
+            item = apply_inline_formatting(bullet_match.group(1))
+            result.append(f'<li>{item}</li>')
+            continue
+        
+        # Нумерованный список
+        numbered_match = re.match(r'^\d+\.\s+(.+)$', stripped)
+        if numbered_match:
+            if in_list is None:
+                result.append('<ol>')
+                in_list = 'ol'
+            item = apply_inline_formatting(numbered_match.group(1))
+            result.append(f'<li>{item}</li>')
+            continue
+        
+        # Закрываем список если был
+        if in_list:
+            result.append(f'</{in_list}>')
+            in_list = None
+        
+        # Обычная строка — абзац
+        if not in_paragraph:
+            result.append('<p>')
+            in_paragraph = True
+        else:
+            result.append('<br>')
+        result.append(apply_inline_formatting(stripped))
+    
+    if in_list:
+        result.append(f'</{in_list}>')
+    if in_paragraph:
+        result.append('</p>')
+    
+    return mark_safe(''.join(result))
+
+
+def apply_inline_formatting(text):
+    """Применяет форматирование внутри строки: жирный, курсив, ссылки."""
+    # Жирный: **текст** или __текст__
+    text = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', text)
+    text = re.sub(r'__([^_]+)__', r'<b>\1</b>', text)
+    # Курсив: *текст* или _текст_
+    text = re.sub(r'\*([^*]+)\*', r'<i>\1</i>', text)
+    text = re.sub(r'(?<!\w)_([^_]+)_(?!\w)', r'<i>\1</i>', text)
+    return text
