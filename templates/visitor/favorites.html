@@ -9,44 +9,48 @@
 <link rel="stylesheet" href="{% static 'css/pages/visitor/favorites.css' %}">
 <div class="visitor-layout">
     {% include 'visitor/visitor_sidebar.html' %}
-        <main class="visitor-content">
+    
+    <!-- Блок пустого состояния вынесен сюда -->
+    {% if not events %}
+        <div class="empty-state visitor-empty-state">
+            <img src="/media/icon/favourites.png" alt="">
+            <p class="empty-hint">У вас пока нет избранных мероприятий<br>Нажмите на кнопку избранное на странице мероприятия, чтобы добавить его сюда</p>
+        </div>
+    {% endif %}
+
+    <main class="visitor-content">
         {% if events %}
             <div class="row mt-3">
                 {% for event in events %}
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        {% if event.has_real_image %}
-                            <img src="{{ event.primary_image_url }}" class="card-img-top" alt="{{ event.title }}">
-                        {% elif event.images.all %}
-                            <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
-                        {% else %}
-                            <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
-                        {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ event.title }}</h5>
-                        {% if event.organizer.is_verified %}
-                        <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
-                        {% endif %}
-                        <div class="card-spacer"></div>
-                        <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
-                        <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ event.category.name }}</span></p>
-                        <p class="card-label">
-                            Формат:
-                            <span class="badge">{{ event.format.name }}</span>
-                        </p>
-                        <div class="btn-row">
-                            <a href="{% url 'event_detail' event.id %}" class="buy-button mt-2 btn-details">Подробнее</a>
-                            <a href="#" class="btn-remove-fav remove-favorite" data-event-id="{{ event.id }}">Удалить</a>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            {% if event.has_real_image %}
+                                <img src="{{ event.primary_image_url }}" class="card-img-top" alt="{{ event.title }}">
+                            {% elif event.images.all %}
+                                <img src="{{ event.images.all.0.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                            {% else %}
+                                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.title }}</h5>
+                                {% if event.organizer.is_verified %}
+                                    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                                {% endif %}
+                                <div class="card-spacer"></div>
+                                <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+                                <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ event.category.name }}</span></p>
+                                <p class="card-label">
+                                    Формат:
+                                    <span class="badge">{{ event.format.name }}</span>
+                                </p>
+                                <div class="btn-row">
+                                    <a href="{% url 'event_detail' event.id %}" class="buy-button mt-2 btn-details">Подробнее</a>
+                                    <a href="#" class="btn-remove-fav remove-favorite" data-event-id="{{ event.id }}">Удалить</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    </div>
-                </div>
                 {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <img src="/media/icon/favourites.png" alt="">
-                <p class="empty-hint">У вас пока нет избранных мероприятий <br>Нажмите на кнопку избранное на странице мероприятия, чтобы добавить его сюда</p>
             </div>
         {% endif %}
     </main>
