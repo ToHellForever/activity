@@ -1,0 +1,51 @@
+.btn-remove-fav {
+  border: none;
+  background-color: #f0542d;
+  color: white;
+  border-radius: 20px;
+  text-align: center;
+  padding: 10px 15px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  margin-top: 7px;
+  text-decoration: none;
+}
+.empty-state img {
+  width: 3em;
+  opacity: 0.5;
+  margin-bottom: 10px;
+}
+.empty-hint {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+}
+/* === Кнопки в строку === */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-row .btn-details,
+.btn-row .btn-remove {
+  flex: 1;
+  text-align: center;
+  display: inline-block;
+}
+
+.empty-state {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column !important;
+    margin: 0 auto !important;
+  text-align: center;
+}
+
+/* === Мобилка — в колонку === */
+@media (max-width: 767px) {
+  .btn-row {
+    flex-direction: column;
+    gap: 0px;
+  }
+}

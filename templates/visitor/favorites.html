@@ -5,6 +5,8 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static '/css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/visitor/favorites.css' %}">
 <div class="visitor-layout">
     {% include 'visitor/visitor_sidebar.html' %}
         <main class="visitor-content">
@@ -20,26 +22,35 @@
                         {% else %}
                             <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
                         {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ event.title }}</h5>
-                            <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
-                            <a href="{% url 'event_detail' event.id %}" class="buy-button mt-2">Подробнее</a>
-                            <a href="#" class="remove-favorite btn-remove-fav" data-event-id="{{ event.id }}">Удалить из избранного</a>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        {% if event.organizer.is_verified %}
+                        <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
+                        {% endif %}
+                        <div class="card-spacer"></div>
+                        <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ event.date_time|date:"d F Y" }}</span></p>
+                        <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ event.category.name }}</span></p>
+                        <p class="card-label">
+                            Формат:
+                            <span class="badge">{{ event.format.name }}</span>
+                        </p>
+                        <div class="btn-row">
+                            <a href="{% url 'event_detail' event.id %}" class="buy-button mt-2 btn-details">Подробнее</a>
+                            <a href="#" class="btn-remove-fav remove-favorite" data-event-id="{{ event.id }}">Удалить</a>
                         </div>
+                    </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="empty-state" style="text-align: center;">
+            <div class="empty-state">
                 <img src="/media/icon/favourites.png" alt="">
-                <p>У вас пока нет избранных мероприятий</p>
-                <p>Нажмите на сердечко на странице мероприятия, чтобы добавить его сюда</p>
+                <p class="empty-hint">У вас пока нет избранных мероприятий <br>Нажмите на кнопку избранное на странице мероприятия, чтобы добавить его сюда</p>
             </div>
         {% endif %}
     </main>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -55,9 +66,10 @@ document.querySelectorAll('.remove-favorite').forEach(function(link) {
             }
         }).then(function(response) {
             if (response.ok) {
-                location.reload();
+                var card = this.closest('.col-md-4');
+                if (card) card.remove();
             }
-        });
+        }.bind(this));
     });
 });
 </script>
