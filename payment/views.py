@@ -80,7 +80,7 @@ def send_reservation_email(order, request):
     }
 
     # Рендеринг HTML-шаблона письма
-    email_html = render_to_string("emails/order_confirmation.html", context)
+    email_html = render_to_string("emails/reservation_payment.html", context)
 
     # Отправка письма
     send_mail(

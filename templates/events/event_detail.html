@@ -3,37 +3,15 @@
 {% load format_filters %}
 
 {% block content %}
-<script>
-window.LOGIN_URL = "{% url 'login' %}";
-</script>
 <link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
 <link rel="stylesheet" href="{% static '/css/carousel.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% include "includes/modal_buy_ticket.html" %}
+{% if event.allow_platform_requests %}
 {% include "includes/modal_question.html" %}
+{% endif %}
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
-<script>
-    window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
-    window.IS_PARTNER = {% if request.user.is_authenticated and request.user.user_type == "partner" %}true{% else %}false{% endif %};
-    
-    // Debug: логирование данных карты для страницы деталей
-    (function() {
-        console.log('=== EVENT DETAIL MAP DEBUG ===');
-        console.log('event.latitude:', {{ event.latitude|default:'null'|safe }});
-        console.log('event.longitude:', {{ event.longitude|default:'null'|safe }});
-        console.log('event.address:', '{{ event.address|default:""|escapejs }}');
-        console.log('event.place_data:', {{ event.place_data|default:'{}'|safe }});
-        console.log('event.city:', '{{ event.city|default:""|escapejs }}');
-        console.log('event.metro:', '{{ event.metro|default:""|escapejs }}');
-        
-        var debugEl = document.getElementById('event-map-debug');
-        if (debugEl) {
-            console.log('Raw debug element text:', debugEl.textContent);
-        }
-        console.log('=============================');
-    })();
-</script>
 <script src="{% static 'js/pages/event_detail.js' %}"></script>
 <!-- Контейнер для toast-уведомлений -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100" id="toastContainer"></div>
@@ -221,7 +199,9 @@ window.LOGIN_URL = "{% url 'login' %}";
                 {% endfor %}
         </div>
             <div class="mt-2 d-flex flex-column">
+                {% if event.allow_platform_requests %}
                 <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+                {% endif %}
                 <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
                 <a href="{% url 'visitor:toggle_favorite' event.id %}" class="favourites-link" data-event-id="{{ event.id }}"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
@@ -433,4 +413,30 @@ window.LOGIN_URL = "{% url 'login' %}";
 {% endif %}
 {% endblock %}
 
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
+<script>
+    window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
+    window.IS_PARTNER = {% if request.user.is_authenticated and request.user.user_type == "partner" %}true{% else %}false{% endif %};
+    
+    // Debug: логирование данных карты для страницы деталей
+    (function() {
+        console.log('=== EVENT DETAIL MAP DEBUG ===');
+        console.log('event.latitude:', {{ event.latitude|default:'null'|safe }});
+        console.log('event.longitude:', {{ event.longitude|default:'null'|safe }});
+        console.log('event.address:', '{{ event.address|default:""|escapejs }}');
+        console.log('event.place_data:', {{ event.place_data|default:'{}'|safe }});
+        console.log('event.city:', '{{ event.city|default:""|escapejs }}');
+        console.log('event.metro:', '{{ event.metro|default:""|escapejs }}');
+        
+        var debugEl = document.getElementById('event-map-debug');
+        if (debugEl) {
+            console.log('Raw debug element text:', debugEl.textContent);
+        }
+        console.log('=============================');
+    })();
+</script>
+<script>
+window.LOGIN_URL = "{% url 'login' %}";
+</script>
+{% endblock %}
