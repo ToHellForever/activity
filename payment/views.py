@@ -76,7 +76,7 @@ def send_reservation_email(order, request):
         "order": order,
         "ticket": order.ticket,
         "participant_data": order.participant_data,
-        "payment_url": request.build_absolute_uri(f"/payment/pay_reserved/{order.id}/"),
+        "payment_url": request.build_absolute_uri(f"/payment/pay-reserved/{order.id}/"),
     }
 
     # Рендеринг HTML-шаблона письма
@@ -85,7 +85,7 @@ def send_reservation_email(order, request):
     # Отправка письма
     send_mail(
         subject=f"Бронирование билета #{order.id}",
-        message=f"Ваш билет #{order.id} забронирован. Для оплаты перейдите по ссылке: {request.build_absolute_uri(f'/payment/pay_reserved/{order.id}/')}",
+        message=f"Ваш билет #{order.id} забронирован. Для оплаты перейдите по ссылке: {request.build_absolute_uri(f'/payment/pay-reserved/{order.id}/')}",
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[participant_email],
         html_message=email_html,

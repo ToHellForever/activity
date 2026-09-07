@@ -1,14 +1,4 @@
 /* Личный кабинет посетителя — разметка как на макете */
-.badge-warning {
-  background: gray;
-  color:#ffffff;
-  font-weight: 500;
-  font-size : clamp(0.7rem, 1vw, 0.8rem);
-  font-family: 'Montserrat', sans-serif;
-  text-align: center;
-  border-radius: 20px;
-padding: 10px 10px 10px 10px;
-}
 .visitor-layout {
   display: flex;
   align-items: flex-start;
