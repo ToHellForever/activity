@@ -74,6 +74,15 @@
                                placeholder="example@mail.ru">
                     {% endif %}
                 </div>
+
+                <!-- Бронирование без оплаты -->
+                {% if event.allow_booking_without_payment %}
+                <div class="form-check mt-3 mb-3" id="reserveWithoutPaymentGroup">
+                    <input type="checkbox" class="form-check-input" id="reserve_without_payment" name="reserve_without_payment">
+                    <label class="form-check-label" for="reserve_without_payment">Забронировать без оплаты</label>
+                </div>
+                {% endif %}
+
                             <div class="modal-footer">
                 <button type="button" class="buy-button-modal" id="confirmPurchaseBtn" disabled>
                     ОПЛАТИТЬ

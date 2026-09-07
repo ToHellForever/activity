@@ -415,6 +415,12 @@ document.addEventListener('DOMContentLoaded', function() {
             email: email
         };
         
+        // Добавляем бронирование без оплаты (если чекбокс установлен)
+        const reserveCheckbox = document.getElementById('reserve_without_payment');
+        if (reserveCheckbox && reserveCheckbox.checked) {
+            payload.reserve_without_payment = true;
+        }
+        
         // Добавляем UTM-метки в payload
         const utmParams = getUtmParams();
         if (Object.keys(utmParams).length > 0) {
@@ -429,7 +435,8 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(payload)
         })
@@ -472,6 +479,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.message) {
                     document.getElementById('purchaseStatusDetail').textContent = data.message;
                     addLog(data.message, 'success');
+                    
+                    // Если это бронирование без оплаты — показываем сообщение об успехе
+                    if (data.message.includes('забронированы') || data.message.includes('Бронирование')) {
+                        setTimeout(function() {
+                            document.getElementById('purchaseLog').innerHTML += 
+                                '<div style="padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-top: 10px;">' +
+                                'Бронь создана! Письмо с ссылкой для оплаты отправлено на ' + email + '.' +
+                                '</div>';
+                        }, 500);
+                    }
                 }
             } else {
                 throw new Error(data.error || 'Неизвестная ошибка');

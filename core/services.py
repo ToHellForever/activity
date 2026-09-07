@@ -147,6 +147,11 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
     """
     from core.models import Ticket, Order, Event
     
+    if not tickets_data:
+        raise TicketReservationError("Нет билетов для бронирования")
+    
+    # Извлекаем список ID билетов для блокировок
+    ticket_ids = [item['id'] for item in tickets_data if item.get('quantity', 0) > 0]
     if not ticket_ids:
         raise TicketReservationError("Нет билетов для бронирования")
     

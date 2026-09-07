@@ -434,11 +434,15 @@ def bulk_buy_tickets(request, event_id):
         # Получаем UTM-метки из JSON (если пришли с фронтенда)
         utm_from_json = data.get('utm_params', {})
         
+        # Проверяем бронирование без оплаты
+        reserve_without_payment = data.get('reserve_without_payment', False)
+        
         logger.info('[bulk_buy] Данные получены', extra={
             'tickets_count': len(tickets_data),
             'total_price': total_price,
             'buyer_name': buyer_name,
-            'email': email
+            'email': email,
+            'reserve_without_payment': reserve_without_payment
         })
         
         # === ПРОВЕРКА ЛИМИТА БЕЗ СОЗДАНИЯ ЗАКАЗА ===
@@ -591,17 +595,31 @@ def bulk_buy_tickets(request, event_id):
         # === БРОНИРОВАНИЕ ПЛАТНЫХ БИЛЕТОВ ===
         paid_orders = []
         if paid_ticket_items:
+            # Определяем статус платежа
+            if reserve_without_payment:
+                payment_status = 'reserved'
+                purchase_type = 'paid_ticket'
+                is_paid = False
+                payment_deadline = timezone.now() + timedelta(hours=24)
+            else:
+                payment_status = 'pending'
+                purchase_type = 'paid_ticket'
+                is_paid = False
+                payment_deadline = None
+            
             try:
                 paid_orders = bulk_reserve_tickets(
                     event_id=event_id,
                     tickets_data=paid_ticket_items,
                     participant_data=participant_data,
-                    payment_status='pending',
-                    purchase_type='paid_ticket',
+                    payment_status=payment_status,
+                    purchase_type=purchase_type,
+                    is_paid=is_paid,
+                    payment_deadline=payment_deadline,
                     **utm_params,  # <-- передаём UTM-метки
                 )
                 orders.extend(paid_orders)
-                logger.info('[bulk_buy] Платные билеты забронированы', extra={'count': len(paid_orders)})
+                logger.info('[bulk_buy] Платные билеты забронированы', extra={'count': len(paid_orders), 'reserve_without_payment': reserve_without_payment})
             except TicketReservationError as e:
                 # Откатываем бесплатные билеты: удаляем заказы и возвращаем квоту
                 for fo in free_orders:
@@ -634,6 +652,33 @@ def bulk_buy_tickets(request, event_id):
                 'success': True,
                 'message': 'Билеты успешно оформлены! Проверьте вашу почту.',
                 'orders': [o.id for o in free_orders],
+                'free_tickets_count': total_free if free_orders else 0
+            })
+        
+        # === БРОНИРОВАНИЕ БЕЗ ОПЛАТЫ ===
+        if reserve_without_payment:
+            # Не создаём платёж в ЮКассе — просто отправляем письмо с бронью
+            for order in paid_orders:
+                try:
+                    send_reservation_email(order, request)
+                    logger.info('[bulk_buy] Письмо с бронью отправлено', extra={'order_id': order.id, 'email': email})
+                except Exception as e:
+                    logger.error('[bulk_buy] Ошибка отправки письма с бронью', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
+            
+            # Обработка бесплатных билетов (отправка писем)
+            if free_orders:
+                for order in free_orders:
+                    try:
+                        send_order_confirmation_email(order, request)
+                        logger.info('[bulk_buy] Письмо отправлено (бесплатные)', extra={'order_id': order.id, 'email': email})
+                    except Exception as e:
+                        logger.error('[bulk_buy] Ошибка отправки письма (бесплатные)', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Билеты успешно забронированы! Проверьте вашу почту для оплаты.',
+                'order_ids': [o.id for o in orders],
+                'order_id': paid_orders[0].id if paid_orders else (free_orders[0].id if free_orders else None),
                 'free_tickets_count': total_free if free_orders else 0
             })
         
@@ -1251,7 +1296,7 @@ def payment_success(request, order_id):
                 'error': str(e)
             }, exc_info=True)
 
-    return render(request, "/payment/payment_success.html", {"order": order})
+    return render(request, "payment/payment_success.html", {"order": order})
 
 def pay_reserved_order(request, order_id):
     """
