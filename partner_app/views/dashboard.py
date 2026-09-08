@@ -86,6 +86,15 @@ def partner_dashboard(request):
     if request.method == 'POST':
         profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
 
+        # Проверяем, идёт ли обработка видео-визитки — блокируем изменение
+        if partner_profile.video_business_card and partner_profile.is_video_processing():
+            messages.warning(
+                request,
+                "Подождите завершения обработки видео-визитки. "
+                "Загрузить новое или удалить текущее можно только после завершения.",
+            )
+            return redirect("partner:dashboard")
+
         # Обработка удаления видео-визитки
         if 'delete_video' in request.POST:
             if partner_profile.video_business_card:

@@ -474,6 +474,17 @@
   background: #fff3f3;
 }
 
+.video-action-btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.video-action-btn-disabled:hover {
+  background: transparent;
+  color: #999;
+}
+
 .video-player-wrapper {
   width: 100%;
   background: #e0e0e0;

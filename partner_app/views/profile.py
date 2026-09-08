@@ -71,6 +71,15 @@ def profile_edit(request):
     )
 
     if request.method == "POST":
+        # Проверяем, идёт ли обработка видео-визитки — блокируем изменение
+        if profile.video_business_card and profile.is_video_processing():
+            messages.warning(
+                request,
+                "Подождите завершения обработки видео-визитки. "
+                "Загрузить новое или удалить текущее можно только после завершения.",
+            )
+            return redirect("partner:dashboard")
+
         # Обработка кнопки "Отправить на пересмотр"
         if "resubmit" in request.POST:
             request.user.organizer_status = "pending"
@@ -231,6 +240,14 @@ def save_field(request):
 
     # Обработка загрузки видео
     if request.GET.get("action") == "upload_video":
+        profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+
+        if profile.video_business_card and profile.is_video_processing():
+            return JsonResponse({
+                "status": "error",
+                "message": "Подождите завершения обработки видео-визитки. Загрузить новое можно только после завершения.",
+            }, status=400)
+
         video_file = request.FILES.get("video_business_card")
         if video_file:
             # Проверяем длительность перед сохранением
@@ -240,7 +257,6 @@ def save_field(request):
                     {"status": "error", "message": duration_error}, status=400
                 )
 
-            profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
             if profile.video_business_card:
                 profile.delete_file_field("video_business_card")
             profile.video_business_card = video_file

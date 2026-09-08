@@ -218,6 +218,13 @@ class PartnerProfile(models.Model):
     def __str__(self):
         return f"Профиль партнёра: {self.user.email}"
 
+    def is_video_processing(self):
+        """
+        Возвращает True, если видео-визитка находится в процессе обработки.
+        Используется для блокировки удаления/замены во время обработки.
+        """
+        return self.video_business_card_processing_status in ('processing', 'pending')
+
     def _get_video_hash(self, video_field):
         """
         Возвращает MD5-хэш видео.
