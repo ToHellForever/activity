@@ -91,6 +91,21 @@ class VenueImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
         verbose_name="Фото площадки"
     )
 
+    # Статус обработки изображения (водяной знак и т.д.)
+    # Поле существует в БД, но отсутствовало в модели
+    image_processing_status = models.CharField(
+        max_length=50,
+        default="pending",
+        verbose_name="Статус обработки изображения",
+    )
+
+    processed_image_hash = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Хэш обработанного изображения",
+    )
+
     def __str__(self):
         return f"Фото для площадки: {self.venue.title}"
 

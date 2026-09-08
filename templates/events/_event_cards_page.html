@@ -1,0 +1,4 @@
+{% comment %}Страница карточек мероприятий (для пагинации "Показать ещё"){% endcomment %}
+{% for ev in events_page %}
+    {% include 'events/_event_card.html' %}
+{% endfor %}

@@ -172,39 +172,66 @@
 </div>
 
 <div class='landing-block mt-5'>
-<div class="row row-cards-list">
     {% if has_venues %}
-    {% for venue in venues %}
-    <div class="col-6 col-md-6 col-lg-4 col-xl-3 venue-list-col mb-4">
-        <div class="card venue-card-wrapper">
-            {% if venue.badge_text %}
-            <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
-            {% endif %}
-            {% if venue.images.all %}
-            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
-            {% endif %}
-<div class="card-body">
-    <h5 class="card-title">{{ venue.title }}</h5>
-    <p class="card-label-venue"><img src="/media/icon/geo-gray.png" alt="" class="icon-calendar"><span class="venue-adress">{{ venue.address }}</span></p>
-    <p class="card-label-venue" style='margin-top: -10px !important;'><img src="/media/icon/S.png" alt="" class="icon-calendar"><span>{{ venue.area|floatformat }} м²</span></p>
-    <p class="card-label-venue">до {{ venue.max_capacity }} человек</p>
-    <p class="card-price-venue">
-        {% if venue.price_unit == 'hour' %}
-        {{ venue.price|format_price }}.- час
-        {% elif venue.price_unit == 'day' %}
-        {{ venue.price|format_price }}.- день
-        {% else %}
-        Договорная
-        {% endif %}</p>
-<a href="{% url 'venues:venue_detail' venue.slug %}" class="buy-button">ЗАБРОНИРОВАТЬ</a>
-            </div>
-        </div>
+    <div class="row row-cards-list" id="venuesCardsContainer">
+    {% include 'venues/_venue_cards_page.html' %}
     </div>
-    {% endfor %}
+    {% if page_obj.has_next %}
+    <div class="text-center mt-3" id="showMoreVenuesWrapper">
+        <button type="button" class="button-others" id="showMoreVenuesBtn" data-next-page="{{ page_obj.next_page_number }}">
+            Показать ещё
+        </button>
+    </div>
+    {% endif %}
     {% elif filters_applied %}
     {% include 'includes/not_found_placeholder.html' %}
     {% else %}
     {% include 'includes/empty_venues_placeholder.html' %}
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Кнопка "Показать ещё" — AJAX-подгрузка следующих карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('showMoreVenuesBtn');
+    if (!btn) return;
+
+    const container = document.getElementById('venuesCardsContainer');
+    const wrapper = document.getElementById('showMoreVenuesWrapper');
+    const currentUrl = new URL(window.location.href);
+    let loading = false;
+
+    btn.addEventListener('click', function() {
+        if (loading) return;
+        loading = true;
+        btn.textContent = 'Загрузка...';
+
+        const nextPage = btn.dataset.nextPage;
+        currentUrl.searchParams.set('page', nextPage);
+        currentUrl.searchParams.set('ajax', '1');
+
+        fetch(currentUrl.toString(), {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            container.insertAdjacentHTML('beforeend', data.html);
+            if (data.next_page) {
+                btn.dataset.nextPage = data.next_page;
+                btn.textContent = 'Показать ещё';
+            } else {
+                wrapper.remove();
+            }
+        })
+        .catch(() => {
+            btn.textContent = 'Ошибка, попробуйте ещё раз';
+        })
+        .finally(() => {
+            loading = false;
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -147,6 +147,28 @@ class VenueListView(ListView):
     context_object_name = "venues"
     paginate_by = 12  # Выводим 12 карточек за раз
 
+    def get(self, request, *args, **kwargs):
+        # AJAX-подгрузка следующей страницы ("Показать ещё")
+        if request.GET.get("ajax") == "1":
+            from django.core.paginator import Paginator
+            from django.template.loader import render_to_string
+
+            paginator = Paginator(self.get_queryset(), self.paginate_by)
+            try:
+                page = paginator.get_page(request.GET.get("page", 1))
+            except Exception:
+                page = paginator.get_page(1)
+
+            html = render_to_string(
+                "venues/_venue_cards_page.html",
+                {"venues_page": page},
+                request=request,
+            )
+            next_page = page.next_page_number() if page.has_next() else None
+            return JsonResponse({"html": html, "next_page": next_page})
+
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         from .models import VenueType
         
@@ -154,12 +176,15 @@ class VenueListView(ListView):
 
         # ВРЕМЕННЫЙ ПЕРЕКЛЮЧАТЕЛЬ: скрывает все площадки для проверки плейсхолдеров.
         # Вернуть обратно: поставить False.
-        TEMP_HIDE_VENUES = True
+        TEMP_HIDE_VENUES = False
         if TEMP_HIDE_VENUES:
             context['venues'] = self.model.objects.none()
 
         # Флаг для проверки наличия площадок
         context['has_venues'] = self.get_queryset().exists() and not TEMP_HIDE_VENUES
+
+        # Объект текущей страницы для шаблона (совпадает с именем в AJAX-партиале)
+        context['venues_page'] = context['page_obj']
 
         # Определяем, применены ли какие-либо фильтры
         context['filters_applied'] = bool(

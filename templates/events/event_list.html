@@ -157,35 +157,16 @@
 
 <div class='landing-block mt-3'>
     {% if has_events %}
-    <div class="row row-cards-list">
-        {% for ev in active_events %}
-        <div class="col-12 event-list-col mb-4">
-            <div class="card">
-                {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
-                {% else %}
-                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ ev.title }}</h5>
-                    {% if ev.organizer.is_verified %}
-                    <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
-                    {% endif %}
-                    <div class="card-spacer"></div>
-                    <p><img src="/media/icon/calendar.svg" alt="" class="icon-calendar"><span class="card-date">{{ ev.date_time|date:"d F Y" }}</span></p>
-                    <p class="card-label" style='margin-top: -10px !important;'>Категория: <span class="badge">{{ ev.category.name }}</span></p>
-                    {% if ev.tags.all %}
-                    <p class="card-label">
-                        Формат:
-                        <span class="badge">{{ ev.format.name }}</span>
-                    </p>
-                    {% endif %}
-                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-3">КУПИТЬ БИЛЕТ</a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="row row-cards-list" id="eventsCardsContainer">
+        {% include 'events/_event_cards_page.html' %}
     </div>
+    {% if events_page.has_next %}
+    <div class="text-center mt-3" id="showMoreEventsWrapper">
+        <button type="button" class="button-others" id="showMoreEventsBtn" data-next-page="{{ events_page.next_page_number }}">
+            Показать ещё
+        </button>
+    </div>
+    {% endif %}
     {% elif filters_applied %}
     {% include 'includes/not_found_placeholder.html' %}
     {% else %}
@@ -195,6 +176,48 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// Кнопка "Показать ещё" — AJAX-подгрузка следующих карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('showMoreEventsBtn');
+    if (!btn) return;
+
+    const container = document.getElementById('eventsCardsContainer');
+    const wrapper = document.getElementById('showMoreEventsWrapper');
+    const currentUrl = new URL(window.location.href);
+    let loading = false;
+
+    btn.addEventListener('click', function() {
+        if (loading) return;
+        loading = true;
+        btn.textContent = 'Загрузка...';
+
+        const nextPage = btn.dataset.nextPage;
+        currentUrl.searchParams.set('page', nextPage);
+        currentUrl.searchParams.set('ajax', '1');
+
+        fetch(currentUrl.toString(), {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            container.insertAdjacentHTML('beforeend', data.html);
+            if (data.next_page) {
+                btn.dataset.nextPage = data.next_page;
+                btn.textContent = 'Показать ещё';
+            } else {
+                wrapper.remove();
+            }
+        })
+        .catch(() => {
+            btn.textContent = 'Ошибка, попробуйте ещё раз';
+        })
+        .finally(() => {
+            loading = false;
+        });
+    });
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const tagsContainer = document.getElementById('tags-filters');

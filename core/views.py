@@ -39,8 +39,8 @@ logger = logging.getLogger(__name__)
 # (для проверки отображения плейсхолдеров).
 # Вернуть обратно: поставить False или удалить эти строки.
 # ═══════════════════════════════════════════════════════════════════
-TEMP_HIDE_EVENTS = True   # True = скрывать все мероприятия (показывать плейсхолдер)
-TEMP_HIDE_VENUES = True   # True = скрывать все площадки (показывать плейсхолдер)
+TEMP_HIDE_EVENTS = False   # True = скрывать все мероприятия (показывать плейсхолдер)
+TEMP_HIDE_VENUES = False   # True = скрывать все площадки (показывать плейсхолдер)
 
 
 def landing_page(request):
@@ -676,6 +676,25 @@ def event_list(request):
         active_events = active_events.none()
         has_events = False
 
+    # Пагинация: 12 карточек за раз + кнопка "Показать ещё"
+    from django.core.paginator import Paginator
+    paginator = Paginator(active_events, 12)
+    try:
+        events_page = paginator.get_page(request.GET.get("page", 1))
+    except Exception:
+        events_page = paginator.get_page(1)
+
+    # AJAX-подгрузка следующей страницы ("Показать ещё")
+    if request.GET.get("ajax") == "1":
+        from django.template.loader import render_to_string
+        html = render_to_string(
+            "events/_event_cards_page.html",
+            {"events_page": events_page},
+            request=request,
+        )
+        next_page = events_page.next_page_number() if events_page.has_next() else None
+        return JsonResponse({"html": html, "next_page": next_page})
+
     # Получаем все категории и форматы для выпадающих списков
     from core.models import Category, Format
     categories = Category.objects.all().order_by("name")
@@ -685,7 +704,7 @@ def event_list(request):
         request,
         "events/event_list.html",
         {
-            "active_events": active_events,
+            "events_page": events_page,
             "main_tags": main_tags,
             "selected_tags": selected_tags,
             "categories": categories,

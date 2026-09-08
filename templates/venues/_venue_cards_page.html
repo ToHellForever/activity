@@ -1,0 +1,5 @@
+{% load format_filters %}
+{% comment %}Страница карточек площадок (для пагинации "Показать ещё"){% endcomment %}
+{% for venue in venues_page %}
+    {% include 'venues/_venue_card.html' %}
+{% endfor %}
