@@ -47,10 +47,13 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
 @receiver(post_save, sender=Order)
 def create_order_tickets(sender, instance, created, **kwargs):
     """Автоматически создаёт OrderTicket для каждого билета в заказе."""
-    with _order_sync:
-        if _order_sync.syncing:
-            return
+    # Защита от рекурсии: если мы уже внутри этого обработчика — выходим.
+    # ВАЖНО: проверка должна выполняться ДО входа в контекст, иначе флаг
+    # будет установлен самим __enter__ и обработчик всегда будет выходить.
+    if _order_sync.syncing:
+        return
 
+    with _order_sync:
         if created:
             quantity = instance.quantity or 1
             # Создаём билеты
