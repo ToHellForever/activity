@@ -17,6 +17,7 @@ import hmac
 import hashlib
 from yookassa import Configuration, Payment, Invoice
 from datetime import timedelta
+from decimal import Decimal
 # Настройка ЮКассы
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -1118,8 +1119,21 @@ def yookassa_webhook(request):
                 if not order_id:
                     raise Http404("Invalid Yookassa refund data")
                 order = Order.objects.get(yookassa_payment_id=order_id)
-                order.payment_status = "refunded"
-                order.save()
+                # Помечаем заказ как возвращённый только если возвращены ВСЕ билеты.
+                # При частичном возврате статус заказа не меняем,
+                # иначе оплаченные билеты исчезнут из кабинета посетителя.
+                if order.tickets.exists():
+                    all_refunded = (
+                        order.tickets.filter(is_refunded=True).count() >= order.quantity
+                    )
+                else:
+                    all_refunded = True
+                if all_refunded:
+                    order.payment_status = "refunded"
+                    order.save()
+                    logger.info('[webhook] Полный возврат заказа', extra={'order_id': order.id})
+                else:
+                    logger.info('[webhook] Частичный возврат — статус заказа не меняем', extra={'order_id': order.id})
 
         return HttpResponse(status=200)
 
@@ -1188,18 +1202,33 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                 {"error": "Отсутствует ID платежа в ЮКассе (невозможно выполнить возврат)"},
             )
 
-        # Проверяем, были ли уже возвраты по этому платежу
-        refunds_count = order.tickets.filter(is_refunded=True).count()
-        
-        # Рассчитываем сумму возврата
+        # --- Расчёт суммы возврата ---
+        # Цена одного билета в заказе
+        per_ticket_price = order.total_price / order.quantity
+
+        # Сколько билетов уже возвращено и сколько денег уже вернули через ЮКассу
+        refunded_count = order.tickets.filter(is_refunded=True).count()
+        already_refunded_amount = per_ticket_price * refunded_count
+        remaining_amount = order.total_price - already_refunded_amount
+
+        # Сумма текущего возврата:
+        #  - один билет → цена билета
+        #  - весь заказ → весь невозвращённый остаток
         if single_ticket_refund:
-            amount_to_refund = order.total_price / order.quantity
+            amount_to_refund = per_ticket_price
         else:
-            amount_to_refund = order.total_price
-        
-        # Пытаемся сделать возврат через ЮКассу (только если это первый возврат)
-        if refunds_count == 0:
-            logger.info("[refund] Возврат через ЮКассу: payment_id=%s, amount=%s", order.yookassa_payment_id, amount_to_refund)
+            amount_to_refund = remaining_amount
+
+        # Возврат через ЮКассу: ЮКасса поддерживает несколько частичных
+        # возвратов по одному платежу, поэтому вызываем её всегда,
+        # пока есть невозвращённый остаток.
+        if amount_to_refund > 0:
+            # Округляем до копеек, чтобы не попасть на отказ ЮКассы из-за точности
+            amount_to_refund = amount_to_refund.quantize(Decimal("0.01"))
+            logger.info(
+                "[refund] Возврат через ЮКассу: payment_id=%s, amount=%s (уже возвращено %s из %s)",
+                order.yookassa_payment_id, amount_to_refund, already_refunded_amount, order.total_price
+            )
             from yookassa import Refund
 
             try:
@@ -1215,18 +1244,18 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                 logger.error("[refund] Ошибка возврата в ЮКассе: %s", refund_error, exc_info=True)
                 logger.info("[refund] Пропускаем возврат через ЮКассу, просто помечаем билет")
         else:
-            # Уже были возвраты — ЮКасса не позволит, просто помечаем
-            logger.info("[refund] Уже было %s возврат(ов), пропускаем ЮКассу", refunds_count)
+            # Возвращать нечего (все билеты уже возвращены)
+            logger.warning("[refund] Невозвращённый остаток равен нулю для заказа #%s", order.id)
 
         # Помечаем билет(ы) как возвращённые
         if single_ticket_refund:
             ticket_to_refund.is_refunded = True
             ticket_to_refund.save()
             logger.info("[refund] Билет #%s помечен как возвращённый", ticket_to_refund.ticket_number)
-            
+
             # Проверяем, все ли билеты возвращены
             all_refunded = order.tickets.filter(is_refunded=True).count() == order.quantity
-            
+
             if all_refunded:
                 order.payment_status = "refunded"
                 order.save()
@@ -1234,8 +1263,11 @@ def refund_ticket(request, order_id, order_ticket_id=None):
             else:
                 logger.info("[refund] Частичный возврат: возвращено %s/%s билетов", order.tickets.filter(is_refunded=True).count(), order.quantity)
         else:
+            # Полный возврат заказа — помечаем все оставшиеся билеты
+            order.tickets.filter(is_refunded=False).update(is_refunded=True)
             order.payment_status = "refunded"
             order.save()
+            logger.info("[refund] Заказ #%s полностью возвращён", order.id)
 
         # Перенаправляем на историю заказов с сообщением об успехе
         messages.success(request, 'Возврат успешно выполнен!')
