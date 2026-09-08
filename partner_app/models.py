@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 from django.conf import settings
 from django.utils import timezone
 from core.models import CustomUser
+from core.validators import validate_video_duration
 import os
 import hashlib
 import logging
@@ -189,6 +190,7 @@ class PartnerProfile(models.Model):
         help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(["mp4", "mov", "avi"]),
+            validate_video_duration,
         ],
     )
     processed_video_business_card_hash = models.CharField(

@@ -1,5 +1,7 @@
 """Профиль партнёра, смена пароля, инлайн-сохранение полей."""
 import logging
+import os
+import tempfile
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -8,6 +10,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.exceptions import ValidationError
+from moviepy import VideoFileClip
 
 from core.models import PartnerDocument
 from core.forms import PartnerProfileForm
@@ -16,6 +20,40 @@ from ..models import PartnerProfile
 from .decorators import get_rejection_messages
 
 logger = logging.getLogger(__name__)
+
+VIDEO_MAX_DURATION = 310  # 5 минут в секундах
+
+
+def _check_video_business_card_duration(video_file):
+    """
+    Проверяет длительность загруженного видео-визитки (не более 5 минут).
+    Возвращает текст ошибки или None, если видео в порядке.
+    """
+    temp_file_path = None
+    try:
+        temp_file_path = tempfile.mktemp(
+            suffix=os.path.splitext(video_file.name)[1]
+        )
+        with open(temp_file_path, 'wb+') as temp_file:
+            for chunk in video_file.chunks():
+                temp_file.write(chunk)
+
+        with VideoFileClip(temp_file_path) as video:
+            if video.duration > VIDEO_MAX_DURATION:
+                return (
+                    "Длительность видео превышает 5 минут. "
+                    "Пожалуйста, загрузите видео не длиннее 5 минут."
+                )
+        return None
+    except Exception as e:
+        logger.error("Ошибка при проверке длительности видео-визитки: %s", e, exc_info=True)
+        return "Произошла ошибка при проверке длительности видео. Попробуйте еще раз."
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                pass
 
 
 @login_required
@@ -64,6 +102,14 @@ def profile_edit(request):
         if new_logo_file and profile.logo:
             # ...то удаляем старый файл с диска/облака.
             profile.logo.delete(save=False)
+
+        # Проверяем длительность загруженного видео-визитки ДО сохранения
+        new_video_file = request.FILES.get("video_business_card")
+        if new_video_file:
+            duration_error = _check_video_business_card_duration(new_video_file)
+            if duration_error:
+                messages.error(request, duration_error)
+                return redirect("partner:dashboard")
 
         # Обработка удаления видео-визитки
         if "delete_video" in request.POST:
@@ -187,6 +233,13 @@ def save_field(request):
     if request.GET.get("action") == "upload_video":
         video_file = request.FILES.get("video_business_card")
         if video_file:
+            # Проверяем длительность перед сохранением
+            duration_error = _check_video_business_card_duration(video_file)
+            if duration_error:
+                return JsonResponse(
+                    {"status": "error", "message": duration_error}, status=400
+                )
+
             profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
             if profile.video_business_card:
                 profile.delete_file_field("video_business_card")
