@@ -156,6 +156,7 @@
 </div>
 
 <div class='landing-block mt-3'>
+    {% if has_events %}
     <div class="row row-cards-list">
         {% for ev in active_events %}
         <div class="col-12 event-list-col mb-4">
@@ -185,6 +186,11 @@
         </div>
         {% endfor %}
     </div>
+    {% elif filters_applied %}
+    {% include 'includes/not_found_placeholder.html' %}
+    {% else %}
+    {% include 'includes/empty_events_placeholder.html' %}
+    {% endif %}
 </div>
 {% endblock %}
 

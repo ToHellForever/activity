@@ -34,6 +34,14 @@ from core.utils import generate_sales_register
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════
+# ВРЕМЕННЫЙ ПЕРЕКЛЮЧАТЕЛЬ: скрывает все мероприятия и площадки
+# (для проверки отображения плейсхолдеров).
+# Вернуть обратно: поставить False или удалить эти строки.
+# ═══════════════════════════════════════════════════════════════════
+# TEMP_HIDE_EVENTS = True   # True = скрывать все мероприятия (показывать плейсхолдер)
+# TEMP_HIDE_VENUES = True   # True = скрывать все площадки (показывать плейсхолдер)
+
 
 def landing_page(request):
     # Получаем все активные мероприятия с фильтрами
@@ -89,6 +97,18 @@ def landing_page(request):
     active_venues_tablet = active_venues[:3]   # Планшет: 3 площадки
     active_venues_desktop = active_venues[:4]  # Десктоп: 4 площадки
 
+    # Флаги для проверки наличия данных
+    has_events = base_events.exists()
+    has_venues = active_venues.exists()
+
+    # ВРЕМЕННО: принудительно скрываем мероприятия/площадки для проверки плейсхолдеров
+    if TEMP_HIDE_EVENTS:
+        has_events = False
+        active_events_mobile = active_events_tablet = active_events_desktop = Event.objects.none()
+    if TEMP_HIDE_VENUES:
+        has_venues = False
+        active_venues_mobile = active_venues_tablet = active_venues_desktop = Venue.objects.none()
+
     # Получаем все категории для выпадающего списка
     from core.models import Category
     categories = Category.objects.all().order_by("name")
@@ -108,6 +128,8 @@ def landing_page(request):
             "selected_date_from": selected_date_from,
             "selected_date_to": selected_date_to,
             "search_title": search_title,
+            "has_events": has_events,
+            "has_venues": has_venues,
         },
     )
 @never_cache
@@ -636,6 +658,24 @@ def event_list(request):
     if search_title:
         active_events = active_events.filter(title__icontains=search_title)
 
+    # Определяем, применены ли какие-либо фильтры
+    filters_applied = bool(
+        selected_tags
+        or selected_category
+        or selected_format
+        or selected_date_from
+        or selected_date_to
+        or search_title
+    )
+
+    # Флаг для проверки наличия мероприятий
+    has_events = active_events.exists()
+
+    # ВРЕМЕННО: принудительно скрываем мероприятия для проверки плейсхолдеров
+    if TEMP_HIDE_EVENTS:
+        active_events = active_events.none()
+        has_events = False
+
     # Получаем все категории и форматы для выпадающих списков
     from core.models import Category, Format
     categories = Category.objects.all().order_by("name")
@@ -655,6 +695,8 @@ def event_list(request):
             "selected_date_from": selected_date_from,
             "selected_date_to": selected_date_to,
             "search_title": search_title,
+            "has_events": has_events,
+            "filters_applied": filters_applied,
         },
     )
 

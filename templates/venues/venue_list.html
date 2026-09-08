@@ -173,6 +173,7 @@
 
 <div class='landing-block mt-5'>
 <div class="row row-cards-list">
+    {% if has_venues %}
     {% for venue in venues %}
     <div class="col-6 col-md-6 col-lg-4 col-xl-3 venue-list-col mb-4">
         <div class="card venue-card-wrapper">
@@ -200,5 +201,10 @@
         </div>
     </div>
     {% endfor %}
+    {% elif filters_applied %}
+    {% include 'includes/not_found_placeholder.html' %}
+    {% else %}
+    {% include 'includes/empty_venues_placeholder.html' %}
+    {% endif %}
 </div>
 {% endblock %}

@@ -151,6 +151,29 @@ class VenueListView(ListView):
         from .models import VenueType
         
         context = super().get_context_data(**kwargs)
+
+        # ВРЕМЕННЫЙ ПЕРЕКЛЮЧАТЕЛЬ: скрывает все площадки для проверки плейсхолдеров.
+        # Вернуть обратно: поставить False.
+        TEMP_HIDE_VENUES = True
+        if TEMP_HIDE_VENUES:
+            context['venues'] = self.model.objects.none()
+
+        # Флаг для проверки наличия площадок
+        context['has_venues'] = self.get_queryset().exists() and not TEMP_HIDE_VENUES
+
+        # Определяем, применены ли какие-либо фильтры
+        context['filters_applied'] = bool(
+            self.request.GET.get('category')
+            or self.request.GET.get('min_capacity')
+            or self.request.GET.get('address')
+            or self.request.GET.get('metro')
+            or self.request.GET.get('max_price')
+            or self.request.GET.get('equipment')
+            or self.request.GET.get('district')
+            or self.request.GET.get('city')
+            or self.request.GET.get('venue_format')
+            or self.request.GET.get('sort')
+        )
         
         # Получаем минимальную и максимальную стоимость из БД
         price_stats = Venue.objects.filter(status="published").aggregate(
