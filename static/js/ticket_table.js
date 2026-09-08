@@ -6,9 +6,9 @@ function addTicketRow() {
     newRow.innerHTML = `
         <td><input type="text" name="ticket_name[]" class="form-control" required></td>
         <td><input type="text" name="ticket_price[]" class="form-control" required></td>
-        <td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>
+        <td><input type="number" name="ticket_quantity[]" min="1" class="form-control" required></td>
         <td><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control" required></td>
-        <td><input type="text" name="ticket_description[]" class="form-control"></td>
+        <td><input type="text" name="ticket_description[]" class="form-control" maxlength="100"></td>
         <td><input type="checkbox" name="ticket_is_per_person[]" class="form-check-input per-person-check"></td>
         <td><button type="button" class="btn btn-danger btn-sm remove-ticket-row">Удалить</button></td>
     `;
@@ -79,7 +79,7 @@ function validateTicketTypes() {
             const price = priceInput.value.trim();
             const quantity = quantityInput.value.trim();
 
-            if (name && price && quantity) {
+            if (name && price && quantity && parseInt(quantity, 10) >= 1) {
                 hasValidTicket = true;
             }
         }

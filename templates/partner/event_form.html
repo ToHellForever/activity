@@ -499,7 +499,7 @@
         </div>
         <div class="place-additional-info mt-2">
             <label>дополнительно к адресу</label>
-            <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}">
+            <input type="text" name="additional_adress" id="id_additional_adress" class="form-control mb-2" value="{% if form.instance.additional_adress %}{{ form.instance.additional_adress }}{% endif %}" maxlength="150">
         </div>
     </div>
     {% comment %} блок с ссылкой на список площадок {% endcomment %}
@@ -532,8 +532,8 @@
                         <td class="color-cell"><div class="ticket-color-preview" style="background: #4A7CF7;"></div></td>
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
-                        <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="0" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control"></td>
+                        <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="1" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control" maxlength="100"></td>
                         <!-- Исправлено: добавлено поле min_quantity для существующих билетов -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
@@ -549,8 +549,8 @@
                         <td class="color-cell"><div class="ticket-color-preview" style="background: {{ ticket.color|default:'#4A7CF7' }};"></div></td>
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
-                        <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="0" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control"></td>
+                        <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="1" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control" maxlength="100"></td>
                         <!-- Исправлено: добавлено поле min_quantity -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
@@ -569,8 +569,8 @@
                         <td class="color-cell"><div class="ticket-color-preview" style="background: #4A7CF7;"></div></td>
                         <td><input type="text" name="ticket_name[]" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" class="form-control" required></td>
-                        <td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" class="form-control"></td>
+                        <td><input type="number" name="ticket_quantity[]" min="1" class="form-control" required></td>
+                        <td><input type="text" name="ticket_description[]" class="form-control" maxlength="100"></td>
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">
                         <td class="actions-cell">
@@ -646,7 +646,7 @@
             </div>
             <div id="invoice-admin-field" style="display:none; margin-bottom:20px;">
                 <label for="admin-email" class="form-label">Email администратора</label>
-                <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" class="form-control">
+                <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" class="form-control" required>
             </div>
             <div class="buy-modal-footer">
                 <button type="submit" class="btn btn-primary">Купить</button>
@@ -686,8 +686,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Show/hide admin email field based on payment method
                 var invoiceField = document.getElementById('invoice-admin-field');
+                var adminEmailInput = document.getElementById('admin-email');
                 if (invoiceField) {
-                    invoiceField.style.display = this.getAttribute('data-value') === 'invoice' ? 'block' : 'none';
+                    var isInvoice = this.getAttribute('data-value') === 'invoice';
+                    invoiceField.style.display = isInvoice ? 'block' : 'none';
+                    if (adminEmailInput) {
+                        adminEmailInput.required = isInvoice;
+                    }
                 }
             });
         });
@@ -989,8 +994,8 @@ document.addEventListener('DOMContentLoaded', function() {
             '<td class="color-cell"><div class="ticket-color-preview" style="background:' + color + ';"></div></td>' +
             '<td><input type="text" name="ticket_name[]" class="form-control" required></td>' +
             '<td><input type="text" name="ticket_price[]" class="form-control" required></td>' +
-            '<td><input type="number" name="ticket_quantity[]" min="0" class="form-control" required></td>' +
-            '<td><input type="text" name="ticket_description[]" class="form-control"></td>' +
+            '<td><input type="number" name="ticket_quantity[]" min="1" class="form-control" required></td>' +
+            '<td><input type="text" name="ticket_description[]" class="form-control" maxlength="100"></td>' +
             '<td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>' +
             '<input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">' +
             '<td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button><button type="button" class="remove-ticket-btn-mobile">Удалить</button></td>';

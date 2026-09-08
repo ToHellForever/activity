@@ -131,6 +131,14 @@ class BookingRequestForm(forms.ModelForm):
         self.venue = kwargs.pop("venue", None)
         super().__init__(*args, **kwargs)
 
+        # name max 50
+        self.fields["name"].widget = forms.TextInput(attrs={"maxlength": "50", "required": "required"})
+        # email required
+        self.fields["email"].required = True
+        self.fields["email"].widget = forms.EmailInput(attrs={"required": "required"})
+        # comment max 300
+        self.fields["comment"].widget = forms.Textarea(attrs={"maxlength": "300", "rows": 3})
+
     class Meta:
         model = BookingRequest
         fields = [
@@ -143,7 +151,7 @@ class BookingRequestForm(forms.ModelForm):
             "comment",
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"required": "required"}),
+            "name": forms.TextInput(attrs={"maxlength": "50", "required": "required"}),
             "phone": forms.TextInput(attrs={"required": "required"}),
             "event_date": forms.DateTimeInput(
                 attrs={"type": "datetime-local", "required": "required"}

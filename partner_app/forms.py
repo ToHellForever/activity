@@ -20,15 +20,25 @@ class EventForm(forms.ModelForm):
         self.fields["title"].required = True
         self.fields["description"].required = True
         self.fields["date_time"].required = True
-        self.fields["place_data"].required = False
+        self.fields["category"].required = True
+        self.fields["format"].required = True
         self.fields["refund_deadline_hours"].required = True
-        self.fields["duration"].required = False
+        self.fields["duration"].required = True
+        self.fields["place_data"].required = False
         # Настройка поля auto_close_sales_hours
         self.fields["auto_close_sales_hours"].required = True
         self.fields["auto_close_sales_hours"].widget.attrs["min"] = 24
         self.fields["auto_close_sales_hours"].help_text = (
             "Продажи автоматически будут прекращены за указанное количество часов до начала мероприятия (минимум 24 часа)."
         )
+        # Настройка refund_deadline_hours
+        self.fields["refund_deadline_hours"].widget.attrs["min"] = 24
+        self.fields["refund_deadline_hours"].help_text = (
+            "Минимальное значение — 24 часа до начала мероприятия."
+        )
+        # Настройка additional_adress
+        self.fields["additional_adress"].max_length = 150
+        self.fields["additional_adress"].widget.attrs["maxlength"] = 150
 
         # Кастомные сообщения об ошибках
         self.fields["date_time"].error_messages = {
@@ -86,6 +96,12 @@ class EventForm(forms.ModelForm):
         if auto_close_sales_hours is not None and auto_close_sales_hours < 24:
             raise forms.ValidationError("Минимальное значение — 24 часа.")
         return auto_close_sales_hours
+
+    def clean_refund_deadline_hours(self):
+        refund_deadline_hours = self.cleaned_data.get("refund_deadline_hours")
+        if refund_deadline_hours is not None and refund_deadline_hours < 24:
+            raise forms.ValidationError("Минимальное значение — 24 часа.")
+        return refund_deadline_hours
 
     def clean(self):
         cleaned_data = super().clean()

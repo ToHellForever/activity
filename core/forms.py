@@ -206,7 +206,7 @@ class PartnerRegistrationForm(forms.Form):
     )
     short_name = forms.CharField(
         max_length=255,
-        required=False,
+        required=True,
         label="Краткое наименование, бренд/торговое имя",
         widget=forms.TextInput(attrs={"placeholder": "Краткое наименование, бренд/торговое имя"}),
     )
@@ -232,15 +232,15 @@ class PartnerRegistrationForm(forms.Form):
     )
     inn = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="ИНН",
-        widget=forms.TextInput(attrs={"placeholder": "ИНН"}),
+        widget=forms.TextInput(attrs={"placeholder": "ИНН", "pattern": "\d{10,12}", "title": "ИНН должен содержать 10 или 12 цифр"}),
     )
     kpp = forms.CharField(
         max_length=9,
-        required=False,
+        required=True,
         label="КПП",
-        widget=forms.TextInput(attrs={"placeholder": "КПП"}),
+        widget=forms.TextInput(attrs={"placeholder": "КПП", "pattern": "\d{8,9}", "title": "КПП должен содержать 8 или 9 цифр"}),
     )
 
     # Адреса
@@ -366,6 +366,48 @@ class PartnerRegistrationForm(forms.Form):
                 raise forms.ValidationError("Введите корректный номер телефона")
         return phone
 
+    def clean_additional_email(self):
+        value = self.cleaned_data.get("additional_email")
+        if value:
+            # Django EmailField already validates format, just return
+            return value
+        return value
+
+    def clean_vk_link(self):
+        value = self.cleaned_data.get("vk_link")
+        if value and value.strip():
+            return value.strip()
+        return value
+
+    def clean_max_link(self):
+        value = self.cleaned_data.get("max_link")
+        if value and value.strip():
+            return value.strip()
+        return value
+
+    def clean_telegram_link(self):
+        value = self.cleaned_data.get("telegram_link")
+        if value and value.strip():
+            return value.strip()
+        return value
+
+    def clean_website(self):
+        value = self.cleaned_data.get("website")
+        if value and value.strip():
+            return value.strip()
+        return value
+
+    def clean_logo(self):
+        logo = self.cleaned_data.get("logo")
+        if logo:
+            MAX_SIZE = 5 * 1024 * 1024  # 5 MB
+            ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"]
+            if logo.size > MAX_SIZE:
+                raise forms.ValidationError(f"Размер логотипа не должен превышать 5 МБ. Размер вашего файла: {logo.size / 1024 / 1024:.2f} МБ")
+            if logo.content_type not in ALLOWED_TYPES:
+                raise forms.ValidationError(f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}")
+        return logo
+
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get("password1")
@@ -440,6 +482,17 @@ class PartnerProfileForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_logo(self):
+        logo = self.cleaned_data.get("logo")
+        if logo:
+            MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+            ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
+            if logo.size > MAX_SIZE:
+                raise forms.ValidationError(f"Размер логотипа не должен превышать 10 МБ.")
+            if logo.content_type not in ALLOWED_TYPES:
+                raise forms.ValidationError(f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}")
+        return logo
 
 
 class SupportTicketForm(forms.ModelForm):
