@@ -1417,9 +1417,9 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             html.append(
                 '<table style="width:100%; border-collapse:collapse;">'
                 '<tr style="background:#f8f9fa;">'
-                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Поле</th>'
-                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Текущее</th>'
-                '<th style="border:1px solid #ddd; padding:6px; text-align:left;">Предложено</th>'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Поле</th>'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Текущее</th>'
+                '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Предложено</th>'
                 '</tr>'
             )
             for label, current, proposed in rows:

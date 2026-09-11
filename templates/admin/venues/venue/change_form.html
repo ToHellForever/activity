@@ -1,7 +1,5 @@
-{% extends "admin/change_form.html" %}
-{% load i18n admin_urls static %}
-
-{% block after_field_sets %}
+{% extends "admin/change_form.html" %} {% load i18n admin_urls static %} {%
+block after_field_sets %}
 <div
   class="form-group"
   style="
@@ -12,7 +10,7 @@
     border: 1px solid #dee2e6;
   "
 >
-  <label style="font-weight: bold;color: black;">
+  <label style="font-weight: bold; color: black">
     {% trans "Множественная загрузка фотографий" %}:
   </label>
   <input
@@ -20,17 +18,13 @@
     name="images"
     multiple
     id="id_images"
-    style="margin-top: 5px;color: black;"
+    style="margin-top: 5px; color: black"
   />
-  <p class="help" id="images_help_text" style="margin-top: 5px;color: black;">
+  <p class="help" id="images_help_text" style="margin-top: 5px; color: black">
     {% trans "Выберите несколько фотографий для загрузки." %}
   </p>
 </div>
-{{ block.super }}
-{% endblock %}
-
-{% block extrahead %}
-{{ block.super }}
+{{ block.super }} {% endblock %} {% block extrahead %} {{ block.super }}
 <style>
   #equipment_items_group fieldset.module {
     min-height: 300px !important;
@@ -41,37 +35,21 @@
     border-radius: 5px;
     background-color: #fff;
   }
-  
+
   #equipment_items_group label,
   #equipment_items_group .form-check-label {
     color: black !important;
   }
-  
+
   #equipment_items_group .form-check {
     margin-left: 0 !important;
     padding-left: 1.25rem;
   }
-  
+
   #equipment_items_group .form-check-input {
     margin-top: 0.25rem;
   }
 </style>
-{% endblock %}
-
-{% block inline_fieldsets %}
-{{ block.super }}
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const equipmentGroup = document.querySelector('#equipment_items_group fieldset.module');
-    if (equipmentGroup) {
-      equipmentGroup.style.minHeight = '300px';
-      equipmentGroup.style.maxHeight = '400px';
-      equipmentGroup.style.overflowY = 'auto';
-      equipmentGroup.style.padding = '10px';
-      equipmentGroup.style.border = '1px solid #dee2e6';
-      equipmentGroup.style.borderRadius = '5px';
-      equipmentGroup.style.backgroundColor = '#fff';
-    }
-  });
-</script>
+{% endblock %} {% block inline_fieldsets %} {{ block.super }}
+<script src="{% static 'js/pages/admin/venue_admin.js' %}"></script>
 {% endblock %}

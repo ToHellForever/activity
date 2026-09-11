@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="partner-layout" style="display:flex; gap:14px;">
     {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
     <div class="partner-main">
@@ -65,40 +66,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Мгновенное удаление кейса
-    document.querySelectorAll('.action-btn--delete[data-delete-url]').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var url = this.dataset.deleteUrl;
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }).then(function(response) {
-                if (response.ok || response.redirected) {
-                    var card = btn.closest('.portfolio-card');
-                    if (card) card.remove();
-                    // Если карточек не осталось — обновить страницу
-                    var cards = document.querySelectorAll('.portfolio-card');
-                    if (cards.length === 0) location.reload();
-                }
-            });
-        });
-    });
-
-    // На мобильных (≤578px) кнопки редактирования/удаления скрыты —
-    // переход к редактированию выполняется по клику на саму карточку
-    document.querySelectorAll('.portfolio-card[data-edit-url]').forEach(function(card) {
-        card.addEventListener('click', function(e) {
-            if (window.matchMedia('(max-width: 578px)').matches) {
-                window.location.href = card.dataset.editUrl;
-            }
-        });
-    });
-});
-</script>
+<script src="{% static 'js/pages/partner/portfolio_list.js' %}"></script>
 {% endblock %}

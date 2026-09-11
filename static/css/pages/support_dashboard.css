@@ -192,6 +192,7 @@
   width: 100%;
   background: #ff8348;
   color: #ffffff;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 .support-form .btn-secondary {
   width: 100%;

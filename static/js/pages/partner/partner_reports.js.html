@@ -1,0 +1,466 @@
+// === PARTNER REPORTS ===
+
+// ============================================================
+// ИСХОДНЫЕ ДАННЫЕ
+// Передаются шаблоном reports.html через meta-теги
+// (статические JS не рендерятся шаблонизатором)
+// ============================================================
+function reportsMetaContent(name) {
+    const meta = document.querySelector('meta[name="' + name + '"]');
+    return meta ? meta.content : '';
+}
+
+function getReportsCsrfToken() {
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (input) return input.value;
+    const match = document.cookie.match(/(^|;\s*)csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[2]) : '';
+}
+
+const serverSalesData = JSON.parse(reportsMetaContent('sales-graph-data') || '{}');
+const trafficSourcesData = JSON.parse(reportsMetaContent('traffic-sources-data') || '{}');
+
+// ============================================================
+// УТИЛИТЫ ДАТ
+// ============================================================
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function formatDateLabel(date) {
+    // "18.07"
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}`;
+}
+
+function formatDateISO(date) {
+    // "2026-07-18"
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function setDisplayFromHidden(hiddenId, displayId) {
+    var hidden = document.getElementById(hiddenId);
+    var display = document.getElementById(displayId);
+    if (!hidden || !display) return;
+
+    if (hidden.value) {
+        var parts = hidden.value.split('-');
+        if (parts.length === 3) {
+            display.value = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        } else {
+            display.value = hidden.value;
+        }
+    } else {
+        display.value = '';
+    }
+}
+
+function initReportCalendars() {
+    if (typeof CustomCalendar === 'undefined') {
+        console.error('CustomCalendar не найден. Календарь не инициализирован.');
+        return;
+    }
+
+    let startCalendar = null;
+    let endCalendar = null;
+
+    startCalendar = new CustomCalendar('filterStartDisplay', 'filterStartCalendar', 'filterStart', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true,
+        onSelectDate: function(date) {
+            const startValue = date.getTime();
+            const endRaw = document.getElementById('filterEnd').value;
+            if (endRaw) {
+                const endDate = new Date(endRaw);
+                if (startValue > endDate.getTime() && endCalendar) {
+                    endCalendar.selectDate(date, { silent: true });
+                    setDisplayFromHidden('filterEnd', 'filterEndDisplay');
+                }
+            }
+        }
+    });
+
+    endCalendar = new CustomCalendar('filterEndDisplay', 'filterEndCalendar', 'filterEnd', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true,
+        onSelectDate: function(date) {
+            const endValue = date.getTime();
+            const startRaw = document.getElementById('filterStart').value;
+            if (startRaw) {
+                const startDate = new Date(startRaw);
+                if (endValue < startDate.getTime() && startCalendar) {
+                    startCalendar.selectDate(date, { silent: true });
+                    setDisplayFromHidden('filterStart', 'filterStartDisplay');
+                }
+            }
+        }
+    });
+
+    // Календари для формы генерации отчёта
+    new CustomCalendar('reportStartDisplay', 'reportStartCalendar', 'reportStart', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
+    });
+
+    new CustomCalendar('reportEndDisplay', 'reportEndCalendar', 'reportEnd', {
+        displayDateFormat: 'dd.mm.yyyy',
+        valueDateFormat: 'yyyy-mm-dd',
+        allowPastDates: true
+    });
+}
+
+/**
+ * Возвращает массив дат [start..end] включительно.
+ */
+function buildDateRange(start, end) {
+    const labels = [];
+    const keys = [];
+    const cur = new Date(start);
+    cur.setHours(0, 0, 0, 0);
+    const stop = new Date(end);
+    stop.setHours(0, 0, 0, 0);
+
+    while (cur <= stop) {
+        labels.push(formatDateLabel(cur));
+        keys.push(formatDateISO(cur));
+        cur.setDate(cur.getDate() + 1);
+    }
+    return { labels, keys };
+}
+
+/**
+ * Данные для графика: даты + суммы (0, если нет продаж в этот день).
+ */
+function buildChartData(start, end) {
+    const { labels, keys } = buildDateRange(start, end);
+    const amounts = keys.map(k => Number(serverSalesData[k] || 0));
+    return { labels, amounts };
+}
+
+/**
+ * Красивая шкала Y: целые деления, «ровный» максимум.
+ * Если продаж нет — 0..1000 с шагом 100.
+ */
+function calcYAxis(amounts) {
+    const max = Math.max(...amounts, 0);
+    if (max === 0) {
+        return { max: 1000, stepSize: 100 };
+    }
+    const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+    const niceMax = Math.ceil(max / magnitude) * magnitude;
+    const stepSize = Math.max(1, Math.round(niceMax / 8));
+    return { max: niceMax, stepSize };
+}
+
+// ============================================================
+// ГРАФИК ПРОДАЖ
+// ============================================================
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+
+// Начальный период: последние 7 дней
+const initEnd = new Date();
+const initStart = new Date();
+initStart.setDate(initEnd.getDate() - 6);
+
+const initData = buildChartData(initStart, initEnd);
+const initY = calcYAxis(initData.amounts);
+
+const salesChart = new Chart(salesCtx, {
+    type: 'line',
+    data: {
+        labels: initData.labels,
+        datasets: [{
+            label: 'Продажи по дням (₽)',
+            data: initData.amounts,
+            backgroundColor: 'rgba(255, 140, 66, 0.15)',
+            borderColor: 'rgba(255, 131, 72, 1)',
+            borderWidth: 2.5,
+            tension: 0.35,
+            pointBackgroundColor: 'rgba(255, 131, 72, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${Number(ctx.parsed.y).toLocaleString('ru-RU')} ₽`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                min: 0,
+                max: initY.max,
+                grid: { color: '#f0f0f0' },
+                ticks: {
+                    stepSize: initY.stepSize,
+                    precision: 0,
+                    color: '#999',
+                    font: { size: 11 },
+                    callback: value => Number.isInteger(value)
+                        ? value.toLocaleString('ru-RU')
+                        : ''
+                }
+            },
+            x: {
+                grid: { display: false },
+                ticks: {
+                    color: '#999',
+                    font: { size: 11 },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 12
+                }
+            }
+        }
+    }
+});
+
+/**
+ * Перестраивает график продаж под новый период.
+ */
+function updateSalesChart(start, end) {
+    const { labels, amounts } = buildChartData(start, end);
+    const y = calcYAxis(amounts);
+
+    salesChart.data.labels = labels;
+    salesChart.data.datasets[0].data = amounts;
+    salesChart.options.scales.y.max = y.max;
+    salesChart.options.scales.y.ticks.stepSize = y.stepSize;
+    salesChart.update();
+}
+
+// ============================================================
+// ГРАФИК ИСТОЧНИКОВ ТРАФИКА
+// ============================================================
+const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+
+const sources = Object.keys(trafficSourcesData);
+const sourceAmounts = sources.map(s => Number(trafficSourcesData[s].total || 0));
+const totalTraffic = sourceAmounts.reduce((a, b) => a + b, 0);
+
+// Плагин: рисует текст в центре пустого пончика
+const emptyDonutTextPlugin = {
+    id: 'emptyDonutText',
+    afterDraw(chart) {
+        if (!chart.$isEmpty) return;
+        const { ctx, chartArea: { left, top, width, height } } = chart;
+        const cx = left + width / 2;
+        const cy = top + height / 2;
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#666';
+        ctx.font = '600 14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+        ctx.fillText('Пока нет данных', cx, cy - 10);
+        ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+        ctx.fillStyle = '#999';
+        ctx.fillText('о трафике', cx, cy + 10);
+        ctx.restore();
+    }
+};
+
+// Настройки для «пустого» состояния (сплошной оранжевый круг)
+const isTrafficEmpty = totalTraffic === 0;
+
+const trafficConfig = isTrafficEmpty
+    ? {
+        labels: ['Нет данных'],
+        data: [1],
+        colors: ['rgba(255, 131, 72, 1)']
+      }
+    : {
+        labels: sources,
+        data: sourceAmounts,
+        colors: [
+            'rgba(255, 140, 66, 0.85)',
+            'rgba(54, 162, 235, 0.75)',
+            'rgba(255, 206, 86, 0.75)',
+            'rgba(75, 192, 192, 0.75)',
+            'rgba(153, 102, 255, 0.75)',
+            'rgba(255, 99, 132, 0.75)'
+        ]
+      };
+
+const trafficSourcesChart = new Chart(trafficCtx, {
+    type: 'doughnut',
+    data: {
+        labels: trafficConfig.labels,
+        datasets: [{
+            data: trafficConfig.data,
+            backgroundColor: trafficConfig.colors,
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: {
+                display: !isTrafficEmpty,
+                position: 'right',
+                labels: { font: { size: 12 }, color: '#333', boxWidth: 14 }
+            },
+            tooltip: {
+                enabled: !isTrafficEmpty,
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = total ? Math.round((value / total) * 100) : 0;
+                        return `${label}: ${Number(value).toLocaleString('ru-RU')} ₽ (${percentage}%)`;
+                    }
+                }
+            }
+        }
+    },
+    plugins: [emptyDonutTextPlugin]
+});
+
+// Флаг «пусто» для плагина
+trafficSourcesChart.$isEmpty = isTrafficEmpty;
+
+// ============================================================
+// ФИЛЬТРЫ ПЕРИОДА И ОБРАБОТЧИКИ
+// ============================================================
+$(document).ready(function() {
+
+    // --- Кнопки периода ---
+    $('.period-btn').on('click', function() {
+        $('.period-btn').removeClass('active');
+        $(this).addClass('active');
+
+        const period = $(this).data('period');
+        const end = new Date();
+        const start = new Date();
+
+        if (period === 'week')   start.setDate(end.getDate() - 6);
+        if (period === 'month')  start.setDate(end.getDate() - 29);
+        if (period === '3month') start.setDate(end.getDate() - 89);
+
+        $('#filterStart').val(formatDateISO(start));
+        $('#filterEnd').val(formatDateISO(end));
+        setDisplayFromHidden('filterStart', 'filterStartDisplay');
+        setDisplayFromHidden('filterEnd', 'filterEndDisplay');
+        const s = $('#filterStart').val();
+        const e = $('#filterEnd').val();
+        if (!s || !e) return;
+        updateSalesChart(new Date(s), new Date(e));
+    });
+
+    // Инициализация календарей и даты
+    initReportCalendars();
+    setDisplayFromHidden('filterStart', 'filterStartDisplay');
+    setDisplayFromHidden('filterEnd', 'filterEndDisplay');
+
+    // Инициализация "Неделя"
+    $('.period-btn.active').trigger('click');
+
+    // --- Чекбоксы отчётов ---
+    $(document).on('change', '.report-checkbox', function() {
+        const allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
+        $('#selectAllCheckbox').prop('checked', allChecked);
+    });
+
+    $('#selectAllCheckbox').change(function() {
+        $('.report-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    $('#selectAllReports').click(function() {
+        $('.report-checkbox').prop('checked', true);
+        $('#selectAllCheckbox').prop('checked', true);
+    });
+
+    // --- Удаление выбранных отчётов ---
+    $('#deleteSelectedReports').click(function() {
+        const selectedReports = [];
+        $('.report-checkbox:checked').each(function() {
+            selectedReports.push($(this).val());
+        });
+
+        if (selectedReports.length === 0) {
+            alert('Пожалуйста, выберите хотя бы один отчёт для удаления');
+            return;
+        }
+
+        if (confirm(`Вы уверены, что хотите удалить ${selectedReports.length} отчёт(ов)?`)) {
+            fetch(reportsMetaContent('delete-reports-url') || '/partner/delete_reports/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getReportsCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ report_ids: selectedReports })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Произошла ошибка при удалении отчётов');
+            });
+        }
+    });
+});
+
+// ============================================================
+// ГЕНЕРАЦИЯ ОТЧЁТА
+// ============================================================
+document.getElementById('generateReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const periodStart = document.getElementById('reportStart').value;
+    const periodEnd   = document.getElementById('reportEnd').value;
+    const reportType  = document.getElementById('reportType').value;
+    const sendEmailEl = document.getElementById('sendEmail');
+    const sendEmail   = sendEmailEl ? sendEmailEl.checked : false;
+
+    fetch(reportsMetaContent('generate-report-url') || '/partner/reports/generate/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getReportsCsrfToken()
+        },
+        body: new URLSearchParams({
+            period_start: periodStart,
+            period_end: periodEnd,
+            report_type: reportType,
+            send_email: sendEmail
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = data.download_url;
+            if (data.email_sent) {
+                alert('Отчёт успешно сгенерирован и отправлен на ваш email!');
+            }
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Произошла ошибка при генерации отчёта');
+    });
+});

@@ -3,6 +3,8 @@
 {% load format_filters %}
 
 {% block content %}
+<meta name="event-id" content="{{ event.id }}">
+{% csrf_token %}
 <link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
 <link rel="stylesheet" href="{% static '/css/carousel.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
@@ -12,7 +14,7 @@
 {% endif %}
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
-<script src="{% static 'js/pages/event_detail.js' %}"></script>
+<script src="{% static 'js/pages/events/event_detail.js' %}"></script>
 <!-- Контейнер для toast-уведомлений -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100" id="toastContainer"></div>
 <div class="event-detail-container">
@@ -418,6 +420,7 @@
 <script>
     window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
     window.IS_PARTNER = {% if request.user.is_authenticated and request.user.user_type == "partner" %}true{% else %}false{% endif %};
+    window.LOGIN_URL = "{% url 'login' %}";
     
     // Debug: логирование данных карты для страницы деталей
     (function() {
@@ -435,8 +438,5 @@
         }
         console.log('=============================');
     })();
-</script>
-<script>
-window.LOGIN_URL = "{% url 'login' %}";
 </script>
 {% endblock %}

@@ -131,6 +131,14 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# MIME types для .js.html файлов (чтобы Django отдавал их как JavaScript)
+import mimetypes
+mimetypes.add_type('text/javascript', '.js.html')
+mimetypes.add_type('text/javascript', '.js')
+
+# MIME types для .css.html файлов
+mimetypes.add_type('text/css', '.css.html')
+
 FIXTURE_DIRS = [
     os.path.join(BASE_DIR, 'fixtures'),
 ]

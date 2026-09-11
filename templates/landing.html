@@ -6,8 +6,8 @@
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <link rel="stylesheet" href="{% static 'css/carousel.css' %}">
-<script src="{% static 'js/pages/landing.js' %}" defer></script>
-<script src="{% static 'js/pages/calendar.js' %}"></script>
+<script src="{% static 'js/pages/other/landing.js' %}" defer></script>
+<script src="{% static 'js/pages/other/calendar.js' %}"></script>
 <div class="landing-block">
 <div class='row'>
     <div class='col-8'>
@@ -405,34 +405,14 @@
         </a>
         <button class="find-button" id="createEventBtn" 
                 data-user-type="{% if request.user.is_authenticated %}{{ request.user.user_type }}{% else %}guest{% endif %}"
-                data-is-auth="{{ request.user.is_authenticated|lower }}">
+                data-is-auth="{{ request.user.is_authenticated|lower }}"
+                data-login-url="{% url 'login' %}"
+                data-event-list-url="{% url 'partner:partner_event_list' %}">
             РАЗМЕСТИТЬ СОБЫТИЕ
         </button>
 </div>
 </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const createEventBtn = document.getElementById('createEventBtn');
-    
-    createEventBtn.addEventListener('click', function() {
-        const userType = this.getAttribute('data-user-type');
-        const isAuthenticated = this.getAttribute('data-is-auth') === 'true';
-        
-        console.log('User authenticated:', isAuthenticated, 'User type:', userType);
-        
-        if (!isAuthenticated) {
-            // Пользователь не авторизован - redirect на login
-            window.location.href = '{% url "login" %}';
-        } else if (userType === 'partner') {
-            // Партнёр - redirect в список мероприятий
-            window.location.href = '{% url "partner:partner_event_list" %}';
-        } else {
-            // Обычный пользователь или гость - redirect на login
-            window.location.href = '{% url "login" %}';
-        }
-    });
-});
-</script>
+<script src="{% static 'js/pages/other/landing_extra.js' %}"></script>
 {% endblock %}

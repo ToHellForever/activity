@@ -113,7 +113,7 @@ def reports(request):
         "total_refunds": "{:,.2f}".format(total_refunds).replace(",", " "),
         "refunded_tickets": total_refunded_tickets,  # учитывает оба типа возвратов
         "sales_graph_data": json.dumps(sales_graph_data),
-        "traffic_sources_data": traffic_sources_data,
+        "traffic_sources_data": json.dumps(traffic_sources_data),
         "user_reports": user_reports,
         "report_schedule": report_schedule,
         "partner_profile": partner_profile,

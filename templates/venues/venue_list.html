@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/events/event_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/venues/venue_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
-<script src="{% static 'js/pages/calendar.js' %}"></script>
+<script src="{% static 'js/pages/other/calendar.js' %}"></script>
         <div class='filters-landing'>
             <h1 class='landing-title'>ПОИСК ЗАЛА</h1>
 
@@ -192,46 +192,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Кнопка "Показать ещё" — AJAX-подгрузка следующих карточек
-document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('showMoreVenuesBtn');
-    if (!btn) return;
-
-    const container = document.getElementById('venuesCardsContainer');
-    const wrapper = document.getElementById('showMoreVenuesWrapper');
-    const currentUrl = new URL(window.location.href);
-    let loading = false;
-
-    btn.addEventListener('click', function() {
-        if (loading) return;
-        loading = true;
-        btn.textContent = 'Загрузка...';
-
-        const nextPage = btn.dataset.nextPage;
-        currentUrl.searchParams.set('page', nextPage);
-        currentUrl.searchParams.set('ajax', '1');
-
-        fetch(currentUrl.toString(), {
-            headers: {'X-Requested-With': 'XMLHttpRequest'}
-        })
-        .then(resp => resp.json())
-        .then(data => {
-            container.insertAdjacentHTML('beforeend', data.html);
-            if (data.next_page) {
-                btn.dataset.nextPage = data.next_page;
-                btn.textContent = 'Показать ещё';
-            } else {
-                wrapper.remove();
-            }
-        })
-        .catch(() => {
-            btn.textContent = 'Ошибка, попробуйте ещё раз';
-        })
-        .finally(() => {
-            loading = false;
-        });
-    });
-});
-</script>
+<script src="{% static 'js/pages/venues/venue_list.js' %}"></script>
 {% endblock %}

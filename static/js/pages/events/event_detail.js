@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
     'use strict';
     
     // === ЛОГГЕР ===
-    const eventId = '{{ event.id }}';
+    // ID мероприятия передаётся шаблоном через meta-тег event-id (см. event_detail.html)
+    const eventMeta = document.querySelector('meta[name="event-id"]');
+    const eventId = eventMeta ? eventMeta.content : '';
     const logPrefix = '[Event:' + eventId + ']';
     const purchaseLog = [];
     const MAX_FREE_TICKETS = 2;
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getAlreadyFreeTicketsForEvent() {
         try {
             // Сначала ищем под ключом мероприятия
-            const stored = localStorage.getItem('free_tickets_event_' + '{{ event.id }}');
+            const stored = localStorage.getItem('free_tickets_event_' + eventId);
             if (stored !== null) {
                 const val = parseInt(stored);
                 return isNaN(val) ? 0 : val;
@@ -206,7 +208,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
     
-    const csrfToken = getCookie('csrftoken') || '{{ csrf_token }}';
+    // CSRF: сначала скрытое поле формы со страницы, затем cookie csrftoken
+    function getCsrfFromPage() {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        return input ? input.value : '';
+    }
+    const csrfToken = getCsrfFromPage() || getCookie('csrftoken') || '';
     addLog('CSRF-токен получен', 'info');
     
     // === ИНИЦИАЛИЗАЦИЯ ===
@@ -459,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Сохраняем информацию о бесплатных билетах (для этого мероприятия)
                 if (data.free_tickets_count !== undefined) {
                     try {
-                        localStorage.setItem('free_tickets_event_' + '{{ event.id }}', String(data.free_tickets_count));
+                        localStorage.setItem('free_tickets_event_' + eventId, String(data.free_tickets_count));
                     } catch(e) {}
                 }
                 
@@ -583,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken') || '{{ csrf_token }}',
+                    'X-CSRFToken': csrfToken || getCookie('csrftoken'),
                 }
             })
             .then(function(response) {
