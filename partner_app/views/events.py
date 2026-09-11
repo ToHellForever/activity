@@ -182,6 +182,20 @@ def _parse_ticket_rows(request):
     }
 
 
+def _ticket_rows_missing_description(rows):
+    """Проверяет, что у каждого заполненного билета есть описание (обязательное поле)."""
+    for i, (name, price, quantity) in enumerate(
+        zip(rows["names"], rows["prices"], rows["quantities"])
+    ):
+        if name and price and quantity:
+            description = (
+                rows["descriptions"][i] if i < len(rows["descriptions"]) else ""
+            )
+            if not description.strip():
+                return True
+    return False
+
+
 def _create_tickets(event, rows, with_color=False):
     """Создаёт билеты мероприятия из разобранных строк формы."""
     for i, (name, price, quantity, description) in enumerate(
@@ -401,6 +415,24 @@ def create_event(request):
                     "form": form,
                     "is_edit": False,
                     "ticket_data": _ticket_data_from_post(request),
+                    "rejection_messages": get_rejection_messages(request),
+                    "all_tags": Tag.objects.all(),
+                },
+            )
+
+        # Описание обязательно для каждого билета
+        if _ticket_rows_missing_description(rows):
+            messages.error(
+                request,
+                "Заполните описание для каждого билета — это обязательное поле.",
+            )
+            return render(
+                request,
+                "partner/event_form.html",
+                {
+                    "form": form,
+                    "is_edit": False,
+                    "ticket_data": _ticket_data_from_post(request, with_description=True),
                     "rejection_messages": get_rejection_messages(request),
                     "all_tags": Tag.objects.all(),
                 },
@@ -710,6 +742,24 @@ def edit_event(request, event_id):
                         "form": form,
                         "is_edit": True,
                         "ticket_data": _ticket_data_from_post(request),
+                        "rejection_messages": get_rejection_messages(request),
+                        "all_tags": Tag.objects.all(),
+                    },
+                )
+
+            # Описание обязательно для каждого билета
+            if _ticket_rows_missing_description(rows):
+                messages.error(
+                    request,
+                    "Заполните описание для каждого билета — это обязательное поле.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    {
+                        "form": form,
+                        "is_edit": True,
+                        "ticket_data": _ticket_data_from_post(request, with_description=True),
                         "rejection_messages": get_rejection_messages(request),
                         "all_tags": Tag.objects.all(),
                     },

@@ -18,6 +18,7 @@ from .decorators import check_partner_status, get_rejection_messages
 from .events import (
     _event_form_context,
     _ticket_data_from_post,
+    _ticket_rows_missing_description,
     _validate_event_files,
     _parse_ticket_rows,
 )
@@ -258,6 +259,23 @@ def request_event_change(request, event_id):
                 messages.error(
                     request,
                     "Добавьте хотя бы один билет — мероприятие не может существовать без билетов.",
+                )
+                return render(
+                    request,
+                    "partner/event_form.html",
+                    _change_request_context(
+                        request,
+                        event,
+                        form,
+                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                    ),
+                )
+
+            # Описание обязательно для каждого билета
+            if _ticket_rows_missing_description(rows):
+                messages.error(
+                    request,
+                    "Заполните описание для каждого билета — это обязательное поле.",
                 )
                 return render(
                     request,

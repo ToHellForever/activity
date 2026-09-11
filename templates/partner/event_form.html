@@ -530,7 +530,7 @@
                     <th>Тип</th>
                     <th>Цена</th>
                     <th>Кол-во билетов</th>
-                    <th>Описание</th>
+                    <th>Описание *</th>
                     <!-- Здесь заголовок для колонки, но сам инпут будет в строке -->
                     <th class="min-qty-cell">Мин. кол-во</th>
                     <th class="actions-cell">Действия</th>
@@ -544,7 +544,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.quantity }}" min="1" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control" maxlength="100"></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.description }}" class="form-control" maxlength="100" required></td>
                         <!-- Исправлено: добавлено поле min_quantity для существующих билетов -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
@@ -561,7 +561,7 @@
                         <td><input type="text" name="ticket_name[]" value="{{ ticket.name }}" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" value="{{ ticket.price|stringformat:"d" }}" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" value="{{ ticket.available_quantity }}" min="1" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control" maxlength="100"></td>
+                        <td><input type="text" name="ticket_description[]" value="{{ ticket.ticket_description }}" class="form-control" maxlength="100" required></td>
                         <!-- Исправлено: добавлено поле min_quantity -->
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="{{ ticket.min_quantity|default:1 }}" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;" {% if ticket.min_quantity|default:1 > 1 %}checked{% endif %}>
@@ -581,7 +581,7 @@
                         <td><input type="text" name="ticket_name[]" class="form-control" required></td>
                         <td><input type="text" name="ticket_price[]" class="form-control" required></td>
                         <td><input type="number" name="ticket_quantity[]" min="1" class="form-control" required></td>
-                        <td><input type="text" name="ticket_description[]" class="form-control" maxlength="100"></td>
+                        <td><input type="text" name="ticket_description[]" class="form-control" maxlength="100" required></td>
                         <td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>
                         <input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">
                         <td class="actions-cell">

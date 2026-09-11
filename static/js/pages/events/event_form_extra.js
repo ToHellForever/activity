@@ -328,7 +328,7 @@ function addTicketRow() {
         '<td><input type="text" name="ticket_name[]" class="form-control" required></td>' +
         '<td><input type="text" name="ticket_price[]" class="form-control" required></td>' +
         '<td><input type="number" name="ticket_quantity[]" min="1" class="form-control" required></td>' +
-        '<td><input type="text" name="ticket_description[]" class="form-control" maxlength="100"></td>' +
+        '<td><input type="text" name="ticket_description[]" class="form-control" maxlength="100" required></td>' +
         '<td class="min-qty-cell"><input type="number" name="ticket_min_quantity[]" value="1" min="1" class="form-control min-qty-input"></td>' +
         '<input type="checkbox" name="ticket_is_per_person[]" class="per-person-hidden" value="on" style="display:none;">' +
         '<td class="actions-cell"><button type="button" class="remove-ticket-btn">✕</button><button type="button" class="remove-ticket-btn-mobile">Удалить</button></td>';
@@ -363,6 +363,29 @@ document.querySelector('form[method="post"][enctype="multipart/form-data"]').add
             showToast('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.', true);
         } else {
             alert('Добавьте хотя бы один билет — мероприятие не может существовать без билетов.');
+        }
+        return;
+    }
+
+    // Описание обязательно для каждого заполненного билета
+    let missingDescription = false;
+    rows.forEach(function(tr) {
+        const name = tr.querySelector('input[name="ticket_name[]"]');
+        const price = tr.querySelector('input[name="ticket_price[]"]');
+        const qty = tr.querySelector('input[name="ticket_quantity[]"]');
+        const desc = tr.querySelector('input[name="ticket_description[]"]');
+        const isFilledRow = name && price && qty && name.value.trim() && price.value.trim() && qty.value && parseInt(qty.value, 10) > 0;
+        if (isFilledRow && desc && !desc.value.trim()) {
+            missingDescription = true;
+            desc.classList.add('is-invalid');
+        }
+    });
+    if (missingDescription) {
+        e.preventDefault();
+        if (typeof showToast === 'function') {
+            showToast('Заполните описание для каждого билета — это обязательное поле.', true);
+        } else {
+            alert('Заполните описание для каждого билета — это обязательное поле.');
         }
     }
 });
