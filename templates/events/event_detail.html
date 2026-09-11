@@ -181,7 +181,7 @@
                 <div class="tickets-row">
                 <div class="ticket-col ticket-col-type">
                 <span class="ticket-dot dot-{{ forloop.counter }}"></span>
-                {{ ticket.name }}
+                <span class="ticket-desc" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">{{ ticket.name }}</span>
                 </div>
                 <div class="ticket-col ticket-col-price">
                 {% if ticket.price == 0 %}
@@ -194,7 +194,7 @@
                 </div>
                 <div class="ticket-col ticket-col-desc">
                 {% if ticket.ticket_description %}
-                {{ ticket.ticket_description }}
+                <span class="ticket-desc" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">{{ ticket.ticket_description }}</span>
                 {% endif %}
                 </div>
                 </div>

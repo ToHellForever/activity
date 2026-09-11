@@ -263,6 +263,39 @@ a {
   font-size: clamp(0.7rem, 1vw, 0.9rem);
   font-weight: 400;
   color: black;
+  min-width: 0; /* чтобы truncate работал внутри grid */
+  display: flex;
+  align-items: center;
+}
+
+/* Название билета в одну строку; кликабельность и многоточие только если обрезано */
+.ticket-col-type .ticket-desc {
+  cursor: default;
+  transition: none;
+  flex: 1;
+  min-width: 0; /* span сжимается вместе с точкой в flex-строке */
+}
+
+.ticket-col-type .ticket-desc.is-truncated {
+  cursor: pointer;
+}
+
+.ticket-col-type .ticket-desc:hover {
+  color: inherit;
+}
+
+.ticket-col-type .ticket-desc.is-truncated:hover {
+  color: #4a7cf7;
+}
+
+.ticket-col-type .ticket-desc.is-truncated::after {
+  content: " \2026";
+  color: #4a7cf7;
+  font-weight: 700;
+}
+
+.ticket-col-type .ticket-desc:not(.is-truncated)::after {
+  content: none;
 }
 
 .ticket-col-price {
@@ -280,6 +313,61 @@ a {
   font-weight: 400;
   color: black;
   margin-left: 40px;
+  min-width: 0; /* чтобы truncate работал внутри grid */
+}
+
+/* Описание билета: одна строка, клик — полный текст */
+.ticket-desc {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.ticket-desc:hover {
+  color: #4a7cf7;
+}
+
+.ticket-desc.is-truncated::after {
+  content: " \2026"; /* многоточие для подсказки, что текст сокращён */
+  color: #4a7cf7;
+  font-weight: 700;
+}
+
+.ticket-desc:focus-visible {
+  outline: 2px solid #4a7cf7;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Тултип с полным описанием */
+.ticket-desc-tooltip {
+  position: fixed;
+  z-index: 2000;
+  max-width: 320px;
+  padding: 10px 14px;
+  background: #1f2430;
+  color: #fff;
+  font-family: "Verdana", sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  white-space: normal;
+  word-break: break-word;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  pointer-events: none;
+}
+
+.ticket-desc-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Рандомные цвета точек */

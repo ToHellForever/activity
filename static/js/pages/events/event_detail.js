@@ -641,4 +641,98 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // === ОПИСАНИЕ БИЛЕТА: одна строка, клик — полный текст ===
+    (function initTicketDescriptions() {
+        var descs = document.querySelectorAll('.ticket-desc');
+        if (!descs.length) return;
+
+        // Помечаем те, чей текст реально не влазит в одну строку
+        descs.forEach(function(el) {
+            if (el.scrollWidth > el.clientWidth + 1) {
+                el.classList.add('is-truncated');
+            }
+        });
+
+        var tooltip = null;
+        var activeEl = null;
+
+        function hideTooltip() {
+            if (!tooltip) return;
+            tooltip.classList.remove('show');
+            var t = tooltip;
+            tooltip = null;
+            activeEl = null;
+            setTimeout(function() {
+                if (t && t.parentNode) t.parentNode.removeChild(t);
+            }, 200);
+        }
+
+        function showTooltipFor(el) {
+            hideTooltip();
+            tooltip = document.createElement('div');
+            tooltip.className = 'ticket-desc-tooltip';
+            tooltip.textContent = el.textContent.trim();
+            document.body.appendChild(tooltip);
+            activeEl = el;
+
+            // Позиционируем под элементом, не вылезая за границы экрана
+            var rect = el.getBoundingClientRect();
+            var tipRect = tooltip.getBoundingClientRect();
+            var left = rect.left;
+            var top = rect.bottom + 8;
+            if (left + tipRect.width > window.innerWidth - 8) {
+                left = window.innerWidth - tipRect.width - 8;
+            }
+            if (left < 8) left = 8;
+            if (top + tipRect.height > window.innerHeight - 8) {
+                top = rect.top - tipRect.height - 8;
+            }
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+            // Показываем на следующем кадре для анимации
+            requestAnimationFrame(function() {
+                if (tooltip) tooltip.classList.add('show');
+            });
+        }
+
+        descs.forEach(function(el) {
+            // Реагируем только на сокращённые описания
+            function handleToggle(e) {
+                e.stopPropagation();
+                if (!el.classList.contains('is-truncated')) return;
+                if (activeEl === el && tooltip) {
+                    hideTooltip();
+                } else {
+                    showTooltipFor(el);
+                }
+            }
+            el.addEventListener('click', handleToggle);
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleToggle(e);
+                }
+            });
+        });
+
+        // Закрытие по клику вне и по Escape
+        document.addEventListener('click', function() {
+            if (tooltip) hideTooltip();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && tooltip) hideTooltip();
+        });
+        // При ресизве пересчитываем, что не влазит, и прячем тултип
+        var resizeTimer = null;
+        window.addEventListener('resize', function() {
+            if (tooltip) hideTooltip();
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                descs.forEach(function(el) {
+                    el.classList.toggle('is-truncated', el.scrollWidth > el.clientWidth + 1);
+                });
+            }, 150);
+        });
+    })();
 });
