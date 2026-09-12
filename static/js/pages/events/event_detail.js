@@ -641,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
     // === ОПИСАНИЕ БИЛЕТА: одна строка, клик — полный текст ===
     (function initTicketDescriptions() {
         var descs = document.querySelectorAll('.ticket-desc');

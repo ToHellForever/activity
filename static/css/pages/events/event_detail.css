@@ -339,7 +339,7 @@ a {
   text-overflow: ellipsis;
   cursor: pointer;
   transition: color 0.15s ease;
-  font-family: 'Verdana', sans-serif;
+  font-family: "Verdana", sans-serif;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
@@ -672,29 +672,132 @@ a {
   color: #857d7d;
 }
 
-/* Десктоп (>= 900px): фото растягивается по высоте правого блока */
-@media (min-width: 900px) {
+/* Десктоп (>= 768px): фото растягивается по высоте правого блока */
+@media (min-width: 768px) {
+  .event-detail-container > .row {
+    align-items: stretch;
+  }
+
+  .event-detail-container .event-detail-image:first-child {
+    display: flex;
+  }
+
   .image-wrapper {
     aspect-ratio: unset;
-    height: 100%;
-    min-height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
-  .image-wrapper img {
-    object-fit: cover;
+  .image-wrapper .carousel,
+  .image-wrapper .carousel-inner,
+  .image-wrapper .carousel-item {
+    height: 100%;
   }
+
+  /* height:100% + min-height:100% — картинка всегда заполняет всю
+     ячейку по высоте и не оставляет пустых полос; object-fit:cover
+     подрезает только лишнее, масштаб при этом уменьшается вместе
+     с блоком, а не остаётся исходным */
 }
 
-/* Мобильные (< 900px): фото на всю ширину, возвращаем пропорции */
-@media (max-width: 900px) {
-  .event-detail-image:first-child {
-    width: 100%;
+/* Название билета в модалке покупки: одна строка, клик — полный текст.
+   Логика как у описаний билетов в блоке .tickets-section: JS помечает
+   элементы, текст которых не влазит в строку, классом .is-truncated */
+.ticket-name-modal {
+  min-width: 0; /* span сжимается вместе с ячейкой в flex-строке */
+}
+
+.ticket-name-modal .ticket-name-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: none;
+  min-width: 0;
+}
+
+.ticket-name-modal .ticket-name-text.is-truncated {
+  cursor: pointer;
+  color: inherit;
+}
+
+.ticket-name-modal .ticket-name-text.is-truncated:hover {
+  color: #4a7cf7;
+}
+
+.ticket-name-modal .ticket-name-text.is-truncated::after {
+  content: " \2026"; /* подсказка, что текст сокращён */
+  color: #4a7cf7;
+  font-weight: 700;
+}
+
+.ticket-name-modal .ticket-name-text:not(.is-truncated)::after {
+  content: none;
+}
+
+.ticket-name-modal .ticket-name-text:focus-visible {
+  outline: 2px solid #4a7cf7;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Тултип полного названия билета в модалке */
+#buyTicketModal .ticket-desc-tooltip {
+  z-index: 1080; /* под модалкой (Bootstrap z-index 1055), но поверх страницы */
+}
+
+/* Раскрытие по клику (мобильные): класс .is-expanded добавляет JS */
+.collapsible-text.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+/* Мобильные (< 768px): фото на всю ширину от края до края, возвращаем пропорции */
+@media (max-width: 767.98px) {
+  /* Компенсируем боковые отступы container-fluid из base.html —
+     изображение игнорирует их и тянется от края до края экрана.
+     12px — стандартный padding Bootstrap-контейнеров */
+  .event-detail-container > .row {
+    margin-left: -12px;
+    margin-right: -12px;
   }
-  .event-detail-image:first-child + .col-6 {
-    width: 100%;
+  .event-detail-container > .row > .event-detail-image {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* Инфо-блок остаётся с обычными отступами */
+  .event-detail-container > .row > .event-detail-info {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  /* Тег-строка: значения не должны вылезать за экран —
+     перенос по словам вместо nowrap-обрезки */
+  .info-tag {
+    white-space: normal;
+  }
+  /* Сворачиваемые тексты: 2 строки, клик — раскрытие */
+  .collapsible-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .image-wrapper {
     aspect-ratio: 4 / 3;
+  }
+  /* Карусель: слайды и картинки заполняют wrapper целиком,
+     чтобы фото масштабировалось вместе с блоком, а не обрезалось */
+  .image-wrapper .carousel-inner,
+  .image-wrapper .carousel-item {
+    height: 100%;
+  }
+  .image-wrapper img,
+  .image-wrapper .carousel-item img {
+    object-fit: cover;
   }
   .event-title {
     margin-top: 20px;
@@ -710,5 +813,8 @@ a {
   }
   .modal-content {
     padding: 15px;
+  }
+  .carousel-item img {
+    border-radius: 0px !important;
   }
 }
