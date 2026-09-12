@@ -29,7 +29,7 @@
                                 </div>
                                 <div class="ticket-cell ticket-cell-price">
                                     {% if ticket.is_per_person %}
-                                        <span class="ticket-price-modal">{{ ticket.price|floatformat }} руб/чел</span>
+                                        <span class="ticket-price-modal">{{ ticket.price|floatformat }} руб.</span>
                                     {% else %}
                                         <span class="ticket-price-modal">{{ ticket.price|floatformat }} ₽</span>
                                     {% endif %}

@@ -185,11 +185,11 @@
                 </div>
                 <div class="ticket-col ticket-col-price">
                 {% if ticket.price == 0 %}
-                Бесплатно
+                <span class="ticket-desc" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">Бесплатно</span>
                 {% elif ticket.is_per_person %}
-                {{ ticket.price|format_price }} руб/чел
+                <span class="ticket-desc" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">{{ ticket.price|format_price }} руб.</span>
                 {% else %}
-                {{ ticket.price|format_price }} руб
+                <span class="ticket-desc" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">{{ ticket.price|format_price }} руб.</span>
                 {% endif %}
                 </div>
                 <div class="ticket-col ticket-col-desc">
