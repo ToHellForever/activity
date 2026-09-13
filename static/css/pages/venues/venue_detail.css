@@ -3,7 +3,7 @@
 /* Основной контент */
 .venue-detail-content {
   display: flex;
-  gap: 30px;
+  gap: 20px;
   margin-bottom: 60px;
 }
 
@@ -19,7 +19,7 @@
 
 /* Информация о площадке */
 .venue-info {
-  flex: 0 0 50%;
+  flex: 0 0 45%;
 }
 .modal-content {
   padding: 15px;
