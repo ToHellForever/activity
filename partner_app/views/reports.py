@@ -180,7 +180,8 @@ def export_participant_list(orders, event, export_format):
 
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = f"Участники {event.title}"
+        # Excel ограничивает имя листа 31 символом
+        ws.title = f"Участники {event.title}"[:31]
 
         # Заголовки
         headers = [
@@ -189,10 +190,9 @@ def export_participant_list(orders, event, export_format):
             "Телефон",
             "Дата покупки",
             "Тип билета",
-            "Статус",
             "Цена",
             "Билет",
-            "Посетил",
+            "Статус",
         ]
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
@@ -213,28 +213,13 @@ def export_participant_list(orders, event, export_format):
                 row=row_num, column=3, value=order.participant_data.get("phone", "")
             )
             ws.cell(
-                row=row_num, column=4, value=order.created_at.strftime("%d.%m.%Y %H:%M")
+                row=row_num, column=4, value=order.created_at.strftime("%d.%m.%Y")
             )
             ws.cell(row=row_num, column=5, value=order.ticket.name)
-            ws.cell(
-                row=row_num,
-                column=6,
-                value="Оплачено" if order.is_paid else "Не оплачен",
-            )
-            ws.cell(row=row_num, column=7, value=f"{order.total_price:.2f} руб.")
-            ws.cell(
-                row=row_num, column=8, value=f"Билетов: {order.quantity}"
-            )
-            # Статус посещения — проверяем по OrderTicket
-            attended_tickets = order.tickets.filter(attended=True).count()
-            total_tickets = order.tickets.count()
-            if attended_tickets == 0:
-                visited = "Нет"
-            elif attended_tickets == total_tickets:
-                visited = "Да"
-            else:
-                visited = f"Частично ({attended_tickets}/{total_tickets})"
-            ws.cell(row=row_num, column=9, value=visited)
+            ws.cell(row=row_num, column=6, value=f"{order.total_price:.2f} руб.")
+            ws.cell(row=row_num, column=7, value=f"Билетов: {order.quantity}")
+            # Статус заказа
+            ws.cell(row=row_num, column=8, value=order.get_payment_status_display())
 
         # Автоподбор ширины столбцов
         for column in ws.columns:
@@ -265,7 +250,6 @@ def export_participant_list(orders, event, export_format):
         import io
         import os
 
-        import qrcode
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
         from reportlab.platypus import (
@@ -273,7 +257,6 @@ def export_participant_list(orders, event, export_format):
             Table,
             TableStyle,
             Paragraph,
-            Image,
         )
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.pdfbase import pdfmetrics
@@ -310,60 +293,27 @@ def export_participant_list(orders, event, export_format):
                 "Статус",
                 "Цена",
                 "Кол-во",
-                "QR",
             ]
         ]
 
         for index, order in enumerate(orders, 1):
-            # Генерация QR-кодов
-            qr_images = []
-            for i in range(order.quantity):
-                qr = qrcode.QRCode(
-                    version=1,
-                    error_correction=qrcode.constants.ERROR_CORRECT_L,
-                    box_size=10,
-                    border=4,
-                )
-                qr.add_data(f"Order ID: {order.id}, Билет: {i+1}")
-                qr.make(fit=True)
-                img = qr.make_image(fill_color="black", back_color="white")
-                qr_code_img = io.BytesIO()
-                img.save(qr_code_img, format="PNG")
-                qr_code_img.seek(0)
-                qr_images.append(Image(qr_code_img, width=40, height=40))
-
-            # Для первой строки заказа добавляем QR-коды в таблицу
-            if qr_images:
-                qr_cell = qr_images[0]  # Первый QR-код в основной строке
-                other_qrs = qr_images[
-                    1:
-                ]  # Остальные QR-коды добавим как дополнительные строки
-            else:
-                qr_cell = " "
-                other_qrs = []
-
             data.append(
                 [
                     f"{order.participant_data.get('first_name', '')} {order.participant_data.get('last_name', '')}".strip(),
                     order.participant_data.get("email", ""),
                     order.participant_data.get("phone", ""),
-                    order.created_at.strftime("%d.%m.%Y %H:%M"),
+                    order.created_at.strftime("%d.%m.%Y"),
                     order.ticket.name,
-                    "Оплачено" if order.is_paid else "Не оплачен",
+                    order.get_payment_status_display(),
                     f"{order.total_price:.2f} руб.",
                     f"{order.quantity}",
-                    qr_cell,
                 ]
             )
-
-            # Добавляем дополнительные QR-коды как отдельные строки в таблицу
-            for qr_img in other_qrs:
-                data.append(["", "", "", "", "", "", "", "", qr_img])
 
         # Создаем таблицу
         table = Table(data)
         # Устанавливаем ширину столбцов
-        column_widths = [80, 100, 60, 70, 70, 60, 60, 40, 50]
+        column_widths = [80, 90, 60, 70, 70, 70, 60, 40]
         table._argW = column_widths
 
         table.setStyle(
@@ -395,7 +345,7 @@ def export_participant_list(orders, event, export_format):
         buffer.seek(0)
         response = HttpResponse(buffer, content_type="application/pdf")
         response["Content-Disposition"] = (
-            f'attachment; filename="Участники_{event.title}_с_QR.pdf"'
+            f'attachment; filename="Участники_{event.title}.pdf"'
         )
         return response
 

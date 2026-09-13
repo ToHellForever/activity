@@ -38,7 +38,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
         ticket_name = order.ticket.name
         quantity = order.quantity
         total_price = order.total_price
-        order_date = order.created_at.strftime("%d.%m.%Y %H:%M")
+        order_date = order.created_at.strftime("%d.%m.%Y")
 
         report_data.append(
             {
@@ -48,6 +48,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
                 "price": total_price,
                 "date": order_date,
                 "refund": "-",  # Пометка, что это не возврат
+                "status": order.get_payment_status_display(),
             }
         )
 
@@ -60,7 +61,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
         ticket_name = order.ticket.name
         quantity = order.quantity
         total_price = order.total_price
-        order_date = order.created_at.strftime("%d.%m.%Y %H:%M")
+        order_date = order.created_at.strftime("%d.%m.%Y")
 
         report_data.append(
             {
@@ -70,6 +71,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
                 "price": total_price,
                 "date": order_date,
                 "refund": "Возврат",  # Пометка, что это возврат
+                "status": order.get_payment_status_display(),
             }
         )
 
@@ -79,7 +81,7 @@ def generate_sales_report(partner, period_start, period_end, report_type):
     # Добавляем итоговую строку (без учёта возвратов)
     report_data.append(
         {
-            "event": "ИТОГО (без возвратов):",
+            "event": "ИТОГО (без возвратов)",
             "ticket": "",
             "quantity": total_tickets,
             "price": total_sales,
@@ -155,7 +157,8 @@ def generate_excel_report(data, period_start, period_end):
     """Генерирует отчёт в формате Excel с поддержкой кириллицы."""
     wb = Workbook()
     ws = wb.active
-    ws.title = f"Отчёт с {period_start} по {period_end}"
+    # Excel ограничивает имя листа 31 символом
+    ws.title = f"Отчёт {period_start:%d.%m.%Y}-{period_end:%d.%m.%Y}"[:31]
 
     # Заголовки
     ws.append(
@@ -290,7 +293,9 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
     elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
     # Таблица с данными
-    table_data = [["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа"]]
+    table_data = [
+        ["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа", "Статус"]
+    ]
 
     for idx, row in enumerate(data):
         if row.get("is_total"):
@@ -302,6 +307,7 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                     str(row.get("quantity", "")),
                     f"{row.get('price', 0):.2f}",
                     row.get("date", ""),
+                    row.get("status", ""),
                 ]
             )
         else:
@@ -313,10 +319,11 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                     str(row.get("quantity", "")),
                     f"{row.get('price', 0):.2f}",
                     row.get("date", ""),
+                    row.get("status", ""),
                 ]
             )
 
-    table = Table(table_data, colWidths=[135, 150, 100, 80, 100])
+    table = Table(table_data, colWidths=[130, 120, 45, 65, 85, 100])
     table.setStyle(
         TableStyle(
             [
