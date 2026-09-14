@@ -11,8 +11,6 @@
   text-decoration: none;
 }
 .empty-state img {
-  width: 3em;
-  opacity: 0.5;
   margin-bottom: 10px;
 }
 .empty-hint {
