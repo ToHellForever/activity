@@ -1,4 +1,5 @@
 """Мероприятия партнёра: создание, редактирование, удаление, медиафайлы."""
+import json
 import logging
 import os
 import tempfile
@@ -58,20 +59,22 @@ def _event_form_context(request, form, *, is_edit, ticket_data=None, selected_ta
         "has_active_subscription": active_subscription is not None,
         "has_free_tickets": False,  # обновляется через JavaScript
         "packages": EventPackage.objects.all(),
+        # Ошибки формы для тостов на клиенте (JS читает data-form-errors у .partner-layout).
+        # Апострофы экранируем: JSON вставляется в HTML-атрибут в одинарных кавычках.
+        "form_errors_json": json.dumps(
+            {field: [str(error) for error in errors] for field, errors in form.errors.items()}
+        ).replace("'", "\u0027"),
     }
     if primary_event_image is not None:
         context["primary_event_image"] = primary_event_image
     return context
 
 
-def _ticket_data_from_post(request, with_description=False):
-    """Собирает введённые пользователем билеты для повторного рендера формы."""
-    keys = ["ticket_name[]", "ticket_price[]", "ticket_quantity[]"]
-    if with_description:
-        keys.append("ticket_description[]")
+def _ticket_data_from_post(request):
+    """Собирает введённые пользователем билеты (включая описание) для повторного рендера формы."""
+    keys = ["ticket_name[]", "ticket_price[]", "ticket_quantity[]", "ticket_description[]"]
     zipped = zip(*(request.POST.getlist(k) for k in keys))
-    fields = ("name", "price", "quantity", "description") if with_description \
-        else ("name", "price", "quantity")
+    fields = ("name", "price", "quantity", "description")
     return [
         dict(zip(fields, values))
         for values in zipped
@@ -411,13 +414,12 @@ def create_event(request):
             return render(
                 request,
                 "partner/event_form.html",
-                {
-                    "form": form,
-                    "is_edit": False,
-                    "ticket_data": _ticket_data_from_post(request),
-                    "rejection_messages": get_rejection_messages(request),
-                    "all_tags": Tag.objects.all(),
-                },
+                _event_form_context(
+                    request,
+                    form,
+                    is_edit=False,
+                    ticket_data=_ticket_data_from_post(request),
+                ),
             )
 
         # Описание обязательно для каждого билета
@@ -429,13 +431,13 @@ def create_event(request):
             return render(
                 request,
                 "partner/event_form.html",
-                {
-                    "form": form,
-                    "is_edit": False,
-                    "ticket_data": _ticket_data_from_post(request, with_description=True),
-                    "rejection_messages": get_rejection_messages(request),
-                    "all_tags": Tag.objects.all(),
-                },
+                _event_form_context(
+                    request,
+                    form,
+                    is_edit=False,
+                    ticket_data=_ticket_data_from_post(request),
+                    selected_tag_ids=event.tags.values_list('id', flat=True),
+                ),
             )
 
         # Если есть и бесплатные, и платные билеты одновременно
@@ -447,13 +449,13 @@ def create_event(request):
             return render(
                 request,
                 "partner/event_form.html",
-                {
-                    "form": form,
-                    "is_edit": False,
-                    "ticket_data": _ticket_data_from_post(request),
-                    "rejection_messages": get_rejection_messages(request),
-                    "all_tags": Tag.objects.all(),
-                },
+                _event_form_context(
+                    request,
+                    form,
+                    is_edit=False,
+                    ticket_data=_ticket_data_from_post(request),
+                    selected_tag_ids=event.tags.values_list('id', flat=True),
+                ),
             )
 
         # Создаём билеты (раньше этот цикл был мёртвым кодом после return)
@@ -577,7 +579,7 @@ def edit_event(request, event_id):
                         request,
                         form,
                         is_edit=True,
-                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                        ticket_data=_ticket_data_from_post(request),
                         selected_tag_ids=event.tags.values_list('id', flat=True),
                     ),
                 )
@@ -745,13 +747,13 @@ def edit_event(request, event_id):
                 return render(
                     request,
                     "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": True,
-                        "ticket_data": _ticket_data_from_post(request),
-                        "rejection_messages": get_rejection_messages(request),
-                        "all_tags": Tag.objects.all(),
-                    },
+                    _event_form_context(
+                        request,
+                        form,
+                        is_edit=True,
+                        ticket_data=_ticket_data_from_post(request),
+                        selected_tag_ids=event.tags.values_list('id', flat=True),
+                    ),
                 )
 
             # Описание обязательно для каждого билета
@@ -763,13 +765,13 @@ def edit_event(request, event_id):
                 return render(
                     request,
                     "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": True,
-                        "ticket_data": _ticket_data_from_post(request, with_description=True),
-                        "rejection_messages": get_rejection_messages(request),
-                        "all_tags": Tag.objects.all(),
-                    },
+                    _event_form_context(
+                        request,
+                        form,
+                        is_edit=True,
+                        ticket_data=_ticket_data_from_post(request),
+                        selected_tag_ids=event.tags.values_list('id', flat=True),
+                    ),
                 )
 
             if rows["has_free"] and rows["has_paid"]:
@@ -780,13 +782,13 @@ def edit_event(request, event_id):
                 return render(
                     request,
                     "partner/event_form.html",
-                    {
-                        "form": form,
-                        "is_edit": True,
-                        "ticket_data": _ticket_data_from_post(request),
-                        "rejection_messages": get_rejection_messages(request),
-                        "all_tags": Tag.objects.all(),
-                    },
+                    _event_form_context(
+                        request,
+                        form,
+                        is_edit=True,
+                        ticket_data=_ticket_data_from_post(request),
+                        selected_tag_ids=event.tags.values_list('id', flat=True),
+                    ),
                 )
 
             _create_tickets(event, rows)

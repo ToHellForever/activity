@@ -30,10 +30,6 @@
        class="mobile-nav-item {% if request.resolver_match.url_name == 'finances' %}active{% endif %}">
         Финансы
     </a>
-    <a href="#"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_places' %}active{% endif %}">
-        Площадки
-    </a>
     <a href="{% url 'support_dashboard' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
         Поддержка

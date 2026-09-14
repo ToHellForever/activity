@@ -297,7 +297,7 @@ def request_event_change(request, event_id):
                         request,
                         event,
                         form,
-                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                        ticket_data=_ticket_data_from_post(request),
                     ),
                 )
 
@@ -314,7 +314,7 @@ def request_event_change(request, event_id):
                         request,
                         event,
                         form,
-                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                        ticket_data=_ticket_data_from_post(request),
                     ),
                 )
 
@@ -330,7 +330,7 @@ def request_event_change(request, event_id):
                         request,
                         event,
                         form,
-                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                        ticket_data=_ticket_data_from_post(request),
                     ),
                 )
 
@@ -421,7 +421,7 @@ def request_event_change(request, event_id):
                         request,
                         event,
                         form,
-                        ticket_data=_ticket_data_from_post(request, with_description=True),
+                        ticket_data=_ticket_data_from_post(request),
                     ),
                 )
 
