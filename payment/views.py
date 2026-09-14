@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.core.mail import send_mail, EmailMultiAlternatives
 import logging
 from django.template.loader import render_to_string
-from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, CustomUser, OrderTicket
+from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, OrderTicket
 from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
 from django.db import transaction, models
 from django.db.models import Sum
@@ -15,7 +15,7 @@ import json
 import uuid
 import hmac
 import hashlib
-from yookassa import Configuration, Payment, Invoice
+from yookassa import Configuration, Payment
 from datetime import timedelta
 from decimal import Decimal
 # Настройка ЮКассы
@@ -93,206 +93,34 @@ def send_reservation_email(order, request):
         fail_silently=False,
     )
 
-def send_package_purchase_email(subscription, request=None):
+def _send_package_invoice_request_email(user, package, subscription, contact_email):
     """
-    Отправка уведомления на почту с информацией о покупке пакета.
+    Отправка заявки на выставление счёта за пакет.
+    Пакеты оплачиваются по безналу: счёт выставляется администратором вручную,
+    после оплаты он активирует подписку через админку.
     """
-    user_email = subscription.user.email
-    if not user_email:
-        return
+    subject = f"Заявка на выставление счёта для пакета {package.name}"
+    message = f"""
+Пользователь {user.email} запросил выставление счёта для покупки пакета {package.name}.
 
-    # Формирование контекста для шаблона письма
-    context = {
-        "subscription": subscription,
-        "package": subscription.package,
-        "user": subscription.user,
-        "request": request,
-    }
+Детали:
+- Пакет: {package.name}
+- Цена: {package.price} RUB
+- Пользователь: {user.email} ({user.first_name} {user.last_name})
+- Email для связи: {contact_email}
+- ID подписки: {subscription.id}
 
-    # Рендеринг HTML-шаблона письма
-    email_html = render_to_string("emails/package_purchase_confirmation.html", context)
+После оплаты счёта активируйте подписку через админку.
+"""
 
-    # Отправка письма
     send_mail(
-        subject=f"Подтверждение покупки пакета {subscription.package.name}",
-        message=f"Вы успешно приобрели пакет {subscription.package.name}.",
+        subject=subject,
+        message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user_email],
-        html_message=email_html,
+        recipient_list=[contact_email, settings.DEFAULT_FROM_EMAIL],
         fail_silently=False,
     )
 
-
-def get_package_subscription_dates(package):
-    """Возвращает (end_date, subscription_type) для подписки на пакет."""
-    if package.is_monthly:
-        return timezone.now() + timezone.timedelta(days=30), "monthly"
-    return timezone.now() + timezone.timedelta(days=365), "one_time"
-
-
-def activate_package_subscription(subscription):
-    """
-    Активирует подписку на пакет после успешной оплаты.
-
-    Закрывает все остальные активные подписки пользователя: без этого старый
-    пакет продолжал бы считаться действующим после смены тарифа.
-    Функция идемпотентна — повторный вызов (дубль вебхука или страница
-    возврата раньше вебхука) ничего не меняет и возвращает False.
-    """
-    with transaction.atomic():
-        subscription = (
-            UserPackageSubscription.objects.select_for_update().get(pk=subscription.pk)
-        )
-        if subscription.is_active:
-            return False
-
-        UserPackageSubscription.objects.filter(
-            user=subscription.user, is_active=True
-        ).exclude(pk=subscription.pk).update(is_active=False)
-
-        subscription.end_date, subscription.subscription_type = (
-            get_package_subscription_dates(subscription.package)
-        )
-        subscription.is_active = True
-        subscription.save()
-    return True
-
-
-def find_package_subscription_for_payment(payment_id, metadata):
-    """
-    Ищет подписку, под которую был создан платёж ЮКассы.
-    Сначала — по привязанному ID платежа, затем по subscription_id из
-    метаданных, затем последняя ожидающая оплаты подписка на этот пакет
-    (для платежей, созданных до появления привязки).
-    """
-    subscription = UserPackageSubscription.objects.filter(
-        yookassa_payment_id=payment_id
-    ).first()
-    if subscription:
-        return subscription
-
-    subscription_id = metadata.get("subscription_id")
-    if subscription_id:
-        return UserPackageSubscription.objects.filter(pk=subscription_id).first()
-
-    return UserPackageSubscription.objects.filter(
-        user_id=metadata.get("user_id"),
-        package_id=metadata.get("package_id"),
-        is_active=False,
-    ).order_by("-start_date").first()
-
-
-def create_package_payment_object(request, package, subscription, description,
-                                 payment_type="yookassa", capture=True, extra_metadata=None):
-    """
-    Создаёт платёж ЮКассы за пакет и привязывает его к подписке.
-    ID платежа сохраняем, чтобы проверить статус оплаты на странице возврата —
-    вебхук от ЮКассы может не дойти (локальная разработка, недоступный URL).
-    """
-    metadata = {
-        "package_id": package.id,
-        "user_id": request.user.id,
-        "payment_type": payment_type,
-    }
-    if subscription is not None:
-        metadata["subscription_id"] = subscription.id
-    if extra_metadata:
-        metadata.update(extra_metadata)
-
-    payment = Payment.create(
-        {
-            "amount": {"value": str(package.price), "currency": "RUB"},
-            "confirmation": {
-                "type": "redirect",
-                "return_url": request.build_absolute_uri(
-                    f"/payment/package_success/{package.id}/"
-                ),
-            },
-            "capture": capture,
-            "description": description,
-            "metadata": metadata,
-        },
-        uuid.uuid4(),
-    )
-
-    if subscription is not None:
-        subscription.yookassa_payment_id = payment.id
-        subscription.save(update_fields=["yookassa_payment_id"])
-
-    return payment
-
-
-def create_package_payment(request, package_id):
-    """
-    Создание платежа в ЮКассе для покупки пакета.
-    """
-    import traceback
-
-    if request.method != "POST":
-        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
-
-    try:
-        package = get_object_or_404(EventPackage, id=package_id)
-        user = request.user
-
-        # Проверка, что пользователь авторизован
-        if not user.is_authenticated:
-            return JsonResponse({"error": "Пользователь не авторизован"}, status=403)
-
-        # Проверка, что пакет доступен для покупки
-        if not package:
-            return JsonResponse({"error": "Пакет не найден"}, status=404)
-
-        # Проверяем, есть ли у пользователя активная подписка
-        active_subscription = UserPackageSubscription.objects.filter(
-            user=user, is_active=True
-        ).first()
-
-        if active_subscription:
-            # Если есть активная подписка, предлагаем выбор: изменить сейчас или запланировать
-            return JsonResponse({
-                "has_active_subscription": True,
-                "package_id": package_id,
-                "current_package": {
-                    "id": active_subscription.package.id,
-                    "name": active_subscription.package.name,
-                    "end_date": active_subscription.end_date.strftime('%Y-%m-%d %H:%M:%S')
-                },
-                "new_package": {
-                    "id": package_id,
-                    "name": package.name,
-                    "price": str(package.price)
-                }
-            })
-
-        # Создаём подписку, ожидающую оплаты. Платёж привязываем к ней,
-        # чтобы подписку было чем активировать и на странице возврата,
-        # и вебхуком — в любом порядке и без дублей.
-        subscription = UserPackageSubscription.objects.create(
-            user=user,
-            package=package,
-            subscription_type="monthly" if package.is_monthly else "one_time",
-            is_active=False,  # Ждёт оплаты
-        )
-
-        # Создание платежа в ЮКассе
-        payment = create_package_payment_object(
-            request,
-            package,
-            subscription,
-            f"Оплата пакета {package.name} для пользователя {user.email}",
-        )
-
-        return JsonResponse(
-            {
-                "payment_url": payment.confirmation.confirmation_url,
-                "package_id": package_id,
-            }
-        )
-
-    except Exception as e:
-        logger.error("Ошибка при создании платежа за пакет: %s", e, exc_info=True)
-        return JsonResponse({"error": str(e)}, status=500)
 
 def handle_package_change_choice(request):
     """Обработка выбора пользователя при смене пакета."""
@@ -319,34 +147,30 @@ def handle_package_change_choice(request):
             return JsonResponse({"error": "Активная подписка не найдена"}, status=404)
 
         if change_type == "immediate":
-            # Немедленная смена пакета — создаём неактивную подписку,
-            # активируем после успешной оплаты (вебхуком либо страницей возврата).
-            # Старая подписка закрывается в момент активации новой,
-            # иначе у пользователя осталась бы вторая активная подписка.
+            # Немедленная смена пакета — создаём неактивную подписку.
+            # Пакеты оплачиваются по безналу: счёт выставляется вручную,
+            # после оплаты администратор активирует подписку через админку.
+            # Старая подписка закроется при активации новой.
             new_subscription = UserPackageSubscription.objects.create(
                 user=user,
                 package=package,
                 subscription_type='monthly' if package.is_monthly else 'one_time',
-                is_active=False  # Ждёт оплаты
+                is_active=False  # Ждёт оплаты по счёту
             )
 
-            # Создаем платеж в ЮКассе для новой подписки
-            payment = create_package_payment_object(
-                request,
-                package,
-                new_subscription,
-                f"Оплата пакета {package.name} для пользователя {user.email}",
+            # Отправляем заявку на счёт администратору
+            _send_package_invoice_request_email(
+                user, package, new_subscription, settings.DEFAULT_FROM_EMAIL
             )
 
             return JsonResponse({
                 "status": "success",
-                "message": "Пакет успешно изменен",
+                "message": "Заявка на выставление счёта отправлена. "
+                           "После оплаты счёта подписка будет активирована.",
                 "new_subscription": {
                     "id": new_subscription.id,
                     "package_name": new_subscription.package.name,
-                    "end_date": new_subscription.end_date.strftime('%Y-%m-%d %H:%M:%S')
                 },
-                "payment_url": payment.confirmation.confirmation_url
             })
 
         elif change_type == "scheduled":
@@ -372,8 +196,10 @@ def handle_package_change_choice(request):
 
 def create_invoice(request, package_id):
     """
-    Создание счёта для юридических лиц.
-    Создаёт подписку со статусом 'ожидает оплаты по счёту'.
+    Заявка на выставление счёта за пакет (оплата по безналу).
+    Создаёт подписку со статусом 'ожидает оплаты по счёту' и отправляет
+    заявку администратору. Счёт выставляется вручную, после оплаты
+    администратор активирует подписку через админку.
     """
     if request.method != "POST":
         return JsonResponse({"error": "Метод не поддерживается"}, status=405)
@@ -393,7 +219,7 @@ def create_invoice(request, package_id):
             return JsonResponse({"error": "Не указан email администратора"}, status=400)
 
         # Старую подписку здесь не закрываем: она закроется автоматически
-        # в момент активации новой (activate_package_subscription).
+        # в момент активации новой администратором.
         # Если счёт так и не оплатят — текущий пакет продолжит работать.
 
         # Создаём новую подписку — неактивную, ждём оплату по счёту
@@ -404,73 +230,21 @@ def create_invoice(request, package_id):
             is_active=False,  # Ждёт оплаты по счёту
         )
 
-        # Создаём платёж со статусом 'ожидает оплаты'
-        # Тестовый аккаунт ЮКассы не поддерживает /v3/invoices,
-        # поэтому используем Payment.create с capture=False
+        # Отправляем заявку на выставление счёта
         try:
-            payment = create_package_payment_object(
-                request,
-                package,
-                new_subscription,
-                f"Счёт на оплату пакета {package.name} для пользователя {user.email}",
-                payment_type="invoice",
-                capture=False,  # Не захватываем деньги — ждём оплату по счёту
-                extra_metadata={"admin_email": admin_email},
+            _send_package_invoice_request_email(
+                user, package, new_subscription, admin_email
             )
         except Exception as e:
-            logger.error("Ошибка при создании счёта в ЮКассе: %s", e, exc_info=True)
-            return JsonResponse({"error": f"Ошибка при создании счёта: {str(e)}"}, status=500)
-
-        if not payment:
-            return JsonResponse({"error": "Не удалось создать счёт в ЮКассе"}, status=500)
-
-        # Ссылка на платёжную форму: по ней счёт можно оплатить
-        # без участия администратора. Платёж двухстадийный (capture=False),
-        # поэтому после оплаты ЮКасса пришлёт payment.waiting_for_capture,
-        # мы подтвердим платёж и подписка активируется автоматически.
-        try:
-            payment_url = payment.confirmation.confirmation_url
-        except AttributeError:
-            payment_url = ""
-            logger.warning(
-                "[invoice] У платежа нет confirmation_url",
-                extra={"payment_id": payment.id},
-            )
-
-        # Отправляем уведомление
-        from django.core.mail import send_mail
-        from django.conf import settings
-
-        subject = f"Заявка на выставление счёта для пакета {package.name}"
-        message = f"""
-Пользователь {user.email} запросил выставление счёта для покупки пакета {package.name}.
-
-Детали:
-- Пакет: {package.name}
-- Цена: {package.price} RUB
-- Пользователь: {user.email} ({user.first_name} {user.last_name})
-- Email для связи: {admin_email}
-- ID подписки: {new_subscription.id}
-- ID платежа: {payment.id}
-- Ссылка для оплаты: {payment_url}
-
-Оплатить счёт можно по ссылке выше. После оплаты подписка активируется автоматически.
-"""
-
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[admin_email, settings.DEFAULT_FROM_EMAIL],
-            fail_silently=False,
-        )
+            logger.error("Ошибка при отправке заявки на счёт: %s", e, exc_info=True)
+            return JsonResponse({"error": "Не удалось отправить заявку на счёт"}, status=500)
 
         return JsonResponse({
             "status": "success",
-            "message": "Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.",
+            "message": "Заявка на выставление счёта отправлена. "
+                       "После оплаты счёта подписка будет активирована.",
             "package_id": package_id,
             "subscription_id": new_subscription.id,
-            "payment_url": payment_url,
         })
 
     except Exception as e:
@@ -1192,126 +966,65 @@ def yookassa_webhook(request):
             if event_type == "payment.succeeded":
                 metadata = payment_data.get("metadata", {})
 
-                # Проверяем, является ли платеж за пакет
-                if "package_id" in metadata and "user_id" in metadata:
-                    package_id = metadata["package_id"]
-                    user_id = metadata["user_id"]
+                # Обработка платежа за билет
+                logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment_id})
+                orders = []
+                try:
+                    order = Order.objects.get(yookassa_payment_id=payment_id)
+                    orders = [order]
+                    logger.info('[webhook] Найден одиночный заказ', extra={'order_id': order.id})
+                except Order.DoesNotExist:
+                    logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment_id})
+                    metadata = payment_data.get("metadata", {})
+                    order_ids_raw = metadata.get("order_ids", [])
+                    order_ids = []
+                    if isinstance(order_ids_raw, str):
+                        try:
+                            order_ids = json.loads(order_ids_raw)
+                        except json.JSONDecodeError:
+                            order_ids = []
+                    elif isinstance(order_ids_raw, list):
+                        order_ids = order_ids_raw
 
-                    subscription = find_package_subscription_for_payment(
-                        payment_id, metadata
-                    )
+                    if order_ids:
+                        # Сначала пытаемся найти по payment_id
+                        orders = Order.objects.filter(yookassa_payment_id=payment_id, id__in=order_ids)
+                        if not orders.exists():
+                            logger.warning('[webhook] Не найдено по payment_id, ищу только по ID', extra={'order_ids': order_ids})
+                            orders = Order.objects.filter(id__in=order_ids)
 
-                    if subscription:
-                        # Активируем ожидающую подписку и закрываем прежнюю.
-                        # Письмо отправляем только при первой активации —
-                        # вебхук может прийти повторно.
-                        if activate_package_subscription(subscription):
-                            send_package_purchase_email(subscription, request)
-                    else:
-                        # Подписки нет — создаём новую активную
-                        package = EventPackage.objects.get(id=package_id)
-                        user = CustomUser.objects.get(id=user_id)
-
-                        # Определяем дату окончания подписки
-                        end_date, subscription_type = get_package_subscription_dates(
-                            package
-                        )
-
-                        subscription = UserPackageSubscription.objects.create(
-                            user=user,
-                            package=package,
-                            end_date=end_date,
-                            subscription_type=subscription_type,
-                            is_active=True,
-                            yookassa_payment_id=payment_id,
-                        )
-                        UserPackageSubscription.objects.filter(
-                            user=user, is_active=True
-                        ).exclude(pk=subscription.pk).update(is_active=False)
-
-                        # Отправка уведомления на почту
-                        send_package_purchase_email(subscription, request)
-
-                else:
-                    # Обработка платежа за билет
-                    logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment_id})
-                    orders = []
-                    try:
-                        order = Order.objects.get(yookassa_payment_id=payment_id)
-                        orders = [order]
-                        logger.info('[webhook] Найден одиночный заказ', extra={'order_id': order.id})
-                    except Order.DoesNotExist:
-                        logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment_id})
-                        metadata = payment_data.get("metadata", {})
-                        order_ids_raw = metadata.get("order_ids", [])
-                        order_ids = []
-                        if isinstance(order_ids_raw, str):
-                            try:
-                                order_ids = json.loads(order_ids_raw)
-                            except json.JSONDecodeError:
-                                order_ids = []
-                        elif isinstance(order_ids_raw, list):
-                            order_ids = order_ids_raw
-
-                        if order_ids:
-                            # Сначала пытаемся найти по payment_id
-                            orders = Order.objects.filter(yookassa_payment_id=payment_id, id__in=order_ids)
-                            if not orders.exists():
-                                logger.warning('[webhook] Не найдено по payment_id, ищу только по ID', extra={'order_ids': order_ids})
-                                orders = Order.objects.filter(id__in=order_ids)
-
-                            if orders.exists():
-                                for o in orders:
-                                    o.yookassa_payment_id = payment_id
-                                    o.save()
-                            else:
-                                logger.error('[webhook] Заказы не найдены в БД', extra={'order_ids': order_ids})
-                                raise Http404("Order with the specified Yookassa payment ID does not exist")
+                        if orders.exists():
+                            for o in orders:
+                                o.yookassa_payment_id = payment_id
+                                o.save()
                         else:
-                            logger.error('[webhook] order_ids пуст или отсутствует в метаданных')
+                            logger.error('[webhook] Заказы не найдены в БД', extra={'order_ids': order_ids})
                             raise Http404("Order with the specified Yookassa payment ID does not exist")
-
-                    if orders:
-                        for order in orders:
-                            try:
-                                order.payment_status = "succeeded"
-                                order.is_paid = True
-                                order.yookassa_payment_data = payment_data
-
-                                order.save()
-
-                                logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
-
-
-                                try:
-                                    send_order_confirmation_email(order, request)
-                                    logger.info('[webhook] Письмо отправлено', extra={'order_id': order.id, 'email': order.participant_data.get('email')})
-                                except Exception as e:
-                                    logger.error('[webhook] Ошибка отправки письма', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
-                            except Exception as e:
-                                logger.error('[webhook] Ошибка обновления заказа', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
                     else:
-                        logger.error('[webhook] orders не определен после поиска')
+                        logger.error('[webhook] order_ids пуст или отсутствует в метаданных')
+                        raise Http404("Order with the specified Yookassa payment ID does not exist")
 
-            elif event_type == "payment.waiting_for_capture":
-                # Двухстадийная оплата (счёт для юр. лиц, capture=False):
-                # пользователь оплатил, деньги захолдированы. Подтверждаем
-                # платёж — ЮКасса затем пришлёт payment.succeeded, и
-                # подписка активируется штатной веткой выше.
-                metadata = payment_data.get("metadata", {})
-                if "package_id" in metadata:
-                    try:
-                        Payment.capture(payment_id)
-                        logger.info(
-                            '[webhook] Платёж по счёту подтверждён (capture)',
-                            extra={'payment_id': payment_id},
-                        )
-                    except Exception as e:
-                        logger.error(
-                            '[webhook] Ошибка подтверждения платежа по счёту',
-                            extra={'payment_id': payment_id, 'error': str(e)},
-                            exc_info=True,
-                        )
+                if orders:
+                    for order in orders:
+                        try:
+                            order.payment_status = "succeeded"
+                            order.is_paid = True
+                            order.yookassa_payment_data = payment_data
+
+                            order.save()
+
+                            logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
+
+
+                            try:
+                                send_order_confirmation_email(order, request)
+                                logger.info('[webhook] Письмо отправлено', extra={'order_id': order.id, 'email': order.participant_data.get('email')})
+                            except Exception as e:
+                                logger.error('[webhook] Ошибка отправки письма', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
+                        except Exception as e:
+                            logger.error('[webhook] Ошибка обновления заказа', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
+                else:
+                    logger.error('[webhook] orders не определен после поиска')
 
             elif event_type == "payment.canceled":
                 order_id = payment_data.get("id")
@@ -1590,59 +1303,3 @@ def pay_reserved_order(request, order_id):
         logger.error("Ошибка при оплате забронированного заказа: %s", e, exc_info=True)
         return render(request, "payment/refund_error.html", {"error": str(e)})
 
-def package_success(request, package_id):
-    """
-    Страница успешной оплаты пакета.
-    Вебхук от ЮКассы может не дойти (недоступный URL, дубли, задержки),
-    поэтому здесь проверяем статус платежа сами и активируем подписку.
-    """
-    package = get_object_or_404(EventPackage, id=package_id)
-
-    if request.user.is_authenticated:
-        # Подписку для этого платежа уже активировал вебхук — ничего не делаем
-        subscription = (
-            UserPackageSubscription.objects.filter(
-                user=request.user,
-                package=package,
-                is_active=False,
-            )
-            .exclude(yookassa_payment_id__isnull=True)
-            .exclude(yookassa_payment_id="")
-            .order_by("-start_date")
-            .first()
-        )
-        if subscription:
-            try:
-                payment = Payment.find_one(subscription.yookassa_payment_id)
-                if payment.status == "waiting_for_capture":
-                    # Счёт для юр. лиц: платёж оплачен, но не подтверждён.
-                    # Подтверждаем сами — вебхук мог не дойти.
-                    payment = Payment.capture(payment.id)
-                paid = payment.status == "succeeded" and bool(payment.paid)
-            except Exception as e:
-                logger.error(
-                    "[package_success] Не удалось проверить статус платежа",
-                    extra={"error": str(e)},
-                    exc_info=True,
-                )
-                paid = False
-
-            if paid and activate_package_subscription(subscription):
-                logger.info(
-                    "[package_success] Подписка активирована на странице возврата",
-                    extra={"subscription_id": subscription.id},
-                )
-                try:
-                    send_package_purchase_email(subscription, request)
-                except Exception as e:
-                    logger.error(
-                        "[package_success] Ошибка отправки письма",
-                        extra={"error": str(e)},
-                        exc_info=True,
-                    )
-                messages.success(
-                    request,
-                    f"Пакет «{package.name}» активирован. Прежний пакет закрыт.",
-                )
-
-    return render(request, "payment/package_success.html", {"package": package})

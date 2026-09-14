@@ -49,92 +49,50 @@ function closeBuyPackageModal() {
     if (modalEl) modalEl.style.display = 'none';
 }
 
-var paymentMethodSelect = document.getElementById('payment-method');
-if (paymentMethodSelect) {
-    paymentMethodSelect.addEventListener('change', function() {
-        var invoiceField = document.getElementById('invoice-admin-field');
-        if (invoiceField) {
-            invoiceField.style.display = this.value === 'invoice' ? 'block' : 'none';
-        }
-    });
-}
-
 var buyForm = document.getElementById('buy-package-form');
 if (buyForm) {
     buyForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
     const packageId = formData.get('package_id');
-    const paymentMethod = formData.get('payment_method');
-    console.log('Form submit - packageId:', packageId, 'paymentMethod:', paymentMethod);
+    console.log('Form submit - packageId:', packageId);
     console.log('formData entries:', Array.from(formData.entries()));
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Обработка…';
 
-    if (paymentMethod === 'yookassa') {
-        // Проверяем, это смена пакета или новая покупка
-        if (pendingPackageChange.isChange === false || pendingPackageChange.isChange === undefined) {
-            // Новая покупка пакета
-            fetch('/payment/create_package_payment/' + packageId + '/', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.payment_url) {
-                    window.location.href = data.payment_url;
-                } else if (data.has_active_subscription) {
-                    // Если вдруг оказалась активная подписка — показываем модалку смены
-                    showPackageChangeModal(
-                        data.current_package.name,
-                        data.current_package.end_date,
-                        data.new_package.name,
-                        data.new_package.price
-                    );
-                } else {
-                    alert('Ошибка: ' + (data.error || ''));
-                }
-            })
-            .catch(err => alert('Ошибка: ' + err))
-            .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
-        } else {
-            // Смена пакета — используем запомненный тип (immediate или scheduled)
-            changePackage(pendingPackageChange.changeType);
-        }
-    } else {
-        const adminEmail = formData.get('admin_email');
-        const pkgId = formData.get('package_id');
-        console.log('create_invoice called with packageId:', pkgId, 'adminEmail:', adminEmail);
-        if (!adminEmail) {
-            alert('Укажите email администратора для выставления счёта.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Купить';
-            return;
-        }
-        fetch('/payment/create_invoice/' + pkgId + '/', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-        })
-        .then(r => {
-            console.log('create_invoice response status:', r.status);
-            return r.json().then(data => ({ status: r.status, data }));
-        })
-        .then(({ status, data }) => {
-            console.log('create_invoice response:', status, data);
-            if (status === 200 && data.status === 'success') {
-                alert('Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.');
-                closeBuyPackageModal();
-                window.location.reload();
-            } else {
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-            }
-        })
-        .catch(err => alert('Ошибка: ' + err))
-        .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
+    // Пакеты оплачиваются по безналу: счёт выставляется администратором вручную.
+    // ЮКасса используется только для билетов.
+    const adminEmail = formData.get('admin_email');
+    const pkgId = formData.get('package_id');
+    console.log('create_invoice called with packageId:', pkgId, 'adminEmail:', adminEmail);
+    if (!adminEmail) {
+        alert('Укажите email администратора для выставления счёта.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Купить';
+        return;
     }
+    fetch('/payment/create_invoice/' + pkgId + '/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(r => {
+        console.log('create_invoice response status:', r.status);
+        return r.json().then(data => ({ status: r.status, data }));
+    })
+    .then(({ status, data }) => {
+        console.log('create_invoice response:', status, data);
+        if (status === 200 && data.status === 'success') {
+            alert('Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.');
+            closeBuyPackageModal();
+            window.location.reload();
+        } else {
+            alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(err => alert('Ошибка: ' + err))
+    .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
     });
 }
 
@@ -219,14 +177,9 @@ function changePackage(changeType) {
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
-            if (data.payment_url) {
-                closePackageChangeModal();
-                window.location.href = data.payment_url;
-            } else {
-                closePackageChangeModal();
-                alert(data.message + ': ' + data.scheduled_change.new_package + ' с ' + data.scheduled_change.change_date);
-                window.location.reload();
-            }
+            closePackageChangeModal();
+            alert(data.message);
+            window.location.reload();
         } else {
             alert('Ошибка: ' + (data.error || ''));
         }

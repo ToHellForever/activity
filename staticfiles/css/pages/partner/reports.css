@@ -371,6 +371,8 @@
   letter-spacing: 0.5px;
   border-bottom: 1px solid #ececec;
   padding: 12px 16px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .report-table .table tbody td {
@@ -379,6 +381,7 @@
   padding: 14px 16px;
   vertical-align: middle;
   border-bottom: 1px solid #f2f2f2;
+  text-align: center;
 }
 
 .report-table .btn-outline-primary {
@@ -405,6 +408,130 @@
 .report-table .form-check-input:checked {
   background-color: rgba(255, 131, 72, 1);
   border-color: rgba(255, 131, 72, 1);
+}
+.text-truncate {
+  font-family: "Montserrat";
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+}
+
+.report-table-actions,
+.report-table-header .report-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Колонка действий/чекбоксов: фиксированная ширина, по центру */
+.report-table .table thead th:last-child,
+.report-table .table tbody td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.report-table .table .report-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Пагинация отчётов */
+.reports-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f2f2f2;
+}
+
+.reports-pagination-info {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9a9a9a;
+}
+
+.reports-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reports-pagination-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  margin-right: 2px;
+}
+
+.reports-pagination .page-num,
+.reports-pagination .page-arrow {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.reports-pagination .page-num:not(.active):hover,
+.reports-pagination .page-arrow:not(.disabled):hover {
+  background: #ffe4d1;
+  border-color: #ffb37a;
+  color: #d9541e;
+}
+
+.reports-pagination .page-num.active {
+  background: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
+  color: #fff;
+  cursor: default;
+}
+
+.reports-pagination .page-arrow.disabled {
+  color: #ccc;
+  background: #fafafa;
+  border-color: #eee;
+  cursor: default;
+  pointer-events: none;
+}
+
+.reports-pagination .page-dots {
+  min-width: 18px;
+  text-align: center;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  color: #9a9a9a;
+}
+
+@media (max-width: 576px) {
+  .report-table .card-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .reports-pagination-bar {
+    justify-content: center;
+  }
 }
 
 /* Бейджи в таблице */

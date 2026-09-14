@@ -851,11 +851,14 @@ class PartnerSubscriptionInline(admin.TabularInline):
 class UserPackageSubscriptionAdmin(admin.ModelAdmin):
     """Админка для подписок на пакеты — полный контроль."""
 
-    list_display = ('id', 'user', 'package', 'subscription_type', 'start_date', 'end_date', 'is_active')
+    change_form_template = "admin/userpackagesubscription_change_form.html"
+
+    list_display = ('id', 'user', 'package', 'subscription_type', 'start_date', 'end_date', 'is_active', 'payment_status_display')
     list_filter = ('is_active', 'subscription_type', 'package')
     search_fields = ('user__email', 'user__username', 'package__name')
     readonly_fields = ('start_date',)
     date_hierarchy = 'start_date'
+    actions = ('activate_subscriptions',)
 
     fieldsets = (
         (None, {
@@ -869,6 +872,15 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         }),
     )
 
+    def payment_status_display(self, obj):
+        """Показывает, что подписка ждёт оплаты по счёту."""
+        if obj.pk and not obj.is_active:
+            return mark_safe(
+                '<span style="color:#ba8b00; font-weight:bold;">⏳ Ожидает оплаты по счёту</span>'
+            )
+        return mark_safe('<span style="color:green; font-weight:bold;">✓ Активна</span>')
+    payment_status_display.short_description = "Статус оплаты"
+
     def save_model(self, request, obj, form, change):
         if not change or not obj.start_date:
             obj.start_date = timezone.now()
@@ -877,7 +889,69 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
     def response_change(self, request, obj):
         if '_assign_package' in request.POST:
             return self.assign_package_action(request, obj)
+        if '_activate_subscription' in request.POST:
+            return self.activate_subscription_action(request, obj)
         return super().response_change(request, obj)
+
+    def activate_subscription(self, subscription):
+        """
+        Активирует подписку после оплаты счёта.
+
+        Закрывает все остальные активные подписки пользователя: без этого старый
+        пакет продолжал бы считаться действующим после смены тарифа.
+        Возвращает True, если подписка была активирована (не была активна ранее).
+        """
+        from django.db import transaction
+
+        with transaction.atomic():
+            subscription = (
+                UserPackageSubscription.objects.select_for_update().get(pk=subscription.pk)
+            )
+            if subscription.is_active:
+                return False
+
+            UserPackageSubscription.objects.filter(
+                user=subscription.user, is_active=True
+            ).exclude(pk=subscription.pk).update(is_active=False)
+
+            if subscription.subscription_type == 'monthly':
+                subscription.end_date = timezone.now() + timezone.timedelta(days=30)
+            else:
+                subscription.end_date = timezone.now() + timezone.timedelta(days=365)
+
+            subscription.is_active = True
+            subscription.save()
+        return True
+
+    def activate_subscription_action(self, request, obj):
+        """Активация подписки кнопкой на карточке (после оплаты счёта)."""
+        if self.activate_subscription(obj):
+            self.message_user(
+                request,
+                f'Подписка #{obj.id} на пакет «{obj.package.name}» активирована. '
+                f'Прежние активные подписки пользователя закрыты.',
+                messages.SUCCESS,
+            )
+        else:
+            self.message_user(
+                request,
+                f'Подписка #{obj.id} уже активна — ничего не изменено.',
+                messages.INFO,
+            )
+        return redirect(request.META.get('HTTP_REFERER', '/admin/core/userpackagesubscription/'))
+
+    @admin.action(description='Активировать выбранные подписки (оплата по счёту получена)')
+    def activate_subscriptions(self, request, queryset):
+        """Массовая активация подписок из списка."""
+        activated = 0
+        for subscription in queryset:
+            if self.activate_subscription(subscription):
+                activated += 1
+        self.message_user(
+            request,
+            f'Активировано подписок: {activated} из {queryset.count()}.',
+            messages.SUCCESS if activated else messages.INFO,
+        )
 
     def assign_package_action(self, request, obj):
         """Просто редирект — основная логика через action."""

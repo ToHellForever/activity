@@ -1,45 +1,5 @@
 // === PARTNER DASHBOARD EXTRA ===
 
-// Dropdown handler for payment modal
-document.addEventListener('DOMContentLoaded', function() {
-    // Payment dropdown in buy package modal
-    var paymentDisplay = document.getElementById('paymentDisplay');
-    var paymentDropdown = document.getElementById('paymentDropdown');
-    var paymentInput = document.getElementById('payment-method');
-    
-    if (paymentDisplay && paymentDropdown) {
-        paymentDisplay.addEventListener('click', function() {
-            paymentDropdown.classList.toggle('show');
-        });
-        
-        var options = paymentDropdown.querySelectorAll('.dropdown-option');
-        options.forEach(function(option) {
-            option.addEventListener('click', function() {
-                paymentDisplay.value = this.textContent.trim();
-                paymentInput.value = this.getAttribute('data-value');
-                paymentDropdown.classList.remove('show');
-                
-                // Update active state
-                options.forEach(function(opt) { opt.classList.remove('active'); });
-                this.classList.add('active');
-                
-                // Show/hide admin email field based on payment method
-                var invoiceField = document.getElementById('invoice-admin-field');
-                if (invoiceField) {
-                    invoiceField.style.display = this.getAttribute('data-value') === 'invoice' ? 'block' : 'none';
-                }
-            });
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-container')) {
-                paymentDropdown.classList.remove('show');
-            }
-        });
-    }
-});
-
 // Inline save script
 document.addEventListener('DOMContentLoaded', function() {
     // URL эндпоинтов задаются шаблоном через meta-теги (см. dashboard.html)

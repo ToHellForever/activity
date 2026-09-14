@@ -271,13 +271,6 @@ class UserPackageSubscription(models.Model):
         verbose_name="Дата запланированного изменения",
         help_text="Дата, когда должен вступить в силу запланированный пакет"
     )
-    yookassa_payment_id = models.CharField(
-        max_length=64,
-        null=True,
-        blank=True,
-        verbose_name="ID платежа ЮКассы",
-        help_text="Платёж, по которому подписка должна быть активирована"
-    )
 
     class Meta:
         verbose_name = "Подписка на пакет"

@@ -641,28 +641,8 @@
         <form id="buy-package-form" method="post">
             {% csrf_token %}
             <input type="hidden" id="modal-package-id" name="package_id">
+            <!-- Пакеты оплачиваются по безналу: счёт выставляется администратором вручную -->
             <div style="margin-bottom:20px;">
-                <label for="payment-method" class="form-label">Способ оплаты</label>
-                <div class="input-with-button dropdown-container">
-                    <input type="text" class="form-control filter-input filter-input-dropdown" 
-                           placeholder="Способ оплаты" 
-                           value="ЮКасса"
-                           readonly 
-                           id="paymentDisplay"
-                           data-placeholder="Способ оплаты">
-                        <span class="triangle-down"></span>
-                    <div class="dropdown-menu-custom" id="paymentDropdown">
-                        <div class="dropdown-option active" data-value="yookassa">
-                            ЮКасса
-                        </div>
-                        <div class="dropdown-option" data-value="invoice">
-                            Счёт (для юр. лиц)
-                        </div>
-                    </div>
-                    <input type="hidden" id="payment-method" name="payment_method" value="yookassa">
-                </div>
-            </div>
-            <div id="invoice-admin-field" style="display:none; margin-bottom:20px;">
                 <label for="admin-email" class="form-label">Email администратора</label>
                 <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" class="form-control email-input">
             </div>

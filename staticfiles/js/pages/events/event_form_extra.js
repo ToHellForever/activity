@@ -1,50 +1,5 @@
 // === EVENT FORM EXTRA ===
 
-// Dropdown handler for payment modal
-document.addEventListener('DOMContentLoaded', function() {
-    // Payment dropdown in buy package modal
-    var paymentDisplay = document.getElementById('paymentDisplay');
-    var paymentDropdown = document.getElementById('paymentDropdown');
-    var paymentInput = document.getElementById('payment-method');
-    
-    if (paymentDisplay && paymentDropdown) {
-        paymentDisplay.addEventListener('click', function() {
-            paymentDropdown.classList.toggle('show');
-        });
-        
-        var options = paymentDropdown.querySelectorAll('.dropdown-option');
-        options.forEach(function(option) {
-            option.addEventListener('click', function() {
-                paymentDisplay.value = this.textContent.trim();
-                paymentInput.value = this.getAttribute('data-value');
-                paymentDropdown.classList.remove('show');
-                
-                // Update active state
-                options.forEach(function(opt) { opt.classList.remove('active'); });
-                this.classList.add('active');
-                
-                // Show/hide admin email field based on payment method
-                var invoiceField = document.getElementById('invoice-admin-field');
-                var adminEmailInput = document.getElementById('admin-email');
-                if (invoiceField) {
-                    var isInvoice = this.getAttribute('data-value') === 'invoice';
-                    invoiceField.style.display = isInvoice ? 'block' : 'none';
-                    if (adminEmailInput) {
-                        adminEmailInput.required = isInvoice;
-                    }
-                }
-            });
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-container')) {
-                paymentDropdown.classList.remove('show');
-            }
-        });
-    }
-});
-
 // ============================================================
 // TOGGLE SWITCHES — стили через CSS :checked
 // ============================================================
