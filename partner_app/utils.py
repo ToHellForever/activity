@@ -1,6 +1,7 @@
 import csv
 import io
 import qrcode
+from decimal import Decimal
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -129,7 +130,7 @@ def generate_csv_report(data, period_start, period_end):
             "Мероприятие",
             "Тип билета",
             "Количество",
-            "Сумма (₽)",
+            "Сумма",
             "Дата заказа",
             "Статус",
         ]
@@ -166,7 +167,7 @@ def generate_excel_report(data, period_start, period_end):
             "Мероприятие",
             "Тип билета",
             "Количество",
-            "Сумма (₽)",
+            "Сумма",
             "Дата заказа",
             "Статус",
         ]
@@ -262,6 +263,25 @@ def generate_qr_code(order_id):
     return img_byte_arr
 
 
+def fit_text(text, font_name, font_size, max_width, ellipsis="..."):
+    """
+    Обрезает строку под ширину колонки: если текст не влезает,
+    возвращает его начало с многоточием в конце.
+    """
+    text = "" if text is None else str(text)
+    if pdfmetrics.stringWidth(text, font_name, font_size) <= max_width:
+        return text
+
+    while text and pdfmetrics.stringWidth(text + ellipsis, font_name, font_size) > max_width:
+        text = text[:-1]
+    return text.rstrip() + ellipsis
+
+
+def format_price(value):
+    """Сумма целым числом без копеек (12345.75 -> 12346)."""
+    return f"{Decimal(str(value or 0)):,.0f}".replace(",", " ")
+
+
 def generate_pdf_report(data, period_start, period_end, orders=None):
     """Генерирует отчёт в формате PDF с поддержкой кириллицы и QR-кодами."""
     # Регистрируем шрифт с поддержкой кириллицы
@@ -292,38 +312,34 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
     elements.append(title)
     elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
-    # Таблица с данными
+    # Таблица с данными. Сумма ширин колонок не должна превышать doc.width (552pt)
+    col_widths = [130, 120, 55, 65, 90, 100]
+    header_font, header_size = "DejaVuSans-Bold", 12
+    body_font, body_size = "DejaVuSans", 10
+    # reportlab по умолчанию отступает по 6pt слева и справа от текста в ячейке
+    inner_widths = [width - 12 for width in col_widths]
+
+    headers = ["Мероприятие", "Тип билета", "Кол-во", "Сумма", "Дата заказа", "Статус"]
     table_data = [
-        ["Мероприятие", "Тип билета", "Кол-во", "Сумма (₽)", "Дата заказа", "Статус"]
+        [
+            fit_text(header, header_font, header_size, inner_width)
+            for header, inner_width in zip(headers, inner_widths)
+        ]
     ]
 
-    for idx, row in enumerate(data):
-        if row.get("is_total"):
-            # Итоговая строка
-            table_data.append(
-                [
-                    row.get("event", row.get("name", "")),
-                    row.get("ticket", ""),
-                    str(row.get("quantity", "")),
-                    f"{row.get('price', 0):.2f}",
-                    row.get("date", ""),
-                    row.get("status", ""),
-                ]
-            )
-        else:
-            # Обычная строка
-            table_data.append(
-                [
-                    row.get("event", row.get("name", "")),
-                    row.get("ticket", ""),
-                    str(row.get("quantity", "")),
-                    f"{row.get('price', 0):.2f}",
-                    row.get("date", ""),
-                    row.get("status", ""),
-                ]
-            )
+    for row in data:
+        table_data.append(
+            [
+                fit_text(row.get("event", row.get("name", "")), body_font, body_size, inner_widths[0]),
+                fit_text(row.get("ticket", ""), body_font, body_size, inner_widths[1]),
+                str(row.get("quantity", "")),
+                fit_text(format_price(row.get("price", 0)), body_font, body_size, inner_widths[3]),
+                fit_text(row.get("date", ""), body_font, body_size, inner_widths[4]),
+                fit_text(row.get("status", ""), body_font, body_size, inner_widths[5]),
+            ]
+        )
 
-    table = Table(table_data, colWidths=[130, 120, 45, 65, 85, 100])
+    table = Table(table_data, colWidths=col_widths)
     table.setStyle(
         TableStyle(
             [
@@ -335,7 +351,8 @@ def generate_pdf_report(data, period_start, period_end, orders=None):
                 ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                 ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
                 ("GRID", (0, 0), (-1, -1), 1, colors.black),
-                ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
+                ("FONTNAME", (0, 1), (-1, -1), body_font),
+                ("FONTSIZE", (0, 1), (-1, -1), body_size),
             ]
         )
     )
