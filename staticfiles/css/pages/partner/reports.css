@@ -13,7 +13,6 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   color: #333;
-  margin-bottom: 20px !important;
   padding-left: 4px;
 }
 
@@ -151,7 +150,7 @@
 
 .fw-bold {
   font-family: "Verdana";
-  font-size: 13px;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: black;
 }
 .report-card .card-header {
@@ -444,5 +443,13 @@
   .report-card .card-body {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-date,
+  .period-range {
+    margin-left: 0px;
+    width: 100% !important;
   }
 }

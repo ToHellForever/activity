@@ -1,0 +1,449 @@
+﻿/* ===== Package modals ===== */
+
+/* Overlay */
+.package-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10500;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.package-modal.show {
+  display: flex;
+}
+
+.package-modal .modal-content {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  width: 480px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  padding: 28px 32px;
+  position: relative;
+}
+
+.package-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  border-bottom: none;
+  margin-bottom: 10px !important;
+  padding: 0 !important;
+}
+
+.package-modal .modal-title {
+  font-family: "Montserrat", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.package-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #999;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  opacity: 1;
+  transition: color 0.2s;
+}
+
+.package-modal .modal-close:hover {
+  color: #333;
+}
+
+.package-modal .form-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9a9a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.package-modal .form-select {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.package-modal .form-select:focus {
+  outline: none;
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 2px rgba(233, 92, 4, 0.3);
+}
+
+.package-modal .form-control {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #333;
+  background: #fff;
+  font-family: "Montserrat", sans-serif;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.package-modal .form-control:focus {
+  outline: none;
+  border-color: rgba(119, 122, 141, 1);
+  box-shadow: none;
+}
+
+/* Override dashboard.css .modal-content / .modal-header / .modal-title / .modal-close */
+.package-modal .modal-content {
+  border-radius: 16px !important;
+  padding: 28px 32px !important;
+  width: 480px !important;
+}
+
+.package-modal .modal-header {
+  margin-bottom: 10px !important;
+  padding: 0 !important;
+}
+
+.package-modal .modal-close {
+  font-size: 28px !important;
+  color: #999 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  border: none !important;
+  background: none !important;
+  cursor: pointer !important;
+}
+
+.package-modal .modal-close:hover {
+  color: #333 !important;
+}
+/* Dropdown styles (like landing.html) */
+.input-with-button {
+  position: relative;
+  width: 100%;
+}
+
+.filter-input-dropdown {
+  border-radius: 20px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  background: #fff;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #333;
+  font-family: "Montserrat", sans-serif;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.filter-input-dropdown:hover {
+  border: 1px solid rgba(119, 122, 141, 1) !important;
+  outline: none;
+  box-shadow: none !important;
+}
+.filter-input-dropdown:focus {
+  border-radius: 20px 20px 0 0 !important;
+  border: 1px solid rgba(119, 122, 141, 1) !important;
+  outline: none;
+  box-shadow: none !important;
+}
+.input-button {
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 49px;
+  height: 37px;
+  background: #ff8348;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.triangle-down {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 12px solid white;
+  margin-top: 2px;
+}
+
+.dropdown-menu-custom {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  z-index: 10600;
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdown-menu-custom.show {
+  display: block;
+}
+
+.dropdown-option {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background: #f5f5f5;
+}
+
+.dropdown-option.active {
+  background: #fff;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Prevent landing.css overrides */
+.package-modal .form-control {
+  border-color: rgba(119, 122, 141, 1) !important;
+}
+
+/* Custom scrollbar for dropdown */
+.dropdown-menu-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-menu-custom::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 20px;
+}
+
+.dropdown-menu-custom::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 20px;
+}
+
+.dropdown-menu-custom::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+.package-modal .btn-primary {
+  width: 100%;
+  background: rgba(255, 131, 72, 1);
+  border: none;
+  border-radius: 20px;
+  padding: 12px 24px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #fff;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.package-modal .btn-primary:hover {
+  background: #e67a35;
+}
+
+.package-modal .btn-secondary {
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #999;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.package-modal .btn-secondary:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.package-modal .btn-schedule {
+  background: #2196f3;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 24px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #fff;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.package-modal .btn-schedule:hover {
+  background: #1976d2;
+}
+
+/* Package change buttons container */
+.package-change-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.package-change-buttons button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 20px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: "Montserrat", sans-serif;
+  transition: background 0.2s;
+}
+
+.package-change-buttons .btn-immediate {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+}
+
+.package-change-buttons .btn-immediate:hover {
+  background: #e67a35;
+}
+
+.package-change-buttons .btn-schedule {
+  background: #2196f3;
+  color: #fff;
+}
+
+.package-change-buttons .btn-schedule:hover {
+  background: #1976d2;
+}
+
+/* Buy modal footer */
+.buy-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.buy-modal-footer .btn {
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: "Montserrat", sans-serif;
+  transition: background 0.2s;
+}
+
+.buy-modal-footer .btn-buy-now {
+  background: rgba(255, 131, 72, 1);
+  color: #fff;
+  border: none;
+}
+
+.buy-modal-footer .btn-buy-now:hover {
+  background: #e67a35;
+}
+
+.buy-modal-footer .btn-cancel {
+  background: transparent;
+  color: #999;
+  border: 1px solid #ddd;
+  font-weight: 500;
+}
+
+.buy-modal-footer .btn-cancel:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+/* Package change text */
+.package-change-text {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #555;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.package-change-text strong {
+  color: #333;
+}
+
+/* Animation */
+.package-modal .modal-content {
+  transform: translateY(20px);
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.package-modal.show .modal-content {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Mobile: stack buttons vertically */
+@media (max-width: 576px) {
+  .package-modal .modal-content {
+    margin: 10px;
+    padding: 20px 16px;
+  }
+
+  .package-change-buttons {
+    flex-direction: column !important;
+  }
+
+  .package-change-buttons button {
+    width: 100% !important;
+  }
+
+  .buy-modal-footer {
+    flex-direction: column;
+  }
+
+  .buy-modal-footer .btn {
+    width: 100%;
+  }
+}

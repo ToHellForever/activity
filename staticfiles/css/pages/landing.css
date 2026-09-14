@@ -3,12 +3,57 @@
   font-family: "Verdana";
   font-weight: 700;
   color: rgba(38, 37, 37, 1);
-  font-size: clamp(1rem, 3vw, 2.5rem);
+  font-size: clamp(1.2rem, 2vw, 2.5rem);
 }
 .landing-h-text {
-  font-size: clamp(1.2rem, 3vw, 2.5rem) !important;
-  margin: 0 auto;
+  text-align: center;
 }
+/* Бейджи тарифов на карточках залов */
+.venue-card-wrapper,
+.venue-card {
+  position: relative;
+}
+
+.venue-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.venue-badge--standard {
+  background-color: rgba(0, 5, 110, 1); /* Партнёр */
+}
+
+.venue-badge--premium {
+  background-color: rgba(0, 5, 110, 1); /* Рекомендуем */
+}
+
+/* Контакты площадки на странице детали */
+.venue-contacts {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Убираем стрелки у поля количества участников */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinners {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Фильтры лендинга — изолированные стили */
 .landing-block .filters-row {
   display: flex;
@@ -86,7 +131,6 @@
   border-top-left-radius: 23.14px;
   border-top-right-radius: 23.14px;
 }
-
 .card-body {
   flex-grow: 1;
   display: flex;
@@ -114,9 +158,9 @@
 .filters-landing {
   background: #00056e;
   padding: clamp(1rem, 3vw, 3rem);
-  border-radius: 31px;
-  margin-right: -10px;
+  border-radius: 20px;
   position: relative;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
 }
 
 .landing-title {
@@ -209,6 +253,7 @@
   border-right: 6px solid transparent;
   border-top: 12px solid white;
   margin-top: 2px;
+  display: none;
 }
 
 /* Стили для формы фильтров */
@@ -219,18 +264,22 @@
 .events-carousel-wrapper {
   width: 100%;
   height: 100%;
+  box-shadow: 1.93px 1.93px 9.64px 0px rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
 }
 
 #activeEventsCarousel {
-  height: 100% !important;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 .carousel-inner {
-  height: 100% !important;
+  height: 100%;
 }
 
 .carousel-item {
-  height: 100% !important;
+  height: 100%;
 }
 
 .carousel-item img {
@@ -238,6 +287,38 @@
   height: 100% !important;
   border-radius: 20px;
   object-fit: cover;
+}
+
+/* Лого в пустом слайде — исключение из правила выше */
+.carousel-item .carousel-empty-slide img {
+  object-fit: contain;
+  border-radius: 0;
+}
+
+/* Пустой слайд карусели (когда нет мероприятий) */
+.carousel-empty-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  min-height: 280px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+}
+
+.carousel-empty-logo {
+  opacity: 0.85;
+}
+
+.carousel-empty-text {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  color: #666;
+  margin: 0;
 }
 
 .active-event-info {
@@ -256,46 +337,19 @@
 }
 .carousel-caption {
   padding-bottom: 0;
+  bottom: 10px;
 }
+
+/* Мобильные: показываем caption */
+.carousel-caption .active-event-info {
+  background: rgba(255, 131, 72, 0.92) !important;
+  backdrop-filter: blur(4px);
+}
+
 .active-event-info a {
   color: #ffffff !important;
-}
-
-/* Стили для кнопок навигации карусели */
-.carousel-control-prev,
-.carousel-control-next {
-  width: auto;
-  background: none;
-  opacity: 1;
-}
-
-.carousel-control-prev:hover,
-.carousel-control-next:hover {
-  opacity: 0.8;
-}
-
-.carousel-arrow {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  margin-left: 15px;
-}
-
-.carousel-arrow-right {
-  transform: rotate(180deg);
-  margin-right: 15px;
-}
-
-.arrow-right {
-  width: 0;
-  height: 0;
-  border-top: 15px solid transparent;
-  border-bottom: 15px solid transparent;
-  border-left: 25px solid rgba(38, 37, 37, 1);
-  margin-left: 10px;
-  display: inline-block;
-  vertical-align: middle;
-  margin-top: -4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 1rem);
 }
 
 .card {
@@ -312,7 +366,7 @@
   color: #000000;
   font-family: "Verdana";
   font-weight: 500;
-  font-size: clamp(0.7rem, 1vw, 1rem);
+  font-size: clamp(0.8rem, 1vw, 1rem);
 }
 
 .icon-calendar {
@@ -322,7 +376,7 @@
 }
 .card-date {
   margin-left: 10px;
-  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -350,15 +404,14 @@
   font-family: "Verdana";
   font-weight: 400;
   font-size: clamp(0.6rem, 1vw, 0.8rem);
-  margin-left: 5px;
+  margin-left: 2px;
 }
-
 .badge {
   color: #070707;
   border-radius: 20px;
   font-family: "Verdana";
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
   margin-left: -5px;
   padding: 3px 8px;
   display: inline-block;
@@ -463,6 +516,7 @@
   font-family: "Montserrat";
   font-weight: 500;
   font-size: clamp(0.75rem, 1vw, 0.9rem);
+  line-height: 1.3;
 }
 .card-price-venue {
   color: rgba(7, 7, 7, 1);
@@ -475,27 +529,6 @@
 
 .venue-col {
   margin-bottom: 0.5rem !important;
-}
-
-.book-button {
-  background: #ff8348;
-  text-align: center;
-  color: #ffffff;
-  border-radius: 20px;
-  font-family: "Montserrat";
-  font-weight: 500;
-  font-size: clamp(0.8rem, 1vw, 0.9rem);
-  padding: 10px 20px;
-  text-decoration: none;
-  margin-top: auto;
-  display: block;
-  width: 100%;
-}
-
-.book-button:hover {
-  background: #e6743c;
-  color: #ffffff;
-  text-decoration: none;
 }
 
 .text-and-button {
@@ -519,12 +552,6 @@
   padding: 7px 50px 7px 50px;
   color: white;
   white-space: nowrap;
-}
-
-@media (max-width: 1399px) {
-  .active-event-info {
-    display: none;
-  }
 }
 @media (max-width: 1299px) {
   .landing-block > .row.d-none.d-900-flex.d-1300-none .col-4 {
@@ -626,9 +653,31 @@
     max-width: 100%;
     margin-bottom: 10px;
   }
-  /* Скрываем карусель на мобильной версии */
+  /* Показываем карусель на мобильной версии, на 100% ширины */
   .events-carousel-wrapper {
-    display: none;
+    display: block;
+    width: 100% !important;
+    height: 400px;
+    order: -1;
+  }
+
+  .landing-block > .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .landing-block > .row > .col-8 {
+    order: 1;
+    width: 100% !important;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .landing-block > .row > .col-4 {
+    order: -1;
+    width: 100% !important;
+    max-width: 100%;
+    flex: 0 0 100%;
   }
 
   .arrow-right {
@@ -655,7 +704,7 @@
     border: none;
     outline: none;
     box-shadow: none;
-    font-size: 0.9rem;
+    font-size: clamp(0.7rem, 1vw, 0.9rem);
   }
 
   .input-button {
@@ -783,28 +832,6 @@
     padding: 7px 0;
   }
 
-  /* Стили для календаря на мобильной */
-  .calendar-popup {
-    min-width: 260px;
-    max-width: 320px;
-    padding: 10px;
-  }
-
-  .calendar-day {
-    padding: 8px;
-    font-size: 0.85rem;
-  }
-
-  .calendar-month-year {
-    font-size: 0.9rem;
-  }
-
-  .calendar-header button {
-    width: 25px;
-    height: 25px;
-    font-size: 1rem;
-  }
-
   /* Стили для dropdown на мобильной */
   .dropdown-menu-custom {
     max-height: 200px;
@@ -824,7 +851,112 @@
     padding: 0;
     line-height: 1;
   }
-  .card-label-venue {
-    line-height: 1;
+  .filter-check input[type="checkbox"] + span {
+    margin: 0 auto;
+  }
+}
+
+/* ===================== */
+/* ПЛЕЙСХОЛДЕРЫ ПУСТЫХ СОСТОЯНИЙ */
+/* ===================== */
+.empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  margin: 40px auto;
+  max-width: 600px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border-radius: 16px;
+  border: 2px dashed rgba(102, 126, 234, 0.3);
+}
+
+.empty-placeholder-icon {
+  margin-bottom: 24px;
+  color: rgba(102, 126, 234, 0.5);
+}
+
+.empty-placeholder-icon svg {
+  opacity: 0.6;
+}
+
+.empty-placeholder-title {
+  font-family: "Verdana", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: rgba(38, 37, 37, 1);
+  margin-bottom: 16px;
+}
+
+.empty-placeholder-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #666;
+  margin-bottom: 12px;
+  max-width: 480px;
+}
+
+.empty-placeholder-hint {
+  font-size: 0.9rem;
+  color: rgba(102, 126, 234, 0.8);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Вариация "ничего не найдено по фильтрам" */
+.empty-placeholder--notfound {
+  background: linear-gradient(135deg, #fdf6ec 0%, #f9e8d8 100%);
+  border-color: rgba(230, 145, 56, 0.4);
+}
+
+.empty-placeholder--notfound .empty-placeholder-icon {
+  color: rgba(230, 145, 56, 0.6);
+}
+
+.empty-placeholder--notfound .empty-placeholder-text {
+  color: #7a5c3a;
+}
+
+.empty-placeholder-button {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 10px 28px;
+  background: rgba(230, 145, 56, 1);
+  color: #fff;
+  border-radius: 24px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+}
+
+.empty-placeholder-button:hover {
+  background: rgba(200, 120, 40, 1);
+  color: #fff;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .empty-placeholder {
+    padding: 40px 16px;
+  }
+
+  .empty-placeholder-title {
+    font-size: 1.25rem;
+  }
+
+  .empty-placeholder-text {
+    font-size: 0.95rem;
+  }
+
+  .empty-placeholder-icon {
+    margin-bottom: 16px;
+  }
+
+  .empty-placeholder-icon svg {
+    width: 60px;
+    height: 60px;
   }
 }

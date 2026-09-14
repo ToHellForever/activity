@@ -142,7 +142,7 @@
   font-size: 0.95rem;
 }
 .card-date-geo-detail {
-  font-size: clamp(0.65rem, 1vw, 0.9rem);
+  font-size: clamp(0.65rem, 1vw, 0.8rem);
   color: #000000;
   font-family: "Verdana";
   font-weight: 700;
@@ -362,7 +362,7 @@ a {
 /* Тултип с полным описанием */
 .ticket-desc-tooltip {
   position: fixed;
-  z-index: 2000;
+  z-index: 10000;
   max-width: 320px;
   padding: 10px 14px;
   background: #1f2430;
@@ -463,6 +463,7 @@ a {
 
 .ticket-cell-name {
   flex: 1;
+  min-width: 0; /* чтобы длинное название обрезалось с «…», а не растягивало строку */
   justify-content: flex-start;
 }
 
@@ -626,17 +627,49 @@ a {
 
 .cart-left {
   flex: 1;
+  min-width: 0; /* чтобы длинное название обрезалось, а не растягивало блок */
 }
 
 .cart-right {
   text-align: right;
+  flex-shrink: 0;
 }
 
+/* Название билета в корзине: одна строка, клик — полный текст
+   (логика как у .ticket-desc и .ticket-name-text: JS добавляет .is-truncated) */
 .cart-item {
   font-family: "Verdana";
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   font-weight: 400;
   color: #9a9a9a;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item.is-truncated {
+  cursor: pointer;
+}
+
+.cart-item.is-truncated:hover {
+  color: #4a7cf7;
+}
+
+.cart-item.is-truncated::after {
+  content: " \2026";
+  color: #4a7cf7;
+  font-weight: 700;
+}
+
+.cart-item:not(.is-truncated)::after {
+  content: none;
+}
+
+.cart-item:focus-visible {
+  outline: 2px solid #4a7cf7;
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 .cart-total-count {
@@ -742,10 +775,8 @@ a {
   border-radius: 3px;
 }
 
-/* Тултип полного названия билета в модалке */
-#buyTicketModal .ticket-desc-tooltip {
-  z-index: 1080; /* под модалкой (Bootstrap z-index 1055), но поверх страницы */
-}
+/* Тултип полного названия билета в модалке: элемент добавляется в <body>,
+   базового z-index: 2000 достаточно, чтобы быть поверх модалки (1055) */
 
 /* Раскрытие по клику (мобильные): класс .is-expanded добавляет JS */
 .collapsible-text.is-expanded {

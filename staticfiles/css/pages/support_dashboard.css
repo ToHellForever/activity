@@ -66,6 +66,7 @@
 .ticket-meta {
   font-size: 0.8rem;
   color: #64748b;
+  white-space: wrap;
 }
 .ticket-status {
   height: auto;
@@ -191,6 +192,7 @@
   width: 100%;
   background: #ff8348;
   color: #ffffff;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 .support-form .btn-secondary {
   width: 100%;
@@ -493,22 +495,38 @@
 }
 .support-placeholder {
   flex: 1;
-  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #64748b;
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   background: #f8fafc;
   border: 1px dashed #d2dbe4;
   border-radius: 20px;
+  padding: 20px;
 }
 @media (max-width: 1140px) {
   .support-page {
     flex-direction: column;
+    padding: 0;
   }
   .support-sidebar,
   .support-chat-column {
     width: 100%;
+    border: none;
+    padding: 0px;
+  }
+}
+
+@media (max-width: 768px) {
+  .support-message {
+    max-width: 100%;
+  }
+  .support-chat-history {
+    padding: 5px;
+  }
+  .support-chat-input-row,
+  .support-chat-input-row input[type="text"] {
+    padding: 7px;
   }
 }

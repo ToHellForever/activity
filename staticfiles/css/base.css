@@ -1,10 +1,49 @@
+/* =========================================
+   STICKY FOOTER (прижатие футера к низу)
+   ========================================= */
+html {
+  height: 100%;
+}
+/* для всех шрифтов на сайте сделать font-style: normal */
+* {
+  font-style: normal;
+}
+
+/* =========================================
+   Global modal z-index override
+   ========================================= */
+.modal-backdrop {
+  z-index: 10499 !important;
+}
+
+.modal {
+  z-index: 10500 !important;
+}
+
+.modal-dialog {
+  z-index: 10501 !important;
+}
+
 body {
-    padding-left: 20px;
-    padding-right: 20px;
+  min-height: 100vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+main.container-fluid {
+  flex: 1 0 auto;
+  min-height: 68vh;
+}
+
+footer.footer-header {
+  flex-shrink: 0;
+}
+.form-control {
+  font-size: clamp(0.8rem, 1vw, 1rem);
 }
 @media (max-width: 768px) {
-    body {
-        padding-left: 0;
-        padding-right: 0;
-    }
+  main.container-fluid {
+    flex: 1 0 auto;
+    min-height: 60vh;
+  }
 }

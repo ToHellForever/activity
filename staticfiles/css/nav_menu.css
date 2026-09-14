@@ -137,7 +137,7 @@
   text-decoration: none;
   color: black;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 .burger-icons {
@@ -156,7 +156,7 @@
 .burger-footer-link {
   text-decoration: none;
   color: #777a8d;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
 }
 
 .desktop-only {
@@ -198,13 +198,14 @@
   }
 
   .mobile-icons {
-    display: flex;
+    display: flex !important;
     align-items: center;
-    gap: 10px; /* Пробел между иконками */
+    gap: 10px;
+    margin-left: auto;
   }
 
   .burger-menu-icon {
-    display: flex;
+    display: flex !important;
   }
 }
 
@@ -218,8 +219,9 @@
   display: flex;
   align-items: center;
   width: 100%;
+  gap: 5px;
   justify-content: space-evenly;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
 }
 .nav-link {
   text-decoration: none;

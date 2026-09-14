@@ -1,7 +1,14 @@
 /* ============================================================
    PARTNER EVENTS PAGE
    ============================================================ */
-
+.card-label {
+  font-family: clamp(0.6rem, 1vw, 0.8rem) !important;
+}
+.card-edit-request {
+  font-size: clamp(0.7rem, 1vw, 0.8rem) !important;
+  color: #666;
+  font-family: "Verdana", sans-serif;
+}
 .partner-main {
   background: #f5f6f8;
   min-height: 100vh;
@@ -177,12 +184,11 @@
   background: #f5f6f8 !important;
   border: 1px solid rgba(119, 122, 141, 1) !important;
   border-radius: 30px !important;
-  padding: 7px;
+  padding: 7px !important;
   font-size: clamp(0.7rem, 1vw, 0.9rem) !important;
   color: #333 !important;
   outline: none !important;
   text-align: center;
-  width: 110px;
   cursor: pointer !important;
   transition:
     border-color 0.2s,
@@ -192,11 +198,6 @@
 .date-input:focus {
   border-color: rgba(255, 131, 72, 1) !important;
   background: #fff !important;
-}
-
-.date-input:focus {
-  border-color: rgba(255, 131, 72, 1);
-  background: #fff;
 }
 
 .filter-actions {
@@ -217,6 +218,7 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
+  margin-left: auto;
 }
 
 .btn-find:hover {
@@ -266,8 +268,8 @@
 }
 
 /* ============================================================
-    Кнопка редактирования на карточке
-    ============================================================ */
+     Кнопка редактирования на карточке
+     ============================================================ */
 .btn-edit {
   display: inline-flex;
   align-items: center;
@@ -281,10 +283,37 @@
   cursor: pointer;
   text-decoration: none;
   flex-shrink: 0;
-  margin-top: 20px;
 }
 
 .btn-edit img {
+  width: 23px;
+  height: 23px;
+}
+
+/* ---------- Кнопка редактирования в правом верхнем углу карточки ---------- */
+.card-edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(2, 54, 156, 1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  z-index: 2;
+  box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+
+.card-edit-btn img {
   width: 23px;
   height: 23px;
 }
@@ -310,7 +339,6 @@
   margin: 0;
   z-index: 2;
 }
-
 .card-check input[type="checkbox"] {
   position: absolute;
   opacity: 0;
@@ -321,7 +349,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 10px;
   border-radius: 50%;
   box-shadow: 0px 5.71px 5.71px 0px rgba(0, 0, 0, 0.25);
@@ -330,41 +359,86 @@
   transition: background 0.2s;
 }
 
-
 .card-check input[type="checkbox"]:checked + .card-check-box {
   background: rgba(255, 255, 255, 1);
   color: #fff;
 }
 
 /* ---------- Footer карточки партнёра ---------- */
-.partner-card-footer {
+
+.partner-card-footer-buttons {
   display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+/* Кнопки в footer карточки — одинаковый стиль */
+.partner-card-footer .buy-button,
+.partner-card-footer .buy-button-sm,
+.partner-card-footer .btn-entry-control {
+  flex: 1;
+  width: auto;
+  display: inline-flex;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-top: auto;
+  text-align: center;
+  margin-top: 7px;
+  font-size: 0.75rem;
+  padding: 10px 10px;
+  border-radius: 20px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  background: #ff8348;
+  color: #ffffff;
+  border: none;
+  text-decoration: none;
+  line-height: 1.2;
 }
-
-/* ---------- Уменьшенная кнопка "УЧАСТНИКИ" ---------- */
-.buy-button-sm {
-  font-size: 11px;
-  padding: 8px 10px;
-  border-radius: 16px;
-  width: 85% !important;
+.partner-card-footer-buttons .buy-button,
+.partner-card-footer-buttons .buy-button-sm,
+.partner-card-footer-buttons .btn-entry-control {
+  width: 100% !important;
+  margin-top: 10px;
 }
-
 /* ============================================================
     RESPONSIVE
     ============================================================ */
 @media (max-width: 600px) {
-  .filter-row {
-    gap: 14px;
+  .partner-card-footer-buttons {
+    flex-direction: column;
   }
-
+  .card-check-box,
+  .card-edit-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .card-edit-btn {
+    right: 45px;
+  }
+  .card-edit-btn img,
+  .card-check-box img {
+    width: 15px;
+    height: 15px;
+  }
+}
+@media (max-width: 900px) {
+  .filter-input {
+    margin-top: 0px !important;
+    width: 100% !important;
+  }
+}
+@media (max-width: 768px) {
   .btn-find {
     width: 100%;
   }
-
-  .filter-actions {
-    justify-content: stretch;
+}
+@media (max-width: 600px) {
+  .date-container {
+    width: 100%;
+  }
+  .filter-date {
+    margin-left: 0px;
+    width: 100% !important;
   }
 }
