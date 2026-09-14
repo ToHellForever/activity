@@ -252,6 +252,36 @@ def request_event_change(request, event_id):
                     _change_request_context(request, event, form),
                 )
 
+            # Проверяем ограничение пакета на количество фотографий.
+            # Event.image — зеркало основного EventImage, поэтому считаем только галерею.
+            if current_package:
+                deleted_image_ids = [
+                    int(x) for x in request.POST.get("deleted_image_ids", "").split(",")
+                    if x.strip().isdigit()
+                ]
+                final_images_count = (
+                    event.images.exclude(id__in=deleted_image_ids).count()
+                    + len(request.FILES.getlist("images"))
+                )
+                # Легаси: у мероприятия может быть только Event.image без записей галереи
+                if (
+                    final_images_count == 0
+                    and event.image
+                    and request.POST.get("delete_main_image") != "1"
+                ):
+                    final_images_count = 1
+                if final_images_count > current_package.max_photos:
+                    messages.error(
+                        request,
+                        f"Ваш пакет позволяет загрузить не более {current_package.max_photos} фотографий. "
+                        f"Итоговое количество фото: {final_images_count}.",
+                    )
+                    return render(
+                        request,
+                        "partner/event_form.html",
+                        _change_request_context(request, event, form),
+                    )
+
             rows = _parse_ticket_rows(request)
 
             # Хотя бы один заполненный билет обязателен

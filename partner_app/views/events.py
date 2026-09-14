@@ -582,22 +582,29 @@ def edit_event(request, event_id):
                     ),
                 )
 
-            # Проверяем ограничения пакета на количество фотографий
-            main_image = request.FILES.get("image")
+            # Проверяем ограничения пакета на количество фотографий.
+            # Event.image — зеркало основного EventImage, поэтому считаем только галерею.
             additional_images = request.FILES.getlist("images")
 
-            # Считаем общее количество загружаемых фото
-            total_images = (1 if main_image else 0) + len(additional_images)
+            # ID существующих фото, отмеченных на клиенте к удалению
+            deleted_image_ids = [
+                int(x) for x in request.POST.get("deleted_image_ids", "").split(",")
+                if x.strip().isdigit()
+            ]
 
-            # Считаем уже существующие фото (если не заменяем основное)
-            existing_images_count = 0
-            if not main_image and event.image:
-                existing_images_count += 1
-            if not additional_images:
-                existing_images_count += event.images.count()
+            # Существующие фото галереи за вычетом отмеченных к удалению
+            existing_images_count = event.images.exclude(id__in=deleted_image_ids).count()
 
-            # Общее количество фото после загрузки
-            final_images_count = existing_images_count + total_images
+            # Общее количество фото после сохранения
+            final_images_count = existing_images_count + len(additional_images)
+
+            # Легаси: у мероприятия может быть только Event.image без записей галереи
+            if (
+                final_images_count == 0
+                and event.image
+                and request.POST.get("delete_main_image") != "1"
+            ):
+                final_images_count = 1
 
             # Проверяем не превышаем ли лимит пакета
             package = event.package if event.package else (active_subscription.package if active_subscription else None)

@@ -256,7 +256,7 @@
     </div>
     <!-- Фото мероприятия -->
     <div class="form-group">
-        <label>Фото (не более {{ form.current_package.max_photos|default:10 }})</label>
+        <label>Фото (не более {{ form.current_package.max_photos }})</label>
         <div class="photo-gallery-hint">Нажмите на фото, чтобы сделать его основным</div>
         <div class="media-upload-container" id="photo-upload-container">
                 {% if form.instance.pk %}

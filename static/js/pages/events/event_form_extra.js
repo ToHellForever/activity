@@ -99,7 +99,13 @@ function showToast(message, isError = true) {
 // PHOTO GALLERY
 // ============================================================
 const TICKET_PALETTE = ['#4A7CF7','#FF6B6B','#51CF66','#FFD43B','rgba(255, 131, 72, 1)','#845EF7','#20C997','#F06595','#339AF0','#F783AC'];
-let photoMaxCount = window.EVENT_FORM_DATA?.photoMaxCount ?? 10;
+// Лимит фото берётся из data-атрибута .partner-layout (data-photo-max-count),
+// который шаблон заполняет значением max_photos текущего пакета
+const photoLimitLayoutEl = document.querySelector('.partner-layout');
+let photoMaxCount = parseInt(photoLimitLayoutEl?.dataset.photoMaxCount || '', 10);
+if (!Number.isFinite(photoMaxCount) || photoMaxCount < 1) {
+    photoMaxCount = 10;
+}
 
 // Адаптивная сетка галереи: колонок = min(лимит фото + кнопка, 6),
 // чтобы максимум фото + кнопка добавления занимали ровно одну строку без пустот
