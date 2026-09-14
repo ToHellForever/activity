@@ -371,6 +371,8 @@
   letter-spacing: 0.5px;
   border-bottom: 1px solid #ececec;
   padding: 12px 16px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .report-table .table tbody td {
@@ -379,6 +381,7 @@
   padding: 14px 16px;
   vertical-align: middle;
   border-bottom: 1px solid #f2f2f2;
+  text-align: center;
 }
 
 .report-table .btn-outline-primary {
@@ -405,6 +408,73 @@
 .report-table .form-check-input:checked {
   background-color: rgba(255, 131, 72, 1);
   border-color: rgba(255, 131, 72, 1);
+}
+.text-truncate {
+  font-family: 'Montserrat';
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+}
+
+.report-table-actions,
+.report-table-header .report-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Колонка действий/чекбоксов: фиксированная ширина, по центру */
+.report-table .table thead th:last-child,
+.report-table .table tbody td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.report-table .table .report-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Пагинация отчётов */
+.reports-pagination {
+  margin-top: 16px;
+}
+
+.reports-pagination .page-link {
+  min-width: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  border-color: #ececec;
+}
+
+.reports-pagination .page-item.disabled .page-link {
+  color: #bbb;
+}
+
+.reports-pagination .page-item:not(.disabled):not(.active) .page-link:hover {
+  color: rgba(255, 131, 72, 1);
+  background: #fff5ec;
+  border-color: #ffcfa8;
+}
+
+.reports-pagination .page-item.active .page-link {
+  background: rgba(255, 131, 72, 1);
+  border-color: rgba(255, 131, 72, 1);
+  color: #fff;
+}
+
+@media (max-width: 576px) {
+  .report-table .card-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 }
 
 /* Бейджи в таблице */

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
 from django.core.mail import EmailMessage
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.http import require_POST
@@ -98,7 +99,13 @@ def reports(request):
     }
 
     # Отчёты и расписание
-    user_reports = SalesReport.objects.filter(partner=request.user).order_by("-created_at")
+    # Пагинация списка отчётов: по 5 документов на странице
+    user_reports_qs = SalesReport.objects.filter(partner=request.user).order_by(
+        "-created_at"
+    )
+    paginator = Paginator(user_reports_qs, 5)
+    user_reports = paginator.get_page(request.GET.get("page"))
+
     try:
         report_schedule = ReportSchedule.objects.get(partner=request.user)
     except ReportSchedule.DoesNotExist:
