@@ -614,17 +614,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updatePhotoGalleryState();
 
-    // Инициализация имени файла программы (для уже загруженного файла)
-    if (window.EVENT_FORM_DATA?.hasProgramFile) {
-        (function() {
-            var display = document.getElementById('program-file-display');
-            var placeholder = document.getElementById('program-upload-placeholder');
-            var container = document.getElementById('program-upload-container');
-            var fileNameSpan = document.getElementById('program-file-name');
+    // Инициализация блока программы (для уже загруженного файла)
+    // Данные передаются шаблоном через data-атрибуты .partner-layout:
+    // data-has-program-file, data-program-file-url, data-program-file-name
+    (function initProgramFileState() {
+        var layoutEl = document.querySelector('.partner-layout');
+        var hasProgramFile = layoutEl && layoutEl.dataset.hasProgramFile === 'true';
+        var display = document.getElementById('program-file-display');
+        var placeholder = document.getElementById('program-upload-placeholder');
+        var container = document.getElementById('program-upload-container');
+        var fileNameSpan = document.getElementById('program-file-name');
+
+        if (hasProgramFile) {
             if (display) {
                 display.style.display = 'flex';
-                var url = window.EVENT_FORM_DATA.programFileUrl;
-                display.querySelectorAll('a').forEach(function(link) { link.href = url; });
+                var url = (layoutEl.dataset.programFileUrl || '').trim();
+                if (url) {
+                    display.querySelectorAll('a').forEach(function(link) { link.href = url; });
+                }
             }
             if (placeholder) placeholder.style.display = 'none';
             if (container) {
@@ -632,20 +639,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 container.classList.add('has-photos');
             }
             if (fileNameSpan) {
-                var name = window.EVENT_FORM_DATA.programFileName || '';
+                var name = (layoutEl.dataset.programFileName || '').trim();
                 var base = name.replace(/.*[\/]/, '');
                 var short = base.length > 40 ? base.substring(0, 37) + '...' : base;
                 fileNameSpan.textContent = short;
             }
-        })();
-    } else {
-        (function() {
-            var container = document.getElementById('program-upload-container');
-            if (container) {
-                container.classList.add('has-no-photos');
-            }
-        })();
-    }
+        } else if (container) {
+            container.classList.add('has-no-photos');
+        }
+    })();
 
     // Ticket table
     const addBtn = document.getElementById('addTicketRow');

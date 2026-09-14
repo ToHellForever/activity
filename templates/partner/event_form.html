@@ -23,6 +23,9 @@
      data-saved-place-data='{% if form.instance.pk and form.instance.place_data %}{{ form.instance.place_data|safe }}{% else %}{% endif %}'
      data-video-processing-status="{{ form.instance.video_processing_status|default:'' }}"
      data-event-id="{{ form.instance.pk|default:'' }}"
+     data-has-program-file="{% if form.instance.program_file %}true{% else %}false{% endif %}"
+     data-program-file-url="{% if form.instance.program_file %}{{ form.instance.program_file.url }}{% endif %}"
+     data-program-file-name="{% if form.instance.program_file %}{{ form.instance.program_file.name }}{% endif %}"
      data-delete-reports-url="{% url 'partner:delete_reports' %}"
      data-generate-report-url="{% url 'partner:generate_report' %}"
      data-csrf-token="{{ csrf_token }}">
