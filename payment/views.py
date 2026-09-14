@@ -392,13 +392,9 @@ def create_invoice(request, package_id):
         if not admin_email:
             return JsonResponse({"error": "Не указан email администратора"}, status=400)
 
-        # Отменяем текущую подписку если есть
-        active_subscription = UserPackageSubscription.objects.filter(
-            user=user, is_active=True
-        ).first()
-        if active_subscription:
-            active_subscription.is_active = False
-            active_subscription.save()
+        # Старую подписку здесь не закрываем: она закроется автоматически
+        # в момент активации новой (activate_package_subscription).
+        # Если счёт так и не оплатят — текущий пакет продолжит работать.
 
         # Создаём новую подписку — неактивную, ждём оплату по счёту
         new_subscription = UserPackageSubscription.objects.create(
@@ -428,6 +424,19 @@ def create_invoice(request, package_id):
         if not payment:
             return JsonResponse({"error": "Не удалось создать счёт в ЮКассе"}, status=500)
 
+        # Ссылка на платёжную форму: по ней счёт можно оплатить
+        # без участия администратора. Платёж двухстадийный (capture=False),
+        # поэтому после оплаты ЮКасса пришлёт payment.waiting_for_capture,
+        # мы подтвердим платёж и подписка активируется автоматически.
+        try:
+            payment_url = payment.confirmation.confirmation_url
+        except AttributeError:
+            payment_url = ""
+            logger.warning(
+                "[invoice] У платежа нет confirmation_url",
+                extra={"payment_id": payment.id},
+            )
+
         # Отправляем уведомление
         from django.core.mail import send_mail
         from django.conf import settings
@@ -443,8 +452,9 @@ def create_invoice(request, package_id):
 - Email для связи: {admin_email}
 - ID подписки: {new_subscription.id}
 - ID платежа: {payment.id}
+- Ссылка для оплаты: {payment_url}
 
-Пожалуйста, выставите счёт и сообщите пользователю о готовности оплаты.
+Оплатить счёт можно по ссылке выше. После оплаты подписка активируется автоматически.
 """
 
         send_mail(
@@ -460,6 +470,7 @@ def create_invoice(request, package_id):
             "message": "Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.",
             "package_id": package_id,
             "subscription_id": new_subscription.id,
+            "payment_url": payment_url,
         })
 
     except Exception as e:
@@ -1282,6 +1293,26 @@ def yookassa_webhook(request):
                     else:
                         logger.error('[webhook] orders не определен после поиска')
 
+            elif event_type == "payment.waiting_for_capture":
+                # Двухстадийная оплата (счёт для юр. лиц, capture=False):
+                # пользователь оплатил, деньги захолдированы. Подтверждаем
+                # платёж — ЮКасса затем пришлёт payment.succeeded, и
+                # подписка активируется штатной веткой выше.
+                metadata = payment_data.get("metadata", {})
+                if "package_id" in metadata:
+                    try:
+                        Payment.capture(payment_id)
+                        logger.info(
+                            '[webhook] Платёж по счёту подтверждён (capture)',
+                            extra={'payment_id': payment_id},
+                        )
+                    except Exception as e:
+                        logger.error(
+                            '[webhook] Ошибка подтверждения платежа по счёту',
+                            extra={'payment_id': payment_id, 'error': str(e)},
+                            exc_info=True,
+                        )
+
             elif event_type == "payment.canceled":
                 order_id = payment_data.get("id")
                 if not order_id:
@@ -1583,6 +1614,10 @@ def package_success(request, package_id):
         if subscription:
             try:
                 payment = Payment.find_one(subscription.yookassa_payment_id)
+                if payment.status == "waiting_for_capture":
+                    # Счёт для юр. лиц: платёж оплачен, но не подтверждён.
+                    # Подтверждаем сами — вебхук мог не дойти.
+                    payment = Payment.capture(payment.id)
                 paid = payment.status == "succeeded" and bool(payment.paid)
             except Exception as e:
                 logger.error(
