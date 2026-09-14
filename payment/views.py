@@ -543,7 +543,7 @@ def bulk_buy_tickets(request, event_id):
                     return JsonResponse({
                         'error': 'Вы уже получили максимальное количество бесплатных билетов на это мероприятие (2).'
                     }, status=400)
-        
+
         # === ИЗВЛЕЧЕНИЕ UTM-МЕТОК ИЗ URL И JSON ===
         # Сначала берём из GET (приоритет выше)
         utm_params = {
@@ -581,7 +581,53 @@ def bulk_buy_tickets(request, event_id):
                 free_ticket_items.append(item)
             else:
                 paid_ticket_items.append(item)
-        
+
+        # Лимит бронирования без оплаты: не более MAX_RESERVED_TICKETS_PER_EVENT
+        # платных билетов на мероприятие на один email.
+        # Считаем только активные брони (reserved) — оплаченные билеты лимит не занимают.
+        if reserve_without_payment:
+            MAX_RESERVED_TICKETS_PER_EVENT = 3
+            already_reserved_count = int(
+                Order.objects.filter(
+                    participant_data__email=email,
+                    ticket__event=event,
+                    purchase_type='paid_ticket',
+                    payment_status='reserved',
+                ).aggregate(total=Sum('quantity'))['total'] or 0
+            )
+            requested_paid_quantity = sum(
+                int(item.get('quantity', 0)) for item in paid_ticket_items
+            )
+            if already_reserved_count + requested_paid_quantity > MAX_RESERVED_TICKETS_PER_EVENT:
+                remaining = MAX_RESERVED_TICKETS_PER_EVENT - already_reserved_count
+                if remaining > 0:
+                    logger.warning('[bulk_buy] Лимит бронирования без оплаты (остаток)', extra={
+                        'email': email,
+                        'event_id': event_id,
+                        'already_reserved': already_reserved_count,
+                        'requested': requested_paid_quantity,
+                        'remaining': remaining,
+                    })
+                    return JsonResponse({
+                        'error': (
+                            f'На это мероприятие можно забронировать без оплаты не более '
+                            f'{MAX_RESERVED_TICKETS_PER_EVENT} билетов. '
+                            f'У вас уже {already_reserved_count}, можно ещё {remaining}.'
+                        )
+                    }, status=400)
+                logger.warning('[bulk_buy] Лимит бронирования без оплаты (исчерпан)', extra={
+                    'email': email,
+                    'event_id': event_id,
+                    'already_reserved': already_reserved_count,
+                    'requested': requested_paid_quantity,
+                })
+                return JsonResponse({
+                    'error': (
+                        f'Вы уже забронировали максимальное количество билетов без оплаты '
+                        f'на это мероприятие ({MAX_RESERVED_TICKETS_PER_EVENT}).'
+                    )
+                }, status=400)
+
         orders = []
         free_orders = []
         
@@ -752,6 +798,21 @@ def bulk_buy_tickets(request, event_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+def _buy_ticket_error(request, ticket, message):
+    """
+    Единый формат ошибки для create_payment.
+    Форма всегда отправляется AJAX-ом (buy_ticket.js) — отдаём JSON,
+    чтобы фронтенд показал сообщение. HTML-рендер — фолбэк для не-AJAX.
+    """
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"error": message}, status=400)
+    return render(
+        request,
+        "payment/buy_ticket.html",
+        {"ticket": ticket, "error_message": message},
+    )
+
+
 def create_payment(request, ticket_id):
     """
     Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
@@ -781,7 +842,7 @@ def create_payment(request, ticket_id):
                 from django.shortcuts import render
                 return render(
                     request,
-                    "buy_ticket.html",
+                    "payment/buy_ticket.html",
                     {
                         "ticket": ticket,
                         "error_message": "Все поля обязательны для заполнения."
@@ -847,27 +908,17 @@ def create_payment(request, ticket_id):
 
         # Проверка лимита бесплатных билетов за один заказ
         if ticket.price == 0 and quantity > 2:
-            from django.shortcuts import render
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "ticket": ticket,
-                    "error_message": "За один заказ можно получить не более 2 бесплатных билетов."
-                },
+            return _buy_ticket_error(
+                request, ticket,
+                "За один заказ можно получить не более 2 бесплатных билетов."
             )
         # Проверка, выбран ли чекбокс "Забронировать без оплаты".
         # Флаг мероприятия проверяем на сервере — POST можно подделать.
         reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
         if reserve_without_payment and not ticket.event.allow_booking_without_payment:
-            from django.shortcuts import render
-            return render(
-                request,
-                "buy_ticket.html",
-                {
-                    "ticket": ticket,
-                    "error_message": "Для этого мероприятия бронирование без оплаты недоступно."
-                },
+            return _buy_ticket_error(
+                request, ticket,
+                "Для этого мероприятия бронирование без оплаты недоступно."
             )
 
         # Определяем статус платежа
@@ -889,6 +940,47 @@ def create_payment(request, ticket_id):
 
         total_price = ticket.price * quantity
 
+        # Лимит бронирования без оплаты: не более MAX_RESERVED_TICKETS_PER_EVENT
+        # платных билетов на мероприятие на один email.
+        # Считаем только активные брони (reserved) — оплаченные билеты лимит не занимают.
+        MAX_RESERVED_TICKETS_PER_EVENT = 3
+        if reserve_without_payment:
+            already_reserved_count = int(
+                Order.objects.filter(
+                    participant_data__email=participant_data["email"],
+                    ticket__event=ticket.event,
+                    purchase_type='paid_ticket',
+                    payment_status="reserved",
+                ).aggregate(total=Sum("quantity"))["total"] or 0
+            )
+            if already_reserved_count + quantity > MAX_RESERVED_TICKETS_PER_EVENT:
+                remaining = MAX_RESERVED_TICKETS_PER_EVENT - already_reserved_count
+                if remaining > 0:
+                    logger.warning("[create_payment] Лимит бронирования без оплаты (остаток)", extra={
+                        'email': participant_data["email"],
+                        'event_id': ticket.event_id,
+                        'already_reserved': already_reserved_count,
+                        'requested': quantity,
+                        'remaining': remaining,
+                    })
+                    return _buy_ticket_error(
+                        request, ticket,
+                        f"На это мероприятие можно забронировать без оплаты не более "
+                        f"{MAX_RESERVED_TICKETS_PER_EVENT} билетов. "
+                        f"У вас уже {already_reserved_count}, можно ещё {remaining}."
+                    )
+                logger.warning("[create_payment] Лимит бронирования без оплаты (исчерпан)", extra={
+                    'email': participant_data["email"],
+                    'event_id': ticket.event_id,
+                    'already_reserved': already_reserved_count,
+                    'requested': quantity,
+                })
+                return _buy_ticket_error(
+                    request, ticket,
+                    f"Вы уже забронировали максимальное количество билетов без оплаты "
+                    f"на это мероприятие ({MAX_RESERVED_TICKETS_PER_EVENT})."
+                )
+
         # === АТОМАРНОЕ БРОНИРОВАНИЕ С ЗАЩИТОЙ ОТ ГОНКИ ===
         try:
             with transaction.atomic():
@@ -901,14 +993,9 @@ def create_payment(request, ticket_id):
                     ).count()
 
                     if free_tickets_count >= 2:
-                        from django.shortcuts import render
-                        return render(
-                            request,
-                            "buy_ticket.html",
-                            {
-                                "ticket": ticket,
-                                "error_message": "На одно устройство можно получить не более 2 бесплатных билетов."
-                            },
+                        return _buy_ticket_error(
+                            request, ticket,
+                            "На одно устройство можно получить не более 2 бесплатных билетов."
                         )
 
                 order = reserve_tickets(
@@ -924,17 +1011,7 @@ def create_payment(request, ticket_id):
                 )
         except TicketReservationError as e:
             logger.warning("[create_payment] Ошибка бронирования: %s", e)
-            if ticket.price == 0:
-                from django.shortcuts import render
-                return render(
-                    request,
-                    "buy_ticket.html",
-                    {
-                        "ticket": ticket,
-                        "error_message": str(e),
-                    },
-                )
-            return JsonResponse({"error": str(e)}, status=400)
+            return _buy_ticket_error(request, ticket, str(e))
 
         # Отправка писем для бесплатных билетов
         if ticket.price == 0:
@@ -1213,7 +1290,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                 order.save()
                 logger.info("[refund] Заказ #%s помечен как возвращённый", order.id)
 
-            return render(request, "/payment/refund_success_free.html")
+            return render(request, "payment/refund_success_free.html")
 
         # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ ===
         if not order.yookassa_payment_id:
@@ -1296,7 +1373,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
 
     except Exception as e:
         logger.error("Ошибка при возврате заказа: %s", e, exc_info=True)
-        return render(request, "/payment/refund_error.html", {"error": str(e)})
+        return render(request, "payment/refund_error.html", {"error": str(e)})
 
 
 def payment_success(request, order_id):
@@ -1402,7 +1479,7 @@ def pay_reserved_order(request, order_id):
 
     except Exception as e:
         logger.error("Ошибка при оплате забронированного заказа: %s", e, exc_info=True)
-        return render(request, "/payment/refund_error.html", {"error": str(e)})
+        return render(request, "payment/refund_error.html", {"error": str(e)})
 
 def package_success(request, package_id):
     """

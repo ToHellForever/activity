@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const logPrefix = '[Event:' + eventId + ']';
     const purchaseLog = [];
     const MAX_FREE_TICKETS = 2;
+    // Лимит бронирования без оплаты: не более 3 платных билетов на мероприятие.
+    // Дублирует серверную проверку в payment/views.py (bulk_buy_tickets / create_payment).
+    const MAX_RESERVED_TICKETS = 3;
     
     // === UTM-МЕТКИ ===
     function captureUtmParams() {
@@ -247,6 +250,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // === УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ===
+
+    // Включено ли бронирование без оплаты
+    function isReserveMode() {
+        const cb = document.getElementById('reserve_without_payment');
+        return !!(cb && cb.checked);
+    }
+
+    // Суммарное количество платных билетов в корзине (бесплатные в лимит не входят,
+    // как и на сервере — там считаются только заказы purchase_type='paid_ticket')
+    function getTotalPaidQty(excludeTicketId) {
+        let total = 0;
+        document.querySelectorAll('.ticket-card').forEach(card => {
+            if (excludeTicketId && card.dataset.ticketId === excludeTicketId) return;
+            const price = parseFloat(card.dataset.ticketPrice) || 0;
+            if (price > 0) {
+                total += parseInt(document.getElementById('qty_' + card.dataset.ticketId).value) || 0;
+            }
+        });
+        return total;
+    }
+
+    // Ограничивает количество платных билетов при бронировании без оплаты.
+    // Возвращает допустимое значение; при урезании показывает toast.
+    function enforceReservedLimit(ticketId, newQty, card, silent) {
+        if (!isReserveMode()) return newQty;
+        const price = parseFloat(card.dataset.ticketPrice) || 0;
+        if (price <= 0) return newQty; // бесплатные билеты лимит не занимают
+        const others = getTotalPaidQty(ticketId);
+        const allowed = Math.max(0, MAX_RESERVED_TICKETS - others);
+        if (newQty > allowed) {
+            if (!silent) {
+                showToast('При бронировании без оплаты можно выбрать не более ' +
+                    MAX_RESERVED_TICKETS + ' билетов на мероприятие. ', true);
+            }
+            return allowed;
+        }
+        return newQty;
+    }
+
     function updateQuantity(ticketId, delta) {
         addLog('Изменение количества билета ' + ticketId + ' на ' + delta, 'info');
         const input = document.getElementById('qty_' + ticketId);
@@ -278,6 +320,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const effectiveMin = isPerPerson && minQty > 1 ? 0 : 0;
         newQty = Math.max(effectiveMin, Math.min(newQty, maxQty));
+        // Лимит бронирования без оплаты (с toast-уведомлением)
+        newQty = enforceReservedLimit(ticketId, newQty, card);
         input.value = newQty;
         
         addLog('Новое количество для билета ' + ticketId + ': ' + newQty, 'info');
@@ -311,11 +355,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             val = Math.max(0, Math.min(val, maxQty));
+            // Лимит бронирования без оплаты (с toast-уведомлением)
+            val = enforceReservedLimit(ticketId, val, card);
             this.value = val;
             addLog('Ручной ввод количества для билета ' + ticketId + ': ' + val, 'info');
             updateCartDisplay();
         });
     });
+
+    // При включении бронирования без оплаты — урезаем уже выбранные платные билеты до лимита
+    const reserveCheckbox = document.getElementById('reserve_without_payment');
+    if (reserveCheckbox) {
+        reserveCheckbox.addEventListener('change', function() {
+            if (!this.checked) return;
+            let clamped = false;
+            document.querySelectorAll('.ticket-card').forEach(card => {
+                const ticketId = card.dataset.ticketId;
+                const input = document.getElementById('qty_' + ticketId);
+                const price = parseFloat(card.dataset.ticketPrice) || 0;
+                if (price <= 0) return;
+                const val = parseInt(input.value) || 0;
+                const limited = enforceReservedLimit(ticketId, val, card, true);
+                if (limited !== val) {
+                    input.value = limited;
+                    clamped = true;
+                }
+            });
+            if (clamped) {
+                showToast('При бронировании без оплаты можно выбрать не более ' +
+                    MAX_RESERVED_TICKETS + ' билетов на мероприятие. Количество уменьшено.', true);
+            }
+            updateCartDisplay();
+        });
+    }
     
     // === ОБНОВЛЕНИЕ КОРЗИНЫ ===
     function updateCartDisplay() {

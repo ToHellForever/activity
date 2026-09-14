@@ -34,7 +34,7 @@
     </div>
     {% endif %}
 
-    <form id="ticketForm" method="post" action="{% url 'create_payment' ticket.id %}">
+    <form id="ticketForm" method="post" action="{% url 'payment:create_payment' ticket.id %}">
         {% csrf_token %}
         <div class="form-group mb-3">
             <label for="quantity">Количество билетов</label>
@@ -70,6 +70,7 @@
         <div class="form-check mb-3">
             <input type="checkbox" class="form-check-input" id="reserve_without_payment" name="reserve_without_payment">
             <label class="form-check-label" for="reserve_without_payment">Забронировать без оплаты</label>
+            <small class="d-block text-muted">Не более 3 билетов на мероприятие с одного аккаунта.</small>
         </div>
         {% endif %}
 

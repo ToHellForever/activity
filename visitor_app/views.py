@@ -269,7 +269,7 @@ def buy_ticket(request, ticket_id=None):
         'initial_data': initial_data
     }
 
-    return render(request, '/payment/buy_ticket.html', context)
+    return render(request, 'payment/buy_ticket.html', context)
 
 @login_required
 def visitor_chats(request):

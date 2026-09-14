@@ -483,9 +483,6 @@ def check_reserved_tickets():
 
 def send_reservation_reminder(order, hours_until_event):
     """Отправляет уведомление о необходимости оплаты забронированного билета."""
-    from django.urls import reverse
-    from django.contrib.sites.shortcuts import get_current_site
-
     user_email = order.participant_data.get("email")
     if not user_email:
         return
@@ -502,7 +499,7 @@ def send_reservation_reminder(order, hours_until_event):
         "event": event,
         "hours_until_event": hours_until_event,
         "payment_link": payment_link,
-        "site_name": get_current_site(None).name,
+        "site_name": "Платформа мероприятий",
     }
 
     html_message = render_to_string("emails/reservation_reminder.html", context)
@@ -543,27 +540,20 @@ def send_reservation_cancelation(order):
     )
 
 def generate_payment_link(order, request=None):
-    """Генерирует ссылку для оплаты забронированного билета."""
+    """
+    Генерирует ссылку для оплаты забронированного билета.
+
+    Ведёт на pay_reserved_order — эндпоинт, который создаёт платёж в ЮКассе
+    для конкретного заказа (тот же, что используется в письме о бронировании).
+    """
     from django.urls import reverse
-    from django.contrib.sites.shortcuts import get_current_site
 
-    # Используем URL покупки билета без указания event_id
-    url = reverse("buy_ticket", args=[order.ticket.event.id])
-
-    # Добавляем параметры для идентификации заказа
-    payment_url = f"{url}?reserve_order={order.id}"
-
-    # Получаем полный URL с доменом
+    path = reverse("payment:pay_reserved_order", args=[order.id])
     if request:
-        # Если передан request, используем его для получения домена
-        current_site = get_current_site(request)
-    else:
-        # Если request не передан, получаем текущий сайт без request
-        current_site = get_current_site(None)
+        return request.build_absolute_uri(path)
 
-    full_url = f"http://{current_site.domain}{payment_url}"
-
-    return full_url
+    base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+    return f"{base_url.rstrip('/')}{path}"
 
 @shared_task
 def manage_event_statuses():
