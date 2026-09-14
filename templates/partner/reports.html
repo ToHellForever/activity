@@ -246,8 +246,8 @@
         </div>
     </div>
     
-    {% if user_reports %}
-    <div class="card report-card mb-4 report-table">
+    {% if user_reports.object_list %}
+    <div class="card report-card mb-4 report-table" id="user-reports">
         <div class="card-header">
             <span class="report-table-title">Предыдущие отчёты</span>
             <div class="report-table-actions">
@@ -307,22 +307,30 @@
                 </table>
             </div>
 
-            {% if user_reports.paginator.num_pages > 1 %}
-            <nav class="reports-pagination" aria-label="Навигация по отчётам">
-                <ul class="pagination pagination-sm justify-content-center mb-0">
-                    <li class="page-item {% if not user_reports.has_previous %}disabled{% endif %}">
-                        <a class="page-link" href="?page={{ user_reports.previous_page_number|default:1 }}">&lsaquo;</a>
-                    </li>
+            {% if user_reports.has_other_pages %}
+            <div class="reports-pagination-bar">
+                <span class="reports-pagination-info">
+                    Отчёты {{ user_reports.start_index }}–{{ user_reports.end_index }}
+                    из {{ user_reports.paginator.count }}
+                </span>
+                <nav class="reports-pagination" aria-label="Навигация по отчётам">
+                    <span class="reports-pagination-label">Страницы:</span>
+                    <a class="page-arrow {% if not user_reports.has_previous %}disabled{% endif %}"
+                       {% if user_reports.has_previous %}href="?page={{ user_reports.previous_page_number }}#user-reports"{% endif %}
+                       aria-label="Предыдущая страница"><i class="bi bi-chevron-left"></i></a>
                     {% for num in user_reports.paginator.page_range %}
-                    <li class="page-item {% if num == user_reports.number %}active{% endif %}">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                    </li>
+                        {% if num == 1 or num == user_reports.paginator.num_pages or num >= user_reports.number|add:"-1" and num <= user_reports.number|add:"1" %}
+                            <a class="page-num {% if num == user_reports.number %}active{% endif %}"
+                               href="?page={{ num }}#user-reports">{{ num }}</a>
+                        {% elif num == 2 or num == user_reports.paginator.num_pages|add:"-1" %}
+                            <span class="page-dots">&hellip;</span>
+                        {% endif %}
                     {% endfor %}
-                    <li class="page-item {% if not user_reports.has_next %}disabled{% endif %}">
-                        <a class="page-link" href="?page={{ user_reports.next_page_number|default:user_reports.paginator.num_pages }}">&rsaquo;</a>
-                    </li>
-                </ul>
-            </nav>
+                    <a class="page-arrow {% if not user_reports.has_next %}disabled{% endif %}"
+                       {% if user_reports.has_next %}href="?page={{ user_reports.next_page_number }}#user-reports"{% endif %}
+                       aria-label="Следующая страница"><i class="bi bi-chevron-right"></i></a>
+                </nav>
+            </div>
             {% endif %}
         </div>
     </div>
