@@ -626,57 +626,12 @@
 </form>
 </div>
 </div>
-
-<!-- ===== Buy package modal ===== -->
-<div id="buy-package-modal" class="modal package-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span class="modal-title">Покупка пакета</span>
-            <button type="button" class="modal-close" onclick="closeBuyPackageModal()">&times;</button>
-        </div>
-        <form id="buy-package-form" method="post">
-            {% csrf_token %}
-            <input type="hidden" id="modal-package-id" name="package_id">
-            <div style="margin-bottom:20px;">
-                <label for="payment-method" class="form-label">Способ оплаты</label>
-                <div class="input-with-button dropdown-container">
-                    <input type="text" class="form-control filter-input filter-input-dropdown" 
-                           placeholder="Способ оплаты" 
-                           value="ЮКасса"
-                           readonly 
-                           id="paymentDisplay"
-                           data-placeholder="Способ оплаты">
-                        <span class="triangle-down"></span>
-                    <div class="dropdown-menu-custom" id="paymentDropdown">
-                        <div class="dropdown-option active" data-value="yookassa">
-                            ЮКасса
-                        </div>
-                        <div class="dropdown-option" data-value="invoice">
-                            Счёт (для юр. лиц)
-                        </div>
-                    </div>
-                    <input type="hidden" id="payment-method" name="payment_method" value="yookassa">
-                </div>
-            </div>
-            <div id="invoice-admin-field" style="display:none; margin-bottom:20px;">
-                <label for="admin-email" class="form-label">Email администратора</label>
-                <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" class="form-control" required>
-            </div>
-            <div class="buy-modal-footer">
-                <button type="submit" class="btn btn-primary">Купить</button>
-            </div>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/pages/partner/custom_media.js"></script>
-<script src="/static/js/pages/partner/dashboard.js?v=9"></script>
-<script src="{% static 'js/pages/events/event_form_extra.js' %}"></script>
-<script src="/static/js/pages/other/calendar.js"></script>
-
 <!-- ===== Modal: Buy package ===== -->
+<!-- Модальное окно объявлено ДО подключения скриптов: dashboard.js
+     навешивает обработчики на #buy-package-form сразу при загрузке. -->
 <div id="buy-package-modal" class="modal package-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -733,4 +688,9 @@
         </div>
     </div>
 </div>
+
+<script src="/static/js/pages/partner/custom_media.js"></script>
+<script src="/static/js/pages/partner/dashboard.js?v=9"></script>
+<script src="{% static 'js/pages/events/event_form_extra.js' %}"></script>
+<script src="/static/js/pages/other/calendar.js"></script>
 {% endblock %}

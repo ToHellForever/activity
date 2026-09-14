@@ -201,6 +201,19 @@ class EventPackage(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def ordered_by_priority(cls):
+        """
+        Пакеты от «крутого» к «обычному»: priority > extended > basic.
+        Единственный источник порядка для всех карточек тарифов
+        (дашборд партнёра, дашборд посетителя, форма мероприятия).
+        """
+        package_order = {"priority": 0, "extended": 1, "basic": 2}
+        return sorted(
+            cls.objects.all(),
+            key=lambda package: package_order.get(package.event_card_type, 99),
+        )
+
     def can_create_event(self, user):
         """Проверяет, может ли пользователь создать новое мероприятие с этим пакетом"""
         active_events_count = Event.objects.filter(
@@ -257,6 +270,13 @@ class UserPackageSubscription(models.Model):
         blank=True,
         verbose_name="Дата запланированного изменения",
         help_text="Дата, когда должен вступить в силу запланированный пакет"
+    )
+    yookassa_payment_id = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        verbose_name="ID платежа ЮКассы",
+        help_text="Платёж, по которому подписка должна быть активирована"
     )
 
     class Meta:

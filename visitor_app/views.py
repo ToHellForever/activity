@@ -95,12 +95,6 @@ def visitor_dashboard(request):
         .first()
     )
 
-    # Сортируем пакеты от «крутого» к «обычному»
-    package_order = {"priority": 0, "extended": 1, "basic": 2}
-    packages = sorted(
-        EventPackage.objects.all(),
-        key=lambda p: package_order.get(p.event_card_type, 99),
-    )
 
     context = {
         "user": request.user,
@@ -109,7 +103,6 @@ def visitor_dashboard(request):
         "past_ticket_items": past_ticket_items,
         "past_user_orders": past_orders,
         "now": now,
-        "packages": packages,
         "user_subscription": user_subscription,
         "has_active_subscription": user_subscription is not None,
     }

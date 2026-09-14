@@ -58,7 +58,8 @@ def _event_form_context(request, form, *, is_edit, ticket_data=None, selected_ta
         "user_subscription": active_subscription,
         "has_active_subscription": active_subscription is not None,
         "has_free_tickets": False,  # обновляется через JavaScript
-        "packages": EventPackage.objects.all(),
+        # Порядок карточек тарифов как в дашборде: priority > extended > basic
+        "packages": EventPackage.ordered_by_priority(),
         # Ошибки формы для тостов на клиенте (JS читает data-form-errors у .partner-layout).
         # Апострофы экранируем: JSON вставляется в HTML-атрибут в одинарных кавычках.
         "form_errors_json": json.dumps(

@@ -138,11 +138,7 @@ def partner_dashboard(request):
         document_form = DocumentUploadForm()
 
     # Сортируем пакеты от «крутого» к «обычному»: priority > extended > basic
-    package_order = {"priority": 0, "extended": 1, "basic": 2}
-    packages = sorted(
-        EventPackage.objects.all(),
-        key=lambda p: package_order.get(p.event_card_type, 99),
-    )
+    packages = EventPackage.ordered_by_priority()
 
     context = {
         "user": request.user,
