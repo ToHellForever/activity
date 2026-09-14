@@ -422,8 +422,11 @@ class CustomDropdown {
         });
         option.classList.add('active');
 
-        // Обновляем скрытый input
-        const hiddenInput = this.input.parentElement.querySelector(`input[name="${this.hiddenInputName}"]`);
+        // Обновляем скрытый input.
+        // Основной поиск — по атрибуту name внутри контейнера; фолбэк по id,
+        // чтобы не терять значение при расхождении name/id.
+        const hiddenInput = this.input.parentElement.querySelector(`input[name="${this.hiddenInputName}"]`)
+            || document.getElementById(this.hiddenInputName);
         if (hiddenInput) {
             hiddenInput.value = value;
         }
@@ -564,9 +567,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Инициализация dropdown формата в форме бронирования площадки
+    // Инициализация dropdown формата в форме бронирования площадки.
+    // Третий аргумент — атрибут name скрытого поля (не id!)
     if (document.getElementById('bookingFormatInput')) {
-        new CustomDropdown('bookingFormatInput', 'bookingFormatDropdown', 'booking_event_format');
+        new CustomDropdown('bookingFormatInput', 'bookingFormatDropdown', 'event_format');
     }
 
     // Инициализация dropdown для категории

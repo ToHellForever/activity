@@ -8,8 +8,6 @@ from django.shortcuts import get_object_or_404
 from django.core.mail import EmailMessage, send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.utils import timezone
-from datetime import timedelta
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem, VenueFormat
 from .forms import BookingRequestForm
 import json
@@ -461,9 +459,9 @@ def _send_admin_booking_notification(booking_request):
 
 
 def _check_booking_rate_limit(venue, request):
-    """Проверяет лимит: не более 1 заявки в сутки на 1 площадку с 1 аккаунта."""
-    day_ago = timezone.now() - timedelta(days=1)
-    qs = BookingRequest.objects.filter(venue=venue, created_at__gte=day_ago)
+    """Проверяет лимит: не более 1 заявки на площадку с 1 аккаунта (за всё время).
+    На разные площадки отправлять заявки можно без ограничений."""
+    qs = BookingRequest.objects.filter(venue=venue)
 
     if request.user.is_authenticated:
         qs = qs.filter(user=request.user)
@@ -485,12 +483,12 @@ def _process_booking_request(request):
     except Venue.DoesNotExist:
         return False, {"__all__": "Указанная площадка не найдена"}, None
 
-    # Лимит: 1 заявка в сутки на 1 площадку с 1 аккаунта
+    # Лимит: 1 заявка на площадку с 1 аккаунта (за всё время)
     if _check_booking_rate_limit(venue, request):
         return (
             False,
             {
-                "__all__": "Вы уже отправляли заявку на эту площадку за последние сутки. "
+                "__all__": "Вы уже отправляли заявку на эту площадку. "
                            "Пожалуйста, дождитесь ответа."
             },
             None,

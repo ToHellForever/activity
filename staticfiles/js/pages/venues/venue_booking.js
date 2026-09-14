@@ -52,12 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!phone.value.trim()) {
             markInvalid(phone, 'Укажите телефон.');
         } else {
-            // Проверка формата телефона: +7XXXXXXXXXX или 11 цифр, начинающихся с 7/8
-            const cleaned = phone.value.replace(/\D/g, '');
-            const validPhone = (phone.value.startsWith('+') && cleaned.length === 12) ||
-                               (!phone.value.startsWith('+') && cleaned.length === 11 && (cleaned[0] === '7' || cleaned[0] === '8'));
+            // Телефон: 10 цифр (без кода страны), 11 цифр (с 7/8) либо + и 10–15 цифр
+            const raw = phone.value.trim();
+            const cleaned = raw.replace(/\D/g, '');
+            const validPhone = raw.startsWith('+')
+                ? (cleaned.length >= 10 && cleaned.length <= 15)
+                : (cleaned.length === 10 || cleaned.length === 11);
             if (!validPhone) {
-                markInvalid(phone, 'Телефон должен быть в формате +7XXXXXXXXXX (11 цифр).');
+                markInvalid(phone, 'Телефон должен содержать 10 или 11 цифр (например, 9996052164, 89996052164 или +79996052164).');
             }
         }
         if (email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {

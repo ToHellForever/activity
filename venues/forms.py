@@ -173,33 +173,27 @@ class BookingRequestForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get("phone")
-        if phone:
-            # Удаляем все нецифровые символы кроме возможного + в начале
-            cleaned_phone = phone
-            if phone.startswith("+"):
-                cleaned_phone = "+" + re.sub(r"\D", "", phone[1:])
-            else:
-                cleaned_phone = re.sub(r"\D", "", phone)
+        if not phone:
+            return phone
+        phone = phone.strip()
+        digits = re.sub(r"\D", "", phone)
 
-            # Проверка формата российского номера
-            if phone.startswith("+"):
-                # Для международного формата (+7...) проверяем общую длину
-                if len(cleaned_phone) != 12:  # +7 и 10 цифр номера
-                    raise ValidationError(
-                        "Номер телефона должен быть в формате +7XXXXXXXXXX (11 цифр после +)"
-                    )
-            else:
-                # Для местного формата проверяем 11 цифр (начинается с 7 или 8)
-                if len(cleaned_phone) != 11 or (
-                    cleaned_phone[0] != "7" and cleaned_phone[0] != "8"
-                ):
-                    raise ValidationError(
-                        "Номер телефона должен содержать 11 цифр и начинаться с 7 или 8"
-                    )
+        if phone.startswith("+"):
+            # Международный формат: + и 10–15 цифр (код страны + номер)
+            if not (10 <= len(digits) <= 15):
+                raise ValidationError(
+                    "Номер телефона должен содержать от 10 до 15 цифр "
+                    "(например, +79996052164)."
+                )
+            return "+" + digits
 
-            # Сохраняем очищенный номер
-            self.cleaned_data["phone"] = cleaned_phone
-        return phone
+        # Местный формат: 10 цифр (без кода страны) или 11 (с 7/8 в начале)
+        if len(digits) not in (10, 11):
+            raise ValidationError(
+                "Номер телефона должен содержать 10 или 11 цифр "
+                "(например, 9996052164, 89996052164 или +79996052164)."
+            )
+        return digits
 
     def clean_participants_count(self):
         participants_count = self.cleaned_data.get("participants_count")

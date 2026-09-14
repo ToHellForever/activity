@@ -404,7 +404,7 @@ class BookingRequest(models.Model):
         Venue, on_delete=models.CASCADE, related_name="booking_requests"
     )
 
-    # Аккаунт, с которого отправлена заявка (для лимита "1 заявка в сутки на площадку")
+    # Аккаунт, с которого отправлена заявка (для лимита "1 заявка на площадку")
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -413,7 +413,7 @@ class BookingRequest(models.Model):
         related_name="venue_booking_requests",
         verbose_name="Пользователь",
     )
-    # Ключ сессии для анонимных посетителей (тот же суточный лимит)
+    # Ключ сессии для анонимных посетителей (тот же лимит)
     session_key = models.CharField(max_length=40, blank=True, default="")
 
     name = models.CharField(max_length=255)
