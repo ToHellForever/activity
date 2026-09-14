@@ -263,9 +263,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "partner_app.tasks.send_scheduled_reports",
         "schedule": 43200.0,
     },
-    "check-scheduled-package-changes-hourly": {
+    "check-scheduled-package-changes-every-5-minutes": {
         "task": "core.tasks.check_and_apply_scheduled_package_changes",
-        "schedule": 3600.0,
+        "schedule": 300.0,
     },
     "manage-event-statuses-every-5-minutes": {
         "task": "core.tasks.manage_event_statuses",

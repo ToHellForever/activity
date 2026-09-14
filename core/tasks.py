@@ -602,8 +602,16 @@ def manage_event_statuses():
 @shared_task
 def check_and_apply_scheduled_package_changes():
     """
-    Задача Celery для проверки и применения запланированных изменений пакетов.
-    Выполняется периодически для проверки, не настало ли время смены пакета.
+    Задача Celery для обслуживания подписок на пакеты.
+
+    1. Завершает истёкшие подписки: если у подписки запланирована смена
+       пакета — применяет её (новый пакет активен, старый закрыт),
+       иначе просто деактивирует подписку. Без этого подписка с прошедшим
+       end_date оставалась бы активной в БД бесконечно.
+    2. Применяет запланированные смены пакетов, у которых наступила дата.
+
+    Порядок важен: сначала применяем запланированную смену для истёкшей
+    подписки, и только потом деактивируем то, что осталось без смены.
     """
     from core.models import UserPackageSubscription
     from django.utils import timezone
@@ -612,13 +620,54 @@ def check_and_apply_scheduled_package_changes():
 
     try:
         now = timezone.now()
+        applied_changes = 0
+        expired_count = 0
+
+        # 1. Истёкшие активные подписки
+        expired_subscriptions = UserPackageSubscription.objects.filter(
+            is_active=True,
+            end_date__lte=now,
+        )
+
+        for subscription in expired_subscriptions:
+            try:
+                if subscription.scheduled_change_to_id:
+                    # Запланированная смена: создаём активную подписку
+                    # на новый пакет, старую закрываем
+                    new_subscription = subscription.apply_scheduled_change()
+                    if new_subscription:
+                        applied_changes += 1
+                        logger.info(
+                            "Applied scheduled package change for user %s: %s -> %s",
+                            subscription.user.email,
+                            subscription.package.name,
+                            new_subscription.package.name,
+                        )
+                else:
+                    subscription.is_active = False
+                    subscription.save(update_fields=["is_active"])
+                    expired_count += 1
+                    logger.info(
+                        "Deactivated expired subscription %s (package %s, user %s)",
+                        subscription.id,
+                        subscription.package.name,
+                        subscription.user.email,
+                    )
+            except Exception as e:
+                logger.error(
+                    "Error processing subscription %s: %s",
+                    subscription.id,
+                    str(e),
+                )
+                continue
+
+        # 2. Запланированные смены, чья дата наступила
+        # (подписка ещё активна — смена может наступить раньше end_date)
         subscriptions = UserPackageSubscription.objects.filter(
             scheduled_change_to__isnull=False,
             scheduled_change_date__lte=now,
-            is_active=True
+            is_active=True,
         )
-
-        applied_changes = 0
 
         for subscription in subscriptions:
             try:
@@ -630,8 +679,8 @@ def check_and_apply_scheduled_package_changes():
                 logger.error(f"Error applying scheduled package change for subscription {subscription.id}: {str(e)}")
                 continue
 
-        logger.info(f"Scheduled package change check completed. Applied {applied_changes} changes.")
-        return f"Success: Applied {applied_changes} scheduled package changes"
+        logger.info(f"Scheduled package change check completed. Applied {applied_changes} changes, deactivated {expired_count} expired subscriptions.")
+        return f"Success: Applied {applied_changes} scheduled package changes, deactivated {expired_count} expired subscriptions"
 
     except Exception as e:
         logger.error(f"Error during scheduled package change check: {str(e)}")

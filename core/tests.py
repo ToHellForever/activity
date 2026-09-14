@@ -4,12 +4,16 @@
 
 import os
 import tempfile
+from datetime import timedelta
+
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
-from core.models import Event, User
+from core.models import Event, User, EventPackage, UserPackageSubscription
+from core.tasks import check_and_apply_scheduled_package_changes
 from core.validators import validate_video_duration
 from core.video_storage import YandexVideoProcessingStorage
 from unittest.mock import patch, MagicMock
@@ -151,3 +155,131 @@ class WatermarkTestCase(TestCase):
         # Удаляем временный файл
         if os.path.exists(test_video_path):
             os.remove(test_video_path)
+
+
+class PackageSubscriptionLifecycleTestCase(TestCase):
+    """
+    Тесты жизненного цикла подписок на пакеты:
+    истечение срока и запланированная смена пакета.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="subuser",
+            email="subuser@example.com",
+            password="testpass123",
+            user_type="partner",
+        )
+        self.basic_package = EventPackage.objects.create(
+            name="Старт",
+            price=100,
+            event_card_type="basic",
+            max_photos=3,
+        )
+        self.priority_package = EventPackage.objects.create(
+            name="Приоритет",
+            price=300,
+            event_card_type="priority",
+            max_photos=10,
+        )
+
+    def _create_subscription(self, *, end_date, is_active=True):
+        """Создаёт подписку с заданной датой окончания."""
+        subscription = UserPackageSubscription(
+            user=self.user,
+            package=self.basic_package,
+            subscription_type="monthly",
+            is_active=is_active,
+        )
+        # save() пересчитывает end_date только для новых подписок,
+        # поэтому задаём дату после первого сохранения
+        subscription.save()
+        subscription.end_date = end_date
+        subscription.save(update_fields=["end_date"])
+        subscription.refresh_from_db()
+        return subscription
+
+    def test_expired_subscription_deactivated_by_task(self):
+        """Истёкшая подписка деактивируется задачей."""
+        subscription = self._create_subscription(
+            end_date=timezone.now() - timedelta(days=1)
+        )
+        self.assertTrue(subscription.is_active)  # в БД ещё активна
+
+        check_and_apply_scheduled_package_changes()
+
+        subscription.refresh_from_db()
+        self.assertFalse(subscription.is_active)
+
+    def test_active_subscription_not_touched_by_task(self):
+        """Действующая подписка задачей не трогается."""
+        subscription = self._create_subscription(
+            end_date=timezone.now() + timedelta(days=10)
+        )
+
+        check_and_apply_scheduled_package_changes()
+
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_active)
+
+    def test_scheduled_change_applies_after_expiry(self):
+        """Запланированная смена применяется после окончания текущей подписки."""
+        subscription = self._create_subscription(
+            end_date=timezone.now() - timedelta(hours=1)
+        )
+        subscription.schedule_package_change(self.priority_package)
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.scheduled_change_to, self.priority_package)
+
+        check_and_apply_scheduled_package_changes()
+
+        subscription.refresh_from_db()
+        # Старая подписка закрыта
+        self.assertFalse(subscription.is_active)
+        self.assertIsNone(subscription.scheduled_change_to)
+
+        # Создана новая активная подписка на новый пакет
+        new_subscription = UserPackageSubscription.objects.filter(
+            user=self.user, package=self.priority_package, is_active=True
+        ).first()
+        self.assertIsNotNone(new_subscription)
+        self.assertGreater(new_subscription.end_date, timezone.now())
+
+        # Активная подписка у пользователя ровно одна — на новый пакет
+        active_subscriptions = UserPackageSubscription.objects.filter(
+            user=self.user, is_active=True
+        )
+        self.assertEqual(active_subscriptions.count(), 1)
+        self.assertEqual(active_subscriptions.first().pk, new_subscription.pk)
+
+    def test_scheduled_change_not_applied_before_expiry(self):
+        """До окончания текущей подписки смена не применяется."""
+        subscription = self._create_subscription(
+            end_date=timezone.now() + timedelta(days=5)
+        )
+        subscription.schedule_package_change(self.priority_package)
+
+        check_and_apply_scheduled_package_changes()
+
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_active)
+        self.assertEqual(subscription.scheduled_change_to, self.priority_package)
+        self.assertFalse(
+            UserPackageSubscription.objects.filter(
+                user=self.user, package=self.priority_package, is_active=True
+            ).exists()
+        )
+
+    def test_expired_without_scheduled_change_leaves_no_active_subscription(self):
+        """После истечения подписки без запланированной смены активных нет."""
+        self._create_subscription(
+            end_date=timezone.now() - timedelta(days=1)
+        )
+
+        check_and_apply_scheduled_package_changes()
+
+        self.assertFalse(
+            UserPackageSubscription.objects.filter(
+                user=self.user, is_active=True
+            ).exists()
+        )
