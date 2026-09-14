@@ -155,6 +155,26 @@ class EventForm(forms.ModelForm):
                     "Ваш пакет не поддерживает бесплатную регистрацию."
                 )
 
+            # Бесплатные билеты (цена 0) несовместимы с бронированием без оплаты.
+            # Дублирует клиентскую проверку в ticket_table.js — чекбокс там блокируется,
+            # но серверная проверка обязательна (JS можно обойти).
+            if cleaned_data.get('allow_booking_without_payment'):
+                prices = (
+                    self.data.getlist('ticket_price[]')
+                    if hasattr(self.data, 'getlist') else []
+                )
+                for raw_price in prices:
+                    try:
+                        price = float(str(raw_price).strip().replace(',', '.'))
+                    except (TypeError, ValueError):
+                        continue
+                    if price == 0:
+                        self.add_error(
+                            'allow_booking_without_payment',
+                            "Нельзя включить бронирование без оплаты: среди билетов есть бесплатные."
+                        )
+                        break
+
             # Проверка на заявки через платформу
             if not package.has_platform_request and cleaned_data.get('allow_platform_requests'):
                 self.add_error(

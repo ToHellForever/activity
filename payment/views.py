@@ -435,8 +435,18 @@ def bulk_buy_tickets(request, event_id):
         # Получаем UTM-метки из JSON (если пришли с фронтенда)
         utm_from_json = data.get('utm_params', {})
         
-        # Проверяем бронирование без оплаты
+        # Проверяем бронирование без оплаты.
+        # Флаг мероприятия проверяем на сервере: чекбокс на фронте можно не показывать,
+        # но подделать POST никто не мешает.
         reserve_without_payment = data.get('reserve_without_payment', False)
+        if reserve_without_payment and not event.allow_booking_without_payment:
+            logger.warning('[bulk_buy] Бронирование без оплаты запрещено для мероприятия', extra={
+                'event_id': event_id,
+                'email': email,
+            })
+            return JsonResponse({
+                'error': 'Для этого мероприятия бронирование без оплаты недоступно.'
+            }, status=400)
         
         logger.info('[bulk_buy] Данные получены', extra={
             'tickets_count': len(tickets_data),
@@ -846,8 +856,19 @@ def create_payment(request, ticket_id):
                     "error_message": "За один заказ можно получить не более 2 бесплатных билетов."
                 },
             )
-        # Проверка, выбран ли чекбокс "Забронировать без оплаты"
+        # Проверка, выбран ли чекбокс "Забронировать без оплаты".
+        # Флаг мероприятия проверяем на сервере — POST можно подделать.
         reserve_without_payment = request.POST.get("reserve_without_payment") == "on"
+        if reserve_without_payment and not ticket.event.allow_booking_without_payment:
+            from django.shortcuts import render
+            return render(
+                request,
+                "buy_ticket.html",
+                {
+                    "ticket": ticket,
+                    "error_message": "Для этого мероприятия бронирование без оплаты недоступно."
+                },
+            )
 
         # Определяем статус платежа
         if ticket.price == 0:
