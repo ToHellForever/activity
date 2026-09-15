@@ -1,4 +1,4 @@
-// === PARTNER FINANCES ===
+ // === PARTNER FINANCES ===
 
 $(document).ready(function() {
     let isSubmitting = false;
