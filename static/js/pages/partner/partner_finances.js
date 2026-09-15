@@ -12,9 +12,17 @@ $(document).ready(function() {
         return value.replace(',', '.');
     }
 
+    // Минимальная сумма выплаты: берём из data-атрибута контейнера (значение из настроек view)
+    function getMinPayout() {
+        const layout = document.querySelector('.partner-layout');
+        const min = parseFloat(layout && layout.dataset.minPayout);
+        return isNaN(min) ? 0 : min;
+    }
+
     function openPayoutModal() {
         let enteredAmountStr = formatInput($('#availableAmountInput').val());
         const enteredAmount = parseFloat(enteredAmountStr);
+        const minPayout = getMinPayout();
         
         if (isNaN(enteredAmount) || enteredAmount <= 0) {
             alert('Введите сумму выплаты больше нуля.');
@@ -23,6 +31,11 @@ $(document).ready(function() {
 
         if (enteredAmount > maxPayoutAmount) {
             alert('Сумма выплаты не может превышать доступную сумму: ' + maxPayoutAmount.toFixed(2) + ' ₽');
+            return;
+        }
+
+        if (minPayout > 0 && enteredAmount < minPayout) {
+            alert('Минимальная сумма выплаты: ' + minPayout.toFixed(2) + ' ₽');
             return;
         }
 
@@ -63,6 +76,14 @@ $(document).ready(function() {
 
         if (isNaN(currentValue) || currentValue > maxPayoutAmount) {
             alert('Сумма выплаты не может превышать доступную сумму: ' + maxPayoutAmount.toFixed(2) + ' ₽');
+            return;
+        }
+
+        // Минимальная сумма выплаты берётся из data-атрибута контейнера
+        const layoutEl = document.querySelector('.partner-layout');
+        const minPayout = parseFloat((layoutEl && layoutEl.dataset.minPayout) || '0');
+        if (minPayout > 0 && currentValue < minPayout) {
+            alert('Минимальная сумма выплаты: ' + minPayout.toFixed(2) + ' ₽');
             return;
         }
 

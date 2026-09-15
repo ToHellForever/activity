@@ -13,6 +13,9 @@ from ..forms import PayoutDetailsForm
 from .decorators import check_partner_status, get_rejection_messages
 
 
+MIN_PAYOUT_AMOUNT = 5000
+
+
 def get_partner_revenue_and_commission(user):
     """
     Единая точка расчёта выручки и комиссии платформы партнёра.
@@ -71,6 +74,7 @@ def finances(request):
         "total_revenue": total_revenue,
         "commission_amount": commission_sum,
         "payout_amount": float(payout_amount),
+        "min_payout_amount": MIN_PAYOUT_AMOUNT,
         "payout_history": payout_history,
         "partner_payout_details": partner_payout_details,
     }
@@ -121,6 +125,15 @@ def request_payout(request):
                 {
                     "status": "error",
                     "message": f"Сумма выплаты не может превышать доступную сумму: {payout_amount:.2f} ₽",
+                },
+                status=400,
+            )
+
+        if amount < MIN_PAYOUT_AMOUNT:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Минимальная сумма выплаты: {MIN_PAYOUT_AMOUNT:.2f} ₽",
                 },
                 status=400,
             )

@@ -3,7 +3,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/partner/finances.css' %}">
-<div class="partner-layout" style="display:flex; gap:14px;" data-request-payout-url="{% url 'partner:request_payout' %}">
+<div class="partner-layout" style="display:flex; gap:14px;" data-request-payout-url="{% url 'partner:request_payout' %}" data-min-payout="{{ min_payout_amount }}">
 {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
 <div class="partner-main finance-page">
 <h1 class="finances-title">Финансы и выплаты</h1>
@@ -21,10 +21,10 @@
                      <div class="payout-form-group">
                           <label for="payoutAmount" class="payout-form-label">Сумма выплаты</label>
                           <div class="payout-input-wrap">
-                              <input type="text" inputmode="decimal" class="payout-form-input" id="payoutAmount" name="amount" value="{{ payout_amount|floatformat:2 }}" placeholder="Например 10.80">
-                              <span class="payout-input-currency">₽</span>
+                <input type="text" inputmode="decimal" class="payout-form-input" id="payoutAmount" name="amount" value="{{ payout_amount|floatformat:2 }}" placeholder="Например 10.80" data-min-payout="{{ min_payout_amount }}">
+                <span class="payout-input-currency">₽</span>
                           </div>
-                          <small class="payout-hint">Максимальная доступная сумма: {{ payout_amount|floatformat:2 }} ₽</small>
+                          <small class="payout-hint">Минимальная сумма выплаты: {{ min_payout_amount|floatformat:0 }} ₽</small>
                      </div>
                     
                      <div class="payout-form-group">
@@ -84,14 +84,14 @@
     <div class="finance-card__actions">
         <div class="finance-card__amount-wrapper">
             <div class="finance-card__input-wrap">
-                <input
-                    id="availableAmountInput"
-                    class="finance-card__available-input"
-                    type="text"
-                    inputmode="decimal"
-                    value="{{ payout_amount|floatformat:2 }}"
-                    aria-label="Сумма выплаты"
-                />
+            <input
+                id="availableAmountInput"
+                class="finance-card__available-input"
+                type="text"
+                inputmode="decimal"
+                value="{{ payout_amount|floatformat:2 }}"
+                aria-label="Сумма выплаты"
+            />
                 <span class="finance-card__input-currency">₽</span>
             </div>
         </div>
