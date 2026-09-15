@@ -136,7 +136,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // === ДОБАВЛЕНИЕ ===
-    document.getElementById('addPayoutForm').addEventListener('submit', function(e) {
+    // Формы может не быть — при достижении лимита в 3 реквизита она не рендерится
+    const addForm = document.getElementById('addPayoutForm');
+    if (addForm) {
+    addForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
         // Валидация
@@ -165,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.textContent = 'Сохранить реквизиты';
         });
     });
+    }
 
     // === РЕДАКТИРОВАНИЕ ===
     document.getElementById('editPayoutBtn').addEventListener('click', function() {
@@ -238,16 +242,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function initDropdown(container) {
         if (!container) return;
         const input = container.querySelector('.filter-input-dropdown');
+        // В разметке страницы нет отдельной кнопки .dropdown-toggle-btn —
+        // триггером служит само поле ввода и иконка .triangle-down
         const button = container.querySelector('.dropdown-toggle-btn');
         const dropdown = container.querySelector('.dropdown-menu-custom');
         const hiddenInput = container.querySelector('input[type="hidden"]');
         if (!input || !dropdown) return;
 
         function openDropdown() {
-            const rect = input.getBoundingClientRect();
-            dropdown.style.top = (rect.bottom + 4) + 'px';
-            dropdown.style.left = rect.left + 'px';
-            dropdown.style.width = rect.width + 'px';
+            // Список позиционируется через CSS (position: absolute
+            // относительно .dropdown-container), поэтому привязан к инпуту
+            // и корректно двигается вместе со страницей
             dropdown.classList.add('active');
             container.classList.add('open');
         }
@@ -257,17 +262,30 @@ document.addEventListener('DOMContentLoaded', function() {
             container.classList.remove('open');
         }
 
-        button.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (dropdown.classList.contains('active')) closeDropdown();
-            else openDropdown();
-        });
+        if (button) {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (dropdown.classList.contains('active')) closeDropdown();
+                else openDropdown();
+            });
+        }
 
         input.addEventListener('click', function(e) {
             e.stopPropagation();
             if (dropdown.classList.contains('active')) closeDropdown();
             else openDropdown();
         });
+
+        // Иконка-треугольник также открывает dropdown (клик по полю её перехватывает,
+        // но обработчик добавляем на случай, если поле не получит клик)
+        const toggleIcon = container.querySelector('.triangle-down');
+        if (toggleIcon) {
+            toggleIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (dropdown.classList.contains('active')) closeDropdown();
+                else openDropdown();
+            });
+        }
 
         dropdown.querySelectorAll('.dropdown-option').forEach(function(option) {
             option.addEventListener('click', function() {

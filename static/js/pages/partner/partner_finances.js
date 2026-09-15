@@ -110,7 +110,7 @@ $(document).ready(function() {
             },
             body: new URLSearchParams({
                 amount: $('input[name="amount"]').val(),
-                payout_details: $('select[name="payout_details"]').val(),
+                payout_details: document.getElementById('payoutDetailsHidden').value,
                 comment: $('textarea[name="comment"]').val(),
                 csrfmiddlewaretoken: csrf
             })
@@ -151,10 +151,9 @@ $(document).ready(function() {
         if (!input || !dropdown) return;
 
         function openDropdown() {
-            const rect = input.getBoundingClientRect();
-            dropdown.style.top = (rect.bottom + 4) + 'px';
-            dropdown.style.left = rect.left + 'px';
-            dropdown.style.width = rect.width + 'px';
+            // Список позиционируется через CSS (position: absolute
+            // относительно .dropdown-container), поэтому корректно
+            // работает внутри модалки и при скролле
             dropdown.classList.add('active');
             container.classList.add('open');
         }
@@ -164,17 +163,41 @@ $(document).ready(function() {
             container.classList.remove('open');
         }
 
-        button.addEventListener('click', function(e) {
-            e.stopPropagation();
+        function toggleDropdown() {
             if (dropdown.classList.contains('active')) closeDropdown();
             else openDropdown();
+        }
+
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
         });
 
         input.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (dropdown.classList.contains('active')) closeDropdown();
-            else openDropdown();
+            // Не toggle: при readonly-инпуте focus срабатывает раньше клика
+            // и уже открыл список — повторное открытие здесь закрывало бы его
+            openDropdown();
         });
+
+        // Поле readonly — надёжнее открывать список и при получении фокуса
+        input.addEventListener('focus', function() {
+            openDropdown();
+        });
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDropdown();
+        });
+
+        // Клик по иконке-треугольнику рядом с полем
+        const toggleIcon = container.querySelector('.triangle-down');
+        if (toggleIcon) {
+            toggleIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleDropdown();
+            });
+        }
 
         dropdown.querySelectorAll('.dropdown-option').forEach(function(opt) {
             opt.addEventListener('click', function() {

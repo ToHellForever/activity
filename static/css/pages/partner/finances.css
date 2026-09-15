@@ -334,8 +334,11 @@
 /* Кастомное выпадающее меню */
 .dropdown-menu-custom {
   display: none;
-  position: fixed;
-  z-index: 10001 !important;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20000 !important;
   background: #ffffff;
   border-radius: 0 0 16px 16px;
   overflow-y: auto;

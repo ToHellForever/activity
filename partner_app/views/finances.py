@@ -208,6 +208,12 @@ def payout_details(request):
                 )
 
         # === СОЗДАНИЕ ===
+        if PayoutDetails.objects.filter(partner=request.user).count() >= 3:
+            messages.error(
+                request, "Можно сохранить не более 3 реквизитов. Удалите лишние."
+            )
+            return redirect("partner:payout_details")
+
         form = PayoutDetailsForm(request.POST)
         if form.is_valid():
             payout_detail = form.save(commit=False)

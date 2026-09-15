@@ -11,7 +11,8 @@
     <div class="partner-main">
 
 
-        <!-- Форма добавления -->
+        <!-- Форма добавления (доступна, пока реквизитов меньше 3) -->
+        {% if details|length < 3 %}
         <div class="payout-details-form-card">
             <h2 class="payout-details-form-title">Добавить реквизиты</h2>
             <form id="addPayoutForm" novalidate>
@@ -63,7 +64,7 @@
 
                 <div class="payout-details-form-row">
                     <label class="payout-details-form-label" for="bik">
-                        БИК банка <span class="optional">(необязательно)</span>
+                        БИК банка <span class="required">*</span>
                     </label>
                     <input type="text" class="payout-details-input" id="bik" name="bik"
                            placeholder="9 цифр" inputmode="numeric" maxlength="9">
@@ -75,6 +76,14 @@
                 </button>
             </form>
         </div>
+        {% else %}
+        <div class="payout-details-empty" style="margin-bottom: 32px;">
+            <div class="payout-details-empty-icon">
+                <i class="bi bi-credit-card"></i>
+            </div>
+            <p class="payout-details-empty-text">Можно сохранить не более 3 реквизитов. Удалите лишние, чтобы добавить новые.</p>
+        </div>
+        {% endif %}
 
         <!-- Сохранённые реквизиты -->
         <h2 class="payout-details-section-title">Сохранённые реквизиты</h2>
@@ -124,9 +133,6 @@
                 <i class="bi bi-credit-card"></i>
             </div>
             <p class="payout-details-empty-text">У вас пока нет сохранённых реквизитов</p>
-            <a href="#" class="payout-details-empty-link" onclick="document.querySelector('.payout-details-form-card').scrollIntoView({behavior:'smooth'}); return false;">
-                Добавить реквизиты
-            </a>
         </div>
         {% endif %}
     </div>
@@ -191,7 +197,7 @@
 
                     <div class="payout-details-form-row">
                         <label class="payout-details-form-label" for="edit_bik">
-                            БИК банка <span class="optional">(необязательно)</span>
+                            БИК банка <span class="required">*</span>
                         </label>
                         <input type="text" class="payout-details-input" id="edit_bik" name="bik"
                                placeholder="9 цифр" inputmode="numeric" maxlength="9">
