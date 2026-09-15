@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/partner/partner_event_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/partner/entry_control.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/other/show_more.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -83,7 +84,7 @@
                 <h2 class="section-title">Актуальные события</h2>
 
                 {% if active_events %}
-                    <div class="row">
+                    <div class="row" id="activeEventsRow">
                         {% for item in active_events %}
                         <div class="col-6 col-md-4 mb-4" style='padding: 0 5px !important'>
                              <div class="card partner-event-card">
@@ -189,7 +190,7 @@
                 <h2 class="section-title mt-4">Архив</h2>
  
                 {% if archived_events %}
-                    <div class="row">
+                    <div class="row" id="archivedEventsRow">
                         {% for item in archived_events %}
                         <div class="col-6 col-md-4 mb-4" style='padding: 0 5px !important'>
                             <div class="card partner-event-card">
@@ -276,6 +277,14 @@
 
 <!-- Скрипт календаря -->
 <script src="{% static 'js/pages/other/calendar.js' %}"></script>
+<!-- Скрипт "Показать ещё" -->
+<script src="{% static 'js/pages/other/show_more.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        initShowMore('activeEventsRow');
+        initShowMore('archivedEventsRow');
+    });
+</script>
 
 <!-- Modal контроля входа -->
 <div class="modal fade entry-control-modal" id="entryControlModal" tabindex="-1" aria-hidden="true">

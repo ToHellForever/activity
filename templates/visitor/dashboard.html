@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/visitor/ticket_display.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/other/show_more.css' %}">
 <div >
     <div class="visitor-layout">
 
@@ -18,7 +19,7 @@
             </div>
 
             {% if ticket_items %}
-                <div class="row"> 
+                <div class="row" id="dashboardRow">
                     {% for item in ticket_items %}
                         {% with event=item.event order=item.order ticket=item.ticket participant_data=item.participant_data ot=item.order_ticket %}
                         <div class="col-md-4 mb-4">
@@ -102,4 +103,10 @@
 </div>
 
 <script src="{% static 'js/pages/visitor/visitor_dashboard.js' %}"></script>
+<script src="{% static 'js/pages/other/show_more.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        initShowMore('dashboardRow');
+    });
+</script>
 {% endblock %}

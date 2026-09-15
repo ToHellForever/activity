@@ -6,6 +6,12 @@
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
   padding-top: 0 !important;
+  /* Сайдбар остаётся на экране при прокрутке страницы */
+  position: sticky !important;
+  top: 20px !important;
+  align-self: flex-start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 /* ===== Sidebar ===== */
@@ -15,6 +21,12 @@
   border-radius: 16px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
+  /* Сайдбар остаётся на экране при прокрутке страницы */
+  position: sticky !important;
+  top: 20px !important;
+  align-self: flex-start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 .sidebar-icon {
   width: 25px;
@@ -162,6 +174,8 @@
 .partner-main {
   flex: 1;
   min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .sidebar-logout {
@@ -200,6 +214,11 @@
   background: #fff;
   border-radius: 20px;
   box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
+
+  /* Меню остаётся на экране при прокрутке страницы */
+  position: sticky;
+  top: 10px;
+  z-index: 1020;
 
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -261,15 +280,17 @@
     display: none !important;
   }
 
+  .visitor-layout {
+    flex-direction: column;
+  }
+
+  .visitor-sidebar {
+    display: none !important;
+  }
+
   .mobile-nav {
     display: flex;
     width: 100%;
     order: -1;
-  }
-
-  .partner-main {
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
   }
 }

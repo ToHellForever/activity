@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/visitor/order_history.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/other/show_more.css' %}">
 {% endblock %}
 {% block content %}
 <div>
@@ -23,7 +24,7 @@
             </div>
 
             {% if past_ticket_items %}
-                <div class="row">
+                <div class="row" id="orderHistoryRow">
                     {% for item in past_ticket_items %}
                         {% with event=item.event order=item.order ticket=item.ticket participant_data=item.participant_data ot=item.order_ticket %}
                         <div class="col-md-4 mb-4">
@@ -77,4 +78,13 @@
         </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/other/show_more.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        initShowMore('orderHistoryRow');
+    });
+</script>
 {% endblock %}
