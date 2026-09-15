@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 
-from core.models import Order, PayoutRequest, PayoutDetails
+from core.models import Order, OrderTicket, PayoutRequest, PayoutDetails
 from ..forms import PayoutDetailsForm
 from .decorators import check_partner_status, get_rejection_messages
 
@@ -19,7 +19,8 @@ MIN_PAYOUT_AMOUNT = 5000
 def get_partner_revenue_and_commission(user):
     """
     Единая точка расчёта выручки и комиссии платформы партнёра.
-    Учитываются только оплаченные заказы, исключая возвраты.
+    Учитываются только оплаченные заказы, исключая возвраты
+    (как возвраты целых заказов, так и поштучные возвраты билетов).
     Возвращает кортеж (total_revenue, commission_sum).
     """
     orders = Order.objects.filter(ticket__event__organizer=user)
@@ -38,7 +39,62 @@ def get_partner_revenue_and_commission(user):
         or 0
     )
 
+    # Поштучные возвраты билетов в заказах, которые сами не являются refunded:
+    # вычитаем их сумму из выручки и пропорционально из комиссии
+    refunded_tickets = OrderTicket.objects.filter(
+        order__ticket__event__organizer=user,
+        order__is_paid=True,
+        is_refunded=True,
+    ).exclude(order__payment_status="refunded")
+
+    refunded_sum = (
+        refunded_tickets.aggregate(
+            total=Sum("order__ticket__price"),
+            commission=Sum(
+                ExpressionWrapper(
+                    F("order__ticket__price")
+                    * (F("order__ticket__event__commission_rate") / 100),
+                    output_field=DecimalField(),
+                )
+            ),
+        )
+    )
+    total_revenue = total_revenue - (refunded_sum["total"] or 0)
+    commission_sum = commission_sum - (refunded_sum["commission"] or 0)
+
+    if total_revenue < 0:
+        total_revenue = 0
+    if commission_sum < 0:
+        commission_sum = 0
+
     return total_revenue, commission_sum
+
+
+def get_partner_payout_amount(user):
+    """
+    Сумма, доступная к выплате: выручка минус комиссия платформы
+    минус заявки на выплату в обработке (pending/processing)
+    и уже выплаченные (paid).
+    """
+    total_revenue, commission_sum = get_partner_revenue_and_commission(user)
+
+    pending_amount = (
+        PayoutRequest.objects.filter(
+            organizer=user,
+            status__in=["pending", "processing"],
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
+    paid_amount = (
+        PayoutRequest.objects.filter(
+            organizer=user,
+            status="paid",
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
+
+    payout_amount = total_revenue - commission_sum - pending_amount - paid_amount
+    return payout_amount if payout_amount > 0 else 0
 
 
 @login_required
@@ -46,22 +102,8 @@ def finances(request):
     total_revenue, commission_sum = get_partner_revenue_and_commission(request.user)
 
     # Сумма к выплате: выручка минус комиссия минус заявки в обработке (pending/processing)
-    pending_amount = (
-        PayoutRequest.objects.filter(
-            organizer=request.user,
-            status__in=["pending", "processing"]
-        ).aggregate(total=Sum("amount"))["total"]
-        or 0
-    )
-    # Также вычитаем уже выплаченные суммы (paid) — они уже ушли партнёру
-    paid_amount = (
-        PayoutRequest.objects.filter(
-            organizer=request.user,
-            status="paid"
-        ).aggregate(total=Sum("amount"))["total"]
-        or 0
-    )
-    payout_amount = total_revenue - commission_sum - pending_amount - paid_amount
+    # и уже выплаченные суммы — единая логика с request_payout
+    payout_amount = get_partner_payout_amount(request.user)
 
     payout_history = PayoutRequest.objects.filter(organizer=request.user).order_by(
         "-created_at"
@@ -115,9 +157,8 @@ def request_payout(request):
                 status=404,
             )
 
-        # Получаем доступную для выплаты сумму
-        total_revenue, commission_sum = get_partner_revenue_and_commission(request.user)
-        payout_amount = total_revenue - commission_sum
+        # Доступная к выплате сумма — та же, что отображается в блоке «Баланс»
+        payout_amount = get_partner_payout_amount(request.user)
 
         # Серверная валидация суммы выплаты
         if amount > payout_amount:
