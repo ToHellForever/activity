@@ -630,14 +630,11 @@
   font-weight: 600;
 }
 
-/* На мобильных — одна карточка в строку */
-@media (max-width: 576px) {
+@media (max-width: 768px) {
+
   .payout-details-grid {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 768px) {
   .payout-detail-actions {
     flex-wrap: wrap;
   }

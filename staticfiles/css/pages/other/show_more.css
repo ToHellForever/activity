@@ -1,0 +1,21 @@
+/* ===== Кнопка "Показать ещё" ===== */
+.show-more-btn {
+  border: solid 3px rgba(2, 54, 156, 1);
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  color: rgba(0, 0, 0, 1);
+  text-decoration: none;
+  text-align: center;
+  border-radius: 25px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: clamp(0.7rem, 1vw, 1rem);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .show-more-btn{
+    padding: 7px 0;
+  }
+}
