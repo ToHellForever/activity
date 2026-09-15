@@ -217,12 +217,44 @@ class EventAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "organizer",
+        "get_package",
+        "get_organizer_active_events",
         "date_time",
         "get_duration",
         "status",
         "commission_rate",
     )
- 
+
+    def get_package(self, obj):
+        """Показывает пакет, к которому привязано мероприятие."""
+        if obj.package:
+            return mark_safe(
+                f'<span style="font-weight:bold;">{obj.package.name}</span> '
+                f'<span style="color:#888;">(лимит: {obj.package.max_active_events})</span>'
+            )
+        return mark_safe('<span style="color:red;">— без пакета</span>')
+    get_package.short_description = "Пакет"
+    get_package.allow_tags = True
+
+    def get_organizer_active_events(self, obj):
+        """Сколько активных (active/on_moderation) мероприятий этого пакета уже у партнёра."""
+        if not obj.organizer:
+            return "-"
+        active_events_count = Event.objects.filter(
+            organizer=obj.organizer,
+            status__in=["active", "on_moderation"],
+            package=obj.package,
+        ).count()
+        if obj.package:
+            color = "red" if active_events_count >= obj.package.max_active_events else "green"
+            return mark_safe(
+                f'<span style="color:{color}; font-weight:bold;">{active_events_count}</span> '
+                f'/ {obj.package.max_active_events}'
+            )
+        return active_events_count
+    get_organizer_active_events.short_description = "Активных мероприятий у партнёра (пакет)"
+    get_organizer_active_events.allow_tags = True
+
     def get_queryset(self, request):
         """Оптимизируем загрузку связанных данных для списка мероприятий."""
         queryset = super().get_queryset(request)
@@ -241,6 +273,7 @@ class EventAdmin(admin.ModelAdmin):
         "date_time",
         "category",
         "format",
+        "package",
     )
 
     # Какие поля использовать для поиска
@@ -1062,7 +1095,7 @@ class PartnerAdmin(admin.ModelAdmin):
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
         'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases',
-        'get_organizer_status', 'is_verified', 'get_permissions_status'
+        'get_active_events', 'get_organizer_status', 'is_verified', 'get_permissions_status'
     )
 
     list_filter = (
@@ -1126,6 +1159,31 @@ class PartnerAdmin(admin.ModelAdmin):
             return obj.partner_profile.phone or '-'
         return '-'
     get_phone_number.short_description = "Телефон"
+
+    def get_active_events(self, obj):
+        """Количество активных мероприятий партнёра относительно лимита активного пакета."""
+        active_subscription = (
+            obj.userpackagesubscription_set
+            .filter(is_active=True)
+            .select_related("package")
+            .first()
+        )
+        if not active_subscription:
+            return mark_safe('<span style="color:#888;">— (нет активного пакета)</span>')
+        package = active_subscription.package
+        active_events_count = Event.objects.filter(
+            organizer=obj,
+            status__in=["active", "on_moderation"],
+            package=package,
+        ).count()
+        color = "red" if active_events_count >= package.max_active_events else "green"
+        return mark_safe(
+            f'<span style="color:{color}; font-weight:bold;">{active_events_count}</span> '
+            f'/ {package.max_active_events} '
+            f'<span style="color:#888;">({package.name})</span>'
+        )
+    get_active_events.short_description = "Активных мероприятий"
+    get_active_events.allow_tags = True
 
     def get_active_subscriptions(self, obj):
         """Возвращает количество активных подписок партнёра"""

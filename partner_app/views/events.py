@@ -290,6 +290,21 @@ def create_event(request):
                 return redirect("partner:dashboard")
             package = active_subscription.package
 
+            # Проверяем лимит активных мероприятий текущего пакета партнёра
+            if not package.can_create_event(request.user):
+                active_events_count = Event.objects.filter(
+                    organizer=request.user,
+                    status__in=["active", "on_moderation"],
+                    package=package,
+                ).count()
+                messages.error(
+                    request,
+                    f"Создание мероприятия ограничено: лимит активных мероприятий вашего пакета "
+                    f"«{package.name}» превышен ({active_events_count} из {package.max_active_events}). "
+                    f"Завершите или удалите активное мероприятие либо перейдите на пакет с большим лимитом."
+                )
+                return redirect("partner:partner_event_list")
+
         form = EventForm(request.POST, request.FILES, user=request.user, current_package=package, request=request)
 
         # Если это редактирование существующего мероприятия — проверяем event.image
@@ -477,6 +492,22 @@ def create_event(request):
                 "У вас нет активного пакета. Пожалуйста, выберите и купите пакет для создания мероприятий."
             )
             return redirect("partner:dashboard")
+
+        # Блокируем открытие формы, если лимит активных мероприятий пакета исчерпан
+        if not active_subscription.package.can_create_event(request.user):
+            active_events_count = Event.objects.filter(
+                organizer=request.user,
+                status__in=["active", "on_moderation"],
+                package=active_subscription.package,
+            ).count()
+            messages.error(
+                request,
+                f"Создание мероприятия ограничено: лимит активных мероприятий вашего пакета "
+                f"«{active_subscription.package.name}» превышен "
+                f"({active_events_count} из {active_subscription.package.max_active_events}). "
+                f"Завершите или удалите активное мероприятие либо перейдите на пакет с большим лимитом."
+            )
+            return redirect("partner:partner_event_list")
 
         form = EventForm(user=request.user, current_package=active_subscription.package, request=request)
 
