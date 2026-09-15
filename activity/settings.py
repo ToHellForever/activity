@@ -16,12 +16,20 @@ YANDEX_MAPS_API_KEY = os.getenv("YANDEX_MAPS_API_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG_MODE", "True") == "True"
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '201.51.30.31',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '201.51.30.31', 'bizafisha.ru', 'biznesafisha.ru', 'бизафиша.рф', 'бизнесафиша.рф']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
     'http://201.51.30.31',
-    'https://201.51.30.31',
+    'https://201.51.30.31'
+    'https://bizafisha.ru',
+    'https://biznesafisha.ru',
+    'https://бизафиша.рф',
+    'https://бизнесафиша.рф',
+    'http://bizafisha.ru',
+    'http://biznesafisha.ru',
+    'http://бизафиша.рф',
+    'http://бизнесафиша.рф',
     ]
 # URL сайта для генерации QR-кодов
 SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
