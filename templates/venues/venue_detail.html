@@ -2,6 +2,11 @@
 {% load static %}
 {% load format_filters %}
 
+{% block title %}{{ venue.title }} — аренда площадки{% if venue.city %}, {{ venue.city }}{% endif %} | Бизнес Афиша{% endblock %}
+{% block meta_description %}{{ venue.title }}: аренда площадки{% if venue.address %} по адресу {{ venue.address }}{% endif %}. Площадь {{ venue.area|floatformat:0 }} м², вместимость до {{ venue.max_capacity }} человек.{% if venue.description %} {{ venue.description|striptags|truncatewords:30 }}{% endif %}{% endblock %}
+{% block og_title %}{{ venue.title }} — аренда площадки{% if venue.city %}, {{ venue.city }}{% endif %}{% endblock %}
+{% block og_description %}{{ venue.description|striptags|truncatechars:200 }}{% endblock %}
+{% block og_type %}article{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/venues/venue_detail.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
@@ -332,4 +337,29 @@
     </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Place",
+  "name": "{{ venue.title|escapejs }}",
+  {% if venue.description %}"description": "{{ venue.description|striptags|escapejs|truncatechars:300 }}",{% endif %}
+  {% if venue.images.all %}"image": "{% if 'http' in venue.images.all.0.image.url %}{{ venue.images.all.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ venue.images.all.0.image.url }}{% endif %}",{% endif %}
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ venue.address|escapejs }}",
+    "addressLocality": "{{ venue.city|default:''|escapejs }}",
+    "addressCountry": "RU"
+  }
+  {% if venue.max_capacity %},
+  "amenityFeature": {
+    "@type": "LocationFeatureSpecification",
+    "name": "Максимальная вместимость",
+    "value": {{ venue.max_capacity }}
+  }
+  {% endif %}
+}
+</script>
 {% endblock %}

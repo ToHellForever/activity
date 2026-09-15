@@ -5,7 +5,7 @@ from django.shortcuts import (
     reverse,
 )
 from django.conf import settings
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.core.files.base import ContentFile
 from django.contrib.auth import login, logout
 from django.contrib.auth import logout as auth_logout
@@ -1064,3 +1064,36 @@ def contacts_view(request):
 def about_view(request):
     """О платформе"""
     return render(request, "other/about.html")
+
+
+def robots_txt(request):
+    """Генерация robots.txt для поисковых роботов."""
+    base_url = f"{request.scheme}://{request.get_host()}"
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /partner/",
+        "Disallow: /visitor/",
+        "Disallow: /login/",
+        "Disallow: /register/",
+        "Disallow: /logout/",
+        "Disallow: /forgot-password/",
+        "Disallow: /verify-email/",
+        "Disallow: /resend-verification-code/",
+        "Disallow: /activate/",
+        "Disallow: /payment/",
+        "Disallow: /scanner/",
+        "Disallow: /support/",
+        "Disallow: /moderator/",
+        "Disallow: /send-message/",
+        "Disallow: /send-event-request/",
+        "Disallow: /update-ticket-status/",
+        "Disallow: /check-ticket/",
+        "Disallow: /reports/",
+        "Disallow: /dev/",
+        "Allow: /",
+        "",
+        f"Sitemap: {base_url}/sitemap.xml",
+        "",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")

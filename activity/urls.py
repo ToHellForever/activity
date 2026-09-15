@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -27,7 +28,9 @@ from core.views import (
     faq_view,
     contacts_view,
     about_view,
+    robots_txt,
 )
+from core.sitemaps import StaticViewSitemap, EventSitemap, VenueSitemap
 from partner_app.views import (
     scanner_view,
     scanner_scan,
@@ -45,6 +48,13 @@ def _dev_refund_success(request):
 
 def _dev_refund_success_free(request):
     return render(request, "payment/refund_success_free.html", {})
+
+
+sitemaps = {
+    "static": StaticViewSitemap,
+    "events": EventSitemap,
+    "venues": VenueSitemap,
+}
 
 app_name = "venues"
 
@@ -90,6 +100,14 @@ urlpatterns = [
     path("faq/", faq_view, name="faq"),
     path("contacts/", contacts_view, name="contacts"),
     path("about/", about_view, name="about"),
+    # SEO: robots.txt и sitemap.xml
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path(
+        "sitemap.xml",
+        sitemap,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
     # DEV: локальные страницы для просмотра стилей
     path("dev/refund-error/", _dev_refund_error, name="dev_refund_error"),
     path("dev/refund-success/", _dev_refund_success, name="dev_refund_success"),

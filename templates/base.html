@@ -4,7 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Activity Platform{% endblock %}</title>
+    <title>{% block title %}Бизнес Афиша — платформа деловой жизни города{% endblock %}</title>
+
+    {# SEO: meta description, keywords, canonical, Open Graph #}
+    <meta name="description" content="{% block meta_description %}Бизнес Афиша — платформа деловой жизни города: проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}деловые мероприятия, афиша, бизнес-события, аренда площадок, нетворкинг, обучение, конференции, семинары{% endblock %}">
+    <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <meta name="yandex-verification" content="01e0d88567f08e96" />
+    {# Open Graph #}
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Бизнес Афиша — платформа деловой жизни города{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Бизнес Афиша — платформа деловой жизни города: проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте.{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:site_name" content="Бизнес Афиша">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg{% endblock %}">
+    <meta property="og:locale" content="ru_RU">
+
+    {# Twitter Card #}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Бизнес Афиша — платформа деловой жизни города{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Бизнес Афиша — платформа деловой жизни города: проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg{% endblock %}">
+
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="icon" href="/media/icon/logo.svg" type="image/svg+xml">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->

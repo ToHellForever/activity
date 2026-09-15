@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load format_filters %}
-{% block title %}БИЗНЕС АФИША{% endblock %}
+{% block title %}Бизнес Афиша — платформа деловой жизни города | Мероприятия, обучение, площадки{% endblock %}
+{% block meta_description %}Бизнес Афиша — где собраны проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте. Покупайте билеты на конференции, семинары, нетворкинг и арендуйте площадки.{% endblock %}
+{% block og_title %}Бизнес Афиша — платформа деловой жизни города{% endblock %}
+{% block og_description %}Проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте.{% endblock %}
+{% block og_type %}website{% endblock %}
+<meta name="yandex-verification" content="01e0d88567f08e96" />
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
@@ -415,4 +420,14 @@
 </div>
 
 <script src="{% static 'js/pages/other/landing_extra.js' %}"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Бизнес Афиша",
+  "url": "{{ request.scheme }}://{{ request.get_host }}",
+  "logo": "{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg",
+  "description": "Платформа деловой жизни города: проверенные деловые мероприятия, обучение, организаторы и площадки в одном месте."
+}
+</script>
 {% endblock %}
