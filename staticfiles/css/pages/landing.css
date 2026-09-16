@@ -36,8 +36,65 @@
   background-color: rgba(0, 5, 110, 1); /* Рекомендуем */
 }
 
+/* Бейджи пакетов на карточках мероприятий */
+.event-card-wrapper {
+  position: relative;
+}
+
+.event-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.event-badge--partner {
+  background-color: rgba(0, 5, 110, 1); /* ПАРТНЁР */
+}
+
+.event-badge--recommended {
+  background-color: rgba(0, 5, 110, 1); /* РЕКОМЕНДУЕМ */
+}
+
 /* Контакты площадки на странице детали */
 .venue-contacts {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Кнопка "Показать контакты" для тарифа Standard */
+.contacts-toggle-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  border: 2px solid rgba(0, 5, 110, 1);
+  border-radius: 20px;
+  background: transparent;
+  color: rgba(0, 5, 110, 1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.contacts-toggle-btn:hover {
+  background: rgba(0, 5, 110, 1);
+  color: #fff;
+}
+
+.venue-contacts-hidden {
+  display: none;
+  margin-top: 12px;
   font-size: 0.9rem;
   color: #333;
 }
