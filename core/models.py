@@ -306,7 +306,10 @@ class UserPackageSubscription(models.Model):
         """Планирует изменение пакета после окончания текущего."""
         self.scheduled_change_to = new_package
         self.scheduled_change_date = self.end_date
-        self.save()
+        # Сохраняем точечно: полный save() при просроченном end_date
+        # выставил бы is_active=False, и задача Celery (фильтр is_active=True)
+        # не нашла бы подписку для применения запланированной смены.
+        self.save(update_fields=["scheduled_change_to", "scheduled_change_date"])
 
     def apply_scheduled_change(self):
         """Применяет запланированное изменение пакета."""

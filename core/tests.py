@@ -108,7 +108,7 @@ class WatermarkTestCase(TestCase):
             title="Test Event",
             description="description",
             date_time="2026-12-31T23:59:59Z",
-            place="Test Place",
+            place_data={"address": "Test Place"},
             organizer=self.user,
             image=event_image,
         )
@@ -116,7 +116,9 @@ class WatermarkTestCase(TestCase):
 
         # Проверяем, что изображение сохранено
         self.assertTrue(event.image)
-        self.assertTrue(os.path.exists(event.image.path))
+        # Storage может не поддерживать абсолютные пути (облачное хранилище),
+        # поэтому проверяем существование через API хранилища
+        self.assertTrue(event.image.storage.exists(event.image.name))
 
     def tearDown(self):
         """Удаляем временные файлы."""
@@ -125,28 +127,34 @@ class WatermarkTestCase(TestCase):
 
     def test_validate_video_duration(self):
         """Тест валидации длительности видео."""
-        # Создаем мок для VideoFileClip
-        mock_video_clip = MagicMock()
-        mock_video_clip.__enter__.return_value = mock_video_clip
-        mock_video_clip.duration = 301  # 5 минут и 1 секунда
+
+        class FakeVideoFile:
+            """Заглушка загруженного файла: только .path, без авто-атрибутов."""
+
+            def __init__(self, path):
+                self.path = path
 
         # Создаем временный файл
         test_video_path = tempfile.mktemp(suffix=".mp4")
         with open(test_video_path, "wb") as f:
             f.write(os.urandom(1024 * 1024))  # 1MB заглушка
 
-        # Создаем мок для SimpleUploadedFile
-        mock_file = MagicMock()
-        mock_file.path = test_video_path
+        mock_file = FakeVideoFile(test_video_path)
+
+        # Мок для VideoFileClip: патчим ссылку в модуле валидатора,
+        # а не в moviepy (core.validators импортировал её при загрузке)
+        mock_video_clip = MagicMock()
+        mock_video_clip.__enter__.return_value = mock_video_clip
+        mock_video_clip.duration = 320  # дольше порога валидатора (310 сек)
 
         # Проверяем, что валидатор выдает ошибку для видео длиннее 5 минут
-        with patch("moviepy.VideoFileClip", return_value=mock_video_clip):
+        with patch("core.validators.VideoFileClip", return_value=mock_video_clip):
             with self.assertRaises(ValidationError):
                 validate_video_duration(mock_file)
 
         # Проверяем, что валидатор не выдает ошибку для видео короче 5 минут
         mock_video_clip.duration = 299  # 4 минуты и 59 секунд
-        with patch("moviepy.VideoFileClip", return_value=mock_video_clip):
+        with patch("core.validators.VideoFileClip", return_value=mock_video_clip):
             try:
                 validate_video_duration(mock_file)
             except ValidationError:
