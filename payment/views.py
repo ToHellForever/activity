@@ -296,6 +296,17 @@ def bulk_buy_tickets(request, event_id):
         buyer_name = data.get('name', '').strip()
         email = data.get('email', '').strip()
         phone = data.get('phone', '').strip()
+
+        # Если имя/телефон не пришли из формы (фронтенд отправляет только email),
+        # подтягиваем их из аккаунта пользователя по email.
+        if (not buyer_name or not phone) and email:
+            from core.models import User as _User
+            _user = _User.objects.filter(email=email).first()
+            if _user:
+                if not buyer_name:
+                    buyer_name = _user.get_full_name() or _user.username or ''
+                if not phone:
+                    phone = getattr(_user, 'phone', '') or ''
         
         # Получаем UTM-метки из JSON (если пришли с фронтенда)
         utm_from_json = data.get('utm_params', {})
