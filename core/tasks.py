@@ -685,3 +685,179 @@ def check_and_apply_scheduled_package_changes():
     except Exception as e:
         logger.error(f"Error during scheduled package change check: {str(e)}")
         return f"Error: {str(e)}"
+
+
+def _clean_single_event_media(event):
+    """
+    Удаляет второстепенные медиа у одного архивного мероприятия.
+
+    Сохраняются: основное фото мероприятия (event.image), одно главное фото
+    галереи (is_primary), сами записи Event/Ticket/Order и история участников.
+    Удаляются: остальные фото галереи, видео и файл программы.
+
+    Возвращает dict со статистикой по одному мероприятию:
+    {"title", "date", "photos_deleted", "video_deleted", "program_deleted"}.
+    """
+    from core.models import EventImage
+
+    stats = {
+        "title": event.title,
+        "date": event.date_time,
+        "photos_deleted": 0,
+        "video_deleted": False,
+        "program_deleted": False,
+    }
+
+    # 1. Галерея: оставляем одно главное фото, остальные удаляем.
+    gallery = list(event.images.order_by("-is_primary", "id"))
+    if gallery:
+        primary = next((img for img in gallery if img.is_primary), gallery[0])
+        # Если главное фото не было размечено — размечаем и синхронизируем.
+        if not primary.is_primary:
+            EventImage.objects.filter(event=event).update(is_primary=False)
+            primary.is_primary = True
+            primary.save(update_fields=["is_primary"])
+            event.set_primary_from_event_images()
+        for img in gallery:
+            if img.pk == primary.pk:
+                continue
+            img.delete()  # delete() сам удаляет файл из хранилища
+            stats["photos_deleted"] += 1
+
+    # 2. Видео: удаляем файл и обнуляем поле с хэшем.
+    if event.video_url:
+        event.delete_file_field("video_url")
+        event.video_url = None
+        event.processed_video_url_hash = None
+        event.save(update_fields=["video_url", "processed_video_url_hash"])
+        stats["video_deleted"] = True
+
+    # 3. Программа (PDF): удаляем файл и обнуляем поле.
+    if event.program_file:
+        event.delete_file_field("program_file")
+        event.program_file = None
+        event.save(update_fields=["program_file"])
+        stats["program_deleted"] = True
+
+    return stats
+
+
+def _send_media_cleanup_notification(organizer, cleaned_events):
+    """
+    Отправляет организатору одно дайджест-письмо об очистке медиа
+    его архивных мероприятий. Ошибка отправки не прерывает чистку.
+    """
+    if not organizer or not getattr(organizer, "email", None) or not cleaned_events:
+        return
+
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+
+    subject = "Очистка медиа архивных мероприятий"
+    context = {
+        "organizer": organizer,
+        "cleaned_events": cleaned_events,
+        "total_events": len(cleaned_events),
+        "site_url": getattr(settings, "SITE_URL", "http://127.0.0.1:8000"),
+    }
+
+    try:
+        html_message = render_to_string(
+            "emails/archived_media_cleanup.html", context
+        )
+        plain_message = strip_tags(html_message)
+        send_mail(
+            subject,
+            plain_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [organizer.email],
+            html_message=html_message,
+        )
+        logger.info(
+            "cleanup_archived_event_media: отправлено уведомление %s (%d мероприятий)",
+            organizer.email,
+            len(cleaned_events),
+        )
+    except Exception as e:
+        logger.error(
+            "cleanup_archived_event_media: ошибка отправки уведомления %s: %s",
+            getattr(organizer, "email", "?"),
+            e,
+            exc_info=True,
+        )
+
+
+@shared_task
+def cleanup_archived_event_media():
+    """
+    Периодическая очистка медиа архивных мероприятий.
+
+    Для мероприятий в статусах completed / on_moderation / rejected,
+    прошедших дату более ARCHIVED_EVENT_MEDIA_RETENTION_DAYS (~полгода) назад:
+    - в галерее оставляем только главное фото, остальные удаляем;
+    - удаляем видео и файл программы.
+
+    Активные (status="active") мероприятия не затрагиваются.
+
+    Сами мероприятия, билеты, заказы и история участников НЕ удаляются.
+    Каждому организатору отправляется дайджест-письмо.
+    """
+    from core.models import Event
+
+    retention_days = getattr(settings, "ARCHIVED_EVENT_MEDIA_RETENTION_DAYS", 183)
+    cutoff = timezone.now() - timezone.timedelta(days=retention_days)
+
+    events = Event.objects.filter(
+        status__in=["completed", "on_moderation", "rejected"],
+        date_time__lte=cutoff,
+    ).select_related("organizer")
+
+    logger.info(
+        "cleanup_archived_event_media: найдено %d архивных мероприятий "
+        "(старше %d дней)",
+        events.count(),
+        retention_days,
+    )
+
+    # Группируем статистику по организатору для дайджест-писем.
+    by_organizer = {}
+    total = {"events": 0, "photos": 0, "videos": 0, "programs": 0}
+
+    for event in events:
+        try:
+            stats = _clean_single_event_media(event)
+        except Exception as e:
+            logger.error(
+                "cleanup_archived_event_media: ошибка обработки мероприятия %s: %s",
+                event.pk,
+                e,
+                exc_info=True,
+            )
+            continue
+
+        # Уведомляем только если что-то реально удалено.
+        if (
+            stats["photos_deleted"]
+            or stats["video_deleted"]
+            or stats["program_deleted"]
+        ):
+            by_organizer.setdefault(event.organizer_id, []).append(stats)
+            total["events"] += 1
+            total["photos"] += stats["photos_deleted"]
+            total["videos"] += int(stats["video_deleted"])
+            total["programs"] += int(stats["program_deleted"])
+
+    # Отправляем по дайджест-письму на каждого организатора.
+    organizers_map = {e.organizer_id: e.organizer for e in events}
+    for organizer_id, cleaned in by_organizer.items():
+        organizer = organizers_map.get(organizer_id)
+        _send_media_cleanup_notification(organizer, cleaned)
+
+    result = (
+        f"Success: очищено {total['events']} мероприятий, "
+        f"удалено фото {total['photos']}, видео {total['videos']}, "
+        f"программ {total['programs']}"
+    )
+    logger.info("cleanup_archived_event_media: %s", result)
+    return result

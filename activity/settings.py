@@ -280,7 +280,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.manage_event_statuses",
         "schedule": 300.0,
     },
+    "cleanup-archived-event-media-daily": {
+        "task": "core.tasks.cleanup_archived_event_media",
+        "schedule": 86400.0,
+    },
 }
+
+# Сколько дней должно пройти после даты мероприятия, чтобы считать его
+# архивным и очистить второстепенные медиа (~полгода).
+ARCHIVED_EVENT_MEDIA_RETENTION_DAYS = 183
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
 YOOKASSA_WEBHOOK_KEY = os.getenv("YOOKASSA_WEBHOOK_KEY")

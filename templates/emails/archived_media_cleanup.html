@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Очистка медиа архивных мероприятий</title>
+</head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.email-wrapper {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.email-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.greeting {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 10px;
+}
+
+.message-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    padding-bottom: 20px;
+}
+
+.summary {
+    background-color: #f7f9ff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #333333;
+    line-height: 1.6;
+}
+
+.events-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.events-table th {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 2px solid #e5e5e5;
+    color: #555555;
+}
+
+.events-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333333;
+}
+
+.note {
+    font-size: 13px;
+    color: #777777;
+    line-height: 1.6;
+    padding-top: 10px;
+}
+</style>
+<body>
+<div class="email-wrapper">
+    <div class="email-container">
+        <div class="greeting">
+            Здравствуйте, {% if organizer.get_full_name %}{{ organizer.get_full_name }}{% else %}{{ organizer.email }}{% endif %}!
+        </div>
+        <div class="message-text">
+            Мы провели плановую очистку медиа у ваших архивных мероприятий —
+            тех, которые завершились более полугода назад. Это освобождает место
+            в хранилище и ускоряет работу платформы.
+        </div>
+
+        <div class="summary">
+            Обработано мероприятий: <strong>{{ total_events }}</strong><br>
+            Удалено фото галерей:
+            <strong>{% for e in cleaned_events %}{% if not forloop.first %} + {% endif %}{{ e.photos_deleted }}{% endfor %}</strong>
+        </div>
+
+        <table class="events-table">
+            <thead>
+                <tr>
+                    <th>Мероприятие</th>
+                    <th>Дата</th>
+                    <th>Фото</th>
+                    <th>Видео</th>
+                    <th>Программа</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in cleaned_events %}
+                <tr>
+                    <td>{{ e.title }}</td>
+                    <td>{{ e.date|date:"d.m.Y" }}</td>
+                    <td>{{ e.photos_deleted }}</td>
+                    <td>{% if e.video_deleted %}удалено{% else %}—{% endif %}</td>
+                    <td>{% if e.program_deleted %}удалено{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="note">
+            Обратите внимание: сами мероприятия, их карточки, билеты и история
+            заказов полностью сохранены. У каждого мероприятия осталось главное
+            фото — оно по-прежнему отображается на сайте.
+        </div>
+    </div>
+</div>
+</body>
+</html>
