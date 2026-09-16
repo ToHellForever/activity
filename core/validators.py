@@ -10,6 +10,42 @@ import tempfile
 logger = logging.getLogger(__name__)
 
 
+def validate_inn(value):
+    """
+    Валидация ИНН: 10 цифр (юр. лица) или 12 цифр (ИП/физлица),
+    включая проверку контрольной суммы.
+
+    10-значный ИНН: контрольная цифра — последняя, вычисляется по весам
+    [2,4,10,3,5,9,4,6,8].
+    12-значный ИНН: две контрольные цифры по весам
+    [7,2,4,10,3,5,9,4,6,8] и [3,7,2,4,10,3,5,9,4,6,8].
+    """
+    if not value:
+        return value
+
+    value = str(value).strip()
+
+    if not value.isdigit():
+        raise ValidationError("ИНН должен содержать только цифры.")
+
+    if len(value) == 10:
+        weights = [2, 4, 10, 3, 5, 9, 4, 6, 8]
+        control = sum(w * int(d) for w, d in zip(weights, value)) % 11 % 10
+        if control != int(value[-1]):
+            raise ValidationError("Неверная контрольная сумма ИНН (10 цифр).")
+    elif len(value) == 12:
+        weights1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+        control1 = sum(w * int(d) for w, d in zip(weights1, value[:10])) % 11 % 10
+        weights2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+        control2 = sum(w * int(d) for w, d in zip(weights2, value[:11])) % 11 % 10
+        if control1 != int(value[10]) or control2 != int(value[11]):
+            raise ValidationError("Неверная контрольная сумма ИНН (12 цифр).")
+    else:
+        raise ValidationError("ИНН должен содержать 10 или 12 цифр.")
+
+    return value
+
+
 def validate_video_duration(value):
     """
     Проверяет, что длительность видео не превышает 5 минут.

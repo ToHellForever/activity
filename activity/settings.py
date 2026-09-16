@@ -293,6 +293,21 @@ YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
 YOOKASSA_WEBHOOK_KEY = os.getenv("YOOKASSA_WEBHOOK_KEY")
 
+# === Атол Онлайн (облачная касса, агентская схема) ===
+# Фискализация включается флагом ATOL_ENABLED; остальные данные — из ЛК Атола.
+ATOL_ENABLED = os.getenv("ATOL_ENABLED", "False").lower() in ("1", "true", "yes")
+ATOL_API_URL = os.getenv("ATOL_API_URL", "https://online.atol.ru/possystem/v4")
+ATOL_GROUP_CODE = os.getenv("ATOL_GROUP_CODE", "")
+ATOL_LOGIN = os.getenv("ATOL_LOGIN", "")
+ATOL_PASSWORD = os.getenv("ATOL_PASSWORD", "")
+# Данные нашей точки продаж (агента) для чеков
+ATOL_INN = os.getenv("ATOL_INN", "")
+ATOL_PAYMENT_ADDRESS = os.getenv("ATOL_PAYMENT_ADDRESS", "")
+ATOL_COMPANY_EMAIL = os.getenv("ATOL_COMPANY_EMAIL", "")
+ATOL_SNO = os.getenv("ATOL_SNO", "patent")
+# Тип агента в чеке: payment_agent — платёжный агент
+ATOL_AGENT_SIGN = os.getenv("ATOL_AGENT_SIGN", "payment_agent")
+
 USE_L10N = True
 LANGUAGE_CODE = 'ru-ru'
 

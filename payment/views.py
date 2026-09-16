@@ -1059,6 +1059,20 @@ def yookassa_webhook(request):
                         logger.info('[webhook] Письмо отправлено', extra={'order_ids': [o.id for o in orders_list], 'email': orders_list[0].participant_data.get('email')})
                     except Exception as e:
                         logger.error('[webhook] Ошибка отправки письма', extra={'order_ids': [o.id for o in orders_list], 'error': str(e)}, exc_info=True)
+
+                    # Фискализация: чек в Атол по агентской схеме (ЮKassa = деньги, Атол = чеки).
+                    # Запускаем после коммита транзакции, чтобы чек не отправлялся раньше
+                    # записи заказа в БД. Ошибки фискализации не влияют на платёж.
+                    def _fiscalize():
+                        from .atol import register_receipt
+
+                        for o in orders_list:
+                            try:
+                                register_receipt(o)
+                            except Exception as e:
+                                logger.error('[atol] Ошибка фискализации заказа #%s: %s', o.id, e, exc_info=True)
+
+                    transaction.on_commit(_fiscalize)
                 else:
                     logger.error('[webhook] orders не определен после поиска')
 

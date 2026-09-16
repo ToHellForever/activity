@@ -962,6 +962,80 @@ class Order(models.Model):
         verbose_name="Комиссия платформы",
         help_text="Сумма комиссии платформы, удержанная с этого заказа",
     )
+
+    # === Снапшот данных принципала (организатора) для чека по агентской схеме ===
+    # Фиксируем на момент оплаты: партнёр мог позже сменить ИНН/название,
+    # а чек должен содержать данные, актуальные на дату продажи.
+    principal_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Принципал (наименование)",
+        help_text="Название организации-принципала на момент продажи",
+    )
+    principal_inn = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="ИНН принципала",
+    )
+    principal_registration_type = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[
+            ("physical", "Физическое лицо"),
+            ("legal", "Юридическое лицо"),
+            ("ip", "ИП"),
+            ("self_employed", "Самозанятый"),
+        ],
+        verbose_name="Юр. статус принципала",
+    )
+
+    # === Фискализация (Атол Онлайн) ===
+    fiscal_receipt_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="UUID фискального документа в Атоле",
+    )
+    fiscal_receipt_status = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[
+            ("pending", "Ожидает фискализации"),
+            ("succeeded", "Чек пробит"),
+            ("failed", "Ошибка фискализации"),
+        ],
+        verbose_name="Статус фискализации",
+    )
+    fiscal_receipt_error = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Ошибка фискализации",
+    )
+    fiscal_data = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Снимок payload чека, отправленного в кассу",
+    )
+
+    def snapshot_principal_data(self):
+        """
+        Заполняет снапшот данных принципала (организатора) для чека
+        по агентской схеме: наименование, ИНН, юр. статус.
+        """
+        from django.apps import apps
+
+        PartnerProfile = apps.get_model("partner_app", "PartnerProfile")
+        profile = PartnerProfile.objects.filter(user=self.ticket.event.partner).first()
+        if not profile:
+            return
+        self.principal_name = profile.company_name or profile.short_name or ""
+        self.principal_inn = profile.inn or ""
+        self.principal_registration_type = profile.registration_type or ""
+
     # Статус платежа
     PAYMENT_STATUS_CHOICES = [
         ("pending", "Ожидает оплаты"),

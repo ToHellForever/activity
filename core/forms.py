@@ -358,6 +358,16 @@ class PartnerRegistrationForm(forms.Form):
         min_length=8,
     )
     
+    def clean_inn(self):
+        """Строгая валидация ИНН: только цифры, 10 или 12 знаков, контрольная сумма."""
+        from .validators import validate_inn
+
+        value = self.cleaned_data.get("inn", "").strip()
+        if not value:
+            raise forms.ValidationError("ИНН обязателен для регистрации партнёра.")
+        validate_inn(value)
+        return value
+
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "")
         if phone:
@@ -482,6 +492,27 @@ class PartnerProfileForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ИНН обязателен: он нужен для фискализации по агентской схеме (чек от Атола)
+        self.fields["inn"].required = True
+        self.fields["inn"].widget.attrs.setdefault("pattern", r"\d{10,12}")
+        self.fields["inn"].widget.attrs.setdefault(
+            "title", "ИНН должен содержать 10 или 12 цифр"
+        )
+
+    def clean_inn(self):
+        """Строгая валидация ИНН: только цифры, 10 или 12 знаков, контрольная сумма."""
+        from .validators import validate_inn
+
+        value = (self.cleaned_data.get("inn") or "").strip()
+        if not value:
+            raise forms.ValidationError(
+                "ИНН обязателен: он используется при фискализации чеков."
+            )
+        validate_inn(value)
+        return value
 
     def clean_logo(self):
         logo = self.cleaned_data.get("logo")
