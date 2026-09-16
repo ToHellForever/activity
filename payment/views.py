@@ -25,26 +25,43 @@ Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 logger = logging.getLogger(__name__)
 
 
-def send_order_confirmation_email(order, request=None):
+def _send_orders_confirmation_email(orders, request=None):
     """
-    Отправка уведомления на почту с информацией о заказе.
-    QR-коды генерируются на лету и вставляются как base64 в письмо.
+    Общий хелпер: отправка ОДНОГО письма подтверждения для списка заказов.
+    Если заказов несколько (покупка нескольких типов билетов) — в письме
+    будет блок «Информация о заказе» и QR-коды по каждому заказу.
     """
-    participant_email = order.participant_data.get("email")
+    if not orders:
+        return
+    first = orders[0]
+    participant_email = first.participant_data.get("email")
     if not participant_email:
-        logger.warning('[email] Email участника пуст для заказа %s', order.id)
+        logger.warning('[email] Email участника пуст для заказа %s', first.id)
         return
 
-    # Генерируем QR-коды "на лету"
+    # Генерируем QR-коды "на лету" для каждого заказа
     base_url = getattr(settings, 'SITE_URL', request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000')
-    qr_codes = order.generate_qr_data(base_url=base_url)
-    logger.info('[email] QR-коды сгенерированы для заказа %s, count=%d', order.id, len(qr_codes))
+    order_blocks = []
+    for order in orders:
+        order_blocks.append({
+            "order": order,
+            "ticket": order.ticket,
+            "qr_codes": order.generate_qr_data(base_url=base_url),
+        })
+    logger.info('[email] QR-коды сгенерированы для %d заказов', len(order_blocks))
+
+    # Тема: №818 или №818, №819, №820
+    ids = ", ".join(f"№{o.id}" for o in orders)
+    total_price = sum(o.total_price for o in orders)
 
     context = {
-        "order": order,
-        "ticket": order.ticket,
-        "participant_data": order.participant_data,
-        "qr_codes": qr_codes,
+        "orders": orders,
+        "order_blocks": order_blocks,
+        "order": first,
+        "ticket": first.ticket,
+        "participant_data": first.participant_data,
+        "order_ids": ids,
+        "total_price": total_price,
         "request": request,
         "site_name": "Платформа мероприятий",
         "now": timezone.now(),
@@ -53,15 +70,23 @@ def send_order_confirmation_email(order, request=None):
     email_html = render_to_string("emails/order_confirmation.html", context)
 
     email_message = EmailMultiAlternatives(
-        subject=f"Подтверждение заказа #{order.id}",
-        body=f"Ваш заказ #{order.id} успешно оплачен.",
+        subject=f"Подтверждение заказа {ids}",
+        body=f"Ваш заказ {ids} успешно оплачен.",
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[participant_email],
     )
     email_message.attach_alternative(email_html, "text/html")
 
     email_message.send(fail_silently=False)
-    logger.info('[email] Письмо отправлено для заказа %s на %s', order.id, participant_email)
+    logger.info('[email] Письмо отправлено для заказов %s на %s', ids, participant_email)
+
+
+def send_order_confirmation_email(order, request=None):
+    """
+    Отправка уведомления на почту с информацией о заказе.
+    QR-коды генерируются на лету и вставляются как base64 в письмо.
+    """
+    _send_orders_confirmation_email([order], request)
 
 
 def send_reservation_email(order, request):
@@ -565,12 +590,12 @@ def bulk_buy_tickets(request, event_id):
         
         # === ОБРАБОТКА БЕСПЛАТНЫХ БИЛЕТОВ ===
         if free_orders:
-            for order in free_orders:
-                try:
-                    send_order_confirmation_email(order, request)
-                    logger.info('[bulk_buy] Письмо отправлено', extra={'order_id': order.id, 'email': email})
-                except Exception as e:
-                    logger.error('[bulk_buy] Ошибка отправки письма', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
+            try:
+                # Одно письмо на все бесплатные заказы (все типы билетов)
+                _send_orders_confirmation_email(free_orders, request)
+                logger.info('[bulk_buy] Письмо отправлено', extra={'order_ids': [o.id for o in free_orders], 'email': email})
+            except Exception as e:
+                logger.error('[bulk_buy] Ошибка отправки письма', extra={'order_ids': [o.id for o in free_orders], 'email': email, 'error': str(e)}, exc_info=True)
             
             total_free = Order.objects.filter(
                 participant_data__email=email,
@@ -598,14 +623,13 @@ def bulk_buy_tickets(request, event_id):
                 except Exception as e:
                     logger.error('[bulk_buy] Ошибка отправки письма с бронью', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
             
-            # Обработка бесплатных билетов (отправка писем)
+            # Обработка бесплатных билетов (одно письмо на все заказы)
             if free_orders:
-                for order in free_orders:
-                    try:
-                        send_order_confirmation_email(order, request)
-                        logger.info('[bulk_buy] Письмо отправлено (бесплатные)', extra={'order_id': order.id, 'email': email})
-                    except Exception as e:
-                        logger.error('[bulk_buy] Ошибка отправки письма (бесплатные)', extra={'order_id': order.id, 'email': email, 'error': str(e)}, exc_info=True)
+                try:
+                    _send_orders_confirmation_email(free_orders, request)
+                    logger.info('[bulk_buy] Письмо отправлено (бесплатные)', extra={'order_ids': [o.id for o in free_orders], 'email': email})
+                except Exception as e:
+                    logger.error('[bulk_buy] Ошибка отправки письма (бесплатные)', extra={'order_ids': [o.id for o in free_orders], 'email': email, 'error': str(e)}, exc_info=True)
             
             return JsonResponse({
                 'success': True,
@@ -1025,15 +1049,16 @@ def yookassa_webhook(request):
                             order.save()
 
                             logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
-
-
-                            try:
-                                send_order_confirmation_email(order, request)
-                                logger.info('[webhook] Письмо отправлено', extra={'order_id': order.id, 'email': order.participant_data.get('email')})
-                            except Exception as e:
-                                logger.error('[webhook] Ошибка отправки письма', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
                         except Exception as e:
                             logger.error('[webhook] Ошибка обновления заказа', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
+
+                    # Одно письмо на все оплаченные заказы (несколько типов билетов = несколько заказов)
+                    orders_list = list(orders)
+                    try:
+                        _send_orders_confirmation_email(orders_list, request)
+                        logger.info('[webhook] Письмо отправлено', extra={'order_ids': [o.id for o in orders_list], 'email': orders_list[0].participant_data.get('email')})
+                    except Exception as e:
+                        logger.error('[webhook] Ошибка отправки письма', extra={'order_ids': [o.id for o in orders_list], 'error': str(e)}, exc_info=True)
                 else:
                     logger.error('[webhook] orders не определен после поиска')
 
@@ -1240,19 +1265,21 @@ def payment_success(request, order_id):
                             'payment_id': order.yookassa_payment_id
                         })
 
-                    # Отправляем письмо только один раз
-                    if not o.email_sent:
-                        try:
-                            send_order_confirmation_email(o, request)
+                # Отправляем ОДНО письмо на все заказы этого платежа
+                pending_orders = [o for o in orders_to_update if not o.email_sent]
+                if pending_orders:
+                    try:
+                        _send_orders_confirmation_email(pending_orders, request)
+                        for o in pending_orders:
                             o.email_sent = True
                             o.save(update_fields=['email_sent'])
                             sent_emails.add(o.id)
-                            logger.info('[success] Письмо отправлено для заказа %s', o.id)
-                        except Exception as e:
-                            logger.error('[success] Ошибка отправки письма', extra={
-                                'order_id': o.id,
-                                'error': str(e)
-                            }, exc_info=True)
+                        logger.info('[success] Письмо отправлено для заказов %s', [o.id for o in pending_orders])
+                    except Exception as e:
+                        logger.error('[success] Ошибка отправки письма', extra={
+                            'order_ids': [o.id for o in pending_orders],
+                            'error': str(e)
+                        }, exc_info=True)
         except Exception as e:
             logger.error('[success] Ошибка проверки статуса ЮКассы', extra={
                 'order_id': order.id,

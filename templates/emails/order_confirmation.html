@@ -133,37 +133,38 @@ body {
                     <!-- Заголовок -->
                     <tr>
                         <td class="order-title">
-                            Подтверждение заказа №{{ order.id }}
+                            Подтверждение заказа {{ order_ids }}
                         </td>
                     </tr>
 
-                    <!-- Карточка с деталями заказа -->
+                    <!-- Карточка с деталями каждого заказа -->
+                    {% for block in order_blocks %}
                     <tr>
                         <td>
-                            <div class="section-title">Информация о заказе</div>
+                            <div class="section-title">Информация о заказе{% if order_blocks|length > 1 %} {{ block.order.id }}{% endif %}</div>
                             <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td class="details-text">
                                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td class="detail-label">Мероприятие:</td>
-                                                <td class="detail-value-bold event-name">{{ ticket.event.title }}</td>
+                                                <td class="detail-value-bold event-name">{{ block.ticket.event.title }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="detail-label">Билет:</td>
-                                                <td class="detail-value">{{ ticket.name }}</td>
+                                                <td class="detail-value">{{ block.ticket.name }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="detail-label">Количество:</td>
-                                                <td class="detail-value">{{ order.quantity }}</td>
+                                                <td class="detail-value">{{ block.order.quantity }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="detail-label">Стоимость:</td>
-                                                <td class="detail-value">{{ order.total_price }} ₽</td>
+                                                <td class="detail-value">{{ block.order.total_price }} ₽</td>
                                             </tr>
                                             <tr>
                                                 <td class="detail-label">Дата заказа:</td>
-                                                <td class="detail-value">{{ order.created_at }}</td>
+                                                <td class="detail-value">{{ block.order.created_at }}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -171,6 +172,27 @@ body {
                             </table>
                         </td>
                     </tr>
+                    {% endfor %}
+
+                    <!-- Общая стоимость (если заказов несколько) -->
+                    {% if order_blocks|length > 1 %}
+                    <tr>
+                        <td>
+                            <table role="presentation" class="details-card" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="details-text">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="detail-label">Итого:</td>
+                                                <td class="detail-value-bold">{{ total_price }} ₽</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
 
                     <!-- Данные участника -->
                     <tr>
@@ -199,13 +221,14 @@ body {
                         </td>
                     </tr>
 
-                    <!-- QR-коды -->
+                    <!-- QR-коды по каждому заказу -->
+                    {% for block in order_blocks %}
                     <tr>
                         <td>
                             <div class="qr-codes">
-                                <div class="section-title">Ваши QR-коды</div>
-                                {% if qr_codes %}
-                                    {% for qr in qr_codes %}
+                                <div class="section-title">Ваши QR-коды{% if order_blocks|length > 1 %} — билет «{{ block.ticket.name }}»{% endif %}</div>
+                                {% if block.qr_codes %}
+                                    {% for qr in block.qr_codes %}
                                     <div class="qr-code">
                                         <p><strong>QR-код для билета #{{ forloop.counter }}</strong></p>
                                         <img src="data:image/png;base64,{{ qr.qr_base64 }}" alt="QR-код">
@@ -218,6 +241,7 @@ body {
                             </div>
                         </td>
                     </tr>
+                    {% endfor %}
 
                     <!-- Кнопка оплаты (только для неоплаченных заказов) -->
                     {% if order.payment_status != 'succeeded' and order.payment_status != 'canceled' %}
