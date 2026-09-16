@@ -1059,43 +1059,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // === В режиме заявки на изменение — просто скрываем и отмечаем флаг очистки ===
-            // Файл будет удалён при одобрении заявки (clear_image/clear_video_url/clear_program_file)
-            // или останется в мероприятии при отклонении
-            // Режим заявки на изменение передаётся шаблоном через data-is-change-request
-            const layoutEl = document.querySelector('.partner-layout');
-            const isChangeRequest = layoutEl && layoutEl.dataset.isChangeRequest === 'true';
-            if (isChangeRequest) {
-                // Отмечаем флаг очистки
-                if (mediaType === 'video_url') {
-                    const vf = document.getElementById('clear_video_url');
-                    if (vf) vf.value = '1';
-                } else if (mediaType === 'program_file') {
-                    const pf = document.getElementById('clear_program_file');
-                    if (pf) pf.value = '1';
-                } else if (mediaType === 'image') {
-                    const df = document.getElementById('delete_main_image');
-                    if (df) df.value = '1';
-                }
-                setFileState(false);
-                clearFileInput();
-                return;
+            // Скрываем превью и отмечаем флаг очистки — удаление произойдёт при сохранении формы
+            if (mediaType === 'video_url') {
+                const vf = document.getElementById('clear_video_url');
+                if (vf) vf.value = '1';
+            } else if (mediaType === 'program_file') {
+                const pf = document.getElementById('clear_program_file');
+                if (pf) pf.value = '1';
+            } else if (mediaType === 'image') {
+                const df = document.getElementById('delete_main_image');
+                if (df) df.value = '1';
             }
-
-            fetch('/partner/remove_media/' + mediaType + '/' + mediaId + '/', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    setFileState(false);
-                    clearFileInput();
-                } else {
-                    showToast('Ошибка удаления', true);
-                }
-            })
-            .catch(err => showToast('Ошибка: ' + err.message, true));
+            setFileState(false);
+            clearFileInput();
         });
     });
 

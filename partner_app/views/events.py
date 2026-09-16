@@ -677,6 +677,20 @@ def edit_event(request, event_id):
                 event.image = None
                 event.save(update_fields=["image"])
 
+            # Удаление программы: если флаг установлен и новый файл не загружен
+            if request.POST.get("clear_program_file") == "1" and not request.FILES.get("program_file"):
+                if event.program_file:
+                    event.program_file.delete(save=False)
+                event.program_file = None
+                event.save(update_fields=["program_file"])
+
+            # Удаление видео: если флаг установлен и новый файл не загружен
+            if request.POST.get("clear_video_url") == "1" and not request.FILES.get("video_url"):
+                if event.video_url:
+                    event.video_url.delete(save=False)
+                event.video_url = None
+                event.save(update_fields=["video_url"])
+
             # Удаляем фотографии, которые были отмечены для удаления
             deleted_image_ids = request.POST.get("deleted_image_ids", "")
             if deleted_image_ids:
