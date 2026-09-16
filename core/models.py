@@ -483,6 +483,27 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     )
 
     @property
+    def badge_text(self):
+        """Текст бейджа на карточке в зависимости от типа пакета.
+        basic → пусто, extended → ПАРТНЁР, priority → РЕКОМЕНДУЕМ."""
+        if not self.package:
+            return ""
+        return {
+            "extended": "ПАРТНЁР",
+            "priority": "РЕКОМЕНДУЕМ",
+        }.get(self.package.event_card_type, "")
+
+    @property
+    def badge_css_class(self):
+        """CSS-класс бейджа: event-badge--partner / event-badge--recommended."""
+        if not self.package:
+            return ""
+        return {
+            "extended": "event-badge--partner",
+            "priority": "event-badge--recommended",
+        }.get(self.package.event_card_type, "")
+
+    @property
     def ends_at(self):
         """Вычисляет время окончания мероприятия на основе даты и длительности."""
         if not self.duration or not self.date_time:

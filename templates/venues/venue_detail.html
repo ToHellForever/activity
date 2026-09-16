@@ -113,6 +113,16 @@
             <div class="venue-contacts mt-3">
                 <strong>Контакты:</strong> {{ venue.contact_info|linebreaksbr }}
             </div>
+            {% elif venue.contacts_level == 'request_or_show' and venue.contact_info %}
+            <div class="mt-3">
+                <button type="button" class="contacts-toggle-btn"
+                        onclick="var el=this.nextElementSibling; el.style.display=(el.style.display==='none'||!el.style.display)?'block':'none'; this.textContent=(el.style.display==='none'||!el.style.display)?'Показать контакты':'Скрыть контакты';">
+                    Показать контакты
+                </button>
+                <div class="venue-contacts-hidden">
+                    <strong>Контакты:</strong> {{ venue.contact_info|linebreaksbr }}
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>

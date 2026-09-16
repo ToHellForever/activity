@@ -148,7 +148,10 @@
     <div class="row d-900-none">
         {% for ev in active_events_mobile %}
         <div class="col-6 ">
-            <div class="card">
+            <div class="card event-card-wrapper">
+                {% if ev.badge_text %}
+                <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
+                {% endif %}
                 {% if ev.has_real_image %}
                 <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}
@@ -181,7 +184,10 @@
     <div class="row d-none d-900-flex d-1300-none">
         {% for ev in active_events_tablet %}
         <div class="col-4 mb-4">
-            <div class="card">
+            <div class="card event-card-wrapper">
+                {% if ev.badge_text %}
+                <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
+                {% endif %}
                 {% if ev.has_real_image %}
                 <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}
@@ -214,7 +220,10 @@
     <div class="row d-none d-1300-flex">
         {% for ev in active_events_desktop %}
         <div class="col-md-3 mb-4">
-            <div class="card">
+            <div class="card event-card-wrapper">
+                {% if ev.badge_text %}
+                <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
+                {% endif %}
                 {% if ev.has_real_image %}
                 <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% elif ev.images.all %}

@@ -5,6 +5,29 @@
   aspect-ratio: 4 / 3;
 }
 
+/* Бейдж пакета на странице детализации мероприятия.
+   По умолчанию встаёт на место бейджа "Проверенный организатор" (слева сверху). */
+.event-badge--detail {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: auto;
+  z-index: 9;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Если рядом есть бейдж "Проверенный организатор" — опускаем бейдж пакета под него. */
+.event-badge--detail.event-badge--below-verified {
+  top: 55px;
+}
+
 .carousel-item {
   /* Убираем фиксированную высоту, если она была */
   height: 100%;
@@ -523,7 +546,7 @@ a {
   align-items: center;
   justify-content: center;
 }
- 
+
 .quantity-input button.minus,
 .quantity-input button.plus {
   width: 1.8rem;

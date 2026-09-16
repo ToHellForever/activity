@@ -1,6 +1,9 @@
 {% comment %}Карточка мероприятия (используется в списке и при AJAX-подгрузке){% endcomment %}
 <div class="col-12 event-list-col mb-4">
-    <div class="card">
+    <div class="card event-card-wrapper">
+        {% if ev.badge_text %}
+        <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
+        {% endif %}
         {% if ev.has_real_image %}
         <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
         {% else %}

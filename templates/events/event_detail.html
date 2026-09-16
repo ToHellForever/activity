@@ -30,6 +30,9 @@
         {% if event.image and event.images.count > 1 %}
             <!-- Карусель: основное фото + дополнительные -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
+                {% if event.badge_text %}
+                <span class="event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
+                {% endif %}
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
                     <img src="/media/icon/ok.png" alt="" class='arrow-card'>
@@ -37,7 +40,7 @@
                 </div>
                 {% endif %}
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="0" 
+                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="0"
                         class="active" aria-current="true" aria-label="Slide 1">
                     </button>
                     {% for img in event.images.all %}
@@ -68,6 +71,9 @@
         {% elif event.images.count > 1 %}
             <!-- Карусель только из дополнительных фото (без основного) -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
+                {% if event.badge_text %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                {% endif %}
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
                     <img src="/media/icon/ok.png" alt="" class='arrow-card'>
@@ -76,8 +82,8 @@
                 {% endif %}
                 <div class="carousel-indicators">
                     {% for img in event.images.all %}
-                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                        class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}" 
+                    <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
+                        class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}"
                         aria-label="Slide {{ forloop.counter }}">
                     </button>
                     {% endfor %}
@@ -101,6 +107,9 @@
         {% elif event.image %}
             <!-- Одиночное основное фото -->
             <div class="image-wrapper">
+                {% if event.badge_text %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                {% endif %}
                 <img src="{{ event.primary_image_url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
@@ -112,6 +121,9 @@
         {% else %}
             <!-- Одиночное дополнительное фото -->
             <div class="image-wrapper">
+                {% if event.badge_text %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                {% endif %}
                 <img src="{{ event.images.first.image.url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified %}
                 <div class="verified-badge">
