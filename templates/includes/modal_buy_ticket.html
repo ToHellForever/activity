@@ -22,10 +22,6 @@
                             <div class="ticket-row">
                                 <div class="ticket-cell ticket-cell-name">
                                     <p class="ticket-name-modal"><span class="ticket-name-text collapsible-text" role="button" tabindex="0" title="Нажмите, чтобы посмотреть полностью">{{ ticket.name }}</span></p>
-                                    {% if ticket.price == 0 %}
-                                        <span class="badge bg-success ms-2">Бесплатно</span>
-                                    {% elif ticket.is_per_person %}
-                                    {% endif %}
                                 </div>
                                 <div class="ticket-cell ticket-cell-price">
                                     {% if ticket.is_per_person %}
