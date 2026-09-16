@@ -970,28 +970,19 @@ def partner_event_list(request):
 @login_required
 def delete_event(request, event_id):
     """
-    Удаляет мероприятие и связанные медиафайлы.
+    Удаляет мероприятие и связанные медиафайлы (только POST).
+    GET-запрос (страница подтверждения не используется) — редирект в список.
     """
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
     if request.method == "POST":
-        # Удаляем медиафайлы, если они существуют
-        if event.image:
-            event.image.delete()
-        if event.video_url:
-            event.video_url.delete()
-        if event.program_file:
-            event.program_file.delete()
-
+        # event.delete() сам удаляет основное фото, видео, программу
+        # и файлы галереи (см. Event.delete())
         event.delete()
+        messages.success(request, "Мероприятие удалено.")
         return redirect("partner:partner_event_list")
 
-    partner_profile = getattr(request.user, 'partner_profile', None)
-    return render(
-        request,
-        "partner/event_confirm_delete.html",
-        {"event": event, "partner_profile": partner_profile},
-    )
+    return redirect("partner:partner_event_list")
 
 
 @login_required

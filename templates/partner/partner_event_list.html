@@ -161,7 +161,7 @@
         <label class="card-check">
             <input type="checkbox" name="event_ids"
                    value="{{ item.event.id }}" class="event-checkbox"
-                   onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
+                                               onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { event.preventDefault(); const f=document.createElement('form'); f.method='post'; f.style.display='none'; f.innerHTML='<input name=csrfmiddlewaretoken value={{ csrf_token }}>'; f.action='{% url 'partner:delete_event' item.event.id %}'; document.body.appendChild(f); f.submit(); } else { event.preventDefault(); } event.stopPropagation();">
             <span class="card-check-box">
                 <img src="/media/icon/trash.svg" alt="" title="Удалить">
             </span>
@@ -203,7 +203,7 @@
                                     <label class="card-check">
                                         <input type="checkbox" name="event_ids"
                                                value="{{ item.event.id }}" class="event-checkbox"
-                                               onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { window.location.href='{% url 'partner:delete_event' item.event.id %}'; } event.stopPropagation();">
+                   onclick="if(confirm('Вы уверены, что хотите удалить это мероприятие?')) { event.preventDefault(); const f=document.createElement('form'); f.method='post'; f.style.display='none'; f.innerHTML='<input name=csrfmiddlewaretoken value={{ csrf_token }}>'; f.action='{% url 'partner:delete_event' item.event.id %}'; document.body.appendChild(f); f.submit(); } else { event.preventDefault(); } event.stopPropagation();">
                                         <span class="card-check-box">
                                             <img src="/media/icon/trash.svg" alt="" title="Удалить">
                                         </span>
