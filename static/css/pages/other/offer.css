@@ -1,4 +1,15 @@
 /* Стили для страницы «Публичная оферта» */
+.offer-policy-button {
+  background: #ff8348;
+  border: none;
+  height: 36px;
+  border-radius: 20px;
+  color: #ffffff;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  padding: 8px 30px 10px 30px;
+}
 
 .offer-page {
   background: #f8f9fa;
@@ -75,8 +86,18 @@
 /* Планшеты */
 
 /* Мобильные */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .offer-container {
     border-radius: 12px;
+  }
+  .offer-policy-switcher {
+    /* в колонку */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 70%;
+  }
+  .offer-policy-button {
+    padding: 8px 20px 10px 20px;
   }
 }
