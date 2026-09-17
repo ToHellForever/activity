@@ -267,7 +267,44 @@ def scanner_scan(request, access_code):
             status=400,
         )
 
-    # Проверяем валидность билета
+    try:
+        ticket_number = int(ticket_number)
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"success": False, "status": "error", "message": "Некорректный номер билета"},
+            status=400,
+        )
+
+    if ticket_number < 1 or ticket_number > order.quantity:
+        return JsonResponse(
+            {"success": False, "status": "error", "message": "Такого билета нет в заказе"},
+            status=400,
+        )
+
+    order_ticket, _ = OrderTicket.objects.get_or_create(
+        order=order,
+        ticket_number=ticket_number,
+    )
+
+    if order_ticket.is_refunded:
+        return JsonResponse({
+            "success": True,
+            "status": "invalid",
+            "message": "Билет возвращён",
+            "order_id": order.id,
+            "ticket_number": ticket_number,
+        })
+
+    if order_ticket.attended:
+        return JsonResponse({
+            "success": True,
+            "status": "invalid",
+            "message": "Этот билет уже был использован",
+            "order_id": order.id,
+            "ticket_number": ticket_number,
+        })
+
+    # Проверяем валидность заказа
     is_valid = (
         order.payment_status == "succeeded"
         and order.is_paid
@@ -289,20 +326,8 @@ def scanner_scan(request, access_code):
         })
 
     # Отмечаем билет как посещённый
-    try:
-        order_ticket = OrderTicket.objects.get(
-            order=order,
-            ticket_number=int(ticket_number),
-        )
-        order_ticket.attended = True
-        order_ticket.save()
-    except OrderTicket.DoesNotExist:
-        # Если OrderTicket не найден, пробуем создать
-        order_ticket = OrderTicket.objects.create(
-            order=order,
-            ticket_number=int(ticket_number),
-            attended=True,
-        )
+    order_ticket.attended = True
+    order_ticket.save()
 
     # Обновляем общий счётчик заказа
     attended_count = OrderTicket.objects.filter(order=order, attended=True).count()

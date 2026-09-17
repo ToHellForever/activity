@@ -1103,8 +1103,8 @@ class Order(models.Model):
 
         qr_items = []
         for i in range(self.quantity):
-            # QR содержит ссылку на проверку билета
-            qr_text_data = f"{base_url}/check-ticket/{self.id}/"
+            ticket_number = i + 1
+            qr_text_data = f"{base_url}/check-ticket/{self.id}/?ticket_number={ticket_number}"
 
             qr = qrcode.QRCode(
                 version=1,
@@ -1123,7 +1123,7 @@ class Order(models.Model):
             qr_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
             qr_items.append({
-                "ticket_number": i + 1,
+                "ticket_number": ticket_number,
                 "qr_text": qr_text_data,
                 "qr_base64": qr_base64,
             })

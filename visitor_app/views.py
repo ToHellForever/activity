@@ -363,14 +363,12 @@ def display_ticket(request, order_id):
     check_link = f"{base_url}{reverse('check_ticket', args=[order.id])}"
     
     for i in range(order.quantity):
-        current_ticket_num = (
-            ticket_number_start + i 
-            if ticket_number_start is not None else f"{order.id}-{i+1}"
-        )
+        current_ticket_num = i + 1
+        qr_text_data = f"{check_link}?ticket_number={current_ticket_num}"
         
         data_payload = {
             "order_id": order.id,
-            "ticket_id": str(current_ticket_num),
+            "ticket_number": current_ticket_num,
             "event_id": event.id,
             "email": participant.get("email") or "",
         }
@@ -382,7 +380,7 @@ def display_ticket(request, order_id):
 
         qr_codes.append({
             "qr_base64": qr_base64,
-            "qr_text": check_link,
+            "qr_text": qr_text_data,
             "ticket_number": current_ticket_num,
         })
 
@@ -408,7 +406,7 @@ def display_ticket(request, order_id):
 @login_required
 @require_http_methods(["GET"])
 def ticket_qr(request, order_id):
-    """Возвращает только PNG QR-код для заказа. QR ведёт на страницу проверки билета."""
+    """Возвращает PNG QR-код конкретного билета заказа."""
     order = get_object_or_404(
         Order.objects.select_related("ticket__event"),
         id=order_id,
@@ -419,7 +417,11 @@ def ticket_qr(request, order_id):
         return HttpResponse(status=403)
 
     from django.urls import reverse
-    check_url = f"{request.scheme}://{request.get_host()}{reverse('check_ticket', args=[order.id])}"
+    ticket_number = int(request.GET.get("ticket_number", 1))
+    if ticket_number < 1 or ticket_number > order.quantity:
+        return HttpResponse(status=404)
+
+    check_url = f"{request.scheme}://{request.get_host()}{reverse('check_ticket', args=[order.id])}?ticket_number={ticket_number}"
 
     qr = qrcode.QRCode(version=None, box_size=10, border=2)
     qr.add_data(check_url)

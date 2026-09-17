@@ -114,8 +114,8 @@
                     const code = jsQR(imageData.data, canvas.width, canvas.height);
 
                     if (code) {
-                        // QR-код найден — извлекаем order_id из URL
-                        handleQRFound(code.data);
+                                    // QR-код найден — извлекаем order_id и номер билета
+                                    handleQRFound(code.data);
                     }
                 }
                 requestAnimationFrame(scanFrame);
@@ -126,12 +126,22 @@
 
         // === Handle found QR code ===
         function handleQRFound(qrData) {
-            // QR содержит URL типа /check-ticket/{order_id}/
-            // Извлекаем order_id
-            const match = qrData.match(/check-ticket\/(\d+)\//);
-            if (match) {
-                const orderId = match[1];
-                scanTicket(orderId);
+            let orderId = null;
+            let ticketNumber = 1;
+            try {
+                const payload = JSON.parse(qrData);
+                orderId = payload.order_id;
+                ticketNumber = payload.ticket_number || 1;
+            } catch (error) {
+                const match = qrData.match(/check-ticket\/(\d+)\/(?:\?ticket_number=(\d+))?/);
+                if (match) {
+                    orderId = match[1];
+                    ticketNumber = match[2] || 1;
+                }
+            }
+
+            if (orderId && Number.isInteger(Number(ticketNumber))) {
+                scanTicket(orderId, ticketNumber);
             } else {
                 showResult('invalid', 'Неверный QR-код', 'Отсканируйте QR-код с билета');
             }
@@ -145,16 +155,16 @@
                 alert('Введите номер заказа');
                 return;
             }
-            scanTicket(orderId);
+            scanTicket(orderId, 1);
             input.value = '';
         }
 
         // === Scan ticket via API ===
-        function scanTicket(orderId) {
+        function scanTicket(orderId, ticketNumber) {
             const url = `/scanner/${ACCESS_CODE}/scan/`;
             const formData = new FormData();
             formData.append('order_id', orderId);
-            formData.append('ticket_number', '1');
+            formData.append('ticket_number', ticketNumber);
 
             fetch(url, {
                 method: 'POST',
