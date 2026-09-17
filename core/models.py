@@ -1096,7 +1096,7 @@ class Order(models.Model):
 
         # Определяем базовый URL
         if not base_url:
-            base_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')
+            base_url = getattr(settings, 'SITE_URL', 'https://bizafisha.ru')
         
         # Убираем trailing slash если есть
         base_url = base_url.rstrip('/')

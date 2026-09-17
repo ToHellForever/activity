@@ -552,7 +552,7 @@ def generate_payment_link(order, request=None):
     if request:
         return request.build_absolute_uri(path)
 
-    base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+    base_url = getattr(settings, "SITE_URL", "https://bizafisha.ru")
     return f"{base_url.rstrip('/')}{path}"
 
 @shared_task
@@ -759,7 +759,7 @@ def _send_media_cleanup_notification(organizer, cleaned_events):
         "organizer": organizer,
         "cleaned_events": cleaned_events,
         "total_events": len(cleaned_events),
-        "site_url": getattr(settings, "SITE_URL", "http://127.0.0.1:8000"),
+        "site_url": getattr(settings, "SITE_URL", "https://bizafisha.ru"),
     }
 
     try:

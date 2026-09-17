@@ -111,7 +111,7 @@ def build_ticket_html(order):
     participant = order.participant_data or {}
     place = (event.place_data or {}).get("address", "Место уточняется")
     organizer = event.organizer.get_full_name() or event.organizer.username
-    base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000").rstrip("/")
+    base_url = getattr(settings, "SITE_URL", "https://bizafisha.ru").rstrip("/")
     check_link = f"{base_url}{reverse('check_ticket', args=[order.id])}"
 
     ticket_number_start = getattr(order, "ticket_number_start", None)

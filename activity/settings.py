@@ -21,7 +21,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
     'http://201.51.30.31',
-    'https://201.51.30.31'
+    'https://201.51.30.31',
     'https://bizafisha.ru',
     'https://biznesafisha.ru',
     'https://бизафиша.рф',
@@ -32,7 +32,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://бизнесафиша.рф',
     ]
 # URL сайта для генерации QR-кодов
-SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
+SITE_URL = os.getenv('SITE_URL', 'https://bizafisha.ru')
 
 # Application definition
 

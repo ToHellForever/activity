@@ -40,7 +40,7 @@ def _send_orders_confirmation_email(orders, request=None):
         return
 
     # Генерируем QR-коды "на лету" для каждого заказа
-    base_url = getattr(settings, 'SITE_URL', request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000')
+    base_url = getattr(settings, 'SITE_URL', request.build_absolute_uri('/')[:-1] if request else 'https://bizafisha.ru')
     order_blocks = []
     for order in orders:
         order_blocks.append({
