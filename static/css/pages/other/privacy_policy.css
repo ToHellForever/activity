@@ -32,14 +32,14 @@
 .policy-content h2 {
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
-  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
   color: #1a1a2e;
   margin: 32px 0 16px;
 }
 
 .policy-content p {
   font-family: "Montserrat", sans-serif;
-  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  font-size: clamp(0.75rem, 0.9vw, 0.9rem);
   line-height: 1.7;
   color: #444;
   margin: 0 0 12px;
