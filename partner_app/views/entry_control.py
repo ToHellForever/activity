@@ -245,6 +245,7 @@ def scanner_scan(request, access_code):
 
     order_id = request.POST.get("order_id")
     ticket_number = request.POST.get("ticket_number", 1)
+    confirm_attendance = request.POST.get("confirm") == "1"
 
     if not order_id:
         return JsonResponse(
@@ -325,15 +326,33 @@ def scanner_scan(request, access_code):
             "event_title": order.ticket.event.title,
         })
 
-    # Отмечаем билет как посещённый
-    order_ticket.attended = True
-    order_ticket.save()
-
-    # Обновляем общий счётчик заказа
     attended_count = OrderTicket.objects.filter(order=order, attended=True).count()
     total_count = order.quantity
 
-    # Обновляем счётчик заказа
+    if not confirm_attendance:
+        participant = order.participant_data
+        first_name = participant.get("first_name", "") or participant.get("name", "")
+        last_name = participant.get("last_name", "")
+        return JsonResponse({
+            "success": True,
+            "status": "valid",
+            "message": "Билет действителен. Подтвердите посещение.",
+            "confirmed": False,
+            "order_id": order.id,
+            "event_title": order.ticket.event.title,
+            "ticket_name": order.ticket.name,
+            "participant": f"{first_name} {last_name}".strip(),
+            "ticket_number": ticket_number,
+            "attended_count": attended_count,
+            "total_count": total_count,
+            "scanned_count": link.scanned_count,
+        })
+
+    # Отмечаем билет как посещённый только после явного подтверждения.
+    order_ticket.attended = True
+    order_ticket.save()
+
+    attended_count += 1
     if attended_count == total_count:
         order.attended = True
         order.save()
@@ -349,7 +368,8 @@ def scanner_scan(request, access_code):
     return JsonResponse({
         "success": True,
         "status": "valid",
-        "message": "Билет действителен",
+        "message": "Посещение отмечено",
+        "confirmed": True,
         "order_id": order.id,
         "event_title": order.ticket.event.title,
         "ticket_name": order.ticket.name,

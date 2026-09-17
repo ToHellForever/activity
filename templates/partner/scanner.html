@@ -50,7 +50,8 @@
 
         <!-- Manual input -->
         <div class="scanner-manual-input">
-            <input type="text" id="manualOrderId" placeholder="Введите номер заказа">
+            <input type="number" id="manualOrderId" placeholder="Номер заказа" min="1" inputmode="numeric">
+            <input type="number" id="manualTicketNumber" placeholder="Номер билета (необязательно)" min="1" value="1" inputmode="numeric">
             <button onclick="manualCheck()">Проверить</button>
         </div>
 
@@ -149,22 +150,28 @@
 
         // === Manual check ===
         function manualCheck() {
-            const input = document.getElementById('manualOrderId');
-            const orderId = input.value.trim();
+            const orderInput = document.getElementById('manualOrderId');
+            const ticketInput = document.getElementById('manualTicketNumber');
+            const orderId = orderInput.value.trim();
+            const ticketNumber = ticketInput.value.trim() || '1';
             if (!orderId) {
                 alert('Введите номер заказа');
                 return;
             }
-            scanTicket(orderId, 1);
-            input.value = '';
+            scanTicket(orderId, ticketNumber);
+            orderInput.value = '';
+            ticketInput.value = '1';
         }
 
         // === Scan ticket via API ===
-        function scanTicket(orderId, ticketNumber) {
+        function scanTicket(orderId, ticketNumber, confirmAttendance = false) {
             const url = `/scanner/${ACCESS_CODE}/scan/`;
             const formData = new FormData();
             formData.append('order_id', orderId);
             formData.append('ticket_number', ticketNumber);
+            if (confirmAttendance) {
+                formData.append('confirm', '1');
+            }
 
             fetch(url, {
                 method: 'POST',
@@ -215,6 +222,7 @@
                         <span class="text-muted">Заказ #${data.order_id}</span><br>
                         <span class="text-muted">Билет ${data.ticket_number} из ${data.total_count}</span>
                     </div>
+                    ${data.confirmed ? '<div class="scanner-attendance-confirmed">Посещение отмечено</div>' : `<button type="button" class="scanner-confirm-btn" onclick="confirmTicket(${data.order_id}, ${data.ticket_number})">Посетил</button>`}
                 `;
                 card.classList.add('scanner-result-card--valid');
                 card.classList.add('scanner-pulse-green');
@@ -234,6 +242,10 @@
 
             card.innerHTML = html;
             wrapper.style.display = 'none';
+        }
+
+        function confirmTicket(orderId, ticketNumber) {
+            scanTicket(orderId, ticketNumber, true);
         }
 
         // === End shift ===
@@ -284,6 +296,9 @@
 
             // Enter key for manual input
             document.getElementById('manualOrderId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') manualCheck();
+            });
+            document.getElementById('manualTicketNumber').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') manualCheck();
             });
         });
