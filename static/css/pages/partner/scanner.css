@@ -439,6 +439,10 @@
 
 /* Мобильные */
 @media (max-width: 480px) {
+  .scanner-area {
+    padding: 12px;
+  }
+
   .scanner-header {
     padding: 12px 16px;
   }
@@ -448,13 +452,13 @@
   }
 
   .scanner-camera-wrapper {
-    width: min(300px, calc(100vw - 40px));
-    height: min(300px, calc(100vw - 40px));
+    width: min(340px, calc(100vw - 24px));
+    height: min(340px, calc(100vw - 24px));
   }
 
   .scanner-frame {
-    width: min(240px, calc(100vw - 100px));
-    height: min(240px, calc(100vw - 100px));
+    width: min(280px, calc(100vw - 64px));
+    height: min(280px, calc(100vw - 64px));
   }
 
   .scanner-counter-number {
