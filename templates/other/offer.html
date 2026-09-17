@@ -7,7 +7,13 @@
 <div class="offer-page">
     <div class="offer-container">
         <h1 class="offer-title">Публичная оферта</h1>
-        <div class="offer-content">
+        <div class="offer-policy-switcher" role="tablist" aria-label="Выбор политики">
+            <button type="button" class="offer-policy-button is-active" role="tab" aria-selected="true" data-policy="participant">Для участников</button>
+            <button type="button" class="offer-policy-button" role="tab" aria-selected="false" data-policy="organizer">Для организаторов</button>
+            <button type="button" class="offer-policy-button" role="tab" aria-selected="false" data-policy="venue">Для площадок</button>
+        </div>
+
+        <div class="offer-content" data-policy-content="participant">
             <p class="offer-date">Дата вступления в силу: 01.08.2025</p>
 
             <h2>1. Общие положения</h2>
@@ -67,6 +73,47 @@
                 <li>Адрес: г. Новосибирск</li>
             </ul>
         </div>
+
+        <div class="offer-content" data-policy-content="organizer" hidden>
+            <p class="offer-date">Дата вступления в силу: 01.08.2025</p>
+            <h2>Политика для организаторов</h2>
+            <p>Раздел содержит условия размещения мероприятий, продажи билетов и взаимодействия организатора с платформой «БИЗНЕС АФИША».</p>
+            <h2>1. Размещение мероприятия</h2>
+            <p>Организатор предоставляет достоверную информацию о мероприятии, его программе, стоимости билетов и правилах посещения.</p>
+            <h2>2. Ответственность организатора</h2>
+            <p>Организатор отвечает за проведение мероприятия, соблюдение заявленных условий и своевременное информирование участников об изменениях.</p>
+            <h2>3. Контактная информация</h2>
+            <p>По вопросам размещения мероприятий обратитесь по адресу <a href="mailto:offer@business-africa.ru" class="offer-link">offer@business-africa.ru</a>.</p>
+        </div>
+
+        <div class="offer-content" data-policy-content="venue" hidden>
+            <p class="offer-date">Дата вступления в силу: 01.08.2025</p>
+            <h2>Политика для площадок</h2>
+            <p>Раздел содержит условия взаимодействия площадок с платформой «БИЗНЕС АФИША» при размещении и проведении мероприятий.</p>
+            <h2>1. Информация о площадке</h2>
+            <p>Площадка предоставляет актуальные сведения о своем адресе, вместимости, оборудовании и доступных услугах.</p>
+            <h2>2. Проведение мероприятий</h2>
+            <p>Площадка обеспечивает подготовку пространства и соблюдение согласованных условий проведения мероприятия.</p>
+            <h2>3. Контактная информация</h2>
+            <p>По вопросам сотрудничества обратитесь по адресу <a href="mailto:offer@business-africa.ru" class="offer-link">offer@business-africa.ru</a>.</p>
+        </div>
     </div>
 </div>
+<script>
+    document.querySelectorAll('.offer-policy-button').forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedPolicy = button.dataset.policy;
+
+            document.querySelectorAll('.offer-policy-button').forEach((item) => {
+                const isActive = item === button;
+                item.classList.toggle('is-active', isActive);
+                item.setAttribute('aria-selected', String(isActive));
+            });
+
+            document.querySelectorAll('[data-policy-content]').forEach((content) => {
+                content.hidden = content.dataset.policyContent !== selectedPolicy;
+            });
+        });
+    });
+</script>
 {% endblock %}
