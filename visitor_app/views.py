@@ -44,49 +44,51 @@ def visitor_dashboard(request):
         .order_by("-created_at")
     )
 
-    # Разделяем на активные и прошедшие
+    # Распределяем билеты отдельно: посещённый билет сразу попадает в историю,
+    # а остальные билеты того же заказа остаются активными.
+    ticket_items = []
+    past_ticket_items = []
     active_orders = []
     past_orders = []
 
     for order in all_orders:
         event = order.ticket.event
-        is_past = event.date_time < now or order.payment_status == "refunded"
+        event_is_past = event.date_time < now
+        order_is_past = (
+            event_is_past
+            or order.payment_status == "refunded"
+            or order.attended
+        )
+        tickets = list(order.tickets.all())
 
-        if is_past:
+        if tickets:
+            for ot in tickets:
+                item = {
+                    "order": order,
+                    "order_ticket": ot,
+                    "event": event,
+                    "ticket": order.ticket,
+                    "participant_data": order.participant_data,
+                }
+                if ot.is_refunded or ot.attended or order_is_past:
+                    past_ticket_items.append(item)
+                else:
+                    ticket_items.append(item)
+        else:
+            target = past_ticket_items if order_is_past else ticket_items
+            for _ in range(order.quantity):
+                target.append({
+                    "order": order,
+                    "order_ticket": None,
+                    "event": event,
+                    "ticket": order.ticket,
+                    "participant_data": order.participant_data,
+                })
+
+        if order_is_past or order.attended:
             past_orders.append(order)
         else:
             active_orders.append(order)
-
-    # Раскрываем каждый заказ на отдельные тикеты (OrderTicket)
-    def expand_orders(orders, exclude_refunded=False):
-        items = []
-        for order in orders:
-            tickets = order.tickets.all()
-            if tickets.exists():
-                for ot in tickets:
-                    # Если нужно исключить возвращённые билеты — пропускаем
-                    if exclude_refunded and ot.is_refunded:
-                        continue
-                    items.append({
-                        "order": order,
-                        "order_ticket": ot,
-                        "event": order.ticket.event,
-                        "ticket": order.ticket,
-                        "participant_data": order.participant_data,
-                    })
-            else:
-                for i in range(order.quantity):
-                    items.append({
-                        "order": order,
-                        "order_ticket": None,
-                        "event": order.ticket.event,
-                        "ticket": order.ticket,
-                        "participant_data": order.participant_data,
-                    })
-        return items
-
-    ticket_items = expand_orders(active_orders, exclude_refunded=True)  # <-- исключаем возвращённые
-    past_ticket_items = expand_orders(past_orders)
 
     # Получаем активную подписку пользователя
     user_subscription = (
@@ -134,8 +136,8 @@ def visitor_order_history(request):
                     is_refunded_ticket = ot.is_refunded
                     is_refunded_order = order.payment_status == "refunded"
 
-                    # Берём если: событие прошло ИЛИ билет возвращён ИЛИ заказ возвращён
-                    if is_past_event or is_refunded_ticket or is_refunded_order:
+                    # Посещённые билеты архивируются сразу после отметки.
+                    if is_past_event or is_refunded_ticket or is_refunded_order or ot.attended:
                         items.append({
                             "order": order,
                             "order_ticket": ot,
