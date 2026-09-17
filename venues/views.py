@@ -458,20 +458,6 @@ def _send_admin_booking_notification(booking_request):
         pass
 
 
-def _check_booking_rate_limit(venue, request):
-    """Проверяет лимит: не более 1 заявки на площадку с 1 аккаунта (за всё время).
-    На разные площадки отправлять заявки можно без ограничений."""
-    qs = BookingRequest.objects.filter(venue=venue)
-
-    if request.user.is_authenticated:
-        qs = qs.filter(user=request.user)
-    else:
-        session_key = request.session.session_key or ""
-        qs = qs.filter(session_key=session_key)
-
-    return qs.exists()
-
-
 def _process_booking_request(request):
     """Обрабатывает данные формы и сохраняет заявку"""
     venue_id = request.POST.get("venue_id")
@@ -482,17 +468,6 @@ def _process_booking_request(request):
         venue = Venue.objects.get(pk=venue_id)
     except Venue.DoesNotExist:
         return False, {"__all__": "Указанная площадка не найдена"}, None
-
-    # Лимит: 1 заявка на площадку с 1 аккаунта (за всё время)
-    if _check_booking_rate_limit(venue, request):
-        return (
-            False,
-            {
-                "__all__": "Вы уже отправляли заявку на эту площадку. "
-                           "Пожалуйста, дождитесь ответа."
-            },
-            None,
-        )
 
     form = BookingRequestForm(request.POST, venue=venue)
 
