@@ -1060,11 +1060,6 @@ def organizer_contract_download(request):
     )
 
 
-def requisites_view(request):
-    """Реквизиты организации"""
-    return render(request, "other/requisites.html")
-
-
 def faq_view(request):
     """FAQ — часто задаваемые вопросы"""
     return render(request, "other/faq.html")
