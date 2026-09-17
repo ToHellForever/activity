@@ -263,6 +263,10 @@
   box-sizing: border-box;
 }
 
+.scanner-manual-input input + input {
+  margin-top: 8px;
+}
+
 .scanner-manual-input input:focus {
   outline: none;
   border-color: #02369c;
@@ -290,6 +294,32 @@
 
 .scanner-manual-input button:hover {
   background: #012a7e;
+}
+
+.scanner-confirm-btn {
+  width: 100%;
+  margin-top: 16px;
+  min-height: 56px;
+  padding: 16px 24px;
+  border: 0;
+  border-radius: 20px;
+  background: #198754;
+  color: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scanner-confirm-btn:hover {
+  background: #146c43;
+}
+
+.scanner-attendance-confirmed {
+  margin-top: 16px;
+  color: #198754;
+  font-weight: 600;
+  text-align: center;
 }
 
 /* ============================================
@@ -329,9 +359,16 @@
 
 /* --- Встряска для ошибки --- */
 @keyframes scanner-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
 }
 
 .scanner-shake {
@@ -340,9 +377,15 @@
 
 /* --- Пульсация для успеха --- */
 @keyframes scanner-pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-  70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(40, 167, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+  }
 }
 
 .scanner-pulse-green {
@@ -351,8 +394,14 @@
 
 /* --- Появление карточки результата --- */
 @keyframes scanner-slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .scanner-result-card {

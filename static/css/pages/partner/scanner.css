@@ -299,13 +299,14 @@
 .scanner-confirm-btn {
   width: 100%;
   margin-top: 16px;
-  padding: 12px 24px;
+  min-height: 56px;
+  padding: 16px 24px;
   border: 0;
   border-radius: 20px;
   background: #198754;
   color: #fff;
   font-family: "Montserrat", sans-serif;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
 }

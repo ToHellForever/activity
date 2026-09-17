@@ -9,14 +9,14 @@
         <div class="col-md-8 col-lg-6">
             <div class="card ticket-check-card">
                 <div class="card-body text-center p-5">
-                    {% if order.payment_status == "refunded" %}
+                    {% if selected_ticket and selected_ticket.is_refunded or order.payment_status == "refunded" %}
                         <!-- Билет возвращён -->
                         <div class="mb-4">
                             <i class="bi bi-x-circle-fill ticket-check-icon ticket-check-icon--refunded"></i>
                         </div>
                         <h3 class="card-title ticket-check-title ticket-check-title--refunded">Билет возвращён</h3>
                         <p class="card-text ticket-check-text mb-4">
-                            Этот билет был возвращён и больше не действителен.<br>
+                            Билет №{{ ticket_number }} возвращён и больше не действителен.<br>
                             Заказ: <strong>#{{ order.id }}</strong>
                         </p>
                     {% elif not is_valid %}
@@ -26,7 +26,7 @@
                         </div>
                         <h3 class="card-title ticket-check-title ticket-check-title--invalid">Билет недействителен</h3>
                         <p class="card-text ticket-check-text mb-4">
-                            Этот билет не найден в системе или уже был использован.<br>
+                            Билет №{{ ticket_number }} не найден в системе или уже был использован.<br>
                             Заказ: <strong>#{{ order.id }}</strong>
                         </p>
                     {% else %}
@@ -43,6 +43,7 @@
                             {% endif %}
                             <div>Мероприятие: <strong>{{ order.ticket.event.title }}</strong></div>
                             <div>Тип билета: <strong>{{ order.ticket.name }}</strong></div>
+                            <div class="text-muted">Билет: #{{ ticket_number }}</div>
                             <div class="text-muted">Заказ: #{{ order.id }}</div>
                         </div>
 

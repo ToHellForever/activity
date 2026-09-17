@@ -1016,20 +1016,31 @@ def check_ticket(request, order_id):
         id=order_id,
     )
 
+    try:
+        ticket_number = int(request.GET.get("ticket_number", 1))
+    except (TypeError, ValueError):
+        ticket_number = 1
+
+    selected_ticket = order.tickets.filter(ticket_number=ticket_number).first()
+
     # Проверяем, что пользователь — организатор мероприятия
     is_organizer = False
     if request.user.is_authenticated:
         is_organizer = order.ticket.event.organizer == request.user
 
-    # Проверяем валидность билета
+    # Проверяем статус конкретного билета, а не всего заказа.
     is_valid = (
         order.payment_status == "succeeded"
         and order.is_paid
-        and not order.attended
+        and selected_ticket is not None
+        and not selected_ticket.attended
+        and not selected_ticket.is_refunded
     )
 
     context = {
         "order": order,
+        "selected_ticket": selected_ticket,
+        "ticket_number": ticket_number,
         "is_valid": is_valid,
         "is_organizer": is_organizer,
     }

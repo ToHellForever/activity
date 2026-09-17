@@ -71,6 +71,7 @@
 
         // === Camera setup ===
         let stream = null;
+        let scanInProgress = false;
 
         async function startCamera() {
             const video = document.getElementById('cameraFeed');
@@ -166,6 +167,9 @@
 
         // === Scan ticket via API ===
         function scanTicket(orderId, ticketNumber, confirmAttendance = false) {
+            if (scanInProgress) return;
+            scanInProgress = true;
+
             const url = `/scanner/${ACCESS_CODE}/scan/`;
             const formData = new FormData();
             formData.append('order_id', orderId);
@@ -199,13 +203,15 @@
             })
             .catch(err => {
                 showResult('invalid', 'Ошибка сети: ' + err.message);
+            })
+            .finally(() => {
+                scanInProgress = false;
             });
         }
 
         // === Show result ===
         function showResult(type, message, data) {
             const card = document.getElementById('resultCard');
-            const wrapper = document.getElementById('cameraWrapper');
 
             card.style.display = 'block';
             card.className = 'scanner-result-card';
@@ -242,7 +248,6 @@
             }
 
             card.innerHTML = html;
-            wrapper.style.display = 'none';
         }
 
         function confirmTicket(orderId, ticketNumber) {
