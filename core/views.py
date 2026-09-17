@@ -6,6 +6,7 @@ from django.shortcuts import (
 )
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+from django.http import FileResponse, Http404
 from django.core.files.base import ContentFile
 from django.contrib.auth import login, logout
 from django.contrib.auth import logout as auth_logout
@@ -1044,6 +1045,19 @@ def privacy_policy_view(request):
 def offer_view(request):
     """Публичная оферта"""
     return render(request, "other/offer.html")
+
+
+def organizer_contract_download(request):
+    """Скачать договор для организаторов."""
+    contract_path = settings.BASE_DIR / "ДОГОВОР для организаторов.docx"
+    if not contract_path.is_file():
+        raise Http404("Файл договора не найден")
+
+    return FileResponse(
+        contract_path.open("rb"),
+        as_attachment=True,
+        filename="ДОГОВОР для организаторов.docx",
+    )
 
 
 def requisites_view(request):

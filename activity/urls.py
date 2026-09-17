@@ -29,6 +29,7 @@ from core.views import (
     contacts_view,
     about_view,
     robots_txt,
+    organizer_contract_download,
 )
 from core.sitemaps import StaticViewSitemap, EventSitemap, VenueSitemap
 from partner_app.views import (
@@ -96,6 +97,7 @@ urlpatterns = [
     # Статические страницы
     path("privacy-policy/", privacy_policy_view, name="privacy_policy"),
     path("offer/", offer_view, name="offer"),
+    path("documents/organizer-contract/", organizer_contract_download, name="organizer_contract_download"),
     path("requisites/", requisites_view, name="requisites"),
     path("faq/", faq_view, name="faq"),
     path("contacts/", contacts_view, name="contacts"),

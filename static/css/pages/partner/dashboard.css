@@ -5,7 +5,12 @@
   padding-left: 0;
   padding-right: 0;
 }
-
+.contract-download-link {
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: #02369c;
+  text-decoration: none;
+}
 /* =========================================
    PROFILE HEADER
    ========================================= */
@@ -579,7 +584,7 @@
    ========================================= */
 .change-password-wrapper {
   margin-top: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .btn-change-password {
