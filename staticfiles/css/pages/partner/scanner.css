@@ -448,13 +448,13 @@
   }
 
   .scanner-camera-wrapper {
-    width: 200px;
-    height: 200px;
+    width: min(300px, calc(100vw - 40px));
+    height: min(300px, calc(100vw - 40px));
   }
 
   .scanner-frame {
-    width: 150px;
-    height: 150px;
+    width: min(240px, calc(100vw - 100px));
+    height: min(240px, calc(100vw - 100px));
   }
 
   .scanner-counter-number {
