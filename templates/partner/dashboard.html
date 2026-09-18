@@ -448,14 +448,21 @@
         <form id="buy-package-form" method="post">
             {% csrf_token %}
             <input type="hidden" id="modal-package-id" name="package_id">
-            <!-- Пакеты оплачиваются по безналу: счёт выставляется администратором вручную -->
             <div style="margin-bottom:20px;">
-                <label for="admin-email" class="form-label">Email администратора</label>
-                <input type="email" id="admin-email" name="admin_email" placeholder="admin@company.ru" class="form-control">
+                <label for="applicant-name" class="form-label">Имя</label>
+                <input type="text" id="applicant-name" name="applicant_name" value="{{ user.get_full_name|default:user.username }}" required class="form-control">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label for="applicant-phone" class="form-label">Телефон</label>
+                <input type="tel" id="applicant-phone" name="applicant_phone" value="{{ user.phone|default:'' }}" required class="form-control">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label for="applicant-email" class="form-label">Email</label>
+                <input type="email" id="applicant-email" name="applicant_email" value="{{ user.email|default:'' }}" required class="form-control">
             </div>
             <div class="buy-modal-footer">
                 <button type="button" onclick="closeBuyPackageModal()" class="btn btn-secondary">Отмена</button>
-                <button type="submit" class="btn btn-primary">Купить</button>
+                <button type="submit" class="btn btn-primary">Отправить заявку</button>
             </div>
         </form>
     </div>
@@ -480,6 +487,6 @@
     </div>
 </div>
 
-<script src="{% static 'js/pages/partner/dashboard.js' %}?v=9"></script>
+<script src="{% static 'js/pages/partner/dashboard.js' %}?v=10"></script>
 <script src="{% static 'js/pages/partner/partner_dashboard_extra.js' %}"></script>
 {% endblock extra_js %}

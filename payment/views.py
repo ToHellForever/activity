@@ -118,35 +118,6 @@ def send_reservation_email(order, request):
         fail_silently=False,
     )
 
-def _send_package_invoice_request_email(user, package, subscription, contact_email):
-    """
-    Отправка заявки на выставление счёта за пакет.
-    Пакеты оплачиваются по безналу: счёт выставляется администратором вручную,
-    после оплаты он активирует подписку через админку.
-    """
-    subject = f"Заявка на выставление счёта для пакета {package.name}"
-    message = f"""
-Пользователь {user.email} запросил выставление счёта для покупки пакета {package.name}.
-
-Детали:
-- Пакет: {package.name}
-- Цена: {package.price} RUB
-- Пользователь: {user.email} ({user.first_name} {user.last_name})
-- Email для связи: {contact_email}
-- ID подписки: {subscription.id}
-
-После оплаты счёта активируйте подписку через админку.
-"""
-
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[contact_email, settings.DEFAULT_FROM_EMAIL],
-        fail_silently=False,
-    )
-
-
 def handle_package_change_choice(request):
     """Обработка выбора пользователя при смене пакета."""
     import traceback
@@ -172,26 +143,21 @@ def handle_package_change_choice(request):
             return JsonResponse({"error": "Активная подписка не найдена"}, status=404)
 
         if change_type == "immediate":
-            # Немедленная смена пакета — создаём неактивную подписку.
-            # Пакеты оплачиваются по безналу: счёт выставляется вручную,
-            # после оплаты администратор активирует подписку через админку.
+            # Немедленная смена пакета — создаём заявку в админке.
             # Старая подписка закроется при активации новой.
             new_subscription = UserPackageSubscription.objects.create(
                 user=user,
                 package=package,
                 subscription_type='monthly' if package.is_monthly else 'one_time',
+                applicant_name=user.get_full_name() or user.username,
+                applicant_phone=user.phone or '',
+                applicant_email=user.email,
                 is_active=False  # Ждёт оплаты по счёту
-            )
-
-            # Отправляем заявку на счёт администратору
-            _send_package_invoice_request_email(
-                user, package, new_subscription, settings.DEFAULT_FROM_EMAIL
             )
 
             return JsonResponse({
                 "status": "success",
-                "message": "Заявка на выставление счёта отправлена. "
-                           "После оплаты счёта подписка будет активирована.",
+                "message": "Заявка на пакет создана. Администратор рассмотрит её в админке.",
                 "new_subscription": {
                     "id": new_subscription.id,
                     "package_name": new_subscription.package.name,
@@ -221,10 +187,8 @@ def handle_package_change_choice(request):
 
 def create_invoice(request, package_id):
     """
-    Заявка на выставление счёта за пакет (оплата по безналу).
-    Создаёт подписку со статусом 'ожидает оплаты по счёту' и отправляет
-    заявку администратору. Счёт выставляется вручную, после оплаты
-    администратор активирует подписку через админку.
+    Создаёт заявку на пакет со статусом ожидания решения администратора.
+    Администратор рассматривает и активирует её через админку.
     """
     if request.method != "POST":
         return JsonResponse({"error": "Метод не поддерживается"}, status=405)
@@ -239,10 +203,6 @@ def create_invoice(request, package_id):
         if not package:
             return JsonResponse({"error": "Пакет не найден"}, status=404)
 
-        admin_email = request.POST.get("admin_email")
-        if not admin_email:
-            return JsonResponse({"error": "Не указан email администратора"}, status=400)
-
         # Старую подписку здесь не закрываем: она закроется автоматически
         # в момент активации новой администратором.
         # Если счёт так и не оплатят — текущий пакет продолжит работать.
@@ -252,22 +212,15 @@ def create_invoice(request, package_id):
             user=user,
             package=package,
             subscription_type='monthly' if package.is_monthly else 'one_time',
+            applicant_name=request.POST.get('applicant_name', '').strip(),
+            applicant_phone=request.POST.get('applicant_phone', '').strip(),
+            applicant_email=request.POST.get('applicant_email', '').strip(),
             is_active=False,  # Ждёт оплаты по счёту
         )
 
-        # Отправляем заявку на выставление счёта
-        try:
-            _send_package_invoice_request_email(
-                user, package, new_subscription, admin_email
-            )
-        except Exception as e:
-            logger.error("Ошибка при отправке заявки на счёт: %s", e, exc_info=True)
-            return JsonResponse({"error": "Не удалось отправить заявку на счёт"}, status=500)
-
         return JsonResponse({
             "status": "success",
-            "message": "Заявка на выставление счёта отправлена. "
-                       "После оплаты счёта подписка будет активирована.",
+            "message": "Заявка на пакет создана. Администратор рассмотрит её в админке.",
             "package_id": package_id,
             "subscription_id": new_subscription.id,
         })

@@ -886,16 +886,15 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
 
     change_form_template = "admin/userpackagesubscription_change_form.html"
 
-    list_display = ('id', 'user', 'package', 'subscription_type', 'start_date', 'end_date', 'is_active', 'payment_status_display')
+    list_display = ('id', 'package', 'applicant_name', 'applicant_phone', 'applicant_email', 'subscription_type', 'start_date', 'end_date', 'is_active', 'payment_status_display')
     list_filter = ('is_active', 'subscription_type', 'package')
-    search_fields = ('user__email', 'user__username', 'package__name')
-    readonly_fields = ('start_date',)
+    search_fields = ('user__email', 'user__username', 'package__name', 'applicant_name', 'applicant_phone', 'applicant_email')
     date_hierarchy = 'start_date'
     actions = ('activate_subscriptions',)
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'package', 'subscription_type')
+            'fields': ('user', 'package', 'applicant_name', 'applicant_phone', 'applicant_email', 'subscription_type')
         }),
         ('Даты', {
             'fields': ('start_date', 'end_date')
@@ -913,11 +912,6 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
             )
         return mark_safe('<span style="color:green; font-weight:bold;">✓ Активна</span>')
     payment_status_display.short_description = "Статус оплаты"
-
-    def save_model(self, request, obj, form, change):
-        if not change or not obj.start_date:
-            obj.start_date = timezone.now()
-        super().save_model(request, obj, form, change)
 
     def response_change(self, request, obj):
         if '_assign_package' in request.POST:

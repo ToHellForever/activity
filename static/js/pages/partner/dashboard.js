@@ -61,17 +61,8 @@ if (buyForm) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Обработка…';
 
-    // Пакеты оплачиваются по безналу: счёт выставляется администратором вручную.
-    // ЮКасса используется только для билетов.
-    const adminEmail = formData.get('admin_email');
     const pkgId = formData.get('package_id');
-    console.log('create_invoice called with packageId:', pkgId, 'adminEmail:', adminEmail);
-    if (!adminEmail) {
-        alert('Укажите email администратора для выставления счёта.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Купить';
-        return;
-    }
+    console.log('create_invoice called with packageId:', pkgId);
     fetch('/payment/create_invoice/' + pkgId + '/', {
         method: 'POST',
         body: formData,
@@ -84,7 +75,7 @@ if (buyForm) {
     .then(({ status, data }) => {
         console.log('create_invoice response:', status, data);
         if (status === 200 && data.status === 'success') {
-            alert('Заявка на выставление счёта отправлена. После оплаты счёта подписка будет активирована.');
+            alert('Заявка на пакет отправлена администратору.');
             closeBuyPackageModal();
             window.location.reload();
         } else {
@@ -92,7 +83,7 @@ if (buyForm) {
         }
     })
     .catch(err => alert('Ошибка: ' + err))
-    .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Купить'; });
+    .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Отправить заявку'; });
     });
 }
 

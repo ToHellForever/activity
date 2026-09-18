@@ -237,8 +237,11 @@ class UserPackageSubscription(models.Model):
         verbose_name="Пакет",
         related_name="active_subscriptions"
     )
+    applicant_name = models.CharField(max_length=255, blank=True, default="", verbose_name="Имя заявителя")
+    applicant_phone = models.CharField(max_length=30, blank=True, default="", verbose_name="Телефон заявителя")
+    applicant_email = models.EmailField(blank=True, default="", verbose_name="Email заявителя")
     start_date = models.DateTimeField(
-        auto_now_add=True,
+        default=timezone.now,
         verbose_name="Дата начала подписки"
     )
     end_date = models.DateTimeField(
