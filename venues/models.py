@@ -435,3 +435,39 @@ class BookingRequest(models.Model):
     class Meta:
         verbose_name = "Заявка на площадку"
         verbose_name_plural = "Заявки на площадки"
+
+
+class VenueAdditionRequest(models.Model):
+    """Заявка на добавление новой площадки в каталог."""
+
+    STATUS_CHOICES = [
+        ("new", "Новая"),
+        ("in_work", "В работе"),
+        ("approved", "Одобрена"),
+        ("rejected", "Отклонена"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="venue_addition_requests",
+        verbose_name="Пользователь",
+    )
+    venue_name = models.CharField(max_length=255, verbose_name="Название площадки")
+    address = models.CharField(max_length=255, verbose_name="Адрес площадки")
+    applicant_name = models.CharField(max_length=255, verbose_name="Имя заявителя")
+    applicant_phone = models.CharField(max_length=30, verbose_name="Телефон заявителя")
+    applicant_email = models.EmailField(verbose_name="Email заявителя")
+    comment = models.TextField(blank=True, verbose_name="Комментарий")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new", verbose_name="Статус")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата заявки")
+
+    def __str__(self):
+        return f"Заявка на добавление площадки «{self.venue_name}» от {self.applicant_name}"
+
+    class Meta:
+        verbose_name = "Заявка на добавление площадки"
+        verbose_name_plural = "Заявки на добавление площадок"
+        ordering = ("-created_at",)

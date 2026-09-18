@@ -4,12 +4,12 @@ from django.contrib.auth.decorators import login_required
 from .models import EquipmentItem
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.core.mail import EmailMessage, send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem, VenueFormat
-from .forms import BookingRequestForm
+from .forms import BookingRequestForm, VenueAdditionRequestForm
 import json
 from django.db import models
 
@@ -516,6 +516,29 @@ def process_booking_request(request):
     if success and contacts:
         response["contacts"] = contacts
     return JsonResponse(response)
+
+
+def venue_addition_request(request):
+    """Публичная форма заявки на добавление площадки в каталог."""
+    if request.method == "POST":
+        form = VenueAdditionRequestForm(request.POST)
+        if form.is_valid():
+            addition_request = form.save(commit=False)
+            if request.user.is_authenticated:
+                addition_request.user = request.user
+            addition_request.save()
+            return JsonResponse({"success": True})
+        return JsonResponse(
+            {
+                "success": False,
+                "errors": {
+                    field: [str(error) for error in errors]
+                    for field, errors in form.errors.items()
+                },
+            },
+            status=400,
+        )
+    return redirect("venues:venue_list")
 
 
 class VenueDetailView(DetailView):

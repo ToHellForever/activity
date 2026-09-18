@@ -5,6 +5,7 @@ from .models import (
     VenueType,
     Venue,
     BookingRequest,
+    VenueAdditionRequest,
     VenueImage,
     EquipmentCategory,
     EquipmentItem,
@@ -266,6 +267,29 @@ class BookingRequestAdmin(admin.ModelAdmin):
     search_fields = ("name", "phone", "email", "venue__title")
     readonly_fields = ("created_at",)
     list_select_related = ("venue", "user")
+
+
+@admin.register(VenueAdditionRequest)
+class VenueAdditionRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "venue_name",
+        "applicant_name",
+        "applicant_phone",
+        "applicant_email",
+        "status",
+        "created_at",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = (
+        "venue_name",
+        "address",
+        "applicant_name",
+        "applicant_phone",
+        "applicant_email",
+    )
+    readonly_fields = ("created_at",)
+    list_select_related = ("user",)
 
 
 @admin.register(VenueFormat)

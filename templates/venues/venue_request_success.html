@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Заявка отправлена — Бизнес Афиша{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/venues/venue_request.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="venue-request-page venue-request-page-success">
+    <section class="venue-request-success">
+        <div class="venue-request-success-mark">✓</div>
+        <p class="venue-request-eyebrow">ЗАЯВКА ПРИНЯТА</p>
+        <h1>Спасибо, мы получили данные</h1>
+        <p>Администратор рассмотрит заявку и свяжется с вами по указанным контактам.</p>
+        <a href="{% url 'venues:venue_list' %}">Вернуться в каталог</a>
+    </section>
+</main>
+{% endblock %}

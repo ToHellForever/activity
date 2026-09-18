@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Добавить площадку — Бизнес Афиша{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/venues/venue_request.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="venue-request-page">
+    <section class="venue-request-hero">
+        <p class="venue-request-eyebrow">КАТАЛОГ ПЛОЩАДОК</p>
+        <h1>Предложите площадку для каталога</h1>
+        <p>Расскажите о площадке, и команда платформы свяжется с вами для уточнения деталей.</p>
+    </section>
+
+    <section class="venue-request-panel">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="venue-request-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="venue-request-grid">
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="id_venue_name">Название площадки</label>
+                    {{ form.venue_name }}
+                    {{ form.venue_name.errors }}
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="id_address">Адрес площадки</label>
+                    {{ form.address }}
+                    {{ form.address.errors }}
+                </div>
+                <div class="venue-request-field">
+                    <label for="id_applicant_name">Ваше имя</label>
+                    {{ form.applicant_name }}
+                    {{ form.applicant_name.errors }}
+                </div>
+                <div class="venue-request-field">
+                    <label for="id_applicant_phone">Телефон</label>
+                    {{ form.applicant_phone }}
+                    {{ form.applicant_phone.errors }}
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="id_applicant_email">Email</label>
+                    {{ form.applicant_email }}
+                    {{ form.applicant_email.errors }}
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="id_comment">Комментарий <span>необязательно</span></label>
+                    {{ form.comment }}
+                    {{ form.comment.errors }}
+                </div>
+            </div>
+
+            <div class="venue-request-actions">
+                <a href="{% url 'venues:venue_list' %}">Вернуться в каталог</a>
+                <button type="submit">Отправить заявку</button>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock %}

@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.forms import ClearableFileInput, MultipleChoiceField, CheckboxSelectMultiple
 from django.utils import timezone
 import re
-from .models import Venue, BookingRequest, VenueImage
+from .models import Venue, BookingRequest, VenueAdditionRequest, VenueImage
 
 
 class MultipleFileInput(ClearableFileInput):
@@ -206,3 +206,35 @@ class BookingRequestForm(forms.ModelForm):
                 f"Количество участников не может превышать {self.venue.max_capacity} - максимальную вместимость площадки"
             )
         return participants_count
+
+
+class VenueAdditionRequestForm(forms.ModelForm):
+    class Meta:
+        model = VenueAdditionRequest
+        fields = [
+            "venue_name",
+            "address",
+            "applicant_name",
+            "applicant_phone",
+            "applicant_email",
+            "comment",
+        ]
+        widgets = {
+            "venue_name": forms.TextInput(attrs={"maxlength": "255", "required": "required"}),
+            "address": forms.TextInput(attrs={"maxlength": "255", "required": "required"}),
+            "applicant_name": forms.TextInput(attrs={"maxlength": "255", "required": "required"}),
+            "applicant_phone": forms.TextInput(attrs={"maxlength": "30", "required": "required"}),
+            "applicant_email": forms.EmailInput(attrs={"required": "required"}),
+            "comment": forms.Textarea(attrs={"maxlength": "1000", "rows": 4}),
+        }
+
+    def clean_applicant_phone(self):
+        phone = self.cleaned_data["applicant_phone"].strip()
+        digits = re.sub(r"\D", "", phone)
+        if phone.startswith("+"):
+            if not 10 <= len(digits) <= 15:
+                raise ValidationError("Номер телефона должен содержать от 10 до 15 цифр.")
+            return "+" + digits
+        if len(digits) not in (10, 11):
+            raise ValidationError("Номер телефона должен содержать 10 или 11 цифр.")
+        return digits

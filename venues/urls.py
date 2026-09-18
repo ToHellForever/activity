@@ -38,6 +38,7 @@ urlpatterns = [
         views.process_booking_request,
         name="process_booking_request",
     ),
+    path("add-request/", views.venue_addition_request, name="venue_addition_request"),
     path("", views.VenueListView.as_view(), name="venue_list"),
     path("<slug:slug>/", views.VenueDetailView.as_view(), name="venue_detail"),
 ]

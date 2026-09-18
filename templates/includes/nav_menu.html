@@ -22,6 +22,7 @@
             <a href="{% url 'landing_page' %}" class="nav-link">Главная</a>
             <a href="{% url 'event_list' %}" class="nav-link">Каталог мероприятий</a>
             <a href="{% url 'venues:venue_list' %}" class="nav-link">Каталог залов</a>
+            <a href="#" class="nav-link nav-link-accent" data-open-venue-request>Добавить площадку</a>
             <a href="{% url 'about' %}" class="nav-link">О платформе</a>
             <a href="{% url 'faq' %}" class="nav-link">FAQ</a>
             <a href="{% url 'contacts' %}" class="nav-link">Контакты</a>
@@ -84,6 +85,7 @@
                 <a href="{% url 'landing_page' %}" class="burger-nav-link">Главная</a>
                 <a href="{% url 'event_list' %}" class="burger-nav-link">Каталог мероприятий</a>
                 <a href="{% url 'venues:venue_list' %}" class="burger-nav-link">Каталог залов</a>
+                <a href="#" class="burger-nav-link" data-open-venue-request>Добавить площадку</a>
                 <a href="{% url 'about' %}" class="burger-nav-link">О платформе</a>
                 <a href="{% url 'faq' %}" class="burger-nav-link">FAQ</a>
                 <a href="{% url 'contacts' %}" class="burger-nav-link">Контакты</a>
@@ -97,5 +99,56 @@
                 <a href="{% url 'privacy_policy' %}" class="burger-footer-link">Политика обработки данных</a>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="venue-request-modal" class="venue-request-modal" aria-hidden="true">
+    <div class="venue-request-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="venue-request-modal-title">
+        <button type="button" class="venue-request-modal__close" data-close-venue-request aria-label="Закрыть">&times;</button>
+        <div class="venue-request-modal__header">
+            <p class="venue-request-eyebrow">КАТАЛОГ ПЛОЩАДОК</p>
+            <h2 id="venue-request-modal-title">Предложить площадку</h2>
+            <p>Оставьте контакты, и мы свяжемся с вами для уточнения деталей.</p>
+        </div>
+        <form method="post" action="{% url 'venues:venue_addition_request' %}" id="venue-request-form" novalidate>
+            {% csrf_token %}
+            <div class="venue-request-grid">
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="modal-venue-name">Название площадки</label>
+                    <input id="modal-venue-name" name="venue_name" maxlength="255" required>
+                    <span class="venue-request-field-error" data-error-for="venue_name"></span>
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="modal-venue-address">Адрес площадки</label>
+                    <input id="modal-venue-address" name="address" maxlength="255" required>
+                    <span class="venue-request-field-error" data-error-for="address"></span>
+                </div>
+                <div class="venue-request-field">
+                    <label for="modal-applicant-name">Ваше имя</label>
+                    <input id="modal-applicant-name" name="applicant_name" maxlength="255" value="{{ user.get_full_name|default:user.username }}" required>
+                    <span class="venue-request-field-error" data-error-for="applicant_name"></span>
+                </div>
+                <div class="venue-request-field">
+                    <label for="modal-applicant-phone">Телефон</label>
+                    <input id="modal-applicant-phone" name="applicant_phone" maxlength="30" value="{{ user.phone|default:'' }}" required>
+                    <span class="venue-request-field-error" data-error-for="applicant_phone"></span>
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="modal-applicant-email">Email</label>
+                    <input id="modal-applicant-email" name="applicant_email" type="email" value="{{ user.email|default:'' }}" required>
+                    <span class="venue-request-field-error" data-error-for="applicant_email"></span>
+                </div>
+                <div class="venue-request-field venue-request-field-wide">
+                    <label for="modal-venue-comment">Комментарий <span>необязательно</span></label>
+                    <textarea id="modal-venue-comment" name="comment" maxlength="1000" rows="3"></textarea>
+                    <span class="venue-request-field-error" data-error-for="comment"></span>
+                </div>
+            </div>
+            <div class="venue-request-modal__actions">
+                <button type="button" class="venue-request-modal__cancel" data-close-venue-request>Отмена</button>
+                <button type="submit" class="venue-request-modal__submit">Отправить заявку</button>
+            </div>
+            <div class="venue-request-modal__result" data-venue-request-result></div>
+        </form>
     </div>
 </div>
