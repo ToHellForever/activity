@@ -13,41 +13,14 @@ logger = logging.getLogger(__name__)
 
 class YandexDocumentProcessingStorage(YandexCloudWithProcessingStorage):
     """
-    Хранилище для документов с обработкой:
-    - PDF: извлечение первых 3 страниц.
-    - DOCX: извлечение текста в .txt.
-    - XLSX: конвертация в CSV.
-    - CSV, TXT, и другие: без изменений.
+    Хранилище для документов.
+
+    Документ загружается в исходном формате, а временная локальная копия
+    удаляется базовым хранилищем после успешной загрузки.
     """
 
     def _process_file(self, temp_path, name):
-        """
-        Обрабатывает документ перед загрузкой.
-        """
-        try:
-            # Определяем расширение файла
-            ext = os.path.splitext(temp_path)[1].lower()
-            base_name = os.path.splitext(temp_path)[0]
-            processed_path = temp_path  # По умолчанию оставляем как есть
-
-            if ext == '.pdf':
-                processed_path = self._process_pdf(temp_path, base_name)
-            elif ext == '.xlsx':
-                processed_path = self._process_xlsx(temp_path, base_name)
-            elif ext == '.docx':
-                processed_path = self._process_docx(temp_path, base_name)
-            # Для .csv, .txt, .jpg, .png и других форматов обработка не требуется
-            # Файл будет загружен как есть
-
-            # Возвращаем processed_path и список файлов для удаления (temp_path)
-            files_to_delete = []
-            if processed_path != temp_path:
-                files_to_delete.append(os.path.normpath(temp_path))
-            return processed_path, files_to_delete
-
-        except Exception as e:
-            logger.error(f"Ошибка при обработке документа {name}: {e}")
-            return temp_path, []  # В случае ошибки возвращаем исходный файл
+        return temp_path, []
 
     def _process_pdf(self, temp_path, base_name):
         """Извлекает первые 3 страницы из PDF."""

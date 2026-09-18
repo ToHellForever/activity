@@ -47,7 +47,7 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
         processed_path = None
         # Выходной файл _save никогда не должен совпадать с входным temp-файлом:
         # иначе он попадёт в files_to_delete и будет удалён до загрузки в облако.
-        files_to_delete = set()  # Используем set для избежания дубликатов
+        files_to_delete = {os.path.normpath(temp_path)}  # Используем set для избежания дубликатов
         
         try:
             logger.info(f"Saving file to temp path: {temp_path}")
@@ -73,6 +73,7 @@ class YandexCloudWithProcessingStorage(S3Boto3Storage):
 
             # Добавляем файлы в список на удаление
             # processed_path всегда нужно удалить после загрузки
+            files_to_delete.add(os.path.normpath(temp_path))
             files_to_delete.add(os.path.normpath(processed_path))
             for f in additional_files:
                 if f:

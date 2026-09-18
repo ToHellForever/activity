@@ -47,7 +47,8 @@ def send_scheduled_reports():
             )
 
             # Сохраняем файл
-            file_name = f"report_{period_start}_{period_end}.{schedule.report_format}"
+            file_extension = "xlsx" if schedule.report_format == "excel" else schedule.report_format
+            file_name = f"report_{period_start}_{period_end}.{file_extension}"
             report.file_path.save(
                 file_name,
                 ContentFile(report_file.getvalue()),
