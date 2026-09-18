@@ -179,8 +179,33 @@ def process_video_task(
             logger.info(f"CELERY TASK: No video for {model_name} {instance_id}")
             return f"Видео не требуется: {model_name} {instance_id}"
 
-        # Получаем путь к временному файлу
-        video_path = video_field.path
+        # Получаем путь к временному файлу. Видео-обработчик хранит исходник
+        # в MEDIA_TEMP_DIR, поэтому путь storage может указывать на MEDIA_ROOT.
+        try:
+            video_path = video_field.path
+        except (NotImplementedError, AttributeError, ValueError):
+            video_path = None
+
+        if not video_path or not os.path.exists(video_path):
+            temp_root = getattr(
+                settings,
+                'MEDIA_TEMP_DIR',
+                os.path.join(settings.BASE_DIR, 'media_temp'),
+            )
+            video_name = str(video_field.name).replace('/', os.sep)
+            temp_candidates = [
+                os.path.join(temp_root, video_name),
+                os.path.join(temp_root, os.path.basename(video_name)),
+            ]
+            for candidate in temp_candidates:
+                if os.path.exists(candidate):
+                    logger.info(
+                        "CELERY TASK: Using temporary video path fallback: %s",
+                        candidate,
+                    )
+                    video_path = candidate
+                    break
+
         logger.info(f"CELERY TASK: Processing video for {model_name} {instance_id}")
         logger.info(f"CELERY TASK: video_field={video_field}")
         logger.info(f"CELERY TASK: video_field.name={video_field.name}")
