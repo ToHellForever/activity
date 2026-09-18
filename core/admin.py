@@ -1407,7 +1407,7 @@ class PartnerAdmin(admin.ModelAdmin):
         # Отправляем email с причиной
         from django.core.mail import send_mail
         from django.conf import settings
-        try:
+        try: 
             send_mail(
                 subject='Ваш аккаунт отклонён',
                 message=f'''Здравствуйте, {obj.get_full_name()}!
