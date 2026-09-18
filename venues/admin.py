@@ -177,6 +177,20 @@ class VenueAdmin(admin.ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
 
+        images = request.FILES.getlist("images")
+        if images:
+            venue = form.instance
+            limits = venue.TARIFF_LIMITS.get(venue.tariff, {})
+            max_photos = limits.get("max_photos", 1)
+            current_count = VenueImage.objects.filter(venue=venue).count()
+            for image in images:
+                if current_count >= max_photos:
+                    raise ValidationError(
+                        f"Для тарифа {venue.get_tariff_display()} можно загрузить не более {max_photos} фотографий."
+                    )
+                VenueImage.objects.create(venue=venue, image=image)
+                current_count += 1
+
         if "video-clear" in request.POST:
             venue = form.instance
             if venue.video:
@@ -191,33 +205,18 @@ class VenueAdmin(admin.ModelAdmin):
     def save_form(self, request, form, change):
         obj = super().save_form(request, form, change)
 
-        # Обработка множественной загрузки фотографий при создании/редактировании площадки
-        if "images" in request.FILES:
-            images = request.FILES.getlist("images")
-            if images:
-                from django.core.exceptions import NON_FIELD_ERRORS
-
-                try:
-                    tariff = form.instance.tariff
-                    limits = form.instance.TARIFF_LIMITS.get(tariff, {})
-                    max_photos = limits.get("max_photos", 1)
-                    current_count = VenueImage.objects.filter(
-                        venue=form.instance
-                    ).count()
-
-                    for image in images:
-                        if current_count >= max_photos:
-                            form._errors[NON_FIELD_ERRORS] = form.error_class(
-                                [
-                                    f"Для тарифа {form.instance.get_tariff_display()} можно загрузить не более {max_photos} фотографий. "
-                                    f"Текущее количество: {current_count}"
-                                ]
-                            )
-                            break
-                        VenueImage.objects.create(venue=form.instance, image=image)
-                        current_count += 1
-                except Exception as e:
-                    form._errors[NON_FIELD_ERRORS] = form.error_class([str(e)])
+        # Проверяем лимит до сохранения Venue, а сами фото создаём после его save().
+        images = request.FILES.getlist("images")
+        if images:
+            limits = obj.TARIFF_LIMITS.get(obj.tariff, {})
+            max_photos = limits.get("max_photos", 1)
+            current_count = VenueImage.objects.filter(venue=obj).count() if obj.pk else 0
+            if current_count + len(images) > max_photos:
+                form.add_error(
+                    None,
+                    f"Для тарифа {obj.get_tariff_display()} можно загрузить не более {max_photos} фотографий. "
+                    f"Текущее количество: {current_count}.",
+                )
 
         return obj
 

@@ -1,8 +1,13 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.admin.sites import AdminSite
+from django.test import RequestFactory
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from .forms import VenueAdditionRequestForm
-from .models import VenueAdditionRequest
+from .models import Venue, VenueAdditionRequest, VenueImage, VenueType
+from .admin import VenueAdmin
+from .forms import VenueForm
 
 
 class VenueAdditionRequestTests(TestCase):
@@ -42,3 +47,45 @@ class VenueAdditionRequestTests(TestCase):
 		self.assertJSONEqual(response.content, {"success": True})
 		self.assertEqual(VenueAdditionRequest.objects.count(), 1)
 		self.assertEqual(VenueAdditionRequest.objects.get().status, "new")
+
+
+class VenueAdminCrudTests(TestCase):
+	def test_uploaded_image_is_created_after_venue_is_saved(self):
+		venue_type = VenueType.objects.create(name="Конференц-зал")
+		form = VenueForm(data={
+			"tariff": 1,
+			"title": "Тестовая площадка",
+			"description": "Описание",
+			"venue_type": venue_type.pk,
+			"address": "ул. Тестовая, 1",
+			"city": "Новосибирск",
+			"district": "",
+			"metro": "",
+			"area": 100,
+			"max_capacity": 50,
+			"price": 1000,
+			"price_unit": "day",
+			"equipment": [],
+			"formats": [],
+			"status": "draft",
+			"contacts_opened": False,
+			"contact_info": "",
+			"email": "venue@example.com",
+			"meta_title": "",
+			"meta_description": "",
+		}, files={
+			"images": [SimpleUploadedFile("venue.jpg", b"image")],
+		})
+		self.assertTrue(form.is_valid(), form.errors)
+
+		request = RequestFactory().post("/admin/venues/venue/add/")
+		request.FILES.setlist("images", [SimpleUploadedFile("venue.jpg", b"image")])
+		admin_obj = VenueAdmin(Venue, AdminSite())
+		venue = admin_obj.save_form(request, form, change=False)
+
+		self.assertIsNone(venue.pk)
+		self.assertEqual(VenueImage.objects.count(), 0)
+		venue.save()
+		admin_obj.save_related(request, form, [], change=False)
+
+		self.assertEqual(VenueImage.objects.filter(venue=venue).count(), 1)

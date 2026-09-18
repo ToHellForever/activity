@@ -7,12 +7,29 @@ import tempfile
 from datetime import timedelta
 
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.contrib.admin.sites import AdminSite
+from django.test import RequestFactory
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
-from core.models import Event, User, EventPackage, UserPackageSubscription
+from core.models import (
+    Event,
+    User,
+    EventPackage,
+    UserPackageSubscription,
+    PartnerDocument,
+    PayoutDetails,
+    PayoutRequest,
+)
+from core.admin import (
+    EventAdmin,
+    PartnerDocumentAdmin,
+    PayoutRequestAdmin,
+    UserPackageSubscriptionAdmin,
+)
 from core.tasks import check_and_apply_scheduled_package_changes
 from core.validators import validate_video_duration
 from core.video_storage import YandexVideoProcessingStorage
@@ -291,3 +308,128 @@ class PackageSubscriptionLifecycleTestCase(TestCase):
                 user=self.user, is_active=True
             ).exists()
         )
+
+
+class AdminCrudRegressionTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.site = AdminSite()
+        self.admin_user = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass123",
+        )
+        self.partner = User.objects.create_user(
+            username="partner-admin-test",
+            email="partner-admin-test@example.com",
+            password="testpass123",
+            user_type="partner",
+        )
+        self.package_basic = EventPackage.objects.create(name="Admin Basic", price=100)
+        self.package_priority = EventPackage.objects.create(name="Admin Priority", price=300)
+
+    def test_document_rejection_updates_partner_status(self):
+        document = PartnerDocument.objects.create(
+            user=self.partner,
+            document=SimpleUploadedFile("document.pdf", b"pdf"),
+        )
+        document.is_approved = False
+        document.rejection_reason = "Нужен читаемый документ"
+
+        request = self.factory.post("/admin/core/partnerdocument/")
+        request.user = self.admin_user
+        PartnerDocumentAdmin(PartnerDocument, self.site).save_model(
+            request, document, form=None, change=True
+        )
+
+        self.partner.refresh_from_db()
+        document.refresh_from_db()
+        self.assertEqual(self.partner.organizer_status, "rejected")
+        self.assertEqual(self.partner.organizer_rejection_reason, "Нужен читаемый документ")
+        self.assertEqual(document.reviewer_id, self.admin_user.id)
+        self.assertIsNotNone(document.reviewed_at)
+
+    def test_bulk_subscription_activation_keeps_one_active_subscription_per_user(self):
+        first = UserPackageSubscription.objects.create(
+            user=self.partner,
+            package=self.package_basic,
+            is_active=False,
+            subscription_type="monthly",
+        )
+        second = UserPackageSubscription.objects.create(
+            user=self.partner,
+            package=self.package_priority,
+            is_active=False,
+            subscription_type="monthly",
+        )
+        request = self.factory.post("/admin/core/userpackagesubscription/")
+        request.user = self.admin_user
+        admin_obj = UserPackageSubscriptionAdmin(UserPackageSubscription, self.site)
+
+        with patch.object(admin_obj, "message_user"):
+            admin_obj.activate_subscriptions(
+                request,
+                UserPackageSubscription.objects.filter(pk__in=[first.pk, second.pk]),
+            )
+
+        active = UserPackageSubscription.objects.filter(user=self.partner, is_active=True)
+        self.assertEqual(active.count(), 1)
+        self.assertEqual(active.first().pk, second.pk)
+
+    def test_bulk_event_activation_respects_package_limit(self):
+        active_event = Event.objects.create(
+            organizer=self.partner,
+            title="Уже активно",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=2),
+            status="active",
+            package=self.package_basic,
+        )
+        pending_event = Event.objects.create(
+            organizer=self.partner,
+            title="Ожидает",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=3),
+            status="on_moderation",
+            package=self.package_basic,
+        )
+        request = self.factory.post("/admin/core/event/")
+        request.user = self.admin_user
+        admin_obj = EventAdmin(Event, self.site)
+
+        with patch.object(admin_obj, "message_user"), self.assertRaises(ValidationError):
+            admin_obj.to_active(request, Event.objects.filter(pk=pending_event.pk))
+
+        pending_event.refresh_from_db()
+        self.assertEqual(pending_event.status, "on_moderation")
+        self.assertEqual(active_event.status, "active")
+
+    def test_reject_payout_action_saves_admin_comment(self):
+        details = PayoutDetails.objects.create(
+            partner=self.partner,
+            bank_name="other",
+            account_number="123",
+            account_holder="Иван Петров",
+        )
+        payout = PayoutRequest.objects.create(
+            organizer=self.partner,
+            amount=100,
+            payment_details=details,
+        )
+        request = self.factory.post(
+            "/admin/core/payoutrequest/",
+            {
+                "apply_rejection": "1",
+                "rejection_comment": "Не хватает подтверждающих документов",
+                "_selected_action": [str(payout.pk)],
+            },
+        )
+        request.user = self.admin_user
+        admin_obj = PayoutRequestAdmin(PayoutRequest, self.site)
+
+        with patch.object(admin_obj, "message_user"):
+            admin_obj.mark_as_rejected(request, PayoutRequest.objects.filter(pk=payout.pk))
+
+        payout.refresh_from_db()
+        self.assertEqual(payout.status, "rejected")
+        self.assertEqual(payout.rejection_comment, "Не хватает подтверждающих документов")

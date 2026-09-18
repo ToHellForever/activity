@@ -56,6 +56,17 @@ class PartnerProfileAdmin(admin.ModelAdmin):
         }),
     )
 
+    def delete_model(self, request, obj):
+        for field_name in ("logo", "video_business_card"):
+            field = getattr(obj, field_name, None)
+            if field:
+                field.delete(save=False)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self.delete_model(request, obj)
+
 
 @admin.register(SalesReport)
 class SalesReportAdmin(admin.ModelAdmin):
@@ -121,6 +132,12 @@ class PortfolioImageAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-width: 80px; border-radius: 4px;" />', obj.image.url)
         return "—"
     preview.short_description = "Превью"
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            if obj.image:
+                obj.image.delete(save=False)
+            obj.delete()
 
 
 @admin.register(EventAccessLink)

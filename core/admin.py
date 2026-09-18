@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
-from django.utils.html import mark_safe
+from django.utils.html import conditional_escape, mark_safe
 from django.db.models import F, Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
@@ -88,8 +88,17 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
         from django.core.mail import send_mail
         from django.conf import settings
 
-        is_new_approval = change and obj.is_approved and not obj.reviewed_at
-        is_rejection = change and not obj.is_approved and obj.reviewed_at
+        previous = None
+        if change:
+            previous = PartnerDocument.objects.get(pk=obj.pk)
+
+        is_new_approval = change and obj.is_approved and not previous.is_approved
+        is_rejection = (
+            change
+            and not obj.is_approved
+            and bool(obj.rejection_reason)
+            and (not previous.rejection_reason or previous.rejection_reason != obj.rejection_reason)
+        )
         
         # Сохраняем объект
         super().save_model(request, obj, form, change)
@@ -128,6 +137,9 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
                 
         elif is_rejection:
             # Документ отклонён
+            obj.reviewed_at = timezone.now()
+            obj.reviewer = request.user
+            obj.save(update_fields=['reviewed_at', 'reviewer'])
             obj.user.organizer_status = "rejected"
             obj.user.organizer_rejection_reason = obj.rejection_reason or None
             obj.user.save(update_fields=['organizer_status', 'organizer_rejection_reason'])
@@ -458,13 +470,15 @@ class EventAdmin(admin.ModelAdmin):
             )
             return None
 
-        form = """
+        selected_inputs = "".join(
+            f'<input type="hidden" name="_selected_action" value="{event.pk}">'
+            for event in queryset
+        )
+        form = f"""
         <form method="post">
             <input type="hidden" name="action" value="reject_events">
             <input type="hidden" name="action_check" value="1">
-            {% for q in queryset %}
-                <input type="hidden" name="_selected_action" value="{{ q.id }}">
-            {% endfor %}
+            {selected_inputs}
             <div style="margin: 10px 0;">
                 <label for="rejection_reason">Укажите причину отклонения:</label><br>
                 <textarea id="rejection_reason" name="rejection_reason" rows="4" cols="60" required></textarea>
@@ -510,8 +524,18 @@ class EventAdmin(admin.ModelAdmin):
     # Действие для установки статуса "Активно"
     def to_active(self, request, queryset):
         from core.tasks import process_video_task
+        activation_offsets = {}
         for event in queryset:
-            self._check_active_events_limit(request, event, is_activating=True)
+            active_subscription = event.organizer.userpackagesubscription_set.filter(is_active=True).first()
+            package = event.package or (active_subscription.package if active_subscription else None)
+            key = (event.organizer_id, package.id if package else None)
+            self._check_active_events_limit(
+                request,
+                event,
+                is_activating=True,
+                additional_active_count=activation_offsets.get(key, 0),
+            )
+            activation_offsets[key] = activation_offsets.get(key, 0) + 1
             # Запускаем обработку видео, если оно есть и статус pending/processing
             if event.video_url and event.video_processing_status in ('pending', 'processing'):
                 logger.info(f"to_active: Запуск обработки видео для Event {event.id}")
@@ -584,7 +608,14 @@ class EventAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
  
-    def _check_active_events_limit(self, request, event, original_status=None, is_activating=False):
+    def _check_active_events_limit(
+        self,
+        request,
+        event,
+        original_status=None,
+        is_activating=False,
+        additional_active_count=0,
+    ):
         """Проверяет, не превышает ли количество активных мероприятий лимит пакета."""
         from .models import Event
 
@@ -621,6 +652,7 @@ class EventAdmin(admin.ModelAdmin):
         # Если это активация мероприятия (перевод в статус "active"), учитываем его в лимитах
         if is_activating or event.status == "active":
             active_events_count += 1
+        active_events_count += additional_active_count
 
         # Проверяем не превышает ли количество активных мероприятий лимит пакета
         if active_events_count > package.max_active_events:
@@ -783,9 +815,25 @@ class PayoutRequestAdmin(admin.ModelAdmin):
     mark_as_paid.short_description = "Отметить как выплаченные"
 
     def mark_as_rejected(self, request, queryset):
-        """Action: отклонить заявки (статус нужно указать в форме)."""
-        updated = queryset.update(status="rejected")
-        self.message_user(request, f"Отклонено заявок: {updated}. Добавьте комментарий в карточку заявки.")
+        """Отклонить заявки с обязательной причиной администратора."""
+        selected_ids = request.POST.getlist("_selected_action")
+        if request.POST.get("apply_rejection"):
+            rejection_comment = request.POST.get("rejection_comment", "").strip()
+            if not rejection_comment:
+                self.message_user(request, "Укажите причину отклонения.", level=messages.ERROR)
+            else:
+                updated = queryset.filter(pk__in=selected_ids).update(
+                    status="rejected",
+                    rejection_comment=rejection_comment,
+                )
+                self.message_user(request, f"Отклонено заявок: {updated}.")
+                return None
+
+        return render(
+            request,
+            "admin/payout_rejection_form.html",
+            {"queryset": queryset, "selected_ids": selected_ids},
+        )
     mark_as_rejected.short_description = "Отклонить заявки"
 
 @admin.register(EventPackage)
@@ -971,12 +1019,18 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
     def activate_subscriptions(self, request, queryset):
         """Массовая активация подписок из списка."""
         activated = 0
-        for subscription in queryset:
+        skipped = 0
+        selected_by_user = {}
+        for subscription in queryset.order_by('user_id', '-id'):
+            selected_by_user.setdefault(subscription.user_id, subscription)
+
+        for subscription in selected_by_user.values():
             if self.activate_subscription(subscription):
                 activated += 1
+        skipped = queryset.count() - len(selected_by_user)
         self.message_user(
             request,
-            f'Активировано подписок: {activated} из {queryset.count()}.',
+            f'Активировано подписок: {activated}. Пропущено дубликатов пользователя: {skipped}.',
             messages.SUCCESS if activated else messages.INFO,
         )
 
@@ -1551,9 +1605,9 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             for label, current, proposed in rows:
                 html.append(
                     f'<tr>'
-                    f'<td style="border:1px solid #ddd; padding:6px;">{label}</td>'
-                    f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{current}</td>'
-                    f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{proposed}</td>'
+                    f'<td style="border:1px solid #ddd; padding:6px;">{conditional_escape(label)}</td>'
+                    f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{conditional_escape(current)}</td>'
+                    f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{conditional_escape(proposed)}</td>'
                     f'</tr>'
                 )
             html.append('</table>')
@@ -1749,7 +1803,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             html.append(
                 f'<tr style="{action_class}">'
                 f'<td style="border:1px solid #dee2e6; padding:8px; font-size:12px;">{action_label}</td>'
-                f'<td style="border:1px solid #dee2e6; padding:8px; {name_style}">{prop["name"] if prop else cur["obj"].name}</td>'
+                f'<td style="border:1px solid #dee2e6; padding:8px; {name_style}">{conditional_escape(prop["name"] if prop else cur["obj"].name)}</td>'
                 f'{color_cell}'
                 f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right; {price_style}">{cur_price} → {prop_price}</td>'
                 f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{cur_qty} → {prop_qty}</td>'

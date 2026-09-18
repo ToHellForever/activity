@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Отклонить заявки на выплату</h1>
+    <p>Укажите причину отклонения. Она будет сохранена в каждой выбранной заявке.</p>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_as_rejected">
+        <input type="hidden" name="apply_rejection" value="1">
+        {% for item in selected_ids %}
+            <input type="hidden" name="_selected_action" value="{{ item }}">
+        {% endfor %}
+        <textarea name="rejection_comment" rows="5" cols="80" required></textarea>
+        <div class="submit-row">
+            <input type="submit" value="Отклонить заявки" class="default">
+            <a href="../" class="button cancel-link">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
