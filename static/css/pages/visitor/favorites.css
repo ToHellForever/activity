@@ -36,7 +36,9 @@
   align-items: center !important;
   justify-content: center !important;
   flex-direction: column !important;
-    margin: auto;
+  width: 100%;
+  min-height: 520px;
+  margin: 0;
   text-align: center;
 }
 
