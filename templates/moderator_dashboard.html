@@ -99,6 +99,39 @@
   }
   .ticket-item:hover { border-color: #ff8348; background: #fffbf3; }
   .ticket-item.active { border-color: #f56e24; background: #fffbf3; }
+  .tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-left: 6px;
+    background: #f56e24;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 9px;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  .moderator-tab-btn.active .tab-badge,
+  .moderator-filter-btn.active .tab-badge { background: #fff; color: #f56e24; }
+  .ticket-unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #f56e24;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 10px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
   .ticket-item a { text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
   .ticket-info { flex: 1; min-width: 0; }
   .ticket-info .ticket-subject {
@@ -253,9 +286,18 @@
 
     <!-- Фильтры по статусу -->
     <div class="moderator-filters">
-      <a href="?tab={{ tab }}&status=new" class="moderator-filter-btn {% if filter_status == 'new' %}active{% endif %}">Новые</a>
-      <a href="?tab={{ tab }}&status=in_progress" class="moderator-filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">В работе</a>
-      <a href="?tab={{ tab }}&status=closed" class="moderator-filter-btn {% if filter_status == 'closed' %}active{% endif %}">Закрытые</a>
+      <a href="?tab={{ tab }}&status=new" class="moderator-filter-btn {% if filter_status == 'new' %}active{% endif %}">
+        Новые
+        {% if status_unread.new > 0 %}<span class="tab-badge">{{ status_unread.new }}</span>{% endif %}
+      </a>
+      <a href="?tab={{ tab }}&status=in_progress" class="moderator-filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">
+        В работе
+        {% if status_unread.in_progress > 0 %}<span class="tab-badge">{{ status_unread.in_progress }}</span>{% endif %}
+      </a>
+      <a href="?tab={{ tab }}&status=closed" class="moderator-filter-btn {% if filter_status == 'closed' %}active{% endif %}">
+        Закрытые
+        {% if status_unread.closed > 0 %}<span class="tab-badge">{{ status_unread.closed }}</span>{% endif %}
+      </a>
     </div>
 
     <!-- Список тикетов -->
@@ -267,6 +309,7 @@
             <div class="ticket-date">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
           </div>
           <span class="ticket-status status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+          {% if ticket.unread_count > 0 %}<span class="ticket-unread-badge">{{ ticket.unread_count }}</span>{% endif %}
         </a>
       </div>
     {% empty %}
@@ -365,10 +408,12 @@
       <!-- История сообщений -->
       <div class="support-chat-history">
         {% for message in chat_messages %}
-          <div class="support-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
+          <!-- Модератор видит: сообщения пользователя (is_from_user) слева как agent,
+               свои ответы (не is_from_user) справа как user -->
+          <div class="support-message {% if message.is_from_user %}agent{% else %}user{% endif %}">
             <div class="support-avatar">
               {% if message.is_from_user %}
-                <span class="sender-initials">ВЫ</span>
+                <span class="sender-initials">{{ message.user.get_full_name|default:message.user.email|slice:":2"|upper }}</span>
               {% else %}
                 <img src="/media/icon/fluent_person-support-20-filled.svg" alt="">
               {% endif %}

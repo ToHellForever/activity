@@ -512,12 +512,16 @@ def send_support_message(request):
                     status=403,
                 )
 
-            # Создаем сообщение
+            # Создаем сообщение.
+            # is_from_user=True только если пишет владелец тикета;
+            # ответы модератора/организатора — is_from_user=False,
+            # чтобы корректно отображать стороны диалога у обоих собеседников.
+            is_from_user = ticket.user_id == request.user.id
             message = SupportMessage.objects.create(
                 ticket=ticket,
-                user=request.user, 
+                user=request.user,
                 text=text,
-                is_from_user=True
+                is_from_user=is_from_user
             )
             
             # Если есть файлы — используем SupportAttachment
@@ -532,7 +536,7 @@ def send_support_message(request):
                 'message': {
                     'id': message.id,
                     'text': message.text,
-                    'is_from_user': True,
+                    'is_from_user': is_from_user,
                     'user_first_name': request.user.first_name or '',
                     'user_email': request.user.email or '',
                     'full_created_at': created_dt.isoformat(), 
@@ -579,20 +583,19 @@ def moderator_dashboard(request):
     # Фильтр по статусу (новые, в работе, закрытые)
     filter_status = request.GET.get("status", "new")
 
-    # Получаем тикеты по табу и статусу
+    # Базовый queryset тикетов для таба (без фильтра по статусу)
     if tab == "participants":
-        # Не партнёры (участники и гости) — только техподдержка платформы
-        tickets = SupportTicket.objects.filter(
-            status=filter_status,
+        tab_tickets = SupportTicket.objects.filter(
             ticket_type="support",
             user__user_type__in=["visitor", "guest"]
-        ).order_by("-created_at")
+        )
     else:
-        # Партнёры — любой тип тикета
-        tickets = SupportTicket.objects.filter(
-            status=filter_status,
+        tab_tickets = SupportTicket.objects.filter(
             user__user_type="partner"
-        ).order_by("-created_at")
+        )
+
+    # Получаем тикеты по табу и статусу
+    tickets = tab_tickets.filter(status=filter_status).order_by("-created_at")
 
     tickets = annotate_unread_counts(tickets, request.user)
 
@@ -609,6 +612,12 @@ def moderator_dashboard(request):
         ),
         request.user,
     )
+
+    # Счётчики непрочитанных по каждому статусу в текущем табе (для бейджей фильтров)
+    status_unread = {
+        s: total_unread_count(tab_tickets.filter(status=s), request.user)
+        for s in ("new", "in_progress", "closed")
+    }
 
     # По умолчанию чат пустой
     selected_ticket = None
@@ -627,6 +636,7 @@ def moderator_dashboard(request):
         "chat_messages": chat_messages,
         "organizers_unread": organizers_unread,
         "participants_unread": participants_unread,
+        "status_unread": status_unread,
         "filter_status": filter_status,
         "tab": tab,
         "compose": request.GET.get("compose") == "1",

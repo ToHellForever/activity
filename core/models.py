@@ -1329,6 +1329,11 @@ class SupportMessage(models.Model):
     def __str__(self):
         return f"Сообщение к тикету #{self.ticket.id}"
 
+    class Meta:
+        ordering = ["created_at", "id"]
+        verbose_name = "Сообщение поддержки"
+        verbose_name_plural = "Сообщения поддержки"
+
 class EmailVerificationCode(models.Model):
     """
     Модель для хранения кодов подтверждения почты.
