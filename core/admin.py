@@ -1167,7 +1167,7 @@ class PartnerProfileInline(admin.StackedInline):
             "fields": ("vk_link", "max_link", "telegram_link", "cases", "reviews"),
         }),
         ("Логотип", {
-            "fields": ("logo",),
+            "fields": ("logo", "video_business_card"),
         }),
     )
 
@@ -1465,16 +1465,6 @@ class PartnerAdmin(admin.ModelAdmin):
             logger.error(f"Не удалось отправить email об отклонении: {e}")
         
         return redirect(request.META.get('HTTP_REFERER', '/admin/'))
-
-# Регистрируем модели, которые ещё не зарегистрированы
-try:
-    admin.site.unregister(CustomUser)
-except:
-    pass
-
-# Регистрируем админку для партнёров
-admin.site.register(CustomUser, PartnerAdmin)
-
 
 # Регистрируем подписки на пакеты
 @admin.register(Category)
