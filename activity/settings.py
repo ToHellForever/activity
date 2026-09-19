@@ -30,7 +30,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://biznesafisha.ru',
     'http://бизафиша.рф',
     'http://бизнесафиша.рф',
-    ]
+    ] 
 # URL сайта для генерации QR-кодов
 SITE_URL = os.getenv('SITE_URL', 'https://bizafisha.ru')
 
