@@ -21,6 +21,17 @@ document.addEventListener('DOMContentLoaded', function() {
             fileText.textContent = 'Выберите файлы';
             fileCount.style.display = 'none';
         });
+
+        // Из закрытого обращения — открыть форму нового обращения
+        document.querySelectorAll('.open-new-ticket').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                form.style.display = 'flex';
+                newBtn.style.display = 'none';
+                newBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const subjectInput = document.getElementById('new_subject');
+                if (subjectInput) subjectInput.focus();
+            });
+        });
     }
 
     if (attachmentInput) {
@@ -84,6 +95,8 @@ const supportHistory = document.querySelector('.support-chat-history');
 if (supportForm && supportHistory) {
     supportForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        // Закрытое обращение — отправка запрещена
+        if (supportForm.classList.contains('is-locked')) return;
         const text = supportTextInput.value.trim();
         const files = supportFileInput.files;
 

@@ -115,16 +115,25 @@
               {% endfor %}
             </div>
 
-            <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form" data-send-url="{% url 'send_support_message' %}">
+            {% if selected_ticket.status == 'closed' %}
+              <div class="chat-closed-notice">
+                🔒 Обращение закрыто. Ответить в этом чате нельзя, но вы можете
+                <button type="button" class="open-new-ticket">создать новое обращение</button>.
+              </div>
+            {% endif %}
+
+            <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form {% if selected_ticket.status == 'closed' %}is-locked{% endif %}" data-send-url="{% url 'send_support_message' %}">
               {% csrf_token %}
               <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
               <div class="support-chat-input-row">
-                <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+                <input type="text" name="text" id="chatTextInput"
+                       placeholder="{% if selected_ticket.status == 'closed' %}Обращение закрыто{% else %}Введите ваше сообщение...{% endif %}"
+                       {% if selected_ticket.status == 'closed' %}disabled{% endif %} required>
                 <div class="support-attachment-wrap">
-                  <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
+                  <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple {% if selected_ticket.status == 'closed' %}disabled{% endif %}>
                   <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
                 </div>
-                <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
+                <button type="submit" class="support-send-button" {% if selected_ticket.status == 'closed' %}disabled{% endif %}><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
               </div>
             </form>
           {% else %}

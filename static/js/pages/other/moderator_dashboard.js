@@ -12,15 +12,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // === МОБИЛЬНАЯ НАВИГАЦИЯ: переключение список/чат ===
+    const sidebar = document.querySelector('.moderator-sidebar');
+    const chat = document.querySelector('.moderator-chat');
+    const isMobile = () => window.innerWidth <= 768;
+
+    function showChat() {
+        if (isMobile() && sidebar && chat) {
+            sidebar.classList.add('mobile-hidden');
+            chat.classList.remove('mobile-hidden');
+        }
+    }
+
+    function showSidebar() {
+        if (isMobile() && sidebar && chat) {
+            chat.classList.add('mobile-hidden');
+            sidebar.classList.remove('mobile-hidden');
+        }
+    }
+
+    // При выборе тикета на мобильном — показываем чат
+    document.querySelectorAll('.ticket-item a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            showChat();
+        });
+    });
+
+    // Кнопка "Назад"
+    document.querySelectorAll('.back-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            showSidebar();
+        });
+    });
+
+    // Если тикет уже выбран при загрузке на мобильном — сразу чат
+    if (isMobile() && document.querySelector('.back-btn')) {
+        showChat();
+    }
+
+    // Кнопка "Написать пользователю" на мобильном — показываем чат
+    const composeBtn = document.querySelector('.compose-btn');
+    if (composeBtn) {
+        composeBtn.addEventListener('click', function() {
+            showChat();
+        });
+    }
+
     // ============================================================
     // ОТПРАВКА СООБЩЕНИЯ ЧЕРЕЗ AJAX (без перезагрузки страницы)
     // ============================================================
     const form = document.getElementById('chatSendForm');
     const textInput = document.getElementById('chatTextInput');
     const fileInput = document.getElementById('chatFileInput');
-    const history = document.querySelector('.chat-history');
+    const history = document.querySelector('.support-chat-history');
 
     if (!form || !history) return;
+
+    // Прокрутка вниз при загрузке, чтобы видеть последние сообщения
+    history.scrollTop = history.scrollHeight;
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -51,22 +100,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const m = data.message;
-            const wrapper = document.createElement('div');
-            wrapper.className = 'message ' + (m.is_from_user ? 'user' : 'moderator');
+            const isUser = m.is_from_user;
+            const msgClass = isUser ? 'user' : 'agent';
 
-            let bubbleContent = escapeHtml(m.text);
+            let bubbleContent = '<strong>' + escapeHtml(m.user_first_name || m.user_email) + '</strong>';
+            bubbleContent += '<div>' + escapeHtml(m.text) + '</div>';
             if (m.attachments && m.attachments.length) {
+                bubbleContent += '<div class="attachments">';
                 m.attachments.forEach(function(att) {
-                    bubbleContent += '<div style="margin-top: 8px;"><a href="' + att.url + '" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.9em; color: #1890ff; text-decoration: none;">📎 ' + att.name + '</a></div>';
+                    bubbleContent += '<a href="' + att.url + '" target="_blank" class="attachment-link">📄 ' + escapeHtml(att.name) + '</a>';
                 });
+                bubbleContent += '</div>';
             }
 
+            const avatarContent = isUser
+                ? '<span class="sender-initials">ВЫ</span>'
+                : '<img src="/media/icon/fluent_person-support-20-filled.svg" alt="">';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'support-message ' + msgClass;
             wrapper.innerHTML =
-                '<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-                    '<strong>' + escapeHtml(m.user_first_name || m.user_email) + '</strong>' +
-                    '<span style="font-size: 0.8em; color: #888;">' + m.created_at + '</span>' +
-                '</div>' +
-                '<div>' + bubbleContent + '</div>';
+                '<div class="support-avatar">' + avatarContent + '</div>' +
+                '<div class="support-message-body">' +
+                    '<div class="support-bubble">' + bubbleContent + '</div>' +
+                    '<div class="support-message-time">' + m.created_at + '</div>' +
+                '</div>';
 
             history.appendChild(wrapper);
             history.scrollTop = history.scrollHeight;

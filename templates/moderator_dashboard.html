@@ -2,156 +2,340 @@
 {% load static %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/support_dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/custom_scrollbar.css' %}">
 <style>
-  .moderator-layout { display: flex; height: calc(100vh - 100px); }
-  .moderator-sidebar { width: 30%; border-right: 1px solid #eee; padding: 20px; overflow-y: auto; background: #fafafa; }
-  .moderator-chat { width: 70%; padding: 20px; display: flex; flex-direction: column; }
-  .chat-history { flex: 1; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
-  .message { margin: 10px 0; padding: 12px 16px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
-  .message.user { background-color: #dcf8c6; margin-left: auto; }
-  .message.moderator { background-color: #ffffff; border: 1px solid #ddd; margin-right: auto; }
-  .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tab-btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.9em; text-decoration: none; color: #333; }
-  .tab-btn.active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
-  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  .filter-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.85em; text-decoration: none; color: #555; }
-  .filter-btn.active { background: #2c7be5; color: #fff; border-color: #2c7be5; }
-  .ticket-item { padding: 10px; border-radius: 6px; margin-bottom: 6px; background: #fff; border: 1px solid #e8e8e8; }
-  .ticket-item:hover { background: #f0f4ff; }
-  .ticket-item.active { background: #e3ecff; border-color: #4a90d9; }
-  .ticket-item a { text-decoration: none; color: #333; display: block; }
-  .ticket-item .badge { font-size: 0.75em; padding: 2px 8px; }
-  .status-new { background: #ffc107; color: #333; }
-  .status-in_progress { background: #17a2b8; color: #fff; }
-  .status-closed { background: #6c757d; color: #fff; }
-  .compose-btn { display: block; width: 100%; padding: 10px; margin-bottom: 16px; background: #28a745; color: #fff; border: none; border-radius: 6px; cursor: pointer; text-align: center; text-decoration: none; font-size: 0.95em; }
-  .compose-btn:hover { background: #218838; color: #fff; text-decoration: none; }
+  .moderator-page { display: flex; gap: 24px; padding: 24px 0; }
+  .moderator-sidebar {
+    width: 28%;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e8eef4;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  }
+  .moderator-chat {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #ffffff;
+    border: 1px solid #e8eef4;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    height: calc(100vh - 220px);
+    max-height: 800px;
+  }
+  .moderator-sidebar h2 {
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: clamp(0.9rem, 1vw, 1rem);
+    color: black;
+    margin: 15px 0 17px;
+  }
+  .moderator-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .moderator-tab-btn {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    color: #64748b;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .moderator-tab-btn:hover { border-color: #ff8348; color: #ff8348; }
+  .moderator-tab-btn.active { background: #ff8348; color: #fff; border-color: #ff8348; }
+  .moderator-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .moderator-filter-btn {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    color: #64748b;
+    font-size: clamp(0.7rem, 0.9vw, 0.8rem);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .moderator-filter-btn:hover { border-color: #ff8348; color: #ff8348; }
+  .moderator-filter-btn.active { background: #ff8348; color: #fff; border-color: #ff8348; }
+  .compose-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    margin-bottom: 12px;
+    background: #f56e24;
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
+  }
+  .compose-btn:hover { background: #e05f1a; color: #fff; text-decoration: none; }
+  .ticket-item {
+    margin-bottom: 7px;
+    padding: 10px 12px 12px 12px;
+    border-radius: 18px;
+    border: 1px solid #eef2f7;
+    background: #ffffff;
+  }
+  .ticket-item:hover { border-color: #ff8348; background: #fffbf3; }
+  .ticket-item.active { border-color: #f56e24; background: #fffbf3; }
+  .ticket-item a { text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
+  .ticket-info { flex: 1; min-width: 0; }
+  .ticket-info .ticket-subject {
+    font-size: 0.8rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ticket-info .ticket-date { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+  .ticket-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: clamp(0.6rem, 0.8vw, 0.7rem);
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .status-new { background: #fff2e6; color: #f56e24; }
+  .status-in_progress { background: #e6f7ff; color: #1890ff; }
+  .status-closed { background: #f0f0f0; color: #666; }
+  .moderator-chat-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .moderator-chat-header h3 {
+    font-family: "Verdana";
+    font-weight: 400;
+    font-size: clamp(1rem, 1.1vw, 1.2rem);
+    color: black;
+    margin: 0;
+  }
+  .moderator-chat-header p {
+    font-family: "Verdana";
+    font-weight: 400;
+    margin: 0;
+    color: #4b5563;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
+  }
+  .moderator-status-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .moderator-status-form select {
+    padding: 8px 14px;
+    border: 1px solid #d2dbe4;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: #1f2937;
+    background: #f8fafc;
+  }
+  .moderator-status-form button {
+    padding: 8px 16px;
+    background: #ff8348;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .moderator-status-form button:hover { background: #e05f1a; }
+  .back-btn {
+    display: none;
+    padding: 8px 16px;
+    background: #ff8348;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
   .compose-panel { max-width: 640px; }
   .user-search-wrap { position: relative; }
-  .search-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 50; background: #fff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); max-height: 260px; overflow-y: auto; margin-top: 4px; }
+  .search-results {
+    position: absolute;
+    left: 0; right: 0; top: 100%; z-index: 50;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 4px;
+  }
   .search-result-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-  .search-result-item:hover, .search-result-item.active { background: #f0f4ff; }
+  .search-result-item:hover, .search-result-item.active { background: #fffbf3; }
   .search-result-item:last-child { border-bottom: none; }
   .search-result-item .u-type { font-size: 0.75em; color: #888; }
   .search-results .search-hint { padding: 10px 12px; color: #888; }
-  .selected-user { display: inline-flex; align-items: center; gap: 8px; background: #e3ecff; border: 1px solid #4a90d9; border-radius: 6px; padding: 6px 12px; }
+  .selected-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffbf3;
+    border: 1px solid #ff8348;
+    border-radius: 12px;
+    padding: 6px 12px;
+  }
+
+  @media (max-width: 1140px) {
+    .moderator-page { flex-direction: column; padding: 0; }
+    .moderator-sidebar, .moderator-chat { width: 100%; height: auto; max-height: none; }
+  }
+  @media (max-width: 768px) {
+    .moderator-sidebar { padding: 12px; }
+    .moderator-chat { padding: 12px; }
+    .back-btn { display: inline-block; }
+    .moderator-sidebar.mobile-hidden { display: none; }
+    .moderator-chat.mobile-hidden { display: none; }
+    .moderator-chat .support-chat-history { max-height: 50vh; }
+    .moderator-tabs { gap: 6px; }
+    .moderator-tab-btn { font-size: 0.75rem; padding: 6px 10px; }
+    .support-chat-input-row { flex-direction: column; align-items: stretch; }
+    .support-chat-input-row input[type="text"] { width: 100%; box-sizing: border-box; }
+    .compose-panel { max-width: 100%; }
+    .ticket-item a { font-size: 0.85em; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="moderator-layout">
+<div class="moderator-page">
   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
   <div class="moderator-sidebar">
-    <h2 style="margin-bottom: 16px;">Управление обращениями</h2>
+    <h2>Управление обращениями</h2>
 
     <!-- Кнопка написать пользователю первым -->
     <a href="?compose=1" class="compose-btn">✉️ Написать пользователю</a>
 
     <!-- Табы: Организаторы / Участники -->
-    <div class="tab-bar">
-      <a href="?tab=organizers&status={{ filter_status }}" class="tab-btn {% if tab == 'organizers' %}active{% endif %}">
-        🏢 Вопросы от организаторов
+    <div class="moderator-tabs">
+      <a href="?tab=organizers&status={{ filter_status }}" class="moderator-tab-btn {% if tab == 'organizers' %}active{% endif %}">
+        🏢 Организаторы
       </a>
-      <a href="?tab=participants&status={{ filter_status }}" class="tab-btn {% if tab == 'participants' %}active{% endif %}">
-        👥 Вопросы от участников
+      <a href="?tab=participants&status={{ filter_status }}" class="moderator-tab-btn {% if tab == 'participants' %}active{% endif %}">
+        👥 Участники
       </a>
     </div>
 
     <!-- Фильтры по статусу -->
-    <div class="filter-bar">
-      <a href="?tab={{ tab }}&status=new" class="filter-btn {% if filter_status == 'new' %}active{% endif %}">Новые</a>
-      <a href="?tab={{ tab }}&status=in_progress" class="filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">В работе</a>
-      <a href="?tab={{ tab }}&status=closed" class="filter-btn {% if filter_status == 'closed' %}active{% endif %}">Закрытые</a>
+    <div class="moderator-filters">
+      <a href="?tab={{ tab }}&status=new" class="moderator-filter-btn {% if filter_status == 'new' %}active{% endif %}">Новые</a>
+      <a href="?tab={{ tab }}&status=in_progress" class="moderator-filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">В работе</a>
+      <a href="?tab={{ tab }}&status=closed" class="moderator-filter-btn {% if filter_status == 'closed' %}active{% endif %}">Закрытые</a>
     </div>
 
     <!-- Список тикетов -->
     {% for ticket in tickets %}
       <div class="ticket-item {% if selected_ticket and selected_ticket.id == ticket.id %}active{% endif %}">
         <a href="?tab={{ tab }}&ticket_id={{ ticket.id }}&status={{ filter_status }}">
-          <strong>#{{ ticket.id }}</strong>: {{ ticket.subject|truncatechars:50 }}
-          <span class="badge status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+          <div class="ticket-info">
+            <div class="ticket-subject">#{{ ticket.id }}: {{ ticket.subject|truncatechars:40 }}</div>
+            <div class="ticket-date">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+          <span class="ticket-status status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
         </a>
-        {% if ticket.event %}
-          <div style="font-size: 0.8em; color: #888; margin-top: 4px;">📅 {{ ticket.event.title }}</div>
-        {% endif %}
-        <div style="font-size: 0.75em; color: #aaa; margin-top: 2px;">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
       </div>
     {% empty %}
-      <div style="color: #888; padding: 20px; text-align: center;">Нет обращений в этой категории.</div>
+      <div class="support-placeholder">Нет обращений в этой категории.</div>
     {% endfor %}
   </div>
 
   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
   <div class="moderator-chat">
     {% if compose %}
-      <!-- НОВОЕ ОБРАЩЕНИЕ: поиск пользователя и первое сообщение от админа -->
+      <!-- НОВОЕ ОБРАЩЕНИЕ -->
+      <a href="?tab={{ tab }}&status={{ filter_status }}" class="back-btn">← Назад к списку</a>
       <div class="compose-panel">
-        <h3 style="margin: 0 0 16px 0;">Новое обращение</h3>
+        <h3 style="margin: 0 0 16px 0; font-family: Verdana; font-weight: 400;">Новое обращение</h3>
 
-        <label style="font-weight: 600;">Найти пользователя</label>
-        <div class="user-search-wrap">
-          <input type="text" id="userSearchInput" placeholder="Имя, email или логин..."
-                 autocomplete="off"
-                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;"
-                 data-search-url="{% url 'search_users_for_ticket' %}">
-          <div id="searchResults" class="search-results" style="display: none;"></div>
+        <div class="support-form">
+          <label style="font-weight: 600;">Найти пользователя</label>
+          <div class="user-search-wrap">
+            <input type="text" id="userSearchInput" placeholder="Имя, email или логин..."
+                   autocomplete="off"
+                   data-search-url="{% url 'search_users_for_ticket' %}">
+            <div id="searchResults" class="search-results" style="display: none;"></div>
+          </div>
+
+          <form method="post" action="{% url 'moderator_create_ticket' %}" enctype="multipart/form-data"
+                id="composeTicketForm" style="display: flex; flex-direction: column; gap: 14px;">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" id="selectedUserId" value="">
+
+            <div id="selectedUserBox" style="margin-bottom: 12px; display: none;">
+              <label style="color: #64748b; font-size: 13px;">Получатель</label><br>
+              <span class="selected-user" style="margin-top: 4px;">
+                <span id="selectedUserLabel"></span>
+                <button type="button" id="clearSelectedUser" title="Убрать"
+                        style="border: none; background: none; cursor: pointer; color: #ff8348; font-size: 1em;">✕</button>
+              </span>
+            </div>
+
+            <label for="compose_subject">Тема</label>
+            <input type="text" name="subject" id="compose_subject" placeholder="Сообщение от поддержки">
+
+            <label for="compose_text">Сообщение</label>
+            <textarea name="text" id="compose_text" rows="5" placeholder="Введите текст сообщения..." required></textarea>
+
+            <label>Вложения (необязательно)</label>
+            <label class="custom-file-label" for="compose_file">
+              <span class="file-icon">📁</span>
+              <span class="file-text">Выберите файлы</span>
+            </label>
+            <input type="file" name="attachment" multiple id="compose_file" style="display: none;">
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Отправить обращение</button>
+              <a href="?tab={{ tab }}&status={{ filter_status }}" class="btn btn-secondary">Отмена</a>
+            </div>
+          </form>
         </div>
-
-        <form method="post" action="{% url 'moderator_create_ticket' %}" enctype="multipart/form-data"
-              id="composeTicketForm" style="margin-top: 16px;">
-          {% csrf_token %}
-          <input type="hidden" name="user_id" id="selectedUserId" value="">
-
-          <div id="selectedUserBox" style="margin-bottom: 12px; display: none;">
-            <label style="font-weight: 600;">Получатель</label><br>
-            <span class="selected-user" style="margin-top: 4px;">
-              <span id="selectedUserLabel"></span>
-              <button type="button" id="clearSelectedUser" title="Убрать"
-                      style="border: none; background: none; cursor: pointer; color: #4a90d9; font-size: 1em;">✕</button>
-            </span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: 600;">Тема</label>
-            <input type="text" name="subject" placeholder="Сообщение от поддержки"
-                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;">
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <label style="font-weight: 600;">Сообщение</label>
-            <textarea name="text" rows="5" placeholder="Введите текст сообщения..." required
-                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;"></textarea>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="font-weight: 600;">Вложения (необязательно)</label><br>
-            <input type="file" name="attachment" multiple style="margin-top: 4px; font-size: 0.9em;">
-          </div>
-
-          <button type="submit" style="padding: 10px 24px; background: #28a745; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Отправить обращение</button>
-          <a href="?tab={{ tab }}&status={{ filter_status }}" style="margin-left: 12px; color: #888;">Отмена</a>
-        </form>
       </div>
 
     {% elif selected_ticket %}
+      <a href="?tab={{ tab }}&status={{ filter_status }}" class="back-btn">← Назад к списку</a>
+
       <!-- Информация о тикете -->
-      <div style="margin-bottom: 16px;">
-        <h3 style="margin: 0;">Обращение #{{ selected_ticket.id }}</h3>
-        <p style="margin: 4px 0 0 0; color: #666;"><strong>Тема:</strong> {{ selected_ticket.subject }}</p>
-        <p style="margin: 4px 0 0 0; color: #666;">
+      <div class="moderator-chat-header">
+        <h3>Обращение #{{ selected_ticket.id }}: {{ selected_ticket.subject }}</h3>
+        <p>
           <strong>От:</strong> {{ selected_ticket.user.get_full_name|default:selected_ticket.user.email }}
-          {% if selected_ticket.user.user_type == "partner" %}
-            (Партнёр)
-          {% elif selected_ticket.user.user_type == "visitor" %}
-            (Участник)
-          {% else %}
-            (Гость)
-          {% endif %}
+          {% if selected_ticket.user.user_type == "partner" %}(Партнёр){% elif selected_ticket.user.user_type == "visitor" %}(Участник){% else %}(Гость){% endif %}
         </p>
         {% if selected_ticket.event %}
-          <p style="margin: 4px 0 0 0; color: #666;">
-            <strong>Мероприятие:</strong> 
+          <p><strong>Мероприятие:</strong>
             {% if selected_ticket.user.user_type == "partner" %}
               {{ selected_ticket.event.title }}
             {% else %}
@@ -159,69 +343,70 @@
             {% endif %}
           </p>
         {% endif %}
-        <p style="margin: 4px 0 0 0; color: #666;">
+        <p>
           <strong>Тип:</strong>
-          {% if selected_ticket.ticket_type == 'support' %}
-            🏢 Техподдержка платформы
-          {% else %}
-            👥 Заявка на мероприятие
-          {% endif %}
+          {% if selected_ticket.ticket_type == 'support' %}🏢 Техподдержка платформы{% else %}👥 Заявка на мероприятие{% endif %}
         </p>
 
         <!-- Смена статуса -->
-        <form method="post" action="{% url 'update_ticket_status' ticket_id=selected_ticket.id %}" style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+        <form method="post" action="{% url 'update_ticket_status' ticket_id=selected_ticket.id %}" class="moderator-status-form">
           {% csrf_token %}
-          <select name="status" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #ddd;">
+          <select name="status">
             <option value="new" {% if selected_ticket.status == 'new' %}selected{% endif %}>Новое</option>
             <option value="in_progress" {% if selected_ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
             <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>Закрыто</option>
           </select>
-          <button type="submit" style="padding: 6px 16px; background: #4a90d9; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Сменить статус</button>
+          <button type="submit">Сменить статус</button>
         </form>
       </div>
 
-      <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;">
-
       <!-- История сообщений -->
-      <div class="chat-history">
+      <div class="support-chat-history">
         {% for message in chat_messages %}
-          <div class="message {% if message.is_from_user %}user{% else %}moderator{% endif %}">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-              <strong>{{ message.user.get_full_name|default:message.user.email }}</strong>
-              <span style="font-size: 0.8em; color: #888;">{{ message.created_at|date:"d.m.Y H:i" }}</span>
+          <div class="support-message {% if message.is_from_user %}user{% else %}agent{% endif %}">
+            <div class="support-avatar">
+              {% if message.is_from_user %}
+                <span class="sender-initials">ВЫ</span>
+              {% else %}
+                <img src="/media/icon/fluent_person-support-20-filled.svg" alt="">
+              {% endif %}
             </div>
-            <div>{{ message.text|linebreaks }}</div>
-
-            <!-- Вложения -->
-            {% if message.attachments.all %}
-              <div style="margin-top: 8px;">
-                {% for attachment in message.attachments.all %}
-                  <a href="{{ attachment.file.url }}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 0.9em; color: #1890ff; text-decoration: none;">
-                    📎 {{ attachment.file.name|cut:"support_attachments/" }}
-                  </a>
-                {% endfor %}
+            <div class="support-message-body">
+              <div class="support-bubble">
+                <strong>{{ message.user.get_full_name|default:message.user.email }}</strong>
+                <div>{{ message.text|linebreaksbr }}</div>
+                {% if message.attachments.all %}
+                  <div class="attachments">
+                    {% for attachment in message.attachments.all %}
+                      <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">📄 {{ attachment.file.name|cut:"support_attachments/" }}</a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </div>
-            {% endif %}
+              <div class="support-message-time">{{ message.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
           </div>
         {% empty %}
-          <div style="color: #888; text-align: center; padding: 40px;">Сообщений в этом чате пока нет.</div>
+          <div class="support-placeholder">Сообщений в этом чате пока нет.</div>
         {% endfor %}
       </div>
 
       <!-- ФОРМА ОТПРАВКИ СООБЩЕНИЯ -->
-      <form id="chatSendForm" enctype="multipart/form-data" data-send-url="{% url 'send_support_message' %}" style="display: flex; gap: 8px; align-items: center;">
+      <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form" data-send-url="{% url 'send_support_message' %}">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
-        <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-        <input type="file" name="attachment" multiple id="chatFileInput" style="font-size: 0.9em;">
-        <button type="submit" style="padding: 10px 20px; background: #4a90d9; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Отправить</button>
+        <div class="support-chat-input-row">
+          <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+          <div class="support-attachment-wrap">
+            <input id="chatFileInput" class="support-attachment-input" type="file" name="attachment" multiple>
+            <label for="chatFileInput" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+          </div>
+          <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
+        </div>
       </form>
 
     {% else %}
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888;">
-        <p style="font-size: 1.2em;">Выберите обращение слева</p>
-        <p>или выберите фильтр для отображения обращений.</p>
-      </div>
+      <div class="support-placeholder">Выберите обращение слева или создайте новое.</div>
     {% endif %}
   </div>
 </div>

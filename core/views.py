@@ -493,7 +493,17 @@ def send_support_message(request):
         
         try:
             ticket = SupportTicket.objects.get(id=ticket_id)
-            
+
+            # В закрытом обращении отвечать может только модератор
+            if ticket.status == "closed" and not is_moderator(request.user):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Обращение закрыто. Создайте новое обращение.",
+                    },
+                    status=403,
+                )
+
             # Создаем сообщение
             message = SupportMessage.objects.create(
                 ticket=ticket,
@@ -584,7 +594,7 @@ def moderator_dashboard(request):
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
         selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
-        chat_messages = selected_ticket.messages.all()
+        chat_messages = selected_ticket.messages.all().order_by('created_at')
 
     context = {
         "tickets": tickets,
