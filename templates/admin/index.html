@@ -229,7 +229,18 @@
             <li><a href="{% url 'admin:core_format_changelist' %}">Форматы</a></li>
             <li><a href="{% url 'admin:core_tag_changelist' %}">Теги</a></li>
             <li><a href="{% url 'admin:core_maintag_changelist' %}">Основные теги</a></li>
+        </ul>
+    </div>
+
+    <!-- Блок: Пакеты -->
+    <div class="admin-block">
+        <div class="admin-block-header">
+            <div class="block-icon finance">🎟️</div>
+            <h2 class="block-title">Пакеты</h2>
+        </div>
+        <ul class="admin-block-list">
             <li><a href="{% url 'admin:core_eventpackage_changelist' %}">Пакеты мероприятий</a></li>
+            <li><a href="{% url 'admin:core_userpackagesubscription_changelist' %}">Подписки на пакеты</a></li>
         </ul>
     </div>
 
@@ -241,7 +252,6 @@
         </div>
         <ul class="admin-block-list">
             <li><a href="{% url 'admin:core_order_changelist' %}">Все заказы</a></li>
-            <li><a href="{% url 'admin:core_payoutrequest_changelist' %}">Запросы выплат</a></li>
             <li><a href="{% url 'admin:core_payoutdetails_changelist' %}">Реквизиты для выплат</a></li>
         </ul>
     </div>
@@ -255,7 +265,7 @@
         <ul class="admin-block-list">
             <li><a href="{% url 'admin:core_customuser_changelist' %}">Партнёры</a></li>
             <li><a href="{% url 'admin:core_visitoruser_changelist' %}">Посетители и гости</a></li>
-            <li><a href="{% url 'admin:core_userpackagesubscription_changelist' %}">Подписки на пакеты</a></li>
+            <li><a href="{% url 'admin:auth_group_changelist' %}">Группы</a></li>
         </ul>
     </div>
 
@@ -272,29 +282,72 @@
             <li><a href="{% url 'admin:venues_venueimage_changelist' %}">Фото площадок</a></li>
             <li><a href="{% url 'admin:venues_equipmentcategory_changelist' %}">Категории оборудования</a></li>
             <li><a href="{% url 'admin:venues_equipmentitem_changelist' %}">Оборудование</a></li>
-            <li><a href="{% url 'admin:venues_bookingrequest_changelist' %}">Заявки на бронирование</a></li>
         </ul>
     </div>
 
-    <!-- Блок: Поддержка -->
+    <!-- Блок: Заявки -->
     <div class="admin-block">
         <div class="admin-block-header">
             <div class="block-icon support">💬</div>
-            <h2 class="block-title">Поддержка</h2>
+            <h2 class="block-title">Заявки</h2>
         </div>
         <ul class="admin-block-list">
             <li><a href="{% url 'admin:core_supportticket_changelist' %}">Обращения в поддержку</a></li>
+            <li><a href="{% url 'admin:partner_app_eventchangerequest_changelist' %}">Изменения мероприятий</a></li>
+            <li><a href="{% url 'admin:venues_venueadditionrequest_changelist' %}">Добавление площадок</a></li>
+            <li><a href="{% url 'admin:venues_bookingrequest_changelist' %}">Бронирование площадок</a></li>
+            <li><a href="{% url 'admin:core_payoutrequest_changelist' %}">Запросы выплат</a></li>
         </ul>
     </div>
 
-    <!-- Блок: Документы и Модерация -->
+    <!-- Блок: Портфолио -->
+    <div class="admin-block">
+        <div class="admin-block-header">
+            <div class="block-icon docs">🖼️</div>
+            <h2 class="block-title">Портфолио</h2>
+        </div>
+        <ul class="admin-block-list">
+            <li><a href="{% url 'admin:partner_app_portfolioitem_changelist' %}">Элементы портфолио</a></li>
+            <li><a href="{% url 'admin:partner_app_portfolioimage_changelist' %}">Изображения портфолио</a></li>
+        </ul>
+    </div>
+
+    <!-- Блок: Отчёты и контроль входа -->
+    <div class="admin-block">
+        <div class="admin-block-header">
+            <div class="block-icon finance">📊</div>
+            <h2 class="block-title">Отчёты и контроль</h2>
+        </div>
+        <ul class="admin-block-list">
+            <li><a href="{% url 'admin:partner_app_salesreport_changelist' %}">Отчёты о продажах</a></li>
+            <li><a href="{% url 'admin:partner_app_reportschedule_changelist' %}">Расписания отчётов</a></li>
+            <li><a href="{% url 'admin:partner_app_eventaccesslink_changelist' %}">Ссылки контроля входа</a></li>
+        </ul>
+    </div>
+
+    <!-- Блок: Документы и модерация -->
     <div class="admin-block">
         <div class="admin-block-header">
             <div class="block-icon docs">📄</div>
-            <h2 class="block-title">Документы и Модерация</h2>
+            <h2 class="block-title">Документы и модерация</h2>
         </div>
         <ul class="admin-block-list">
             <li><a href="{% url 'admin:core_partnerdocument_changelist' %}">Документы партнёров</a></li>
+        </ul>
+    </div>
+
+    <!-- Блок: Периодические задачи -->
+    <div class="admin-block">
+        <div class="admin-block-header">
+            <div class="block-icon finance">⏱️</div>
+            <h2 class="block-title">Периодические задачи</h2>
+        </div>
+        <ul class="admin-block-list">
+            <li><a href="{% url 'admin:django_celery_beat_crontabschedule_changelist' %}">Crontab</a></li>
+            <li><a href="{% url 'admin:django_celery_beat_intervalschedule_changelist' %}">Интервалы</a></li>
+            <li><a href="{% url 'admin:django_celery_beat_solarschedule_changelist' %}">Астрономические события</a></li>
+            <li><a href="{% url 'admin:django_celery_beat_clockedschedule_changelist' %}">Время</a></li>
+            <li><a href="{% url 'admin:django_celery_beat_periodictask_changelist' %}">Периодические задачи</a></li>
         </ul>
     </div>
 
