@@ -13,7 +13,7 @@ from django.utils.html import conditional_escape, mark_safe
 from django.db.models import F, Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
-from partner_app.models import EventChangeRequest
+from partner_app.models import EventChangeRequest, PartnerProfile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -735,7 +735,15 @@ class SupportTicketAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("ticket_type", "status", "created_at")
-    readonly_fields = ("user", "subject", "created_at", "event", "ticket_type")
+    readonly_fields = (
+        "user",
+        "user_type_label",
+        "subject",
+        "ticket_type",
+        "event_label",
+        "created_at",
+        "event",
+    )
     fieldsets = (
         (None, {"fields": ("user", "user_type_label", "ticket_type", "status")}),
         ("Тикет", {"fields": ("subject", "event_label", "created_at")}),
@@ -1134,6 +1142,35 @@ class PartnerPayoutInline(admin.TabularInline):
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
+
+class PartnerProfileInline(admin.StackedInline):
+    model = PartnerProfile
+    extra = 0
+    max_num = 1
+    can_delete = False
+    verbose_name = "Данные регистрации партнёра"
+    verbose_name_plural = "Данные регистрации партнёра"
+    fieldsets = (
+        ("Основные данные", {
+            "fields": ("registration_type", "company_name", "short_name", "description"),
+        }),
+        ("Реквизиты", {
+            "fields": ("ogrn", "inn", "kpp"),
+        }),
+        ("Адреса", {
+            "fields": ("postal_code", "legal_address", "actual_address"),
+        }),
+        ("Контакты", {
+            "fields": ("website", "contact_person", "phone", "email", "additional_email"),
+        }),
+        ("Ссылки и портфолио", {
+            "fields": ("vk_link", "max_link", "telegram_link", "cases", "reviews"),
+        }),
+        ("Логотип", {
+            "fields": ("logo",),
+        }),
+    )
+
 @admin.register(CustomUser)
 class PartnerAdmin(admin.ModelAdmin):
     """
@@ -1142,8 +1179,7 @@ class PartnerAdmin(admin.ModelAdmin):
 
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
-        'get_phone_number', 'has_active_subscription', 'get_active_subscriptions', 'get_total_purchases',
-        'get_active_events', 'get_organizer_status', 'is_verified', 'get_permissions_status'
+        'get_phone_number', 'get_organizer_status', 'get_permissions_status'
     )
 
     list_filter = (
@@ -1157,7 +1193,7 @@ class PartnerAdmin(admin.ModelAdmin):
         'username', 'email', 'partner_profile__company_name', 'partner_profile__contact_person', 'partner_profile__phone'
     )
 
-    inlines = [PartnerSubscriptionInline, PartnerPayoutInline]
+    inlines = [PartnerProfileInline]
 
     fieldsets = (
         ('Статус партнёра', {
@@ -1165,7 +1201,7 @@ class PartnerAdmin(admin.ModelAdmin):
             'description': 'Статус заявки партнёра: на рассмотрении (после регистрации), подтверждено/отклонено админом. Причина отказа — если отклонено.'
         }),
         ('Проверенный организатор', {
-            'fields': ('is_verified', 'organizer_status', 'organizer_rejection_reason'),
+            'fields': ('organizer_status', 'organizer_rejection_reason'),
             'description': 'Статус на основе загруженных документов: нет отметки, на рассмотрении, подтверждено, отклонено.'
         }),
         ('Аккаунт', {
@@ -1186,7 +1222,6 @@ class PartnerAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['admin_context'] = {
             'users': CustomUser.objects.filter(user_type='partner').order_by('email'),
-            'packages': EventPackage.objects.all(),
         }
         return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
