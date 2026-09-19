@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse, Http404, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
@@ -1074,6 +1076,8 @@ def yookassa_webhook(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+@login_required
+@require_POST
 def refund_ticket(request, order_id, order_ticket_id=None):
     """
     Возврат билета.
@@ -1085,6 +1089,9 @@ def refund_ticket(request, order_id, order_ticket_id=None):
     try:
         logger.info("[refund] Начало возврата: order_id=%s, order_ticket_id=%s", order_id, order_ticket_id)
         order = get_object_or_404(Order, id=order_id)
+        participant_email = (order.participant_data or {}).get("email", "")
+        if not participant_email or participant_email.casefold() != (request.user.email or "").casefold():
+            return HttpResponseForbidden("Возврат этого заказа недоступен.")
         logger.info(
             "[refund] Заказ найден: id=%s, status=%s, yookassa_payment_id=%s, price=%s, quantity=%s",
             order.id, order.payment_status, order.yookassa_payment_id, order.total_price, order.quantity
@@ -1172,7 +1179,12 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                 logger.info("[refund] Возврат создан: %s", refund.id)
             except Exception as refund_error:
                 logger.error("[refund] Ошибка возврата в ЮКассе: %s", refund_error, exc_info=True)
-                logger.info("[refund] Пропускаем возврат через ЮКассу, просто помечаем билет")
+                return render(
+                    request,
+                    "payment/refund_error.html",
+                    {"error": "ЮКасса не подтвердила возврат. Билет не был изменён."},
+                    status=502,
+                )
         else:
             # Возвращать нечего (все билеты уже возвращены)
             logger.warning("[refund] Невозвращённый остаток равен нулю для заказа #%s", order.id)
@@ -1262,6 +1274,7 @@ def payment_success(request, order_id):
 
     return render(request, "payment/payment_success.html", {"order": order})
 
+@login_required
 def pay_reserved_order(request, order_id):
     """
     Оплата забронированного билета.
@@ -1270,6 +1283,9 @@ def pay_reserved_order(request, order_id):
 
     try:
         order = get_object_or_404(Order, id=order_id)
+        participant_email = (order.participant_data or {}).get("email", "")
+        if not participant_email or participant_email.casefold() != (request.user.email or "").casefold():
+            return HttpResponseForbidden("Оплата этого заказа недоступна.")
 
         if order.payment_status not in ["reserved", "pending"]:
             return render(

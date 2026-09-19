@@ -1,6 +1,7 @@
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.http import require_GET, require_POST
 from .models import EquipmentItem
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
@@ -15,8 +16,8 @@ from django.db import models
 
 
 # ФУНКЦИИ ДЛЯ АДМИНКИ
-@csrf_exempt
-@login_required
+@staff_member_required
+@require_GET
 def get_equipment_items(request):
     category_id = request.GET.get("category_id")
     if not category_id:
@@ -26,8 +27,8 @@ def get_equipment_items(request):
     return JsonResponse(list(items), safe=False)
 
 
-@csrf_exempt
-@login_required
+@staff_member_required
+@require_POST
 def save_venue_equipment(request):
     if request.method != "POST":
         return JsonResponse(
@@ -63,8 +64,8 @@ def save_venue_equipment(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-@csrf_exempt
-@login_required
+@staff_member_required
+@require_GET
 def get_venue_equipment(request, venue_id=None):
     """
     Получает оборудование для площадки.

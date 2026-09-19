@@ -17,6 +17,7 @@ from core.views import (
     send_event_request,
     activate_account,
     forgot_password,
+    reset_password,
     update_ticket_status,
     sales_register,
     verify_email_view,
@@ -74,8 +75,9 @@ urlpatterns = [
         send_event_request,
         name="send_event_request",
     ),
-    path("activate/<int:pk>/", activate_account, name="activate_account"),
+    path("activate/<str:token>/", activate_account, name="activate_account"),
     path("forgot-password/", forgot_password, name="forgot_password"),
+    path("reset-password/<str:token>/", reset_password, name="reset_password"),
     path("verify-email/", verify_email_view, name="verify_email"),
     path("resend-verification-code/", resend_verification_code, name="resend_verification_code"),
     path(

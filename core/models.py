@@ -84,6 +84,11 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         verbose_name="Токен восстановления пароля",
         help_text="Временный токен для сброса пароля по ссылке из письма",
     )
+    password_reset_created_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Дата создания токена восстановления",
+    )
 
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""

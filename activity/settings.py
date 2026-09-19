@@ -14,7 +14,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.getenv("SECRET_KEY")
 YANDEX_MAPS_API_KEY = os.getenv("YANDEX_MAPS_API_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG_MODE", "True") == "True"
+DEBUG = os.getenv("DEBUG_MODE", "False").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '201.51.30.31', 'bizafisha.ru', 'biznesafisha.ru', 'бизафиша.рф', 'бизнесафиша.рф']
 CSRF_TRUSTED_ORIGINS = [
@@ -97,7 +97,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "activity_db",
         "USER": "postgres",
-        "PASSWORD": "Dima228anosov",
+        "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": "localhost",
         "PORT": "5432",
     }
@@ -133,10 +133,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
-CRONJOBS = [
-    ('*/5 * * * *', 'django.core.management.call_command', ['clean_expired_reservations']),
-]
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -266,11 +262,11 @@ CELERY_BEAT_SCHEDULE = {
     },
     "check-unpaid-tickets-every-10-minutes": {
         "task": "core.tasks.check_unpaid_tickets",
-        "schedule": 1000.0,
+        "schedule": 600.0,
     },
     "check-reserved-tickets-every-10-minutes": {
         "task": "core.tasks.check_reserved_tickets",
-        "schedule": 1000.0,
+        "schedule": 600.0,
     },
     "send-scheduled-reports-every-12-hours": {
         "task": "partner_app.tasks.send_scheduled_reports",
@@ -334,3 +330,12 @@ for var, value in REQUIRED_ENV_VARS.items():
             f"Отсутствует обязательная переменная окружения '{var}'. "
             f"Скопируйте .env.example в .env и заполните данные."
         )
+
+
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG

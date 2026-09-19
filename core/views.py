@@ -23,6 +23,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.contrib import messages
 from django.template.loader import render_to_string
 import logging
+import secrets
 import random
 import string
 import base64
@@ -170,10 +171,11 @@ def forgot_password(request):
         try:
             user = CustomUser.objects.get(email=email)
             # Генерируем токен восстановления
-            reset_token = generate_temporary_password(32)
+            reset_token = secrets.token_urlsafe(32)
             # Сохраняем токен (будет проверен на странице reset_password)
             user.password_reset_token = reset_token
-            user.save()
+            user.password_reset_created_at = timezone.now()
+            user.save(update_fields=["password_reset_token", "password_reset_created_at"])
             
             # Формируем ссылку на страницу сброса пароля
             reset_url = request.build_absolute_uri(
@@ -216,6 +218,16 @@ def reset_password(request, token):
     """Страница сброса пароля по токену."""
     # Находим пользователя с этим токеном
     user = get_object_or_404(CustomUser, password_reset_token=token)
+    if (
+        not user.password_reset_created_at
+        or timezone.now() - user.password_reset_created_at > timedelta(hours=1)
+    ):
+        user.password_reset_token = None
+        user.password_reset_created_at = None
+        user.save(update_fields=["password_reset_token", "password_reset_created_at"])
+        return render(request, "registration/reset_password.html", {
+            "error": "Срок действия ссылки истёк. Запросите восстановление пароля ещё раз.",
+        }, status=400)
     
     if request.method == "POST":
         password1 = request.POST.get("password1")
@@ -242,7 +254,8 @@ def reset_password(request, token):
         # Устанавливаем новый пароль
         user.set_password(password1)
         user.password_reset_token = None  # Очищаем токен
-        user.save()
+        user.password_reset_created_at = None
+        user.save(update_fields=["password", "password_reset_token", "password_reset_created_at"])
         
         return redirect("login")
     
@@ -945,14 +958,14 @@ def activate_account(request, token):
         if not password or len(password) < 8:
             return render(
                 request,
-                "activate_account.html",
+                "registration/activate_account.html",
                 {"error": "Пароль должен быть не менее 8 символов."},
             )
         user.set_password(password)
         user.password_reset_token = None  # Очищаем токен
         user.save()
         return redirect("login")
-    return render(request, "activate_account.html", {"token": token})
+    return render(request, "registration/activate_account.html", {"token": token})
 
 @staff_member_required
 def sales_register(request):
