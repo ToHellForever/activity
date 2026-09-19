@@ -6,7 +6,7 @@ on:
   push:
     branches: [main, my-changes, watermark_on_video]
 
-# Определяем задачи для выполнения 
+# Определяем задачи для выполнения
 jobs:
   deploy:
     # Указываем на какой ОС запускать
@@ -19,22 +19,29 @@ jobs:
       # Деплоим на сервер через SSH
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
         with:
           # Используем секреты из GitHub для подключения
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          envs: ENV_FILE
+          envs_format: secret
 
           # Команды выполняемые на сервере
           script: |
+            set -e
             # Переходим в директорию проекта
             cd /home/v/activity
 
-            # Останавливаем службу приложения  (с sudo и передачей пароля)
-            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop gunicorn_activity
+            # Деплоим именно ветку, которая запустила workflow
+            git fetch origin "${{ github.ref_name }}"
+            git checkout "${{ github.ref_name }}"
+            git pull --ff-only origin "${{ github.ref_name }}"
 
-            # Обновляем код из репозитория (с sudo и передачей пароля)
-            echo "${{ secrets.PASSWORD }}" | git pull
+            # Конфигурация должна быть доступна Django до проверки и миграций
+            printf '%s\n' "$ENV_FILE" > .env
 
             # Если у вас PIP
             # Активируем виртуальное окружение
@@ -46,14 +53,14 @@ jobs:
             # Если у вас Poetry (Можно определить путь до poetry which poetry)
             /home/v/.local/bin/poetry install --no-root 
 
-            # Миграции
-            /home/v/.local/bin/poetry run python manage.py migrate
-
-            # Создаем файл .env из секрета где записано все его содержимое
-            echo "${{ secrets.ENV_FILE }}" > .env
+            # Применяем миграции к той же БД, которую использует production
+            /home/v/.local/bin/poetry run python manage.py migrate --noinput
 
             # Собираем статику 
             /home/v/.local/bin/poetry run python manage.py collectstatic --noinput
+
+            # Перезапускаем приложение только после успешной поставки кода и БД
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop gunicorn_activity
 
             # Перезапускаем systemd сервис (с sudo и передачей пароля)
             echo "${{ secrets.PASSWORD }}" | sudo -S systemctl start gunicorn_activity

@@ -4,6 +4,7 @@ import os
 import logging
 from django.contrib.auth import get_user_model
 from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
@@ -284,8 +285,9 @@ class UserPackageSubscription(models.Model):
 
     def save(self, *args, **kwargs):
         """Обновляем статус активности подписки и дату окончания при сохранении."""
-        # Only set end_date automatically for new subscriptions
-        if not self.pk:  # If this is a new subscription
+        # Автоматический срок задаём только если дата не была передана явно.
+        # Это важно для выдачи пакета администратором на произвольный срок.
+        if not self.pk and not self.end_date:
             if self.subscription_type == 'monthly':
                 self.end_date = timezone.now() + timezone.timedelta(days=30)
             else:  # one_time
@@ -307,6 +309,11 @@ class UserPackageSubscription(models.Model):
 
     def schedule_package_change(self, new_package):
         """Планирует изменение пакета после окончания текущего."""
+        if not self.is_active:
+            raise ValidationError("Нельзя запланировать смену для неактивной подписки.")
+        if new_package.pk == self.package_id:
+            raise ValidationError("Нельзя запланировать смену на текущий пакет.")
+
         self.scheduled_change_to = new_package
         self.scheduled_change_date = self.end_date
         # Сохраняем точечно: полный save() при просроченном end_date

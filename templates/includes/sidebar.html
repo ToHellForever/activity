@@ -4,30 +4,30 @@
 <!-- ===== Mobile top nav ===== -->
 <div class="mobile-nav">
     <a href="{% url 'partner:dashboard' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'dashboard profile_edit' %}active{% endif %}">
         Профиль
     </a>
     <a href="{% url 'partner:partner_event_list' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'partner_event_list participant_list create_event edit_event request_event_change' %}active{% endif %}">
         Мои события
     </a>
     <a href="{% url 'partner:chats_list' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'chats_list chats' %}active{% endif %}">
         Чаты
         {% if unread_chats_count|default:0 > 0 %}
         <span class="mobile-nav-badge">{{ unread_chats_count }}</span>
         {% endif %}
     </a>
     <a href="{% url 'partner:portfolio_list' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'portfolio_list' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'portfolio_list portfolio_create portfolio_edit' %}active{% endif %}">
         Портфолио
     </a>
     <a href="{% url 'partner:reports' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'reports report_schedule' %}active{% endif %}">
         Продажи
     </a>
     <a href="{% url 'partner:finances' %}"
-       class="mobile-nav-item {% if request.resolver_match.url_name == 'finances' %}active{% endif %}">
+    class="mobile-nav-item {% if request.resolver_match.url_name in 'finances payout_details' %}active{% endif %}">
         Финансы
     </a>
     <a href="{% url 'support_dashboard' %}"
@@ -62,27 +62,28 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="{% url 'partner:dashboard' %}"
-                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                class="{% if request.resolver_match.url_name in 'dashboard profile_edit' %}active{% endif %}">
                     <img src="/media/icon/gray-profile.svg" alt="" class="sidebar-icon">Профиль
                 </a>
                 <a href="{% url 'partner:partner_event_list' %}"
-                class="{% if request.resolver_match.url_name == 'partner_event_list' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                class="{% if request.resolver_match.url_name in 'partner_event_list participant_list create_event edit_event request_event_change' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <img src="/media/icon/star.svg" alt="" class="sidebar-icon">Мои события
                 </a>
                 <a href="{% url 'partner:chats_list' %}"
-                class="{% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
+                class="{% if request.resolver_match.url_name in 'chats_list chats' %}active{% endif %}">
                     <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты
                 </a>
                 <a href="{% url 'partner:portfolio_list' %}"
-                class="{% if request.resolver_match.url_name == 'portfolio_list' %}active{% endif %}">
+                class="{% if request.resolver_match.url_name in 'portfolio_list portfolio_create portfolio_edit' %}active{% endif %}">
                     <img src="/media/icon/portfolio.svg" alt="" class="sidebar-icon"> Портфолио
                 </a>
                 {% comment %} Продажи и отчёты {% endcomment %}
-                <a href="{% url 'partner:reports' %}">
+                <a href="{% url 'partner:reports' %}"
+                class="{% if request.resolver_match.url_name in 'reports report_schedule' %}active{% endif %}">
                     <img src="/media/icon/reports.svg" alt="" class="sidebar-icon"> Продажи и отчёты
                 </a>
                 <a href="{% url 'partner:finances' %}"
-                class="{% if request.resolver_match.url_name == 'finances' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
+                class="{% if request.resolver_match.url_name in 'finances payout_details' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <img src="/media/icon/finances.svg" alt="" class="sidebar-icon"> Финансы и выплаты
                 </a>
                 {% comment %} поддержка {% endcomment %}

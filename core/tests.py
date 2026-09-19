@@ -309,6 +309,23 @@ class PackageSubscriptionLifecycleTestCase(TestCase):
             ).exists()
         )
 
+    def test_explicit_end_date_is_preserved_on_creation(self):
+        """Явный срок подписки не заменяется автоматическим месячным сроком."""
+        end_date = timezone.now() + timedelta(days=90)
+        subscription = UserPackageSubscription.objects.create(
+            user=self.user,
+            package=self.basic_package,
+            subscription_type="monthly",
+            end_date=end_date,
+        )
+
+        subscription.refresh_from_db()
+        self.assertAlmostEqual(
+            subscription.end_date.timestamp(),
+            end_date.timestamp(),
+            delta=1,
+        )
+
 
 class AdminCrudRegressionTestCase(TestCase):
     def setUp(self):

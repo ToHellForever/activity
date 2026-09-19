@@ -11,6 +11,7 @@ from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscript
 from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
 from django.db import transaction, models
 from django.db.models import Sum
+from django.core.exceptions import ValidationError
 import json
 import uuid
 import hmac
@@ -142,6 +143,9 @@ def handle_package_change_choice(request):
         if not active_subscription:
             return JsonResponse({"error": "Активная подписка не найдена"}, status=404)
 
+        if package.pk == active_subscription.package_id:
+            return JsonResponse({"error": "Вы уже используете этот пакет"}, status=400)
+
         if change_type == "immediate":
             # Немедленная смена пакета — создаём заявку в админке.
             # Старая подписка закроется при активации новой.
@@ -166,7 +170,10 @@ def handle_package_change_choice(request):
 
         elif change_type == "scheduled":
             # Запланированная смена пакета - планируем изменение на дату окончания текущей подписки
-            active_subscription.schedule_package_change(package)
+            try:
+                active_subscription.schedule_package_change(package)
+            except ValidationError as error:
+                return JsonResponse({"error": error.message}, status=400)
 
             return JsonResponse({
                 "status": "success",
