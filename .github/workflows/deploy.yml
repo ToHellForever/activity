@@ -59,8 +59,7 @@ jobs:
             # Собираем статику 
             /home/v/.local/bin/poetry run python manage.py collectstatic --noinput
 
-            # Перезапускаем приложение только после успешной поставки кода и БД
-            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl stop gunicorn_activity
-
-            # Перезапускаем systemd сервис (с sudo и передачей пароля)
-            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl start gunicorn_activity
+            # Перезапускаем сервисы только после успешной поставки кода и БД
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl restart celery_activity
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl restart celerybeat_activity
+            echo "${{ secrets.PASSWORD }}" | sudo -S systemctl restart gunicorn_activity
