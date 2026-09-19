@@ -32,7 +32,12 @@ from django.db.models import Q
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
 from venues.models import Venue
-from core.utils import generate_sales_register
+from core.utils import (
+    generate_sales_register,
+    annotate_unread_counts,
+    mark_ticket_messages_read,
+    total_unread_count,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -472,10 +477,13 @@ def support_dashboard(request):
     if ticket_filter != "all":
         tickets = tickets.filter(status=ticket_filter)
 
+    tickets = annotate_unread_counts(tickets, request.user)
+
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
         selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
         chat_messages = selected_ticket.messages.all()
+        mark_ticket_messages_read(selected_ticket, request.user)
 
     partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
@@ -586,6 +594,22 @@ def moderator_dashboard(request):
             user__user_type="partner"
         ).order_by("-created_at")
 
+    tickets = annotate_unread_counts(tickets, request.user)
+
+    # Суммарные счётчики непрочитанных по каждому табу (для бейджей)
+    organizers_unread = total_unread_count(
+        SupportTicket.objects.filter(
+            ticket_type="support", user__user_type="partner"
+        ),
+        request.user,
+    )
+    participants_unread = total_unread_count(
+        SupportTicket.objects.filter(
+            ticket_type="support", user__user_type__in=["visitor", "guest"]
+        ),
+        request.user,
+    )
+
     # По умолчанию чат пустой
     selected_ticket = None
     chat_messages = []
@@ -595,11 +619,14 @@ def moderator_dashboard(request):
         ticket_id = request.GET.get("ticket_id")
         selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
         chat_messages = selected_ticket.messages.all().order_by('created_at')
+        mark_ticket_messages_read(selected_ticket, request.user)
 
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
         "chat_messages": chat_messages,
+        "organizers_unread": organizers_unread,
+        "participants_unread": participants_unread,
         "filter_status": filter_status,
         "tab": tab,
         "compose": request.GET.get("compose") == "1",

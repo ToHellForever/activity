@@ -18,10 +18,16 @@
     <a href="{% url 'visitor:chats_list' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
         Чаты
+        {% if unread_chats_count|default:0 > 0 %}
+        <span class="mobile-nav-badge">{{ unread_chats_count }}</span>
+        {% endif %}
     </a>
     <a href="{% url 'support_dashboard' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
         Поддержка
+        {% if unread_support_count|default:0 > 0 %}
+        <span class="mobile-nav-badge">{{ unread_support_count }}</span>
+        {% endif %}
     </a>
     <a href="{% url 'visitor:settings' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
@@ -62,10 +68,16 @@
         <a href="{% url 'visitor:chats_list' %}"
            class="{% if request.resolver_match.url_name == 'chats_list' %}active{% endif %}">
             <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты с организаторами
+            {% if unread_chats_count|default:0 > 0 %}
+            <span class="sidebar-badge">{{ unread_chats_count }}</span>
+            {% endif %}
         </a>
         <a href="{% url 'support_dashboard' %}"
            class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
             <img src="/media/icon/support.svg" alt="" class="sidebar-icon"> Служба поддержки
+            {% if unread_support_count|default:0 > 0 %}
+            <span class="sidebar-badge">{{ unread_support_count }}</span>
+            {% endif %}
         </a>
           <a href="{% url 'visitor:settings' %}"
               class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">

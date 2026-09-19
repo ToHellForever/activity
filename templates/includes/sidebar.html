@@ -33,6 +33,9 @@
     <a href="{% url 'support_dashboard' %}"
        class="mobile-nav-item {% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %}">
         Поддержка
+        {% if unread_support_count|default:0 > 0 %}
+        <span class="mobile-nav-badge">{{ unread_support_count }}</span>
+        {% endif %}
     </a>
     <a href="{% url 'logout' %}"
        class="mobile-nav-item">
@@ -72,6 +75,9 @@
                 <a href="{% url 'partner:chats_list' %}"
                 class="{% if request.resolver_match.url_name in 'chats_list chats' %}active{% endif %}">
                     <img src="/media/icon/chats.svg" alt="" class="sidebar-icon"> Чаты
+                    {% if unread_chats_count|default:0 > 0 %}
+                    <span class="sidebar-badge">{{ unread_chats_count }}</span>
+                    {% endif %}
                 </a>
                 <a href="{% url 'partner:portfolio_list' %}"
                 class="{% if request.resolver_match.url_name in 'portfolio_list portfolio_create portfolio_edit' %}active{% endif %}">
@@ -90,6 +96,9 @@
                 <a href="{% url 'support_dashboard' %}"
                 class="{% if request.resolver_match.url_name == 'support_dashboard' %}active{% endif %} {% if user.verification_status != 'approved' %}disabled-link{% endif %}">
                     <img src="/media/icon/support.svg" alt="" class="sidebar-icon"> Поддержка
+                    {% if unread_support_count|default:0 > 0 %}
+                    <span class="sidebar-badge">{{ unread_support_count }}</span>
+                    {% endif %}
                 </a>
                 <a href="{% url 'logout' %}" class="logout-btn">
                     <img src="/media/icon/logout.svg" alt="" class="sidebar-icon"> Выйти из аккаунта

@@ -1321,6 +1321,9 @@ class SupportMessage(models.Model):
         default=True
     )  # True - Пользователь, False - Модератор
     text = models.TextField(verbose_name="Текст сообщения")
+    is_read = models.BooleanField(
+        default=False, verbose_name="Прочитано", db_index=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

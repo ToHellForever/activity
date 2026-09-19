@@ -60,6 +60,9 @@
                   <div class="ticket-meta">
                     {{ ticket.subject|truncatechars:40 }}
                   </div>
+                  {% if ticket.unread_count > 0 %}
+                    <span class="ticket-unread-badge">{{ ticket.unread_count }}</span>
+                  {% endif %}
                   <span class="ticket-status">{{ ticket.get_status_display }}</span>
                 </a>
               {% endfor %}

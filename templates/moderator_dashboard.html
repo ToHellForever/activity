@@ -243,9 +243,11 @@
     <div class="moderator-tabs">
       <a href="?tab=organizers&status={{ filter_status }}" class="moderator-tab-btn {% if tab == 'organizers' %}active{% endif %}">
         🏢 Организаторы
+        {% if organizers_unread > 0 %}<span class="tab-badge">{{ organizers_unread }}</span>{% endif %}
       </a>
       <a href="?tab=participants&status={{ filter_status }}" class="moderator-tab-btn {% if tab == 'participants' %}active{% endif %}">
         👥 Участники
+        {% if participants_unread > 0 %}<span class="tab-badge">{{ participants_unread }}</span>{% endif %}
       </a>
     </div>
 

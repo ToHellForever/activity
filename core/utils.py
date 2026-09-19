@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.db.models import Sum, F, DecimalField
 from django.db.models.functions import Coalesce
+from django.db.models import Count, Q
 import os
 from django.core.files import File
 from PIL import Image, ImageDraw, ImageFont
@@ -13,6 +14,74 @@ from io import BytesIO
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def mark_ticket_messages_read(ticket, viewer):
+    """
+    Отмечает сообщения тикета как прочитанные для текущего зрителя.
+    Прочитанными считаются только сообщения, отправленные НЕ текущим
+    пользователем (то есть ответ от второй стороны).
+    """
+    from core.models import SupportMessage
+
+    SupportMessage.objects.filter(ticket=ticket).exclude(user=viewer).update(
+        is_read=True
+    )
+
+
+def annotate_unread_counts(tickets, viewer):
+    """
+    Добавляет каждому тикету аннотацию unread_count — количество
+    непрочитанных сообщений от собеседника для данного зрителя.
+    """
+    return tickets.annotate(
+        unread_count=Count(
+            "messages",
+            filter=Q(messages__is_read=False) & ~Q(messages__user=viewer),
+        )
+    )
+
+
+def total_unread_count(tickets, viewer):
+    """Суммарное число непрочитанных сообщений по набору тикетов."""
+    result = tickets.aggregate(
+        total=Count(
+            "messages",
+            filter=Q(messages__is_read=False) & ~Q(messages__user=viewer),
+        )
+    )
+    return result["total"]
+
+
+def _get_unread_for_user(user):
+    """
+    Возвращает (unread_support, unread_chats) для бокового меню.
+    - support: личные тикеты в техподдержку платформы
+    - chats:   чаты-participant (для партнёра — по его мероприятиям,
+               для участника — собственные заявки)
+    """
+    from core.models import SupportTicket
+
+    unread_support = 0
+    unread_chats = 0
+
+    if user.is_authenticated:
+        support_qs = SupportTicket.objects.filter(
+            user=user, ticket_type="support"
+        )
+        unread_support = total_unread_count(support_qs, user)
+
+        if user.user_type == "partner":
+            chats_qs = SupportTicket.objects.filter(
+                event__organizer=user, ticket_type="participant"
+            )
+        else:
+            chats_qs = SupportTicket.objects.filter(
+                user=user, ticket_type="participant"
+            )
+        unread_chats = total_unread_count(chats_qs, user)
+
+    return unread_support, unread_chats
 
 
 def generate_sales_register(partner, start_date, end_date):

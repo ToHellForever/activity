@@ -14,6 +14,7 @@ from core.models import (
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from visitor_app.models import Favorite
+from core.utils import annotate_unread_counts, mark_ticket_messages_read
 import logging
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.clickjacking import xframe_options_exempt
@@ -293,6 +294,7 @@ def visitor_chats(request):
             )
             # Загружаем сообщения сразу одним запросом
             chat_messages = selected_ticket.messages.all().order_by('created_at')
+            mark_ticket_messages_read(selected_ticket, request.user)
         except (ValueError, TypeError):
             pass # Некорректный ID или тип данных
 

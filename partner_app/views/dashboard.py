@@ -182,6 +182,7 @@ def partner_chats(request):
             ticket_type='participant'
         )
         chat_messages = selected_ticket.messages.all()
+        mark_ticket_messages_read(selected_ticket, request.user)
 
     partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
 
