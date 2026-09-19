@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
 from .proxy_models import VisitorUser
-from .forms import EventAdminForm, PartnerAdminForm
+from .forms import EventAdminForm, PartnerAdminForm, SupportTicketAdminForm
 from django import forms
 from django.contrib import messages
 from django.conf import settings
@@ -724,6 +724,7 @@ class SubscriptionInline(admin.TabularInline):
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
+    form = SupportTicketAdminForm
     list_display = (
         "id",
         "user",
@@ -748,6 +749,13 @@ class SupportTicketAdmin(admin.ModelAdmin):
         (None, {"fields": ("user", "user_type_label", "ticket_type", "status")}),
         ("Тикет", {"fields": ("subject", "event_label", "created_at")}),
     )
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return (
+                (None, {"fields": ("user", "subject", "event", "initial_message")}),
+            )
+        return super().get_fieldsets(request, obj)
 
     def user_type_label(self, obj):
         types = {
@@ -781,8 +789,19 @@ class SupportTicketAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs.filter(ticket_type='support').select_related("user", "event").prefetch_related("messages")
 
-    def has_add_permission(self, request, obj=None):
-        return False
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.ticket_type = "support"
+            obj.status = "new"
+            super().save_model(request, obj, form, change)
+            SupportMessage.objects.create(
+                ticket=obj,
+                user=request.user,
+                is_from_user=False,
+                text=form.cleaned_data["initial_message"],
+            )
+            return
+        super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser

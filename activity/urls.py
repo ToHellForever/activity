@@ -12,6 +12,8 @@ from core.views import (
     support_dashboard,
     moderator_dashboard,
     send_support_message,
+    search_users_for_ticket,
+    moderator_create_ticket,
     event_list,
     event_detail,
     send_event_request,
@@ -68,6 +70,8 @@ urlpatterns = [
     path("support/", support_dashboard, name="support_dashboard"),
     path("moderator/", moderator_dashboard, name="moderator_dashboard"),
     path("send-message/", send_support_message, name="send_support_message"),
+    path("moderator/search-users/", search_users_for_ticket, name="search_users_for_ticket"),
+    path("moderator/create-ticket/", moderator_create_ticket, name="moderator_create_ticket"),
     path("events/", event_list, name="event_list"),
     path("events/<int:event_id>/", event_detail, name="event_detail"),
     path(

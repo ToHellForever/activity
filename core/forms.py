@@ -57,6 +57,30 @@ class EventAdminForm(ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class SupportTicketAdminForm(forms.ModelForm):
+    """Форма для первого обращения администратора к пользователю."""
+
+    initial_message = forms.CharField(
+        label="Сообщение",
+        widget=forms.Textarea(attrs={"rows": 6}),
+        help_text="Это сообщение будет первым сообщением в новом тикете.",
+    )
+
+    class Meta:
+        model = SupportTicket
+        fields = ("user", "subject", "event", "ticket_type", "status", "initial_message")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["initial_message"].required = not bool(self.instance.pk)
+
+    def clean_initial_message(self):
+        message = self.cleaned_data.get("initial_message", "").strip()
+        if not message and not self.instance.pk:
+            raise forms.ValidationError("Введите текст сообщения.")
+        return message
 # --- ФОРМА ВХОДА ---
 class CustomAuthenticationForm(forms.Form):
     """Форма для входа с автоматической проверкой роли."""

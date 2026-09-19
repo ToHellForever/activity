@@ -592,6 +592,7 @@ def moderator_dashboard(request):
         "chat_messages": chat_messages,
         "filter_status": filter_status,
         "tab": tab,
+        "compose": request.GET.get("compose") == "1",
     }
     return render(request, "moderator_dashboard.html", context)
 
@@ -601,6 +602,89 @@ def update_ticket_status(request, ticket_id):
     ticket.status = new_status
     ticket.save()
     return redirect(reverse("moderator_dashboard") + "?ticket_id=" + str(ticket_id))
+
+
+@user_passes_test(is_moderator, login_url="/login/")
+@login_required
+def search_users_for_ticket(request):
+    """
+    AJAX-поиск пользователей для того, чтобы админ/модератор мог
+    найти пользователя и написать ему первым.
+    """
+    query = request.GET.get("q", "").strip()
+    if len(query) < 1:
+        return JsonResponse({"users": []})
+
+    users = (
+        CustomUser.objects.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(username__icontains=query)
+        )
+        .exclude(pk=request.user.pk)
+        .order_by("user_type", "first_name", "last_name")[:20]
+    )
+
+    data = []
+    for u in users:
+        data.append(
+            {
+                "id": u.id,
+                "name": u.get_full_name() or u.username or u.email,
+                "email": u.email or "",
+                "user_type": u.get_user_type_display() or "",
+            }
+        )
+    return JsonResponse({"users": data})
+
+
+@user_passes_test(is_moderator, login_url="/login/")
+@login_required
+def moderator_create_ticket(request):
+    """
+    Создание нового обращения админом/модератором: админ выбирает
+    пользователя и пишет ему первое сообщение.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("Некорректный запрос")
+
+    user_id = request.POST.get("user_id")
+    subject = request.POST.get("subject", "").strip()
+    text = request.POST.get("text", "").strip()
+
+    if not user_id:
+        return HttpResponseBadRequest("Не выбран пользователь")
+    if not text:
+        return HttpResponseBadRequest("Пустое сообщение")
+
+    target_user = get_object_or_404(CustomUser, id=user_id)
+
+    if not subject:
+        subject = "Сообщение от поддержки"
+
+    ticket = SupportTicket.objects.create(
+        user=target_user,
+        subject=subject,
+        ticket_type="support",
+        status="new",
+    )
+
+    message = SupportMessage.objects.create(
+        ticket=ticket,
+        user=request.user,
+        text=text,
+        is_from_user=False,
+    )
+
+    for f in request.FILES.getlist("attachment"):
+        SupportAttachment.objects.create(message=message, file=f)
+
+    tab = "organizers" if target_user.user_type == "partner" else "participants"
+    return redirect(
+        reverse("moderator_dashboard")
+        + f"?tab={tab}&status=new&ticket_id={ticket.id}"
+    )
 
 def event_list(request):
     now = timezone.now()

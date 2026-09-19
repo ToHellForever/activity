@@ -25,6 +25,17 @@
   .status-new { background: #ffc107; color: #333; }
   .status-in_progress { background: #17a2b8; color: #fff; }
   .status-closed { background: #6c757d; color: #fff; }
+  .compose-btn { display: block; width: 100%; padding: 10px; margin-bottom: 16px; background: #28a745; color: #fff; border: none; border-radius: 6px; cursor: pointer; text-align: center; text-decoration: none; font-size: 0.95em; }
+  .compose-btn:hover { background: #218838; color: #fff; text-decoration: none; }
+  .compose-panel { max-width: 640px; }
+  .user-search-wrap { position: relative; }
+  .search-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 50; background: #fff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); max-height: 260px; overflow-y: auto; margin-top: 4px; }
+  .search-result-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+  .search-result-item:hover, .search-result-item.active { background: #f0f4ff; }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item .u-type { font-size: 0.75em; color: #888; }
+  .search-results .search-hint { padding: 10px 12px; color: #888; }
+  .selected-user { display: inline-flex; align-items: center; gap: 8px; background: #e3ecff; border: 1px solid #4a90d9; border-radius: 6px; padding: 6px 12px; }
 </style>
 {% endblock %}
 
@@ -33,6 +44,9 @@
   <!-- ЛЕВАЯ КОЛОНКА: Список тикетов -->
   <div class="moderator-sidebar">
     <h2 style="margin-bottom: 16px;">Управление обращениями</h2>
+
+    <!-- Кнопка написать пользователю первым -->
+    <a href="?compose=1" class="compose-btn">✉️ Написать пользователю</a>
 
     <!-- Табы: Организаторы / Участники -->
     <div class="tab-bar">
@@ -70,7 +84,57 @@
 
   <!-- ПРАВАЯ КОЛОНКА: Окно чата -->
   <div class="moderator-chat">
-    {% if selected_ticket %}
+    {% if compose %}
+      <!-- НОВОЕ ОБРАЩЕНИЕ: поиск пользователя и первое сообщение от админа -->
+      <div class="compose-panel">
+        <h3 style="margin: 0 0 16px 0;">Новое обращение</h3>
+
+        <label style="font-weight: 600;">Найти пользователя</label>
+        <div class="user-search-wrap">
+          <input type="text" id="userSearchInput" placeholder="Имя, email или логин..."
+                 autocomplete="off"
+                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;"
+                 data-search-url="{% url 'search_users_for_ticket' %}">
+          <div id="searchResults" class="search-results" style="display: none;"></div>
+        </div>
+
+        <form method="post" action="{% url 'moderator_create_ticket' %}" enctype="multipart/form-data"
+              id="composeTicketForm" style="margin-top: 16px;">
+          {% csrf_token %}
+          <input type="hidden" name="user_id" id="selectedUserId" value="">
+
+          <div id="selectedUserBox" style="margin-bottom: 12px; display: none;">
+            <label style="font-weight: 600;">Получатель</label><br>
+            <span class="selected-user" style="margin-top: 4px;">
+              <span id="selectedUserLabel"></span>
+              <button type="button" id="clearSelectedUser" title="Убрать"
+                      style="border: none; background: none; cursor: pointer; color: #4a90d9; font-size: 1em;">✕</button>
+            </span>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="font-weight: 600;">Тема</label>
+            <input type="text" name="subject" placeholder="Сообщение от поддержки"
+                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;">
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="font-weight: 600;">Сообщение</label>
+            <textarea name="text" rows="5" placeholder="Введите текст сообщения..." required
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; box-sizing: border-box;"></textarea>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="font-weight: 600;">Вложения (необязательно)</label><br>
+            <input type="file" name="attachment" multiple style="margin-top: 4px; font-size: 0.9em;">
+          </div>
+
+          <button type="submit" style="padding: 10px 24px; background: #28a745; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Отправить обращение</button>
+          <a href="?tab={{ tab }}&status={{ filter_status }}" style="margin-left: 12px; color: #888;">Отмена</a>
+        </form>
+      </div>
+
+    {% elif selected_ticket %}
       <!-- Информация о тикете -->
       <div style="margin-bottom: 16px;">
         <h3 style="margin: 0;">Обращение #{{ selected_ticket.id }}</h3>
