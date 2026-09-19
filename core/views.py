@@ -1088,7 +1088,9 @@ def about_view(request):
 
 def robots_txt(request):
     """Генерация robots.txt для поисковых роботов."""
-    base_url = f"{request.scheme}://{request.get_host()}"
+    base_url = getattr(settings, "SITE_URL", "").rstrip("/")
+    if not base_url:
+        base_url = f"{request.scheme}://{request.get_host()}"
     lines = [
         "User-agent: *",
         "Disallow: /admin/",

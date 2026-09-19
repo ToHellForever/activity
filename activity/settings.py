@@ -34,6 +34,10 @@ CSRF_TRUSTED_ORIGINS = [
 # URL сайта для генерации QR-кодов
 SITE_URL = os.getenv('SITE_URL', 'https://bizafisha.ru')
 
+# Nginx/reverse proxy сообщает Django исходную схему запроса.
+# Это позволяет sitemap.xml и canonical URL использовать HTTPS в production.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 
 INSTALLED_APPS = [
