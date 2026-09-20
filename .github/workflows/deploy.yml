@@ -19,15 +19,11 @@ jobs:
       # Деплоим на сервер через SSH
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
         with:
           # Используем секреты из GitHub для подключения
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          envs: ENV_FILE
-          envs_format: secret
 
           # Команды выполняемые на сервере
           script: |
@@ -44,8 +40,13 @@ jobs:
             git checkout -- .
             git pull --ff-only origin "${{ github.ref_name }}"
 
-            # Конфигурация должна быть доступна Django до проверки и миграций
-            printf '%s\n' "$ENV_FILE" > .env
+            # Конфигурация (.env) хранится только на сервере и НЕ перезаписывается
+            # деплоем. Если файла нет — падаем сразу с понятной ошибкой,
+            # чтобы не положить gunicorn рестартом ниже.
+            if [ ! -s .env ]; then
+              echo "ERROR: /home/v/activity/.env отсутствует или пуст. Деплой прерван."
+              exit 1
+            fi
 
             # Если у вас PIP
             # Активируем виртуальное окружение
