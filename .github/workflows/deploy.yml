@@ -38,6 +38,10 @@ jobs:
             # Деплоим именно ветку, которая запустила workflow
             git fetch origin "${{ github.ref_name }}"
             git checkout "${{ github.ref_name }}"
+            # Отбрасываем любые локальные изменения в отслеживаемых файлах
+            # (например, celerybeat-schedule перезаписывается демоном на сервере).
+            # Production-код не должен иметь локальных правок на сервере.
+            git checkout -- .
             git pull --ff-only origin "${{ github.ref_name }}"
 
             # Конфигурация должна быть доступна Django до проверки и миграций

@@ -5,6 +5,10 @@ __pycache__/
 .env
 debug.log
 email_test.log
+# Локальные артефакты Celery Beat — перезаписываются демоном, не должны быть в VCS
+celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid
 ПУБЛИЧНАЯ_ОФЕРТА_ДЛЯ_ОРГАНИЗАТОРОВ.docx
 ПУБЛИЧНАЯ_ОФЕРТА_ДЛЯ_ПОЛЬЗОВАТЕЛЕЙ_СЕРВИСА.docx
 ПУБЛИЧНАЯ_ОФЕРТА_ДЛЯ_СОБСТВЕННИКОВ_ПЛОЩАДОК.docx
