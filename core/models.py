@@ -24,6 +24,9 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         ("visitor", "Посетитель"),
         ("partner", "Партнёр"),
     )
+    email = models.EmailField( 
+        max_length=254, verbose_name='Email', unique=True 
+    )
     user_type = models.CharField(
         max_length=10, choices=USER_TYPE_CHOICES, default="guest", verbose_name='Тип пользователя'
     )
