@@ -48,21 +48,21 @@ jobs:
               exit 1
             fi
 
-            # Если у вас PIP
-            # Активируем виртуальное окружение
-            # source venv/bin/activate
+            # Зависимости ставятся в venv через pip вручную (не через poetry).
+            # Poetry в pyproject.toml описан в PEP 621-формате, но Poetry 1.8.2
+            # его не понимает — используем python из venv напрямую.
+            # Если добавишь новую зависимость — установи её на сервере вручную:
+            #   /home/v/activity/venv/bin/pip install <package>
+            VENV_PY=/home/v/activity/venv/bin/python
 
-            # Обновляем зависимости
-            # pip install -r requirements.txt
-
-            # Poetry установлен системно (which poetry -> /usr/bin/poetry)
-            /usr/bin/poetry install --no-root 
+            # Проверяем, что окружение живо и конфиг читается
+            $VENV_PY -c "import django; print('Django', django.__version__)"
 
             # Применяем миграции к той же БД, которую использует production
-            /usr/bin/poetry run python manage.py migrate --noinput
+            $VENV_PY manage.py migrate --noinput
 
-            # Собираем статику 
-            /usr/bin/poetry run python manage.py collectstatic --noinput
+            # Собираем статику
+            $VENV_PY manage.py collectstatic --noinput
 
             # Перезапускаем сервисы только после успешной поставки кода и БД
             echo "${{ secrets.PASSWORD }}" | sudo -S systemctl restart celery_activity
