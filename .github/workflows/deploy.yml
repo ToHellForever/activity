@@ -55,14 +55,14 @@ jobs:
             # Обновляем зависимости
             # pip install -r requirements.txt
 
-            # Если у вас Poetry (Можно определить путь до poetry which poetry)
-            /home/v/.local/bin/poetry install --no-root 
+            # Poetry установлен системно (which poetry -> /usr/bin/poetry)
+            /usr/bin/poetry install --no-root 
 
             # Применяем миграции к той же БД, которую использует production
-            /home/v/.local/bin/poetry run python manage.py migrate --noinput
+            /usr/bin/poetry run python manage.py migrate --noinput
 
             # Собираем статику 
-            /home/v/.local/bin/poetry run python manage.py collectstatic --noinput
+            /usr/bin/poetry run python manage.py collectstatic --noinput
 
             # Перезапускаем сервисы только после успешной поставки кода и БД
             echo "${{ secrets.PASSWORD }}" | sudo -S systemctl restart celery_activity
