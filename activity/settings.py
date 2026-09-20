@@ -16,7 +16,18 @@ YANDEX_MAPS_API_KEY = os.getenv("YANDEX_MAPS_API_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG_MODE", "False").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '201.51.30.31', 'bizafisha.ru', 'biznesafisha.ru', 'бизафиша.рф', 'бизнесафиша.рф']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '201.51.30.31',
+    'bizafisha.ru',
+    'biznesafisha.ru',
+    'бизафиша.рф',
+    'бизнесафиша.рф',
+    # Punycode-версии кириллических доменов — браузер присылает Host в ASCII
+    'xn--80aabyec7f7a.xn--p1ai',
+    'xn--80aabqjfd1bzb5a9b.xn--p1ai',
+]
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
@@ -30,6 +41,11 @@ CSRF_TRUSTED_ORIGINS = [
     'http://biznesafisha.ru',
     'http://бизафиша.рф',
     'http://бизнесафиша.рф',
+    # Punycode-версии кириллических доменов
+    'https://xn--80aabyec7f7a.xn--p1ai',
+    'https://xn--80aabqjfd1bzb5a9b.xn--p1ai',
+    'http://xn--80aabyec7f7a.xn--p1ai',
+    'http://xn--80aabqjfd1bzb5a9b.xn--p1ai',
     ] 
 # URL сайта для генерации QR-кодов
 SITE_URL = os.getenv('SITE_URL', 'https://bizafisha.ru')
