@@ -483,6 +483,14 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Пожалуйста, укажите email');
             return;
         }
+
+        // Согласие на обработку персональных данных (обязательно для неавторизованных)
+        const consentPdCheckbox = document.getElementById('consent_personal_data');
+        if (consentPdCheckbox && !consentPdCheckbox.checked) {
+            addLog('Ошибка: требуется согласие на обработку персональных данных', 'error');
+            alert('Для покупки необходимо согласие на обработку персональных данных');
+            return;
+        }
         
         // Показываем модалку статуса
         statusModal.show();
@@ -497,6 +505,13 @@ document.addEventListener('DOMContentLoaded', function() {
             total_price: window.cartTotal,
             email: email
         };
+
+        // Согласия (для неавторизованных покупателей)
+        const consentPd = document.getElementById('consent_personal_data');
+        const consentMk = document.getElementById('consent_marketing');
+        if (consentPd) payload.consent_personal_data = consentPd.checked;
+        if (consentMk) payload.consent_marketing = consentMk.checked;
+
         
         // Добавляем бронирование без оплаты (если чекбокс установлен)
         const reserveCheckbox = document.getElementById('reserve_without_payment');

@@ -423,12 +423,24 @@ def bulk_buy_tickets(request, event_id):
                 if key in utm_from_json and not utm_params.get(key):
                     utm_params[key] = utm_from_json[key]
         
+        # Согласия покупателя (152-ФЗ). Для неавторизованных согласие на
+        # обработку ПД обязательно; проверяем на сервере, а не только на фронте.
+        consent_personal_data = bool(data.get('consent_personal_data', False))
+        consent_marketing = bool(data.get('consent_marketing', False))
+        if not request.user.is_authenticated and not consent_personal_data:
+            return JsonResponse({
+                'error': 'Для покупки необходимо согласие на обработку персональных данных.'
+            }, status=400)
+
         # Создаём participant_data
         participant_data = {
             'name': buyer_name,
             'email': email,
-            'phone': phone
+            'phone': phone,
+            'consent_personal_data': consent_personal_data,
+            'consent_marketing': consent_marketing,
         }
+
 
         # === РАЗДЕЛЕНИЕ НА БЕСПЛАТНЫЕ И ПЛАТНЫЕ ===
         free_ticket_items = []
@@ -692,6 +704,29 @@ def create_payment(request, ticket_id):
             "email": request.POST.get("email"),
             "phone": request.POST.get("phone"),
         }
+
+        # Согласия покупателя (152-ФЗ). Для неавторизованных согласие на
+        # обработку ПД обязательно, проверяем на сервере.
+        consent_personal_data = request.POST.get("consent_personal_data") == "on"
+        consent_marketing = request.POST.get("consent_marketing") == "on"
+        participant_data["consent_personal_data"] = consent_personal_data
+        participant_data["consent_marketing"] = consent_marketing
+        if not request.user.is_authenticated and not consent_personal_data:
+            from django.shortcuts import render
+            return render(
+                request,
+                "payment/buy_ticket.html",
+                {
+                    "ticket": ticket,
+                    "initial_data": {
+                        "name": request.POST.get("name"),
+                        "email": request.POST.get("email"),
+                        "phone": request.POST.get("phone"),
+                    },
+                    "error_message": "Необходимо согласие на обработку персональных данных.",
+                },
+            )
+
 
         # Проверка, выбран ли чекбокс "Заявка организатору"
         request_to_organizer = request.POST.get("request_to_organizer") == "on"

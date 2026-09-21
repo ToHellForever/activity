@@ -71,6 +71,22 @@
                     {% endif %}
                 </div>
 
+                {% if not user.is_authenticated %}
+                <!-- Согласия (152-ФЗ) -->
+                <div class="form-check mt-3" id="consentPersonalDataGroup">
+                    <input type="checkbox" class="form-check-input" id="consent_personal_data" name="consent_personal_data">
+                    <label class="form-check-label" for="consent_personal_data">
+                        Согласен(на) на <a href="{% url 'personal_data_consent_view' %}">обработку персональных данных</a>
+                    </label>
+                </div>
+                <div class="form-check mt-2 mb-2" id="consentMarketingGroup">
+                    <input type="checkbox" class="form-check-input" id="consent_marketing" name="consent_marketing">
+                    <label class="form-check-label" for="consent_marketing">
+                        Согласен(на) на получение <a href="{% url 'mailing_consent_view' %}">рассылок</a>
+                    </label>
+                </div>
+                {% endif %}
+
                 <!-- Бронирование без оплаты -->
                 {% if event.allow_booking_without_payment %}
                 <div class="form-check mt-3 mb-3" id="reserveWithoutPaymentGroup">

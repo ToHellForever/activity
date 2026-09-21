@@ -84,6 +84,20 @@ def partner_dashboard(request):
 
     # Обработка формы редактирования профиля
     if request.method == 'POST':
+        # Обновление согласия на рассылку (можно отказаться в любой момент)
+        if 'save_consent' in request.POST:
+            from django.utils import timezone
+            request.user.consent_marketing = 'consent_marketing' in request.POST
+            request.user.consent_marketing_at = timezone.now()
+            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
+            messages.success(
+                request,
+                "Согласие на рассылку сохранено."
+                if request.user.consent_marketing
+                else "Вы отказались от рассылок.",
+            )
+            return redirect("partner:dashboard")
+
         profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
 
         # Проверяем, идёт ли обработка видео-визитки — блокируем изменение

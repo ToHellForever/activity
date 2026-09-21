@@ -65,6 +65,20 @@
                 </div>
             </div>
  
+            <div class="form-section">
+                <div class="agreements">
+                    <label class="agreement-item">
+                        {{ form.agree_personal_data }}
+                        <span>Согласен(на) на <a href="{% url 'personal_data_consent_view' %}">обработку персональных данных</a></span>
+                    </label>
+                    {% if form.agree_personal_data.errors %}<ul class="errorlist">{{ form.agree_personal_data.errors }}</ul>{% endif %}
+                    <label class="agreement-item">
+                        {{ form.agree_marketing }}
+                        <span>Согласен(на) на получение <a href="{% url 'mailing_consent_view' %}">рассылок</a></span>
+                    </label>
+                </div>
+            </div>
+
             <button type="submit" class="submit-btn-visitor">Зарегистрироваться</button>
         </form>
 
@@ -300,12 +314,17 @@
                     
                     <label class="agreement-item">
                         <input type="checkbox" name="agree_personal_data" required>
-                        <span>Согласен(на) на обработку персональных данных</span>
+                        <span>Согласен(на) на <a href="{% url 'personal_data_consent_view' %}">обработку персональных данных</a></span>
                     </label>
                     
                     <label class="agreement-item">
                         <input type="checkbox" name="agree_publish_profile">
                         <span>Разрешаю публикацию профиля организации на платформе</span>
+                    </label>
+
+                    <label class="agreement-item">
+                        <input type="checkbox" name="agree_marketing">
+                        <span>Согласен(на) на получение <a href="{% url 'mailing_consent_view' %}">рассылок</a></span>
                     </label>
                 </div>
             </div>

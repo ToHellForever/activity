@@ -117,8 +117,25 @@
 {% endif %}
 {% endif %}
 
+<!-- Согласие на рассылку -->
+<h3 style="margin-top: 20px;">Уведомления</h3>
+<form method="post" style="margin-top: 15px; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px;">
+    {% csrf_token %}
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" name="consent_marketing" id="partner_consent_marketing"
+               {% if request.user.consent_marketing %}checked{% endif %}>
+        <label class="form-check-label" for="partner_consent_marketing">
+            Получать новости и рассылки платформы
+            (<a href="{% url 'mailing_consent_view' %}">согласие на рассылку</a>)
+        </label>
+    </div>
+    <button type="submit" name="save_consent" class="btn btn-primary" style="margin-top: 10px;">
+        Сохранить
+    </button>
+</form>
+
 <!-- Ссылка на соглашение -->
-<p><a href="#" target="_blank">Пользовательское соглашение партнёра</a></p>
+<p><a href="{% url 'organizer_contract_download' %}" target="_blank">Договор для организаторов</a></p>
     </div>
 </div>
 {% endblock %}

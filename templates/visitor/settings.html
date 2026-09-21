@@ -49,6 +49,20 @@
                     ИЗМЕНИТЬ ПАРОЛЬ
                 </button>
             </div>
+
+            <!-- Согласие на рассылку -->
+            <div class="info-row">
+                <form method="post" class="consent-form">
+                    {% csrf_token %}
+                    <label class="consent-item">
+                        <input type="checkbox" name="consent_marketing" {% if user.consent_marketing %}checked{% endif %}>
+                        <span>Получать новости и рассылки платформы</span>
+                    </label>
+                    <button type="submit" name="save_consent" class="btn-change-password">
+                        СОХРАНИТЬ
+                    </button>
+                </form>
+            </div>
         </div>
     </main>
 </div>

@@ -183,6 +183,19 @@ def settings(request):
                 messages.success(request, "Пароль успешно изменён!")
                 return redirect("visitor:settings") # Перезагружаем страницу, чтобы очистить форму
             # Если форма не валидна, мы продолжим рендерить страницу с ошибками
+        elif 'save_consent' in request.POST:
+            # Обновление согласия на рассылку (можно отказаться в любой момент)
+            from django.utils import timezone
+            request.user.consent_marketing = 'consent_marketing' in request.POST
+            request.user.consent_marketing_at = timezone.now()
+            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
+            messages.success(
+                request,
+                "Согласие на рассылку сохранено."
+                if request.user.consent_marketing
+                else "Вы отказались от рассылок.",
+            )
+            return redirect("visitor:settings")
         else:
             # Здесь можно обработать обновление имени/телефона, если добавите такие формы
             pass

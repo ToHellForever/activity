@@ -112,6 +112,15 @@ class CustomAuthenticationForm(forms.Form):
 class VisitorRegistrationForm(UserCreationForm):
     """Простая форма для регистрации участника (только email + пароль)."""
 
+    agree_personal_data = forms.BooleanField(
+        required=True,
+        label="Согласен(на) на обработку персональных данных",
+    )
+    agree_marketing = forms.BooleanField(
+        required=False,
+        label="Согласен(на) на получение рассылок",
+    )
+
     class Meta:
         model = CustomUser
         fields = ("email", "password1", "password2")
@@ -127,8 +136,14 @@ class VisitorRegistrationForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.username = user.email
+        user.username = user.email  # Используем email как username
         user.user_type = "visitor"
+        # Фиксируем согласия с датой (для подтверждения по 152-ФЗ)
+        from django.utils import timezone
+        user.consent_personal_data = self.cleaned_data.get("agree_personal_data", False)
+        user.consent_personal_data_at = timezone.now()
+        user.consent_marketing = self.cleaned_data.get("agree_marketing", False)
+        user.consent_marketing_at = timezone.now()
         if commit:
             user.save()
         return user
@@ -366,6 +381,10 @@ class PartnerRegistrationForm(forms.Form):
     agree_publish_profile = forms.BooleanField(
         required=False,
         label="Разрешаю публикацию профиля организации на платформе",
+    )
+    agree_marketing = forms.BooleanField(
+        required=False,
+        label="Согласен(на) на получение рассылок",
     )
 
     # Пароли

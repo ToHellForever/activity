@@ -288,6 +288,19 @@ def register_view(request):
                     user_type="partner",
                     verification_status="pending",  # После регистрации — на рассмотрении
                 )
+
+                # Фиксируем согласия с датой (152-ФЗ)
+                from django.utils import timezone as _tz
+                user.consent_personal_data = partner_form.cleaned_data.get("agree_personal_data", False)
+                user.consent_personal_data_at = _tz.now()
+                user.consent_marketing = partner_form.cleaned_data.get("agree_marketing", False)
+                user.consent_marketing_at = _tz.now()
+                user.save(update_fields=[
+                    "consent_personal_data",
+                    "consent_personal_data_at",
+                    "consent_marketing",
+                    "consent_marketing_at",
+                ])
                 
                 # Создаём профиль партнёра
                 from django.db import transaction
@@ -1213,6 +1226,16 @@ def organizer_contract_download(request):
         as_attachment=True,
         filename="ДОГОВОР для организаторов.docx",
     )
+
+
+def personal_data_consent_view(request):
+    """Страница согласия на обработку персональных данных."""
+    return render(request, "other/consent_personal_data.html")
+
+
+def mailing_consent_view(request):
+    """Страница согласия на рассылку."""
+    return render(request, "other/consent_mailing.html")
 
 
 def faq_view(request):

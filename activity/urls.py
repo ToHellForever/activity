@@ -32,6 +32,8 @@ from core.views import (
     about_view,
     robots_txt,
     organizer_contract_download,
+    personal_data_consent_view,
+    mailing_consent_view,
 )
 from core.sitemaps import StaticViewSitemap, EventSitemap, VenueSitemap
 from partner_app.views import (
@@ -103,6 +105,8 @@ urlpatterns = [
     path("privacy-policy/", privacy_policy_view, name="privacy_policy"),
     path("offer/", offer_view, name="offer"),
     path("documents/organizer-contract/", organizer_contract_download, name="organizer_contract_download"),
+    path("documents/personal-data-consent/", personal_data_consent_view, name="personal_data_consent_view"),
+    path("documents/mailing-consent/", mailing_consent_view, name="mailing_consent_view"),
     path("faq/", faq_view, name="faq"),
     path("contacts/", contacts_view, name="contacts"),
     path("about/", about_view, name="about"),

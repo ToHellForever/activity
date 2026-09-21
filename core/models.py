@@ -93,6 +93,26 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         verbose_name="Дата создания токена восстановления",
     )
 
+    # ─── Согласия пользователя (152-ФЗ) ───────────────────────────────
+    consent_personal_data = models.BooleanField(
+        default=False,
+        verbose_name="Согласие на обработку персональных данных",
+    )
+    consent_personal_data_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Дата согласия на обработку ПД",
+    )
+    consent_marketing = models.BooleanField(
+        default=False,
+        verbose_name="Согласие на рассылку",
+    )
+    consent_marketing_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Дата согласия на рассылку",
+    )
+
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""
         # Удаляем все подписки пользователя

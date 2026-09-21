@@ -88,6 +88,21 @@ def profile_edit(request):
             messages.info(request, "Документы отправлены на повторное рассмотрение. Ожидайте решения администратора.")
             return redirect("partner:dashboard")
 
+        # Обновление согласия на рассылку (можно отказаться в любой момент)
+        if "save_consent" in request.POST:
+            from django.utils import timezone
+            request.user.consent_marketing = "consent_marketing" in request.POST
+            request.user.consent_marketing_at = timezone.now()
+            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
+            messages.success(
+                request,
+                "Согласие на рассылку сохранено."
+                if request.user.consent_marketing
+                else "Вы отказались от рассылок.",
+            )
+            return redirect("partner:dashboard")
+
+
         # Инициализируем форму профиля с instance=profile
         profile_form = PartnerProfileForm(
             request.POST, request.FILES, instance=profile

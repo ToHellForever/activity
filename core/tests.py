@@ -469,17 +469,17 @@ class RegistrationEmailCodeTestCase(TestCase):
     VERIFY_URL = "/verify-email/"
     RESEND_URL = "/resend-verification-code/"
 
-    def _register_visitor(self, email="newvisitor@example.com"):
+    def _register_visitor(self, email="newvisitor@example.com", *, with_consent=True):
         """Выполняет POST-регистрацию посетителя и возвращает response."""
-        return self.client.post(
-            self.REGISTER_URL,
-            {
-                "form_type": "visitor",
-                "email": email,
-                "password1": "Str0ng!Pass2026",
-                "password2": "Str0ng!Pass2026",
-            },
-        )
+        data = {
+            "form_type": "visitor",
+            "email": email,
+            "password1": "Str0ng!Pass2026",
+            "password2": "Str0ng!Pass2026",
+        }
+        if with_consent:
+            data["agree_personal_data"] = "on"
+        return self.client.post(self.REGISTER_URL, data)
 
     def _extract_code_from_email(self, message):
         """Достаёт 5-значный код из HTML-альтернативы письма."""
@@ -505,6 +505,39 @@ class RegistrationEmailCodeTestCase(TestCase):
         self.assertEqual(
             self.client.session.get("unverified_user_id"), user.id
         )
+
+    def test_registration_without_personal_data_consent_fails(self):
+        """Без согласия на обработку ПД регистрация не проходит (152-ФЗ)."""
+        response = self._register_visitor(with_consent=False)
+
+        # Форма невалидна — пользователь не создан, редиректа нет
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            User.objects.filter(email="newvisitor@example.com").exists()
+        )
+
+    def test_registration_stores_consents(self):
+        """Согласия сохраняются на пользователе вместе с датой."""
+        self._register_visitor(email="consent@example.com")
+        # Включим согласие на рассылку отдельным запросом
+        self.client.post(
+            self.REGISTER_URL,
+            {
+                "form_type": "visitor",
+                "email": "consent2@example.com",
+                "password1": "Str0ng!Pass2026",
+                "password2": "Str0ng!Pass2026",
+                "agree_personal_data": "on",
+                "agree_marketing": "on",
+            },
+        )
+
+        user = User.objects.get(email="consent2@example.com")
+        self.assertTrue(user.consent_personal_data)
+        self.assertIsNotNone(user.consent_personal_data_at)
+        self.assertTrue(user.consent_marketing)
+        self.assertIsNotNone(user.consent_marketing_at)
+
 
     def test_registration_sends_verification_code_email(self):
         """На почту уходит письмо с темой и кодом, совпадающим с кодом в БД."""

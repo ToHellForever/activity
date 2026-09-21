@@ -100,8 +100,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const m = data.message;
+            // Модератор: сообщение пользователя (is_from_user) — слева (agent),
+            // собственный ответ — справа (user)
             const isUser = m.is_from_user;
-            const msgClass = isUser ? 'user' : 'agent';
+            const msgClass = isUser ? 'agent' : 'user';
 
             let bubbleContent = '<strong>' + escapeHtml(m.user_first_name || m.user_email) + '</strong>';
             bubbleContent += '<div>' + escapeHtml(m.text) + '</div>';
@@ -114,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const avatarContent = isUser
-                ? '<span class="sender-initials">ВЫ</span>'
+                ? '<span class="sender-initials">' + escapeHtml((m.user_first_name || m.user_email || '?').slice(0, 2).toUpperCase()) + '</span>'
                 : '<img src="/media/icon/fluent_person-support-20-filled.svg" alt="">';
 
             const wrapper = document.createElement('div');
