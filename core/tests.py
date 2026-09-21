@@ -3,9 +3,11 @@
 """
 
 import os
+import re
 import tempfile
 from datetime import timedelta
 
+from django.core import mail
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.admin.sites import AdminSite
 from django.test import RequestFactory
@@ -23,6 +25,7 @@ from core.models import (
     PartnerDocument,
     PayoutDetails,
     PayoutRequest,
+    EmailVerificationCode,
 )
 from core.admin import (
     EventAdmin,
@@ -450,3 +453,165 @@ class AdminCrudRegressionTestCase(TestCase):
         payout.refresh_from_db()
         self.assertEqual(payout.status, "rejected")
         self.assertEqual(payout.rejection_comment, "Не хватает подтверждающих документов")
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="no-reply@example.com",
+)
+class RegistrationEmailCodeTestCase(TestCase):
+    """
+    Тесты логики регистрации с отправкой кода подтверждения на почту:
+    создание пользователя, письмо с кодом, подтверждение кода, повторная отправка.
+    """
+
+    REGISTER_URL = "/register/"
+    VERIFY_URL = "/verify-email/"
+    RESEND_URL = "/resend-verification-code/"
+
+    def _register_visitor(self, email="newvisitor@example.com"):
+        """Выполняет POST-регистрацию посетителя и возвращает response."""
+        return self.client.post(
+            self.REGISTER_URL,
+            {
+                "form_type": "visitor",
+                "email": email,
+                "password1": "Str0ng!Pass2026",
+                "password2": "Str0ng!Pass2026",
+            },
+        )
+
+    def _extract_code_from_email(self, message):
+        """Достаёт 5-значный код из HTML-альтернативы письма."""
+        html = next(
+            content for content, mimetype in message.alternatives
+            if mimetype == "text/html"
+        )
+        match = re.search(r'class="code-value">(\d{5})<', html)
+        self.assertIsNotNone(match, "Код не найден в HTML-письме")
+        return match.group(1)
+
+    def test_registration_creates_unverified_user_and_redirects(self):
+        """Регистрация создаёт неподтверждённого пользователя и редиректит на ввод кода."""
+        response = self._register_visitor()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, self.VERIFY_URL)
+
+        user = User.objects.get(email="newvisitor@example.com")
+        self.assertEqual(user.username, "newvisitor@example.com")
+        self.assertEqual(user.user_type, "visitor")
+        self.assertFalse(user.is_verified)
+        self.assertEqual(
+            self.client.session.get("unverified_user_id"), user.id
+        )
+
+    def test_registration_sends_verification_code_email(self):
+        """На почту уходит письмо с темой и кодом, совпадающим с кодом в БД."""
+        self._register_visitor()
+
+        # Ровно одно письмо
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.subject, "Подтверждение почты")
+        self.assertEqual(message.to, ["newvisitor@example.com"])
+
+        # Код в письме совпадает с сохранённым в БД
+        user = User.objects.get(email="newvisitor@example.com")
+        db_code = EmailVerificationCode.objects.get(user=user, is_used=False).code
+        email_code = self._extract_code_from_email(message)
+        self.assertEqual(email_code, db_code)
+        self.assertEqual(len(db_code), 5)
+        self.assertTrue(db_code.isdigit())
+
+    def test_verify_email_with_correct_code_verifies_and_logs_in(self):
+        """Верный код подтверждает пользователя, помечает код и логинит его."""
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+        code = EmailVerificationCode.objects.get(user=user, is_used=False).code
+
+        response = self.client.post(
+            self.VERIFY_URL,
+            {
+                "code1": code[0],
+                "code2": code[1],
+                "code3": code[2],
+                "code4": code[3],
+                "code5": code[4],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, "/visitor/dashboard/", status_code=302)
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_verified)
+        self.assertTrue(
+            EmailVerificationCode.objects.get(user=user).is_used
+        )
+        self.assertNotIn("unverified_user_id", self.client.session)
+        self.assertEqual(self.client.session.get("_auth_user_id"), str(user.id))
+
+    def test_verify_email_with_wrong_code_fails(self):
+        """Неверный код не подтверждает пользователя и не логинит его."""
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+
+        response = self.client.post(
+            self.VERIFY_URL,
+            {"code1": "0", "code2": "0", "code3": "0", "code4": "0", "code5": "0"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Неверный код подтверждения")
+
+        user.refresh_from_db()
+        self.assertFalse(user.is_verified)
+        self.assertFalse(EmailVerificationCode.objects.get(user=user).is_used)
+
+    def test_verify_email_without_session_redirects_to_login(self):
+        """Без id неподтверждённого пользователя в сессии редирект на логин."""
+        self.client.session.pop("unverified_user_id", None)
+
+        response = self.client.get(self.VERIFY_URL)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, "/login/")
+
+    def test_resend_invalidates_old_code_and_sends_new(self):
+        """Повторная отправка помечает старый код использованным и создаёт новый."""
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+        old_code = EmailVerificationCode.objects.get(user=user, is_used=False).code
+        mail.outbox.clear()
+
+        response = self.client.post(self.RESEND_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json().get("success"), True)
+
+        # Старый код помечен использованным
+        self.assertTrue(
+            EmailVerificationCode.objects.get(user=user, code=old_code).is_used
+        )
+        # Создан новый активный код
+        new_active = EmailVerificationCode.objects.filter(
+            user=user, is_used=False
+        )
+        self.assertEqual(new_active.count(), 1)
+        self.assertNotEqual(new_active.first().code, old_code)
+
+        # Ушло ровно одно новое письмо с новым кодом
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            self._extract_code_from_email(mail.outbox[0]), new_active.first().code
+        )
+
+    def test_resend_without_session_returns_400(self):
+        """Повторная отправка без сессии возвращает 400."""
+        self.client.session.pop("unverified_user_id", None)
+
+        response = self.client.post(self.RESEND_URL)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json().get("success"), False)
