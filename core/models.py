@@ -17,7 +17,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
+ 
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     USER_TYPE_CHOICES = (
         ("guest", "Гость"),
