@@ -83,8 +83,8 @@ MOCK = {
     "{{ order.payment_status }}": "canceled",
 
     # password_reset.html
-    "{{ temp_password }}": "Xk9mP2vL",
-    "{{ login_url }}": "http://127.0.0.1:8080/login/",
+    "{{ reset_url }}": "http://127.0.0.1:8080/reset-password/test-token/",
+    "{{ site_name }}": "Платформа мероприятий",
 
     # booking_notification.html
 
