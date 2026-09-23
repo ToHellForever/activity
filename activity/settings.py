@@ -220,6 +220,18 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "")
 
+# Раздельные адреса отправителя.
+# TICKETS_FROM_EMAIL — письма, связанные с билетами и покупкой
+# (подтверждение заказа, бронирование, напоминания об оплате, отмена
+# неоплаченного/просроченного заказа, возврат).
+# SUPPORT_FROM_EMAIL — сервисные письма (восстановление пароля,
+# верификация почты, модерация, уведомления партнёрам, отчёты о продажах,
+# «все билеты выкуплены», очистка медиа, заявки на площадки).
+# Fallback на DEFAULT_FROM_EMAIL — письма уходят без ошибок,
+# даже если переменные ещё не добавлены в .env.
+TICKETS_FROM_EMAIL = os.getenv("TICKETS_FROM_EMAIL", DEFAULT_FROM_EMAIL)
+SUPPORT_FROM_EMAIL = os.getenv("SUPPORT_FROM_EMAIL", DEFAULT_FROM_EMAIL)
+
 
 # Настройка логирования
 LOGGING = {

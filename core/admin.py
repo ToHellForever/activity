@@ -87,6 +87,7 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         from django.core.mail import send_mail
         from django.conf import settings
+        from core.utils import get_from_email
 
         previous = None
         if change:
@@ -126,7 +127,7 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    from_email=get_from_email("support"),
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
@@ -159,7 +160,7 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    from_email=get_from_email("support"),
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
@@ -490,25 +491,14 @@ class EventAdmin(admin.ModelAdmin):
 
     def send_rejection_notification(self, event, rejection_reason):
         from django.core.mail import send_mail
+        from core.utils import get_from_email
 
-        subject = f"Ваше мероприятие '{event.title}' отклонено"
-        message = f"""
-        Здравствуйте, {event.organizer.first_name}!
-
-        Ваше мероприятие '{event.title}' было отклонено модератором.
-
-        Причина отклонения: {rejection_reason}
-
-        Пожалуйста, исправьте указанные недочеты и снова отправьте мероприятие на модерацию.
-
-        С уважением,
-        Администрация платформы
-        """
+        message = f"Ваше мероприятие «{event.title}» было отклонено.\n\nПричина: {rejection_reason}"
         send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [event.organizer.email],
+            subject="Мероприятие отклонено",
+            message=message,
+            from_email=get_from_email(),
+            recipient_list=[event.created_by.email],
             fail_silently=False,
         )
 
@@ -1426,7 +1416,7 @@ class PartnerAdmin(admin.ModelAdmin):
         
         # Отправляем email
         from django.core.mail import send_mail
-        from django.conf import settings
+        from core.utils import get_from_email
         try:
             send_mail(
                 subject='Ваш аккаунт одобрен',
@@ -1436,7 +1426,7 @@ class PartnerAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=get_from_email("support"),
                 recipient_list=[obj.email],
                 fail_silently=False,
             )
@@ -1460,7 +1450,7 @@ class PartnerAdmin(admin.ModelAdmin):
         
         # Отправляем email с причиной
         from django.core.mail import send_mail
-        from django.conf import settings
+        from core.utils import get_from_email
         try: 
             send_mail(
                 subject='Ваш аккаунт отклонён',
@@ -1474,7 +1464,7 @@ class PartnerAdmin(admin.ModelAdmin):
 
 С уважением,
 Администрация платформы''',
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=get_from_email("support"),
                 recipient_list=[obj.email],
                 fail_silently=False,
             )

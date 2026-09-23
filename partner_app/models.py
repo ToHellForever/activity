@@ -1245,7 +1245,7 @@ class EventChangeRequest(models.Model):
     def notify_partner(self):
         """Отправляет партнёру письмо о результате рассмотрения заявки."""
         from django.core.mail import send_mail
-        from django.conf import settings as dj_settings
+        from core.utils import get_from_email
 
         if self.status == "approved":
             subject = f"Заявка на изменение мероприятия «{self.event.title}» одобрена"
@@ -1264,6 +1264,6 @@ class EventChangeRequest(models.Model):
                 + "\nС уважением,\nАдминистрация платформы"
             )
         try:
-            send_mail(subject, message, dj_settings.DEFAULT_FROM_EMAIL, [self.partner.email])
+            send_mail(subject, message, get_from_email(), [self.partner.email])
         except Exception as e:
             logger.error("Не удалось отправить письмо о заявке #%s: %s", self.pk, e)

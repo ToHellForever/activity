@@ -213,8 +213,8 @@ class CustomUserCreationForm(UserCreationForm):
         """Отправляет код подтверждения на почту пользователя."""
         import random
         from django.core.mail import EmailMultiAlternatives
-        from django.conf import settings
         from django.template.loader import render_to_string
+        from core.utils import get_from_email
 
         # Генерация случайного 5-значного кода
         code = ''.join([str(random.randint(0, 9)) for _ in range(5)])
@@ -227,7 +227,7 @@ class CustomUserCreationForm(UserCreationForm):
         subject = "Подтверждение почты"
         context = {'code': code}
         html_content = render_to_string('emails/email_verification.html', context)
-        msg = EmailMultiAlternatives(subject, '', settings.DEFAULT_FROM_EMAIL, [self.instance.email])
+        msg = EmailMultiAlternatives(subject, '', get_from_email(), [self.instance.email])
         msg.attach_alternative(html_content, "text/html")
         msg.send()
 

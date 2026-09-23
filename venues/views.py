@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from .models import Venue, BookingRequest, EquipmentCategory, EquipmentItem, VenueFormat
 from .forms import BookingRequestForm, VenueAdditionRequestForm
+from core.utils import get_from_email
 import json
 from django.db import models
 
@@ -422,7 +423,7 @@ def _send_booking_notification(booking_request):
     email = EmailMessage(
         subject=subject,
         body=email_content,
-        from_email=None,  # Будет использован DEFAULT_FROM_EMAIL из настроек
+        from_email=get_from_email(),  # support-ящик платформы
         to=[venue.email],
     )
     email.content_subtype = "html"  # Указываем, что содержимое - HTML
@@ -451,8 +452,8 @@ def _send_admin_booking_notification(booking_request):
         send_mail(
             subject,
             message,
-            settings.DEFAULT_FROM_EMAIL,
-            [settings.DEFAULT_FROM_EMAIL],
+            get_from_email(),
+            [get_from_email()],
             fail_silently=True,
         )
     except Exception:

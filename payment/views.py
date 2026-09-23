@@ -11,6 +11,7 @@ import logging
 from django.template.loader import render_to_string
 from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, OrderTicket
 from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
+from core.utils import get_from_email
 from django.db import transaction, models
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
@@ -75,7 +76,7 @@ def _send_orders_confirmation_email(orders, request=None):
     email_message = EmailMultiAlternatives(
         subject=f"Подтверждение заказа {ids}",
         body=f"Ваш заказ {ids} успешно оплачен.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=get_from_email("tickets"),
         to=[participant_email],
     )
     email_message.attach_alternative(email_html, "text/html")
@@ -115,7 +116,7 @@ def send_reservation_email(order, request):
     send_mail(
         subject=f"Бронирование билета #{order.id}",
         message=f"Ваш билет #{order.id} забронирован. Для оплаты перейдите по ссылке: {request.build_absolute_uri(f'/payment/pay-reserved/{order.id}/')}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=get_from_email("tickets"),
         recipient_list=[participant_email],
         html_message=email_html,
         fail_silently=False,

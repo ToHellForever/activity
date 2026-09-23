@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.management import call_command
+from core.utils import get_from_email
 
 logger = logging.getLogger(__name__)
 
@@ -447,7 +448,7 @@ def check_unpaid_tickets():
                 send_mail(
                     subject,
                     strip_tags(html),
-                    settings.DEFAULT_FROM_EMAIL,
+                    get_from_email("tickets"),
                     [email],
                     html_message=html,
                 )
@@ -533,7 +534,7 @@ def send_reservation_reminder(order, hours_until_event):
     send_mail(
         subject,
         plain_message,
-        settings.DEFAULT_FROM_EMAIL,
+        get_from_email("tickets"),
         [user_email],
         html_message=html_message,
     )
@@ -559,7 +560,7 @@ def send_reservation_cancelation(order):
     send_mail(
         subject,
         plain_message,
-        settings.DEFAULT_FROM_EMAIL,
+        get_from_email("tickets"),
         [user_email],
         html_message=html_message,
     )
@@ -795,7 +796,7 @@ def _send_media_cleanup_notification(organizer, cleaned_events):
         send_mail(
             subject,
             plain_message,
-            settings.DEFAULT_FROM_EMAIL,
+            get_from_email("support"),
             [organizer.email],
             html_message=html_message,
         )

@@ -16,6 +16,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def get_from_email(kind="support"):
+    """
+    Возвращает адрес отправителя письма в зависимости от типа письма.
+
+    kind="tickets" — письма по билетам и покупке (заказ, бронь, возврат)
+                     -> settings.TICKETS_FROM_EMAIL
+    kind="support" — все остальные (сервисные) письма
+                     -> settings.SUPPORT_FROM_EMAIL
+
+    Обе настройки в settings.py имеют fallback на DEFAULT_FROM_EMAIL,
+    поэтому пустой адрес здесь быть не должен; на всякий случай
+    возвращаем DEFAULT_FROM_EMAIL, если что-то пошло не так.
+    """
+    from django.conf import settings
+
+    if kind == "tickets":
+        return settings.TICKETS_FROM_EMAIL or settings.DEFAULT_FROM_EMAIL
+    return settings.SUPPORT_FROM_EMAIL or settings.DEFAULT_FROM_EMAIL
+
+
 def mark_ticket_messages_read(ticket, viewer):
     """
     Отмечает сообщения тикета как прочитанные для текущего зрителя.

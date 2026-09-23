@@ -17,6 +17,7 @@ from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
 
 from core.models import Event, Order, OrderTicket
+from core.utils import get_from_email
 from ..forms import ReportScheduleForm
 from ..models import SalesReport, ReportSchedule
 from ..utils import generate_sales_report
@@ -462,7 +463,7 @@ def generate_report(request):
                 email = EmailMessage(
                     subject=f"Отчёт о продажах с {period_start} по {period_end}",
                     body=f"Добрый день!\n\nПрикрепляем отчёт о продажах за период с {period_start} по {period_end}.\n\nС уважением, ваша платформа мероприятий.",
-                    from_email=None,
+                    from_email=get_from_email(),
                     to=[request.user.email],
                 )
                 email.attach(

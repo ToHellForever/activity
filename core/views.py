@@ -37,6 +37,7 @@ from core.utils import (
     annotate_unread_counts,
     mark_ticket_messages_read,
     total_unread_count,
+    get_from_email,
 )
 
 logger = logging.getLogger(__name__)
@@ -202,7 +203,7 @@ def forgot_password(request):
             email_message = EmailMultiAlternatives(
                 subject,
                 plain_message,
-                settings.DEFAULT_FROM_EMAIL,
+                get_from_email("support"),
                 [user.email],
             )
             email_message.attach_alternative(html_content, "text/html")

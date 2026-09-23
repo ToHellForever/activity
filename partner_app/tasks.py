@@ -8,6 +8,7 @@ from datetime import timedelta
 from .models import ReportSchedule, SalesReport
 from .utils import generate_sales_report
 from core.models import Order
+from core.utils import get_from_email
 import logging
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,7 @@ def send_scheduled_reports():
             email = EmailMultiAlternatives(
                 subject=f"Отчёт о продажах с {period_start} по {period_end}",
                 body=plain_message,
-                from_email=settings.EMAIL_HOST_USER,
+                from_email=get_from_email(),
                 to=[schedule.email],
             )
             email.attach_alternative(html_message, "text/html")
