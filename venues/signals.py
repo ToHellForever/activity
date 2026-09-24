@@ -27,21 +27,37 @@ def clear_venue_video(sender, instance, **kwargs):
 def process_venue_video(sender, instance, **kwargs):
     logger.info(f"SIGNAL: process_venue_video triggered for venue {instance.id}")
     
-    # Проверяем, не вызвано ли это обновлением хэша после обработки
-    # Если обновляются только поля хэша, пропускаем сигнал
+    # Проверяем, не вызвано ли это служебным обновлением полей после обработки.
+    # Если обновляются только хэш/статус/путь к облаку — пропускаем сигнал,
+    # иначе Celery-задача будет перезапускать сама себя (петля post_save).
     update_fields = kwargs.get('update_fields', None)
-    if update_fields and 'processed_video_hash' in update_fields:
-        logger.info(f"SIGNAL: Skipping - update_fields contains processed_video_hash for Event {instance.id}")
-        return
+    if update_fields:
+        service_fields = {
+            'processed_video_hash',
+            'video_processing_status',
+            'video',
+        }
+        if service_fields & set(update_fields):
+            logger.info(
+                f"SIGNAL: Skipping - service fields {set(update_fields)} for Venue {instance.id}"
+            )
+            return
 
     if not instance.video:
-        logger.info(f"SIGNAL: No video for Event {instance.id}")
+        logger.info(f"SIGNAL: No video for Venue {instance.id}")
+        return
+
+    # Не запускаем повторную обработку, пока текущая ещё не завершена
+    # (аналогично защите в core.signals.process_event_video)
+    status = getattr(instance, 'video_processing_status', 'pending')
+    if status in ('processing', 'completed'):
+        logger.info(f"SIGNAL: Skipping - status is '{status}' for Venue {instance.id}")
         return
 
     # Получаем текущий хэш видео для логирования
     current_hash = instance._get_video_hash(instance.video)
     stored_hash = instance.processed_video_hash
-    logger.info(f"SIGNAL: Event {instance.id} - current_hash={current_hash}, stored_hash={stored_hash}")
+    logger.info(f"SIGNAL: Venue {instance.id} - current_hash={current_hash}, stored_hash={stored_hash}")
 
     # Запускаем задачу если:
     # 1) stored_hash=None (новое видео или видео ещё не обработано)
@@ -50,16 +66,16 @@ def process_venue_video(sender, instance, **kwargs):
     if stored_hash is None and instance.video:
         # Новое видео или видео ещё не обработано
         should_process = True
-        logger.info(f"SIGNAL: Event {instance.id} - new video (stored_hash=None), processing")
+        logger.info(f"SIGNAL: Venue {instance.id} - new video (stored_hash=None), processing")
     elif current_hash is not None and stored_hash is not None and current_hash != stored_hash:
         # Хэш изменился - видео заменено
         should_process = True
-        logger.info(f"SIGNAL: Event {instance.id} - hash changed from {stored_hash} to {current_hash}, processing")
+        logger.info(f"SIGNAL: Venue {instance.id} - hash changed from {stored_hash} to {current_hash}, processing")
     elif current_hash is not None and stored_hash is not None:
         # Хэш совпадает - видео уже обработано
-        logger.info(f"SIGNAL: Event {instance.id} - hash unchanged, skipping")
+        logger.info(f"SIGNAL: Venue {instance.id} - hash unchanged, skipping")
     else:
-        logger.info(f"SIGNAL: Event {instance.id} - hash mismatch or invalid, skipping")
+        logger.info(f"SIGNAL: Venue {instance.id} - hash mismatch or invalid, skipping")
 
     if should_process:
         logger.info(f"SIGNAL: Sending process_video_task.delay for Venue {instance.id}")
@@ -67,6 +83,7 @@ def process_venue_video(sender, instance, **kwargs):
             model_name='Venue',
             instance_id=instance.id,
             video_field_name='video',
-            hash_field_name='processed_video_hash'
+            hash_field_name='processed_video_hash',
+            status_field_name='video_processing_status'
         )
         logger.info(f"SIGNAL: Task sent with ID: {result.id}")

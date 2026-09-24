@@ -54,7 +54,9 @@ class VenueImageForm(forms.ModelForm):
 class VenueForm(forms.ModelForm):
     class Meta:
         model = Venue
-        fields = "__all__"
+        # Служебное поле: статус обновляет только Celery-задача,
+        # редактировать его через форму площадки нельзя
+        exclude = ("video_processing_status",)
         widgets = {
             "formats": forms.CheckboxSelectMultiple,
         }

@@ -253,6 +253,21 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
         null=True,
         verbose_name="Хэш обработанного видео площадки",
     )
+    VIDEO_PROCESSING_STATUS_CHOICES = (
+        ("pending", "Ожидает обработки"),
+        ("processing", "Обрабатывается"),
+        ("completed", "Обработка завершена"),
+        ("failed", "Ошибка обработки"),
+    )
+    # Статус асинхронной обработки видео (сжатие + водяной знак + загрузка в Cloud).
+    # Имя совпадает с полем Event, чтобы core.tasks.process_video_task работал
+    # с обеими моделями через один и тот же status_field_name.
+    video_processing_status = models.CharField(
+        max_length=20,
+        choices=VIDEO_PROCESSING_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус обработки видео",
+    )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
 
@@ -295,6 +310,8 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
             logger.info(f"Venue {self.pk}: Video changed! old={old_video}, new={self.video}")
             # Обнуляем хэш ДО сохранения, чтобы сигнал post_save увидел None и запустил задачу
             self.processed_video_hash = None
+            # Новое видео ещё не обработано — ждём запуска Celery-задачи
+            self.video_processing_status = "pending"
 
         super().save(*args, **kwargs)
 

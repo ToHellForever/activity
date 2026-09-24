@@ -3,6 +3,7 @@ from celery import shared_task
 from core.models import Ticket, Order, Event
 import logging
 from django.apps import apps
+from django.core.exceptions import FieldDoesNotExist
 import os
 import time
 import hashlib
@@ -123,6 +124,58 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
         time.sleep(delay)
     return False
 
+
+def _resolve_status_field(model, requested=None):
+    """
+    Проверяет, что поле статуса обработки видео реально существует в модели.
+
+    Модель может не иметь поля статуса (или иметь поле с другим именем), а
+    update_fields с несуществующим полем приводит к ValueError внутри save().
+    Поэтому имя статуса приводим к фактически существующему concrete-полю,
+    иначе возвращаем None — статус просто не обновляем.
+    """
+    candidates = []
+    if requested:
+        candidates.append(requested)
+    # Резервные имена, принятые в проекте
+    candidates += ["video_processing_status", "video_status"]
+
+    for name in candidates:
+        try:
+            field = model._meta.get_field(name)
+        except FieldDoesNotExist:
+            continue
+        if field.concrete and not field.many_to_many:
+            return name
+        logger.warning(
+            "CELERY TASK: поле %s у модели %s не является concrete — статус не обновляем",
+            name, model.__name__,
+        )
+
+    logger.warning(
+        "CELERY TASK: у модели %s нет поля статуса обработки видео "
+        "(запрошено: %s) — статус не будет обновляться",
+        model.__name__, requested,
+    )
+    return None
+
+
+def _set_video_status(instance, status_field_name, value):
+    """Ставит статус обработки видео, если у модели есть такое поле."""
+    if not status_field_name:
+        return False
+    setattr(instance, status_field_name, value)
+    instance.save(update_fields=[status_field_name])
+    return True
+
+
+def _get_video_status(instance, status_field_name):
+    """Читает статус обработки видео, возвращает None если поля нет."""
+    if not status_field_name:
+        return None
+    return getattr(instance, status_field_name, None)
+
+
 @shared_task(bind=True)
 def process_video_task(
     self, model_name, instance_id, video_field_name, hash_field_name, status_field_name=None
@@ -133,14 +186,11 @@ def process_video_task(
     2. Добавляет водяной знак
     3. Загружает в Яндекс Cloud (если включен)
     4. Удаляет временный локальный файл
-    """
-    # Определяем поле статуса по умолчанию, если не передано
-    if not status_field_name:
-        if model_name == 'PartnerProfile':
-            status_field_name = 'video_business_card_processing_status'
-        else:
-            status_field_name = 'video_processing_status'
 
+    status_field_name — имя поля статуса у конкретной модели. Если поле не
+    передано или не существует в модели, обработка выполняется без записи
+    статуса (иначе save(update_fields=[...]) упал бы с ValueError).
+    """
     logger.info(f"CELERY TASK STARTED: process_video_task for {model_name} {instance_id}, status_field={status_field_name}")
     try:
         # Разбираем model_name в формате "app_label.model_name"
@@ -162,6 +212,9 @@ def process_video_task(
                 app_label = "core"
 
         model = apps.get_model(app_label, model_name)
+        # Имя поля статуса приводим к реально существующему полю модели,
+        # иначе save(update_fields=[...]) упадёт с ValueError
+        status_field_name = _resolve_status_field(model, status_field_name)
         try:
             instance = model.objects.get(pk=instance_id)
         except model.DoesNotExist:
@@ -169,8 +222,7 @@ def process_video_task(
             return f"{model_name} {instance_id} does not exist"
 
         # Устанавливаем статус в processing
-        setattr(instance, status_field_name, 'processing')
-        instance.save(update_fields=[status_field_name])
+        _set_video_status(instance, status_field_name, 'processing')
         logger.info(f"CELERY TASK: Set status to processing for {model_name} {instance_id}")
 
         video_field = getattr(instance, video_field_name)
@@ -217,11 +269,10 @@ def process_video_task(
             logger.error(f"Файл видео не найден: {video_path}")
             # Перечитываем из БД: возможно, другая задача уже обработала видео
             fresh_instance = model.objects.get(pk=instance_id)
-            if getattr(fresh_instance, status_field_name) == 'completed':
+            if _get_video_status(fresh_instance, status_field_name) == 'completed':
                 logger.info(f"CELERY TASK: {model_name} {instance_id} already completed by another task, skipping")
                 return f"Видео уже обработано другой задачей: {instance_id}"
-            setattr(fresh_instance, status_field_name, 'failed')
-            fresh_instance.save(update_fields=[status_field_name])
+            _set_video_status(fresh_instance, status_field_name, 'failed')
             logger.error(f"CELERY TASK: Set status to failed - file not found: {video_path}")
             return f"Файл не найден: {video_path}"
 
@@ -243,8 +294,7 @@ def process_video_task(
         from .utils import compress_video
         if not compress_video(video_path, compressed_video_path):
             logger.error(f"Ошибка при сжатии видео: {video_path}")
-            setattr(instance, status_field_name, 'failed')
-            instance.save(update_fields=[status_field_name])
+            _set_video_status(instance, status_field_name, 'failed')
             return f"Ошибка при сжатии видео: {video_path}"
         logger.info(f"CELERY TASK: Video compressed to {compressed_video_path}")
 
@@ -262,6 +312,7 @@ def process_video_task(
             # Удаляем сжатое видео и возвращаем ошибку
             if os.path.exists(compressed_video_path):
                 os.remove(compressed_video_path)
+            _set_video_status(instance, status_field_name, 'failed')
             return f"Файл водяного знака не найден: {watermark_path}"
 
         logger.info(f"CELERY TASK: Adding watermark to {compressed_video_path}")
@@ -271,6 +322,7 @@ def process_video_task(
             # Удаляем сжатое видео и возвращаем ошибку
             if os.path.exists(compressed_video_path):
                 os.remove(compressed_video_path)
+            _set_video_status(instance, status_field_name, 'failed')
             return f"Ошибка при добавлении водяного знака: {compressed_video_path}"
         logger.info(f"CELERY TASK: Watermark added to {watermarked_video_path}")
 
@@ -321,8 +373,7 @@ def process_video_task(
                             os.remove(p)
                         except Exception:
                             pass
-                setattr(instance, status_field_name, 'failed')
-                instance.save(update_fields=[status_field_name])
+                _set_video_status(instance, status_field_name, 'failed')
                 return f"Ошибка при загрузке в Cloud: {e}"
         else:
             # Локальный режим - перемещаем обработанный файл
@@ -344,9 +395,12 @@ def process_video_task(
             new_hash = hashlib.md5(str(cloud_name).encode()).hexdigest()
         else:
             new_hash = None
+        save_fields = [hash_field_name]
+        if status_field_name:
+            setattr(instance, status_field_name, 'completed')
+            save_fields.append(status_field_name)
         setattr(instance, hash_field_name, new_hash)
-        setattr(instance, status_field_name, 'completed')
-        instance.save(update_fields=[hash_field_name, status_field_name])
+        instance.save(update_fields=save_fields)
         logger.info(f"CELERY TASK: Updated hash to {new_hash} and status to completed")
 
         # 5. Удаляем временные локальные файлы (сжатое и с водяным знаком)
@@ -369,13 +423,12 @@ def process_video_task(
         # 'completed' на 'failed' устаревшим объектом.
         try:
             fresh_instance = model.objects.get(pk=instance_id)
-            if getattr(fresh_instance, status_field_name) == 'completed':
+            if _get_video_status(fresh_instance, status_field_name) == 'completed':
                 logger.info(
                     f"CELERY TASK: {model_name} {instance_id} already completed by another task, not downgrading to failed"
                 )
                 return f"Видео уже обработано другой задачей: {instance_id}"
-            setattr(fresh_instance, status_field_name, 'failed')
-            fresh_instance.save(update_fields=[status_field_name])
+            _set_video_status(fresh_instance, status_field_name, 'failed')
             logger.error(f"CELERY TASK: Set status to failed for {model_name} {instance_id}")
         except Exception:
             pass
