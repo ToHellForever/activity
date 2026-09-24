@@ -18,10 +18,10 @@
         <span class="mobile-nav-badge">{{ unread_chats_count }}</span>
         {% endif %}
     </a>
-    <a href="{% url 'partner:portfolio_list' %}"
+    {% comment %} <a href="{% url 'partner:portfolio_list' %}"
     class="mobile-nav-item {% if request.resolver_match.url_name in 'portfolio_list portfolio_create portfolio_edit' %}active{% endif %}">
         Портфолио
-    </a>
+    </a> {% endcomment %}
     <a href="{% url 'partner:reports' %}"
     class="mobile-nav-item {% if request.resolver_match.url_name in 'reports report_schedule' %}active{% endif %}">
         Продажи
@@ -79,10 +79,10 @@
                     <span class="sidebar-badge">{{ unread_chats_count }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'partner:portfolio_list' %}"
+                {% comment %} <a href="{% url 'partner:portfolio_list' %}"
                 class="{% if request.resolver_match.url_name in 'portfolio_list portfolio_create portfolio_edit' %}active{% endif %}">
                     <img src="/media/icon/portfolio.svg" alt="" class="sidebar-icon"> Портфолио
-                </a>
+                </a> {% endcomment %}
                 {% comment %} Продажи и отчёты {% endcomment %}
                 <a href="{% url 'partner:reports' %}"
                 class="{% if request.resolver_match.url_name in 'reports report_schedule' %}active{% endif %}">

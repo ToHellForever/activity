@@ -46,13 +46,13 @@ from .finances import (
     get_partner_revenue_and_commission,
 )
 from .profile import profile_edit, change_password, save_field
-from .portfolio import (
-    portfolio_list,
-    portfolio_create,
-    portfolio_edit,
-    portfolio_delete,
-    portfolio_image_delete,
-)
+# from .portfolio import (
+#     portfolio_list,
+#     portfolio_create,
+#     portfolio_edit,
+#     portfolio_delete,
+#     portfolio_image_delete,
+# )
 from .entry_control import (
     enable_entry_control,
     disable_entry_control,
@@ -106,11 +106,11 @@ __all__ = [
     "change_password",
     "save_field",
     # portfolio
-    "portfolio_list",
-    "portfolio_create",
-    "portfolio_edit",
-    "portfolio_delete",
-    "portfolio_image_delete",
+    # "portfolio_list",
+    # "portfolio_create",
+    # "portfolio_edit",
+    # "portfolio_delete",
+    # "portfolio_image_delete",
     # entry_control
     "enable_entry_control",
     "disable_entry_control",
