@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Event, Ticket, Order, PartnerDocument, PayoutRequest, PayoutDetails
+from .models import Event, Ticket, Order, EventImage, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
 from .proxy_models import VisitorUser
 from .forms import EventAdminForm, PartnerAdminForm, SupportTicketAdminForm
@@ -218,9 +218,30 @@ class TicketInline(admin.TabularInline):
 
     get_available_count.short_description = "Доступно"
 
+
+class EventImageInline(admin.TabularInline):
+    """Дополнительные фотографии мероприятия (загрузка/удаление прямо в форме события)."""
+
+    model = EventImage
+    extra = 1
+    fields = ("image", "image_preview", "is_primary")
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        """Миниатюра уже загруженного фото."""
+        if obj is not None and obj.image:
+            return mark_safe(
+                f'<img src="{obj.image.url}" '
+                f'style="max-height: 80px; max-width: 80px; border: 1px solid #ddd; padding: 2px;">'
+            )
+        return "-"
+
+    image_preview.short_description = "Превью"
+
+
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    inlines = [TicketInline]
+    inlines = [TicketInline, EventImageInline]
     form = EventAdminForm
     """
     Настройка отображения модели Event в админке.
@@ -341,20 +362,6 @@ class EventAdmin(admin.ModelAdmin):
             ),
         ]
 
-        # Блок с фотографиями имеет смысл только у сохранённого мероприятия.
-        # На странице добавления (obj=None) фотографий ещё нет, а fieldset с
-        # read-only методом без obj вызвал бы FieldError ("Unknown field(s)").
-        if obj is not None:
-            fieldsets.append(
-                (
-                    "Фотографии мероприятия",
-                    {
-                        "fields": ("get_images_display",),
-                        "description": "Все фотографии, загруженные для мероприятия (основное изображение и дополнительные фотографии)",
-                    },
-                )
-            )
-
         # Добавляем блок для отображения статуса
         fieldsets.append(
             (
@@ -396,45 +403,29 @@ class EventAdmin(admin.ModelAdmin):
 
     get_tags_display.short_description = "Теги"
 
-    # Настройка отображения фотографий мероприятия
-    def get_images_display(self, obj):
-        """Отображает все фотографии мероприятия, включая основное изображение и фотографии из EventImage."""
-        # На странице добавления объекта ещё нет — фотографий тоже нет.
-        if obj is None:
-            return "Сохраните мероприятие, чтобы загрузить фотографии"
+    def save_formset(self, request, form, formset, change):
+        """Оставляем у мероприятия ровно одно основное фото."""
+        super().save_formset(request, form, formset, change)
+        if formset.model is not EventImage:
+            return
 
-        images_html = ""
+        event = form.instance
+        primaries = list(event.images.filter(is_primary=True).order_by("id"))
+        if len(primaries) > 1:
+            # Отмечено несколько основных — оставляем первую по порядку загрузки
+            event.images.filter(is_primary=True).exclude(pk=primaries[0].pk).update(is_primary=False)
+        elif not primaries:
+            first = event.images.order_by("id").first()
+            if first:
+                EventImage.objects.filter(pk=first.pk).update(is_primary=True)
 
+        # Основное фото должно быть видно и в карточке мероприятия (Event.image)
+        event.set_primary_from_event_images()
 
-        # Основное изображение
-        if obj.image:
-            images_html += f'<div style="margin: 5px; display: inline-block;">'
-            images_html += f'<img src="{obj.image.url}" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 5px;">'
-            images_html += f'<div style="text-align: center; font-size: 12px;">Основное изображение</div>'
-            images_html += f'</div>'
-
-        # Дополнительные фотографии из EventImage
-        event_images = obj.images.all()
-        if event_images:
-            for img in event_images:
-                images_html += f'<div style="margin: 5px; display: inline-block;">'
-                images_html += f'<img src="{img.image.url}" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 5px;">'
-                images_html += f'<div style="text-align: center; font-size: 12px;">Дополнительное фото</div>'
-                images_html += f'</div>'
-
-        if not images_html:
-            return "Нет фотографий"
-
-        return mark_safe(f'<div style="display: flex; flex-wrap: wrap;">{images_html}</div>')
-
-    get_images_display.short_description = "Фотографии мероприятия"
 
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
-        # get_images_display всегда read-only: иначе Django ищет его как поле модели
-        # и падает с FieldError на странице добавления (obj=None).
-        readonly_fields = ["approved_status", "get_tags_display", "get_images_display"]
-        return readonly_fields
+        return ["approved_status", "get_tags_display"]
 
 
     # Метод для отображения статуса в виде галочки
