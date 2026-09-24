@@ -302,7 +302,7 @@ class EventAdmin(admin.ModelAdmin):
 
     # Группировка полей на странице редактирования
     def get_fieldsets(self, request, obj=None):
-        fieldsets = (
+        fieldsets = [
             (
                 None,
                 {
@@ -339,38 +339,53 @@ class EventAdmin(admin.ModelAdmin):
                     )
                 },
             ),
-        # Добавляем блок для отображения фотографий
-        (
-            "Фотографии мероприятия",
-            {
-                "fields": ("get_images_display",),
-                "description": "Все фотографии, загруженные для мероприятия (основное изображение и дополнительные фотографии)",
-            },
-        ),
-            # Добавляем блок для отображения статуса
+        ]
+
+        # Блок с фотографиями имеет смысл только у сохранённого мероприятия.
+        # На странице добавления (obj=None) фотографий ещё нет, а fieldset с
+        # read-only методом без obj вызвал бы FieldError ("Unknown field(s)").
+        if obj is not None:
+            fieldsets.append(
+                (
+                    "Фотографии мероприятия",
+                    {
+                        "fields": ("get_images_display",),
+                        "description": "Все фотографии, загруженные для мероприятия (основное изображение и дополнительные фотографии)",
+                    },
+                )
+            )
+
+        # Добавляем блок для отображения статуса
+        fieldsets.append(
             (
                 "Статусы",
                 {
                     "fields": ("approved_status",),
                 },
-            ),
+            )
         )
 
+
         if obj and obj.status == "rejected":
-            fieldsets += (
+            fieldsets.append(
                 (
                     "Модерация",
                     {
                         "fields": ("rejection_reason",),
                     },
-                ),
+                )
             )
+
 
         return fieldsets
 
     # Настройка отображения тегов
     def get_tags_display(self, obj):
+        # Read-only поле рендерится и на странице добавления, где obj=None.
+        if obj is None:
+            return "-"
         tags = obj.tags.all()
+
         if not tags:
             return "-"
         html = '<div style="display: flex; flex-wrap: wrap; gap: 5px;">'
@@ -384,7 +399,12 @@ class EventAdmin(admin.ModelAdmin):
     # Настройка отображения фотографий мероприятия
     def get_images_display(self, obj):
         """Отображает все фотографии мероприятия, включая основное изображение и фотографии из EventImage."""
+        # На странице добавления объекта ещё нет — фотографий тоже нет.
+        if obj is None:
+            return "Сохраните мероприятие, чтобы загрузить фотографии"
+
         images_html = ""
+
 
         # Основное изображение
         if obj.image:
@@ -411,15 +431,18 @@ class EventAdmin(admin.ModelAdmin):
 
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ["approved_status", "get_tags_display"]
-        # Добавляем отображение фотографий только для существующих объектов
-        if obj:
-            readonly_fields.append("get_images_display")
+        # get_images_display всегда read-only: иначе Django ищет его как поле модели
+        # и падает с FieldError на странице добавления (obj=None).
+        readonly_fields = ["approved_status", "get_tags_display", "get_images_display"]
         return readonly_fields
+
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
+        if obj is None:
+            return None
         if obj.status == "active":
+
             return True
         elif obj.status == "on_moderation":
             return False
