@@ -1322,6 +1322,9 @@ class SupportAttachment(models.Model):
     Модель для вложений в сообщениях поддержки.
     """
 
+    # Только эти расширения отображаются в чате миниатюрами.
+    IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
     message = models.ForeignKey(
         "SupportMessage", on_delete=models.CASCADE, related_name="attachments"
     )
@@ -1330,6 +1333,16 @@ class SupportAttachment(models.Model):
 
     def __str__(self):
         return f"Вложение для сообщения #{self.message.id}"
+
+    @property
+    def filename(self):
+        """Имя файла без пути относительно MEDIA_ROOT."""
+        return os.path.basename(self.file.name)
+
+    @property
+    def is_image(self):
+        """Показывать ли вложение как изображение в ленте чата."""
+        return os.path.splitext(self.file.name)[1].lower() in self.IMAGE_EXTENSIONS
 
 class SupportMessage(models.Model):
     """

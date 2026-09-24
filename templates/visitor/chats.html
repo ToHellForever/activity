@@ -60,7 +60,10 @@
         <div class="chat-message chat-message--outgoing">
           <div class="chat-message-bubble-row">
             <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
-            <div class="chat-message-bubble">{{ message.text }}</div>
+            <div class="chat-message-bubble">
+              {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+              {% if message.text %}<div>{{ message.text }}</div>{% endif %}
+            </div>
           </div>
         </div>
         
@@ -69,7 +72,10 @@
         <div class="chat-message chat-message--incoming">
           <!-- БЛОК АВАТАРА УДАЛЕН -->
           <div class="chat-message-bubble-row">
-            <div class="chat-message-bubble">{{ message.text }}</div>
+            <div class="chat-message-bubble">
+              {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+              {% if message.text %}<div>{{ message.text }}</div>{% endif %}
+            </div>
             <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
           </div>
         </div>
@@ -84,11 +90,12 @@
               <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form" data-send-url="{% url 'send_support_message' %}">
                 {% csrf_token %}
                 <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+                <div class="attachment-preview" hidden></div>
                 <div class="support-chat-input-row">
-                  <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+                  <input type="text" name="text" id="chatTextInput" placeholder="Сообщение">
                   <div class="support-attachment-wrap">
-                    <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
-                    <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+                    <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" accept="image/*" multiple>
+                    <label for="chat-attachment" class="support-send-button" title="Прикрепить фото"><img src="/media/icon/+.svg" alt=""></label>
                   </div>
                   <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
                 </div>
@@ -108,5 +115,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/chat_attachments.js' %}"></script>
 <script src="{% static 'js/pages/visitor/visitor_chats.js' %}"></script>
 {% endblock %}

@@ -75,7 +75,10 @@
                       <div class="chat-message-guest-info">
                         Имя: {{ message.user.get_first_name|default:"—" }}<br>
                         e-mail: {{ message.user.email }}<br>
-                        <div style='margin-top: 15px;'>{{ message.text }}</div>
+                        <div style='margin-top: 15px;'>
+                          {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+                          {% if message.text %}{{ message.text }}{% endif %}
+                        </div>
                       </div>
                       <div class="chat-message-guest-note">Пользователь не авторизован на платформе, направьте ответ на электронную почту</div>
                     </div>
@@ -91,7 +94,8 @@
                 </div>
                 <div class="chat-message-bubble-row">
                   <div class="chat-message-bubble">
-                    {{ message.text }}
+                    {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+                    {% if message.text %}{{ message.text }}{% endif %}
                   </div>
                   <div class="chat-message-time">{{ message.created_at|date:"H:i" }}</div>
                 </div>
@@ -104,7 +108,10 @@
                 <div class="chat-message-time">
                   {{ message.created_at|date:"H:i" }}
                 </div>
-                <div class="chat-message-bubble">{{ message.text }}</div>
+                <div class="chat-message-bubble">
+                  {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+                  {% if message.text %}{{ message.text }}{% endif %}
+                </div>
               </div>
             </div>
           {% endif %}
@@ -118,11 +125,12 @@
       <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form" data-send-url="{% url 'send_support_message' %}">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+        <div class="attachment-preview" hidden></div>
         <div class="support-chat-input-row">
-          <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+          <input type="text" name="text" id="chatTextInput" placeholder="Сообщение">
           <div class="support-attachment-wrap">
-            <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple>
-            <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+            <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" accept="image/*" multiple>
+            <label for="chat-attachment" class="support-send-button" title="Прикрепить фото"><img src="/media/icon/+.svg" alt=""></label>
           </div>
           <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
         </div>
@@ -143,5 +151,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/chat_attachments.js' %}"></script>
 <script src="{% static 'js/pages/partner/partner_chats.js' %}"></script>
 {% endblock %}

@@ -115,12 +115,11 @@ document.addEventListener('DOMContentLoaded', function() {
             wrapper.setAttribute('data-message-date', newDate);
             const outerDiv = document.createElement('div');
             outerDiv.className = 'chat-message chat-message--outgoing';
-            let bubbleContent = escapeHtml(m.text);
-            if (m.attachments && m.attachments.length) {
-              m.attachments.forEach(function(att) {
-                bubbleContent += '<br><a href="' + att.url + '" target="_blank" style="color:#fff;text-decoration:underline;">📎 ' + att.name + '</a>';
-              });
-            }
+            // Фото рисуются сеткой над подписью, как в серверной разметке
+            let bubbleContent = window.ChatAttachments
+              ? window.ChatAttachments.attachmentsHtml(m.attachments)
+              : '';
+            if (m.text) bubbleContent += escapeHtml(m.text);
             outerDiv.innerHTML =
               '<div class="chat-message-bubble-row">' +
                 '<div class="chat-message-bubble">' + bubbleContent + '</div>' +

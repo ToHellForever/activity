@@ -354,12 +354,12 @@
             <label for="compose_text">Сообщение</label>
             <textarea name="text" id="compose_text" rows="5" placeholder="Введите текст сообщения..." required></textarea>
 
-            <label>Вложения (необязательно)</label>
+            <label>Фото (необязательно)</label>
             <label class="custom-file-label" for="compose_file">
               <span class="file-icon">📁</span>
-              <span class="file-text">Выберите файлы</span>
+              <span class="file-text">Выберите фото</span>
             </label>
-            <input type="file" name="attachment" multiple id="compose_file" style="display: none;">
+            <input type="file" name="attachment" accept="image/*" multiple id="compose_file" style="display: none;">
 
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Отправить обращение</button>
@@ -421,14 +421,8 @@
             <div class="support-message-body">
               <div class="support-bubble">
                 <strong>{{ message.user.get_full_name|default:message.user.email }}</strong>
-                <div>{{ message.text|linebreaksbr }}</div>
-                {% if message.attachments.all %}
-                  <div class="attachments">
-                    {% for attachment in message.attachments.all %}
-                      <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">📄 {{ attachment.file.name|cut:"support_attachments/" }}</a>
-                    {% endfor %}
-                  </div>
-                {% endif %}
+                {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+                {% if message.text %}<div>{{ message.text|linebreaksbr }}</div>{% endif %}
               </div>
               <div class="support-message-time">{{ message.created_at|date:"d.m.Y H:i" }}</div>
             </div>
@@ -442,11 +436,12 @@
       <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form" data-send-url="{% url 'send_support_message' %}">
         {% csrf_token %}
         <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+        <div class="attachment-preview" hidden></div>
         <div class="support-chat-input-row">
-          <input type="text" name="text" id="chatTextInput" placeholder="Введите ваше сообщение..." required>
+          <input type="text" name="text" id="chatTextInput" placeholder="Сообщение">
           <div class="support-attachment-wrap">
-            <input id="chatFileInput" class="support-attachment-input" type="file" name="attachment" multiple>
-            <label for="chatFileInput" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+            <input id="chatFileInput" class="support-attachment-input" type="file" name="attachment" accept="image/*" multiple>
+            <label for="chatFileInput" class="support-send-button" title="Прикрепить фото"><img src="/media/icon/+.svg" alt=""></label>
           </div>
           <button type="submit" class="support-send-button"><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
         </div>
@@ -461,5 +456,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/chat_attachments.js' %}"></script>
 <script src="{% static 'js/pages/other/moderator_dashboard.js' %}"></script>
 {% endblock %}

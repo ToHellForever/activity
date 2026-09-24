@@ -127,12 +127,11 @@ if (supportForm && supportHistory) {
             const wrapper = document.createElement('div');
             wrapper.className = 'support-message ' + (m.is_from_user ? 'user' : 'agent');
 
-            let bubbleContent = escapeHtml(m.text);
-            if (m.attachments && m.attachments.length) {
-                m.attachments.forEach(function(att) {
-                    bubbleContent += '<div class="attachments"><a href="' + att.url + '" target="_blank" class="attachment-link" title="' + att.name + '">📄 Файл</a></div>';
-                });
-            }
+            // Фото рисуются сеткой над подписью, как в серверной разметке
+            let bubbleContent = window.ChatAttachments
+                ? window.ChatAttachments.attachmentsHtml(m.attachments)
+                : '';
+            if (m.text) bubbleContent += escapeHtml(m.text);
 
             const avatarHtml = m.is_from_user
                 ? '<span class="sender-initials">ВЫ</span>'

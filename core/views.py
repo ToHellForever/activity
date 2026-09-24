@@ -15,6 +15,9 @@ from django.views.decorators.cache import never_cache
 from .models import Event, MainTag
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
+import os
+
+from PIL import Image
 from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
 from partner_app.models import PartnerProfile
 from .models import EmailVerificationCode
@@ -445,6 +448,69 @@ def custom_logout(request):
     # Редиректим на страницу входа по имени URL
     return redirect("login")
 
+# --- Ограничения для вложений в чатах и поддержке ---
+ATTACHMENT_ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"]
+ATTACHMENT_MAX_SIZE_MB = 10
+ATTACHMENT_MAX_COUNT = 6
+# С этим расширением фронтенд показывает миниатюру вместо ссылки «Файл».
+ATTACHMENT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+
+def validate_attachments(files):
+    """
+    Валидация вложений для чатов и поддержки.
+    Разрешены только фото, не более ATTACHMENT_MAX_COUNT файлов за раз,
+    каждый размером до ATTACHMENT_MAX_SIZE_MB МБ.
+    Возвращает сообщение об ошибке или None, если всё в порядке.
+    """
+    if len(files) > ATTACHMENT_MAX_COUNT:
+        return f"Можно прикрепить не более {ATTACHMENT_MAX_COUNT} фото за раз"
+    for f in files:
+        ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+        if ext not in ATTACHMENT_ALLOWED_EXTENSIONS:
+            return "Можно прикреплять только фото (jpg, png, gif, webp)"
+        if f.size > ATTACHMENT_MAX_SIZE_MB * 1024 * 1024:
+            return f"Размер фото не должен превышать {ATTACHMENT_MAX_SIZE_MB} МБ"
+        # Расширение можно подделать, поэтому проверяем, что файл действительно
+        # читается как изображение.
+        try:
+            with Image.open(f) as image:
+                image.verify()
+        except Exception:
+            return "Можно прикреплять только фото (jpg, png, gif, webp)"
+        finally:
+            # Иначе Django не сможет прочитать содержимое при сохранении.
+            try:
+                f.seek(0)
+            except Exception:
+                pass
+    return None
+
+
+def save_attachments(message, files):
+    """Сохраняет вложения сообщения и возвращает их для ответа фронтенду."""
+    return [
+        SupportAttachment.objects.create(message=message, file=f)
+        for f in files
+    ]
+
+
+def attachments_payload(attachments):
+    """
+    Сериализация вложений в формат, общий для шаблонов и AJAX-ответа.
+    Тип передаётся, чтобы фронтенд рисовал фото миниатюрой, а не ссылкой.
+    """
+    return [
+        {
+            "id": a.id,
+            "url": a.file.url,
+            "name": a.filename,
+            "is_image": a.is_image,
+        }
+        for a in attachments
+    ]
+
+
 @login_required
 def support_dashboard(request):
     """
@@ -454,10 +520,15 @@ def support_dashboard(request):
     # --- ЛОГИКА: Создание тикета техподдержки ---
     if request.method == "POST":
         new_subject = request.POST.get("new_subject")
-        new_message = request.POST.get("new_message")
+        new_message = request.POST.get("new_message", "").strip()
         files = request.FILES.getlist("attachment")
 
-        if new_subject and new_message:
+        if new_subject and (new_message or files):
+            error = validate_attachments(files)
+            if error:
+                messages.error(request, error)
+                return redirect("/support/")
+
             # Техподдержка платформы — всегда ticket_type='support'
             ticket = SupportTicket.objects.create(
                 subject=new_subject,
@@ -470,8 +541,7 @@ def support_dashboard(request):
                 ticket=ticket, user=request.user, is_from_user=True, text=new_message
             )
 
-            for file in files:
-                SupportAttachment.objects.create(message=message, file=file)
+            save_attachments(message, files)
 
             return redirect(f"/support/?ticket_id={ticket.id}")
 
@@ -508,13 +578,47 @@ def support_dashboard(request):
     }
     return render(request, "support_dashboard.html", context)
 
+def can_access_ticket(user, ticket):
+    """
+    Право видеть и писать в переписку:
+    - владелец тикета;
+    - модератор/админ;
+    - организатор мероприятия в чатах с участниками.
+    """
+    if user.is_authenticated and ticket.user_id == user.id:
+        return True
+    if is_moderator(user):
+        return True
+    if (
+        ticket.ticket_type == "participant"
+        and ticket.event_id
+        and ticket.event.organizer_id == user.id
+    ):
+        return True
+    return False
+
+
+@login_required
 def send_support_message(request):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         ticket_id = request.POST.get('ticket_id')
         text = request.POST.get('text', '').strip()
-        
+        files = request.FILES.getlist('attachment')
+
+        if not text and not files:
+            return JsonResponse(
+                {'success': False, 'message': 'Введите сообщение или прикрепите фото'},
+                status=400,
+            )
+
         try:
             ticket = SupportTicket.objects.get(id=ticket_id)
+
+            if not can_access_ticket(request.user, ticket):
+                return JsonResponse(
+                    {'success': False, 'message': 'Нет доступа к этому обращению'},
+                    status=403,
+                )
 
             # В закрытом обращении отвечать может только модератор
             if ticket.status == "closed" and not is_moderator(request.user):
@@ -525,6 +629,10 @@ def send_support_message(request):
                     },
                     status=403,
                 )
+
+            error = validate_attachments(files)
+            if error:
+                return JsonResponse({'success': False, 'message': error}, status=400)
 
             # Создаем сообщение.
             # is_from_user=True только если пишет владелец тикета;
@@ -537,10 +645,8 @@ def send_support_message(request):
                 text=text,
                 is_from_user=is_from_user
             )
-            
-            # Если есть файлы — используем SupportAttachment
-            for f in request.FILES.getlist('attachment'):
-                SupportAttachment.objects.create(message=message, file=f)
+
+            attachments = save_attachments(message, files)
 
             # Формируем ОДИНАКОВЫЙ формат ответа
             created_dt = timezone.localtime(message.created_at)
@@ -555,6 +661,7 @@ def send_support_message(request):
                     'user_email': request.user.email or '',
                     'full_created_at': created_dt.isoformat(), 
                     'created_at': created_dt.strftime('%H:%M'), 
+                    'attachments': attachments_payload(attachments),
                 }
             }
             return JsonResponse(response_data)
@@ -565,20 +672,6 @@ def send_support_message(request):
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
     
     return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
-
-def upload_image(request):
-    if request.method == "POST":
-        data_url = request.POST.get("data")
-        format, imgstr = data_url.split(";base64,")
-        ext = format.split("/")[1]
-        data = ContentFile(base64.b64decode(imgstr), name=f"image.{ext}")
-
-        # Создаем вложение и возвращаем его ID
-        from core.models import SupportAttachment
-        attachment = SupportAttachment.objects.create(file=data)
-        return JsonResponse({"attachment_id": attachment.id})
-
-    return HttpResponseBadRequest("Некорректный запрос")
 
 def is_moderator(user):
     return user.is_superuser or user.groups.filter(name="Модераторы").exists()
@@ -713,11 +806,16 @@ def moderator_create_ticket(request):
     user_id = request.POST.get("user_id")
     subject = request.POST.get("subject", "").strip()
     text = request.POST.get("text", "").strip()
+    files = request.FILES.getlist("attachment")
 
     if not user_id:
         return HttpResponseBadRequest("Не выбран пользователь")
-    if not text:
+    if not text and not files:
         return HttpResponseBadRequest("Пустое сообщение")
+
+    error = validate_attachments(files)
+    if error:
+        return HttpResponseBadRequest(error)
 
     target_user = get_object_or_404(CustomUser, id=user_id)
 
@@ -738,8 +836,7 @@ def moderator_create_ticket(request):
         is_from_user=False,
     )
 
-    for f in request.FILES.getlist("attachment"):
-        SupportAttachment.objects.create(message=message, file=f)
+    save_attachments(message, files)
 
     tab = "organizers" if target_user.user_type == "partner" else "participants"
     return redirect(

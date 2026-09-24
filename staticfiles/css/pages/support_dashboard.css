@@ -448,7 +448,6 @@
   background: #e5e7eb;
 }
 .support-chat-form {
-  display: flex;
   align-items: center;
   flex-shrink: 0;
 }
@@ -479,6 +478,101 @@
 }
 .support-attachment-wrap {
   position: relative;
+}
+/* Превью выбранных фото над полем ввода */
+.attachment-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.attachment-preview-item {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #d2dbe4;
+  background: #f1f5f9;
+  flex-shrink: 0;
+}
+.attachment-preview-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.attachment-preview-name {
+  max-width: 160px;
+  align-self: center;
+  font-size: 0.8rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Фото, прикреплённые к сообщению: одно — на всю ширину, несколько — по два в ряд */
+.message-attachments {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.message-attachments--multiple {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 1500px) {
+.message-attachments--multiple {
+  grid-template-columns: repeat(2, 1fr);
+}
+}
+.message-attachments + div {
+  margin-top: 8px;
+}
+.message-attachment {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+}
+.message-attachment-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Сообщение только с фото и без подписи не должно выглядеть пустым */
+.support-bubble:not(
+  :has(div:not(.message-attachments):not(.message-attachments div))
+),
+.chat-message-bubble:not(
+  :has(div:not(.message-attachments):not(.message-attachments div))
+) {
+  padding: 6px;
+}
+.attachment-preview-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+.attachment-preview-remove:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+.message-attachment-image {
+  width: 130px;
+  height: 130px;
+  object-fit: cover;
+  padding: 5px;
 }
 .support-attachment-input {
   display: none;

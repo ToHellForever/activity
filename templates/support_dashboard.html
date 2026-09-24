@@ -31,13 +31,13 @@
               <label for="new_message">Ваше сообщение</label>
               <textarea id="new_message" name="new_message" placeholder="Опишите суть обращения..." required></textarea>
 
-              <label for="attachment">Файлы</label>
+              <label for="attachment">Фото</label>
               <label for="attachment" class="custom-file-label">
                 <span class="file-icon">📁</span>
-                <span class="file-text" id="file-text">Выберите файлы</span>
+                <span class="file-text" id="file-text">Выберите фото</span>
                 <span class="file-count" id="file-count" style="display:none;"></span>
               </label>
-              <input type="file" id="attachment" name="attachment" multiple style="display:none;">
+              <input type="file" id="attachment" name="attachment" accept="image/*" multiple style="display:none;">
 
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Создать обращение</button>
@@ -101,14 +101,8 @@
                   </div>
                   <div class="support-message-body">
                     <div class="support-bubble">
-                      <div>{{ message.text }}</div>
-                      {% if message.attachments.all %}
-                        <div class="attachments">
-                          {% for attachment in message.attachments.all %}
-                            <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link" title="{{ attachment.file.name }}">📄 Файл</a>
-                          {% endfor %}
-                        </div>
-                      {% endif %}
+                      {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}
+                      {% if message.text %}<div>{{ message.text }}</div>{% endif %}
                     </div>
                     <div class="support-message-time">{{ message.created_at|date:"d.m.Y H:i" }}</div>
                   </div>
@@ -128,13 +122,14 @@
             <form id="chatSendForm" enctype="multipart/form-data" class="support-chat-form {% if selected_ticket.status == 'closed' %}is-locked{% endif %}" data-send-url="{% url 'send_support_message' %}">
               {% csrf_token %}
               <input type="hidden" name="ticket_id" value="{{ selected_ticket.id }}">
+              <div class="attachment-preview" hidden></div>
               <div class="support-chat-input-row">
                 <input type="text" name="text" id="chatTextInput"
-                       placeholder="{% if selected_ticket.status == 'closed' %}Обращение закрыто{% else %}Введите ваше сообщение...{% endif %}"
-                       {% if selected_ticket.status == 'closed' %}disabled{% endif %} required>
+                       placeholder="{% if selected_ticket.status == 'closed' %}Обращение закрыто{% else %}Сообщение{% endif %}"
+                       {% if selected_ticket.status == 'closed' %}disabled{% endif %}>
                 <div class="support-attachment-wrap">
-                  <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" multiple {% if selected_ticket.status == 'closed' %}disabled{% endif %}>
-                  <label for="chat-attachment" class="support-send-button" title="Прикрепить файл"><img src="/media/icon/+.svg" alt=""></label>
+                  <input id="chat-attachment" class="support-attachment-input" type="file" name="attachment" accept="image/*" multiple {% if selected_ticket.status == 'closed' %}disabled{% endif %}>
+                  <label for="chat-attachment" class="support-send-button" title="Прикрепить фото"><img src="/media/icon/+.svg" alt=""></label>
                 </div>
                 <button type="submit" class="support-send-button" {% if selected_ticket.status == 'closed' %}disabled{% endif %}><img src="/media/icon/material-symbols_send-rounded.svg" alt=""></button>
               </div>
@@ -149,5 +144,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/chat_attachments.js' %}"></script>
 <script src="{% static 'js/pages/other/support_dashboard.js' %}"></script>
 {% endblock %}

@@ -106,14 +106,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const msgClass = isUser ? 'agent' : 'user';
 
             let bubbleContent = '<strong>' + escapeHtml(m.user_first_name || m.user_email) + '</strong>';
-            bubbleContent += '<div>' + escapeHtml(m.text) + '</div>';
-            if (m.attachments && m.attachments.length) {
-                bubbleContent += '<div class="attachments">';
-                m.attachments.forEach(function(att) {
-                    bubbleContent += '<a href="' + att.url + '" target="_blank" class="attachment-link">📄 ' + escapeHtml(att.name) + '</a>';
-                });
-                bubbleContent += '</div>';
+            // Фото рисуются сеткой над подписью, как в серверной разметке
+            if (window.ChatAttachments) {
+                bubbleContent += window.ChatAttachments.attachmentsHtml(m.attachments);
             }
+            if (m.text) bubbleContent += '<div>' + escapeHtml(m.text) + '</div>';
 
             const avatarContent = isUser
                 ? '<span class="sender-initials">' + escapeHtml((m.user_first_name || m.user_email || '?').slice(0, 2).toUpperCase()) + '</span>'

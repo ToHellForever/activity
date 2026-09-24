@@ -1,0 +1,18 @@
+{% comment %}
+Вложения сообщения чата/поддержки.
+Фото рисуются сеткой (одно — на всю ширину, несколько — по два в ряд),
+прочие файлы — ссылкой. Подпись сообщения выводится под этим блоком.
+{% endcomment %}
+{% if attachments %}
+  <div class="message-attachments{% if attachments|length > 1 %} message-attachments--multiple{% endif %}">
+    {% for attachment in attachments %}
+      {% if attachment.is_image %}
+        <a class="message-attachment" href="{{ attachment.file.url }}" target="_blank" rel="noopener" title="{{ attachment.filename }}">
+          <img class="message-attachment-image" src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" loading="lazy">
+        </a>
+      {% else %}
+        <a class="attachment-link" href="{{ attachment.file.url }}" target="_blank">📄 {{ attachment.filename }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
