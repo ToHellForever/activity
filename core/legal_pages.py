@@ -5,7 +5,7 @@
 из core/legal_documents_defaults/ — страница никогда не останется пустой.
 """
 from pathlib import Path
-
+ 
 from django.conf import settings
 
 DEFAULTS_DIR = Path(settings.BASE_DIR) / "core" / "legal_documents_defaults"
