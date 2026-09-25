@@ -1377,6 +1377,7 @@ class EmailVerificationCode(models.Model):
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    email = models.EmailField(verbose_name="Адрес электронной почты", default="")
     code = models.CharField(max_length=5, verbose_name="Код подтверждения")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_used = models.BooleanField(default=False, verbose_name="Использован")
