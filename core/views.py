@@ -19,6 +19,8 @@ import os
 
 from PIL import Image
 from .models import SupportTicket, SupportMessage, SupportAttachment, CustomUser, Order
+from .models import LegalDocument
+from . import legal_pages
 from partner_app.models import PartnerProfile
 from .models import EmailVerificationCode
 from django.views.decorators.http import require_POST, require_http_methods
@@ -1305,12 +1307,18 @@ def check_ticket(request, order_id):
 
 def privacy_policy_view(request):
     """Политика конфиденциальности"""
-    return render(request, "other/privacy_policy.html")
+    return render(request, "other/privacy_policy.html", {
+        "content": legal_pages.get_content("privacy-policy"),
+    })
 
 
 def offer_view(request):
     """Публичная оферта"""
-    return render(request, "other/offer.html")
+    return render(request, "other/offer.html", {
+        "content_participant": legal_pages.get_content("offer-participant"),
+        "content_organizer": legal_pages.get_content("offer-organizer"),
+        "content_venue": legal_pages.get_content("offer-venue"),
+    })
 
 
 def organizer_contract_download(request):
@@ -1328,12 +1336,16 @@ def organizer_contract_download(request):
 
 def personal_data_consent_view(request):
     """Страница согласия на обработку персональных данных."""
-    return render(request, "other/consent_personal_data.html")
+    return render(request, "other/consent_personal_data.html", {
+        "content": legal_pages.get_content("personal-data-consent"),
+    })
 
 
 def mailing_consent_view(request):
     """Страница согласия на рассылку."""
-    return render(request, "other/consent_mailing.html")
+    return render(request, "other/consent_mailing.html", {
+        "content": legal_pages.get_content("mailing-consent"),
+    })
 
 
 def faq_view(request):

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, EventImage, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
+from .models import LegalDocument
 from .proxy_models import VisitorUser
 from .forms import EventAdminForm, PartnerAdminForm, SupportTicketAdminForm
 from django import forms
@@ -9,7 +10,8 @@ from django.contrib import messages
 from django.conf import settings
 from django.conf.urls.static import static
 from django.utils import timezone
-from django.utils.html import conditional_escape, mark_safe
+from django.utils.html import conditional_escape, mark_safe, format_html
+from django.db import models
 from django.db.models import F, Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
@@ -43,7 +45,7 @@ class VisitorUserAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return True
 
 @admin.register(PayoutDetails)
 class PayoutDetailsAdmin(admin.ModelAdmin):
@@ -1947,5 +1949,47 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             self.message_user(request, f"Заявка #{obj.pk} отклонена.")
             return redirect(request.path)
         return super().response_change(request, obj)
+
+
+@admin.register(LegalDocument)
+class LegalDocumentAdmin(admin.ModelAdmin):
+    """Юридические страницы: текст правится прямо в админке, набор страниц фиксирован."""
+
+    list_display = ('title', 'slug', 'updated_at', 'open_page')
+    search_fields = ('title', 'slug')
+    readonly_fields = ('slug', 'updated_at')
+    formfield_overrides = {
+        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={
+            'rows': 30, 'style': 'width: 100%; font-family: Consolas, monospace;',
+        })},
+    }
+
+    @admin.display(description='Страница')
+    def open_page(self, obj):
+        url = obj.get_absolute_url()
+        if not url:
+            return '—'
+        return format_html('<a href="{}" target="_blank">открыть</a>', url)
+
+    def has_add_permission(self, request):
+        # новые страницы создаёт миграция заполнения, админ только правит текст
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='Страница')
+    def open_page(self, obj):
+        url = obj.get_absolute_url()
+        if not url:
+            return '—'
+        return format_html('<a href="{}" target="_blank">открыть</a>', url)
+
+    def has_add_permission(self, request):
+        # новые страницы создаёт миграция заполнения, админ только правит текст
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 

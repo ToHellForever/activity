@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from django.urls import reverse
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
 try:
@@ -1427,3 +1428,51 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     class Meta:
         verbose_name = "Фото мероприятия"
         verbose_name_plural = "Фото мероприятий"
+
+
+class LegalDocument(models.Model):
+    """Текст юридической страницы сайта, редактируемый из админки.
+
+    Набор страниц фиксирован: slug подключён к URL в core/views.py, новые
+    записи создаёт миграция 0044, администратор правит только title и content.
+    content хранит HTML тела документа (<h2>, <p>, <ul> ...) без обёртки
+    страницы — шаблон сам добавляет вёрстку, стили и заголовки документа.
+    """
+
+    PRIVACY_POLICY = 'privacy-policy'
+    PERSONAL_DATA_CONSENT = 'personal-data-consent'
+    MAILING_CONSENT = 'mailing-consent'
+    OFFER_PARTICIPANT = 'offer-participant'
+    OFFER_ORGANIZER = 'offer-organizer'
+    OFFER_VENUE = 'offer-venue'
+
+    # slug -> имя URL страницы, чтобы из админки можно было её открыть
+    PAGE_URL_NAMES = {
+        PRIVACY_POLICY: 'privacy_policy',
+        PERSONAL_DATA_CONSENT: 'personal_data_consent_view',
+        MAILING_CONSENT: 'mailing_consent_view',
+        OFFER_PARTICIPANT: 'offer',
+        OFFER_ORGANIZER: 'offer',
+        OFFER_VENUE: 'offer',
+    }
+
+    slug = models.SlugField('Код страницы', max_length=50, unique=True)
+    title = models.CharField(
+        'Название',
+        max_length=200,
+        help_text='Видно только в админке — на сайте заголовок задаёт шаблон',
+    )
+    content = models.TextField('Текст страницы (HTML)', blank=True)
+    updated_at = models.DateTimeField('Обновлён', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Юридическая страница'
+        verbose_name_plural = 'Юридические страницы'
+        ordering = ('title',)
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        url_name = self.PAGE_URL_NAMES.get(self.slug)
+        return reverse(url_name) if url_name else ''
