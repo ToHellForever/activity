@@ -615,7 +615,7 @@ def generate_agent_report_pdf(partner, year, month, report_number, report_date):
     principal_line = principal_name + (
         f" (ИНН {principal_inn})" if principal_inn else ""
     )
-    elements.append(Paragraph(f"<b>Агент:</b> {agent_line}", normal))
+    elements.append(Paragraph(f"{agent_line}", normal))
     elements.append(Paragraph(f"<b>Принципал:</b> {principal_line}", normal))
     elements.append(Spacer(1, 12))
 
