@@ -114,6 +114,44 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         verbose_name="Дата согласия на рассылку",
     )
 
+    # ─── Жизненный цикл незавершённой регистрации ────────────────────
+    # Когда последний раз реально уходило письмо с кодом. От этой даты
+    # считается час до автоудаления неподтверждённого аккаунта. Обновляется
+    # только при успешной отправке — спам кнопкой «отправить снова» не
+    # продлевает жизнь резервации чужого email.
+    last_verification_sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Последняя отправка кода подтверждения",
+    )
+
+    # Сколько писем с кодом ушло с момента регистрации. Лимит —
+    # VERIFICATION_MAX_SENDS (3). После лимита повторные отправки
+    # отклоняются, и аккаунт удаляется по сроку.
+    verification_send_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Количество отправок кода",
+    )
+
+    # Незавершённая регистрация живёт час с последней реальной отправки
+    # письма. Дальше аккаунт удаляется, и email освобождается для владельца.
+    UNVERIFIED_ACCOUNT_TTL_MINUTES = 60
+    # Максимум писем с кодом на одну незавершённую регистрацию
+    VERIFICATION_MAX_SENDS = 3
+
+    def unverified_expires_at(self):
+        """Момент, когда незавершённая регистрация будет удалена."""
+        if self.is_verified or self.last_verification_sent_at is None:
+            return None
+        return self.last_verification_sent_at + timezone.timedelta(
+            minutes=self.UNVERIFIED_ACCOUNT_TTL_MINUTES
+        )
+
+    def is_stale_unverified(self):
+        """Незавершённая регистрация просрочена и подлежит удалению."""
+        expires_at = self.unverified_expires_at()
+        return expires_at is not None and timezone.now() > expires_at
+
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""
         # Удаляем все подписки пользователя
@@ -1381,13 +1419,50 @@ class EmailVerificationCode(models.Model):
     code = models.CharField(max_length=5, verbose_name="Код подтверждения")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_used = models.BooleanField(default=False, verbose_name="Использован")
+    # Срок действия кода из письма (по умолчанию задают константы
+    # VERIFICATION_CODE_TTL_MINUTES / UNVERIFIED_ACCOUNT_TTL_MINUTES).
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Срок действия кода",
+    )
 
     def __str__(self):
         return f"Код подтверждения для {self.user.email}"
 
+    # Сколько минут живёт код из письма
+    CODE_TTL_MINUTES = 15
+
+    @classmethod
+    def generate_code(cls):
+        """Генерирует случайный 5-значный цифровой код."""
+        import secrets
+
+        return "".join(secrets.choice("0123456789") for _ in range(5))
+
+    @classmethod
+    def create_for_user(cls, user, email):
+        """Создаёт новый активный код, предварительно отменяя все прежние."""
+        cls.objects.filter(user=user).update(is_used=True)
+        return cls.objects.create(
+            user=user,
+            email=email,
+            code=cls.generate_code(),
+            expires_at=timezone.now()
+            + timezone.timedelta(minutes=cls.CODE_TTL_MINUTES),
+        )
+
+    def is_expired(self):
+        """Код истёк, если его срок действия наступил и он не подтверждён."""
+        if self.is_used:
+            return True
+        return self.expires_at is not None and timezone.now() > self.expires_at
+
     class Meta:
         verbose_name = "Код подтверждения почты"
         verbose_name_plural = "Коды подтверждения почты"
+
+
 
 class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     """

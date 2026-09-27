@@ -158,11 +158,26 @@ def login_view(request):
         form = CustomAuthenticationForm(request.POST, request=request)
         if form.is_valid():
             user = form.cleaned_data["user"]
-            login(request, user)
-            if user.user_type == "partner":
-                return redirect("partner:dashboard")
+            # Вход только после подтверждения почты. Пока код из письма не
+            # введён (is_verified=False), сессию не создаём — возвращаем на
+            # страницу ввода кода. Иначе аккаунт был бы доступен сразу после
+            # регистрации, в обход 5-значного кода.
+            if not user.is_verified:
+                # Просроченная незавершённая регистрация (час без ввода
+                # кода) удаляется на месте: вход в неё невозможен, а email
+                # должен освобождаться для настоящего владельца.
+                if user.is_stale_unverified():
+                    user.delete()
+                    form.add_error(None, "Неверный email или пароль.")
+                else:
+                    request.session["unverified_user_id"] = user.id
+                    return redirect("verify_email")
             else:
-                return redirect("visitor:dashboard")
+                login(request, user)
+                if user.user_type == "partner":
+                    return redirect("partner:dashboard")
+                else:
+                    return redirect("visitor:dashboard")
     else:
         form = CustomAuthenticationForm()
 
@@ -286,6 +301,10 @@ def register_view(request):
         if user_type == "partner":
             partner_form = PartnerRegistrationForm(request.POST, request.FILES)
             if partner_form.is_valid():
+                # Форма уже очистила email от неподтверждённой заявки
+                # (clean -> _purge_unverified_account) — как и форма
+                # посетителя, поэтому поведение ролей одинаковое.
+
                 # Создаём пользователя
                 user = CustomUser.objects.create_user(
                     email=partner_form.cleaned_data["email"],
@@ -344,6 +363,9 @@ def register_view(request):
         else:
             form = VisitorRegistrationForm(request.POST)
             if form.is_valid():
+                # Форма уже очистила email от неподтверждённой заявки
+                # (clean_email -> _purge_unverified_account), просто создаём
+                # пользователя и отправляем ему код подтверждения.
                 user = form.save(commit=False)
                 user.backend = "core.backends.EmailBackend"
                 user.save()
@@ -381,15 +403,15 @@ def verify_email_view(request):
 
         entered_code = f"{code1}{code2}{code3}{code4}{code5}"
 
-        # Проверяем код
+        # Проверяем код (только активный, не отменённый и не просроченный)
         from .models import EmailVerificationCode
         verification_code = EmailVerificationCode.objects.filter(
             user=user,
             code=entered_code,
-            is_used=False
+            is_used=False,
         ).first()
 
-        if verification_code:
+        if verification_code and not verification_code.is_expired():
             # Код верный, подтверждаем пользователя
             user.is_verified = True
             user.save()
@@ -428,14 +450,26 @@ def resend_verification_code(request):
     user_id = request.session['unverified_user_id']
     user = get_object_or_404(CustomUser, id=user_id)
 
-    # Делаем все предыдущие коды недействительными
-    from .models import EmailVerificationCode
-    EmailVerificationCode.objects.filter(user=user, is_used=False).update(is_used=True)
+    # Лимит отправок (3 на регистрацию) проверяется в форме; при его
+    # превышении сообщаем пользователю, что нужно начать регистрацию заново
+    # (аккаунт будет удалён по истечении часа с последней отправки).
+    if user.verification_send_count >= CustomUser.VERIFICATION_MAX_SENDS:
+        return JsonResponse({
+            'success': False,
+            'message': 'Превышен лимит повторных отправок кода. '
+                       'Пожалуйста, начните регистрацию заново через час.',
+        }, status=429)
 
-    # Отправляем новый код
+    # Отправляем новый код (форма сама гасит прежние коды)
     from .forms import CustomUserCreationForm
     form = CustomUserCreationForm(instance=user)
-    form.send_verification_code(request)
+    sent = form.send_verification_code(request)
+
+    if not sent:
+        return JsonResponse({
+            'success': False,
+            'message': 'Не удалось отправить код. Попробуйте позже.',
+        }, status=500)
 
     return JsonResponse({'success': True, 'message': 'Код подтверждения был успешно отправлен повторно.'})
 

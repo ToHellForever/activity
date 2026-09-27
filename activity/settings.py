@@ -340,6 +340,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.cleanup_archived_event_media",
         "schedule": 86400.0,
     },
+    # Удаление незавершённых регистраций (не ввели код за час) — каждые
+    # 10 минут, чтобы email владельца освобождался почти сразу после часа.
+    "cleanup-stale-unverified-accounts-every-10-minutes": {
+        "task": "core.tasks.cleanup_stale_unverified_accounts",
+        "schedule": 600.0,
+    },
 }
 
 # Сколько дней должно пройти после даты мероприятия, чтобы считать его

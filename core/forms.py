@@ -7,6 +7,32 @@ from .models import CustomUser
 from .models import SupportTicket
 from partner_app.models import PartnerProfile
 
+
+def _purge_unverified_account(email):
+    """
+    Перезаписывает НЕПОДТВЕРЖДЁННЫЙ аккаунт с указанным email при повторной
+    регистрации.
+
+    Если регистрация была прервана на шаге ввода кода (страница подтверждения),
+    у владельца почты больше нет способа войти в этот аккаунт. Поэтому он не
+    должен видеть «email уже занят» — это выглядело бы так, будто аккаунт
+    создали без его участия. Старая незавершённая заявка стирается, и
+    регистрация проходит как обычно: новый аккаунт + письмо с кодом.
+    Контроль над ящиком = контроль над аккаунтом.
+
+    Подтверждённые аккаунты не удаляются никогда: переходя по ссылке
+    «зарегистрироваться», нельзя удалить чужой существующий профиль.
+    """
+    stale = CustomUser.objects.filter(email=email, is_verified=False)
+    if not stale.exists():
+        return False
+    # Профили партнёров и коды подтверждения каскадно удалятся вместе с
+    # пользователем (on_delete=CASCADE), медиа-файлы не трогаем.
+    stale.delete()
+    return True
+
+
+
 class EventAdminForm(ModelForm):
     class Meta:
         model = Event
@@ -128,6 +154,10 @@ class VisitorRegistrationForm(UserCreationForm):
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if email:
+            # Незавершённую регистрацию (код с почты не введён) перезаписываем
+            # молча — владелец почты не должен видеть, что на его ящик кто-то
+            # уже заводил аккаунт. Подтверждённый аккаунт остаётся занят.
+            _purge_unverified_account(email)
             if CustomUser.objects.filter(email=email).exists():
                 raise forms.ValidationError(
                     "Пользователь с таким email уже существует."
@@ -179,12 +209,18 @@ class CustomUserCreationForm(UserCreationForm):
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if email:
-            # Проверяем, существует ли пользователь с таким email
-            if CustomUser.objects.filter(email=email).exists():
+            # «Email уже занят» показываем только для ПОДТВЕРЖДЁННОГО аккаунта.
+            # Неподтверждённый (прерванная регистрация) будет перезаписан —
+            # иначе владелец почты, не дошедший до ввода кода, получил бы
+            # полную блокировку на повторную регистрацию.
+            if CustomUser.objects.filter(
+                email=email, is_verified=True
+            ).exists():
                 raise forms.ValidationError(
                     "Пользователь с таким email уже существует."
                 )
         return email
+
 
     def clean(self):
         cleaned_data = super().clean()
@@ -215,16 +251,32 @@ class CustomUserCreationForm(UserCreationForm):
         import logging
         from django.core.mail import EmailMultiAlternatives
         from django.template.loader import render_to_string
+        from django.utils import timezone as _tz
         from core.utils import get_from_email
 
         logger = logging.getLogger("core")
 
-        # Генерация случайного 5-значного кода
-        code = ''.join([str(random.randint(0, 9)) for _ in range(5)])
+        # Лимит отправок: не больше VERIFICATION_MAX_SENDS на регистрацию.
+        # Без лимита атакующий мог бы бесконечно продлевать резервацию
+        # чужого email, долбя «отправить код снова».
+        if (
+            self.instance.verification_send_count
+            >= CustomUser.VERIFICATION_MAX_SENDS
+        ):
+            logger.warning(
+                "Превышен лимит отправок кода: user_id=%s email=%s",
+                self.instance.pk,
+                self.instance.email,
+            )
+            return False
 
-        # Сохраняем код в базе данных
+        # Создаём код в БД (create_for_user гасит прежние коды и задаёт
+        # срок действия); в письмо уходит тот же код, что сохранён в БД.
         from .models import EmailVerificationCode
-        EmailVerificationCode.objects.create(user=self.instance, code=code)
+        verification = EmailVerificationCode.create_for_user(
+            self.instance, self.instance.email
+        )
+        code = verification.code
 
         # Отправляем код на почту
         subject = "Подтверждение почты"
@@ -261,6 +313,16 @@ class CustomUserCreationForm(UserCreationForm):
                 from_email,
                 self.instance.email,
             )
+            return False
+
+        # Письмо реально ушло — фиксируем отправку: продлеваем час жизни
+        # незавершённой регистрации и считаем отправку в лимите.
+        self.instance.last_verification_sent_at = _tz.now()
+        self.instance.verification_send_count += 1
+        self.instance.save(
+            update_fields=["last_verification_sent_at", "verification_send_count"]
+        )
+        return True
 
 
 # --- ФОРМА РЕГИСТРАЦИИ ПАРТНЁРА ---
@@ -501,8 +563,14 @@ class PartnerRegistrationForm(forms.Form):
         if password1 and password2 and password1 != password2:
             self.add_error("password2", "Пароли не совпадают.")
 
-        if email and CustomUser.objects.filter(email=email).exists():
-            self.add_error("email", "Пользователь с таким email уже существует.")
+        # «Email уже занят» показываем только для ПОДТВЕРЖДЁННОГО аккаунта.
+        # Незавершённую регистрацию (код не введён) перезаписываем молча —
+        # владелец почты не должен видеть, что на его ящик кто-то уже
+        # заводил аккаунт, независимо от роли прежней заявки.
+        if email:
+            _purge_unverified_account(email)
+            if CustomUser.objects.filter(email=email).exists():
+                self.add_error("email", "Пользователь с таким email уже существует.")
 
         return cleaned_data
     

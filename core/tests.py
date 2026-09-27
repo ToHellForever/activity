@@ -648,3 +648,237 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("success"), False)
+
+    def test_partner_reregistration_overwrites_stale_visitor_account(self):
+        """
+        Регистрация партнёром на email незавершённой заявки посетителя.
+
+        Поведение ролей должно быть одинаковым: если прежняя регистрация
+        (пусть даже посетителем) не подтверждена кодом, партнёрская форма
+        тоже молча перезаписывает её, а не пишет «email уже занят».
+        """
+        # Кто-то зарегистрировался посетителем на чужой email и не ввёл код.
+        self._register_visitor(email="owner@example.com")
+        visitor = User.objects.get(email="owner@example.com")
+        self.assertFalse(visitor.is_verified)
+
+        mail.outbox.clear()
+
+        # Настоящий владелец регистрируется партнёром на тот же email.
+        response = self.client.post(
+            self.REGISTER_URL,
+            {
+                "form_type": "partner",
+                "email": "owner@example.com",
+                "password1": "Own3r!Pass2026",
+                "password2": "Own3r!Pass2026",
+                "company_name": "ООО Рога и копыта",
+                "short_name": "Рога",
+                "registration_type": "legal",
+                "inn": "7707083893",
+                "kpp": "770701001",
+                "contact_person": "Иван Иванов",
+                "phone": "+79990001122",
+                "agree_terms": "on",
+                "agree_user_agreement": "on",
+                "agree_personal_data": "on",
+            },
+        )
+        self.assertRedirects(response, self.VERIFY_URL)
+
+        # Старый аккаунт посетителя удалён, создан партнёрский
+        self.assertFalse(User.objects.filter(pk=visitor.pk).exists())
+        partner = User.objects.get(email="owner@example.com")
+        self.assertEqual(partner.user_type, "partner")
+        self.assertFalse(partner.is_verified)
+
+        # Письмо с новым кодом ушло
+        self.assertEqual(len(mail.outbox), 1)
+
+
+    def test_reregistration_overwrites_stale_unverified_account(self):
+        """
+        Повторная регистрация на email незавершённой заявки проходит как обычно.
+
+        Владелец почты не должен видеть «email уже занят», если прежняя
+        регистрация так и не подтверждена кодом: для него это выглядело бы
+        как «аккаунт создали без меня». Старый неподтверждённый аккаунт
+        стирается, письмо с новым кодом уходит на ящик.
+        """
+        # «Злоумышленник» зарегистрировался на чужой email и не ввёл код.
+        first = self._register_visitor(email="owner@example.com")
+        self.assertRedirects(first, self.VERIFY_URL)
+        attacker = User.objects.get(email="owner@example.com")
+        self.assertFalse(attacker.is_verified)
+
+        # Настоящий владелец заходит на форму регистрации — и она работает.
+        mail.outbox.clear()
+        second = self.client.post(
+            self.REGISTER_URL,
+            {
+                "form_type": "visitor",
+                "email": "owner@example.com",
+                "password1": "Own3r!Pass2026",
+                "password2": "Own3r!Pass2026",
+                "agree_personal_data": "on",
+            },
+        )
+        self.assertRedirects(second, self.VERIFY_URL)
+
+
+        # Старый аккаунт удалён, создан новый с паролем владельца
+        self.assertFalse(User.objects.filter(pk=attacker.pk).exists())
+        owner = User.objects.get(email="owner@example.com")
+        self.assertNotEqual(owner.pk, attacker.pk)
+        self.assertTrue(owner.check_password("Own3r!Pass2026"))
+        self.assertFalse(owner.is_verified)
+
+        # Письмо с кодом ушло ровно один раз
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Код из письма подтверждается — владелец получает контроль
+        code = EmailVerificationCode.objects.get(
+            user=owner, is_used=False
+        ).code
+        verify_response = self.client.post(
+            self.VERIFY_URL,
+            {
+                "code1": code[0],
+                "code2": code[1],
+                "code3": code[2],
+                "code4": code[3],
+                "code5": code[4],
+            },
+        )
+        self.assertEqual(verify_response.status_code, 302)
+        owner.refresh_from_db()
+        self.assertTrue(owner.is_verified)
+
+    def test_reregistration_keeps_verified_accounts_blocked(self):
+        """Подтверждённый аккаунт остаётся занятым при повторной регистрации."""
+        self._register_visitor(email="real@example.com")
+        user = User.objects.get(email="real@example.com")
+        code = EmailVerificationCode.objects.get(user=user, is_used=False).code
+        self.client.post(
+            self.VERIFY_URL,
+            {
+                "code1": code[0],
+                "code2": code[1],
+                "code3": code[2],
+                "code4": code[3],
+                "code5": code[4],
+            },
+        )
+        user.refresh_from_db()
+        self.assertTrue(user.is_verified)
+
+        response = self.client.post(
+            self.REGISTER_URL,
+            {
+                "form_type": "visitor",
+                "email": "real@example.com",
+                "password1": "Attack3r!Pass2026",
+                "password2": "Attack3r!Pass2026",
+                "agree_personal_data": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "уже существует")
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("Str0ng!Pass2026"))
+
+    def test_resend_limit_is_three_per_registration(self):
+        """После трёх отправок повторные запросы отклоняются (429)."""
+        self._register_visitor()  # 1-я отправка при регистрации
+        user = User.objects.get(email="newvisitor@example.com")
+
+        # 2-я и 3-я — проходят
+        for _ in range(2):
+            response = self.client.post(self.RESEND_URL)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json().get("success"), True)
+
+        # 4-я — отклоняется лимитом
+        response = self.client.post(self.RESEND_URL)
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json().get("success"), False)
+
+        user.refresh_from_db()
+        self.assertEqual(user.verification_send_count, 3)
+
+    def test_stale_unverified_account_deleted_after_hour(self):
+        """Незавершённая регистрация старше часа удаляется задачей."""
+        from core.tasks import cleanup_stale_unverified_accounts
+
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+        self.assertFalse(user.is_stale_unverified())
+
+        # Симулируем, что последняя отправка была больше часа назад
+        user.last_verification_sent_at = timezone.now() - timedelta(hours=2)
+        user.save(update_fields=["last_verification_sent_at"])
+        self.assertTrue(user.is_stale_unverified())
+
+        cleanup_stale_unverified_accounts()
+
+        self.assertFalse(
+            User.objects.filter(email="newvisitor@example.com").exists()
+        )
+
+    def test_fresh_unverified_account_survives_cleanup(self):
+        """Свежая незавершённая регистрация задачей не удаляется."""
+        from core.tasks import cleanup_stale_unverified_accounts
+
+        self._register_visitor()
+
+        cleanup_stale_unverified_accounts()
+
+        self.assertTrue(
+            User.objects.filter(email="newvisitor@example.com").exists()
+        )
+
+    def test_verified_account_never_deleted_by_cleanup(self):
+        """Подтверждённый аккаунт не удаляется задачей, даже «старый»."""
+        from core.tasks import cleanup_stale_unverified_accounts
+
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+        user.is_verified = True
+        user.last_verification_sent_at = timezone.now() - timedelta(days=30)
+        user.save(update_fields=["is_verified", "last_verification_sent_at"])
+
+        cleanup_stale_unverified_accounts()
+
+        self.assertTrue(
+            User.objects.filter(email="newvisitor@example.com").exists()
+        )
+
+    def test_verification_code_expires_after_15_minutes(self):
+        """Код из письма не принимается после истечения срока действия."""
+        self._register_visitor()
+        user = User.objects.get(email="newvisitor@example.com")
+        code = EmailVerificationCode.objects.get(user=user, is_used=False).code
+
+        # «Старим» код: срок действия прошёл
+        EmailVerificationCode.objects.filter(user=user).update(
+            expires_at=timezone.now() - timedelta(minutes=1)
+        )
+
+        response = self.client.post(
+            self.VERIFY_URL,
+            {
+                "code1": code[0],
+                "code2": code[1],
+                "code3": code[2],
+                "code4": code[3],
+                "code5": code[4],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Неверный код подтверждения")
+        user.refresh_from_db()
+        self.assertFalse(user.is_verified)
+
+

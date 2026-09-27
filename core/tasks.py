@@ -18,6 +18,41 @@ from core.utils import get_from_email
 logger = logging.getLogger(__name__)
 
 @shared_task
+def cleanup_stale_unverified_accounts():
+    """
+    Удаляет незавершённые регистрации, просроченные более чем на час.
+
+    Аккаунт считается незавершённым, если is_verified=False и с последней
+    РЕАЛЬНОЙ отправки письма с кодом прошло больше UNVERIFIED_ACCOUNT_TTL_MINUTES
+    (60 минут). Отправка засчитывается только при успешной доставке на SMTP,
+    поэтому спам кнопкой «отправить код снова» не продлевает резервацию
+    чужого email (плюс жёсткий лимит VERIFICATION_MAX_SENDS = 3 отправки).
+
+    Задача освобождает email для настоящего владельца: после удаления он
+    может зарегистрироваться заново, не видя «email уже занят».
+    """
+    from core.models import CustomUser
+
+    User = CustomUser
+    cutoff = timezone.now() - timezone.timedelta(
+        minutes=CustomUser.UNVERIFIED_ACCOUNT_TTL_MINUTES
+    )
+    stale = CustomUser.objects.filter(
+        is_verified=False,
+        last_verification_sent_at__lt=cutoff,
+    )
+    # Никогда не трогаем сотрудников/админов — у них свои механизмы доступа
+    stale = stale.exclude(is_staff=True).exclude(is_superuser=True)
+    count = stale.count()
+    if count:
+        logger.info(
+            "Удаление просроченных незавершённых регистраций: %d аккаунт(ов)",
+            count,
+        )
+        stale.delete()
+    return f"Удалено незавершённых регистраций: {count}"
+
+@shared_task
 def check_race_conditions_task():
     """
     Периодическая задача для проверки согласованности данных и обнаружения гонок.
