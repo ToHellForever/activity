@@ -212,9 +212,12 @@ class CustomUserCreationForm(UserCreationForm):
     def send_verification_code(self, request):
         """Отправляет код подтверждения на почту пользователя."""
         import random
+        import logging
         from django.core.mail import EmailMultiAlternatives
         from django.template.loader import render_to_string
         from core.utils import get_from_email
+
+        logger = logging.getLogger("core")
 
         # Генерация случайного 5-значного кода
         code = ''.join([str(random.randint(0, 9)) for _ in range(5)])
@@ -227,9 +230,37 @@ class CustomUserCreationForm(UserCreationForm):
         subject = "Подтверждение почты"
         context = {'code': code}
         html_content = render_to_string('emails/email_verification.html', context)
-        msg = EmailMultiAlternatives(subject, '', get_from_email(), [self.instance.email])
+        from_email = get_from_email()
+        msg = EmailMultiAlternatives(subject, '', from_email, [self.instance.email])
         msg.attach_alternative(html_content, "text/html")
-        msg.send()
+
+        logger.info(
+            "Отправка кода подтверждения: user_id=%s from=%s to=%s subject=%r",
+            self.instance.pk,
+            from_email,
+            self.instance.email,
+            subject,
+        )
+        try:
+            sent = msg.send()
+        except Exception:
+            logger.exception(
+                "Исключение при отправке кода подтверждения: user_id=%s to=%s",
+                self.instance.pk,
+                self.instance.email,
+            )
+            raise
+        if not sent:
+            # SMTP-сервер принял соединение, но отверг письмо (fail_silently
+            # нигде не включён, поэтому такое маловероятно — фиксируем на
+            # всякий случай). Подробности — в строках smtplib в debug.log.
+            logger.error(
+                "SMTP-сервер не принял письмо с кодом подтверждения: "
+                "user_id=%s from=%s to=%s. Ответ сервера — в логе smtplib.",
+                self.instance.pk,
+                from_email,
+                self.instance.email,
+            )
 
 
 # --- ФОРМА РЕГИСТРАЦИИ ПАРТНЁРА ---

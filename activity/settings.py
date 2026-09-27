@@ -212,7 +212,22 @@ CELERY_BROKER_URL = "redis://localhost:6379/0"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+# Бэкенд отправки писем.
+# По умолчанию используется core.mail_logging.LoggingEmailBackend — обёртка
+# над штатным SMTP-бэкендом Django, которая пишет в debug.log от кого, куда,
+# тема письма и сколько писем реально принял SMTP-сервер (см. строки "MAIL"
+# в логе). Это позволяет видеть отказы вроде
+# "550-5.7.26 Your email has been blocked because the sender is ..."
+# ещё до того, как пользователь принесёт отчёт о недоставке.
+# Переменная EMAIL_BACKEND в .env позволяет вернуть чистый бэкенд Django.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "core.mail_logging.LoggingEmailBackend"
+)
+
+# smtplib пишет полную SMTP-переписку (команды и ответы сервера, включая
+# тексты ошибок 550) на уровне DEBUG в свой логгер — подключаем его к
+# файлу, чтобы видеть точную причину отказа доставки.
+SMTP_DEBUG = os.getenv("SMTP_DEBUG", "True") == "True"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.yandex.ru")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
@@ -264,6 +279,18 @@ LOGGING = {
         "payment": {
             "handlers": ["file"],
             "level": "DEBUG",
+        },
+        # Логгер логирования почты (core/mail_logging.py) — строки "MAIL ..."
+        "mail": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        # Полная SMTP-переписка (ответы сервера с текстами ошибок доставки)
+        "smtplib": {
+            "handlers": ["file"],
+            "level": "DEBUG" if SMTP_DEBUG else "WARNING",
+            "propagate": False,
         },
     },
 }
