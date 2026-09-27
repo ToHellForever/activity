@@ -201,17 +201,32 @@
                 </div>
             </div>
             
-            <!-- 8. Логотип -->
+            <!-- 8. Логотип (визуально как блок «Программа» в форме мероприятия) -->
             <div class="form-section">
                 <div class="form-group form-group-full">
-                    <label class="form-label">Логотип PNG/SVG/JPG, до 5 МБ</label>
-                    <div class="file-upload-area">
-                        <input type="file" id="id_logo" name="logo" accept=".png,.svg,.jpg,.jpeg" class="file-input-hidden">
-                        <label for="id_logo" class="file-upload-label">
-                            <span class="file-upload-text">+ ЗАГРУЗИТЬ</span>
-                        </label>
-                        <span id="logo-filename" class="file-name-display"></span>
+                    <label class="form-label">Логотип PNG/SVG/JPG, до 5 МБ (одно фото)</label>
+                    <div class="media-upload-container has-no-photos" id="logo-upload-container">
+                        <!-- Блок отображения выбранного логотипа (всегда в DOM) -->
+                        <div id="logo-file-display" style="display:none; flex-direction:column;">
+                            <div style="position:relative; display:inline-block;">
+                                <img id="logo-preview-img" alt="Логотип"
+                                     style="max-width:200px; max-height:200px; border-radius:8px; object-fit:contain;">
+                                <button type="button" class="program-remove-btn" id="logo-remove-btn" title="Удалить">&times;</button>
+                            </div>
+                            <span id="logo-file-name" style="font-size: 12px; color: #555; margin-top: 4px; word-break: break-all;"></span>
+                            <button type="button" class="media-program-button" id="logo-replace-btn">
+                                Заменить
+                            </button>
+                        </div>
+                        <!-- Плейсхолдер загрузки — виден, пока логотип не выбран -->
+                        <div class="media-upload-placeholder" id="logo-upload-placeholder" onclick="document.getElementById('id_logo').click()">
+                            <div class="media-upload-icon">
+                                <img src="/media/icon/raphael_photo.svg" alt="" class="inner-icon">
+                            </div>
+                            <div class="media-upload-text">+ загрузите логотип в формате PNG, SVG, JPG (до 5 МБ)</div>
+                        </div>
                     </div>
+                    <input type="file" id="id_logo" name="logo" accept=".png,.svg,.jpg,.jpeg" class="file-input-hidden" style="display:none;">
                     {% if partner_form.logo.errors %}<ul class="errorlist">{{ partner_form.logo.errors }}</ul>{% endif %}
                 </div>
             </div>
@@ -288,13 +303,20 @@
                     <li>Политика возврата билетов/оферта для участников</li>
                 </ul>
                 
-                <div class="file-upload-area">
-                    <input type="file" id="documents-upload" name="documents" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" class="file-input-hidden">
-                    <label for="documents-upload" class="file-upload-label">
-                        <span class="file-upload-text">+ ЗАГРУЗИТЬ</span>
-                    </label>
-                    <span id="documents-filename" class="file-name-display"></span>
+                <div class="media-upload-container has-no-photos" id="documents-upload-container">
+                    <!-- Список выбранных документов (до 3), каждый можно удалить -->
+                    <div id="documents-file-display" style="display:none; flex-direction:column; align-items:flex-start; gap:6px; width:100%;">
+                        <!-- элементы списка добавляет JS -->
+                    </div>
+                    <!-- Плейсхолдер загрузки — виден, пока документы не выбраны -->
+                    <div class="media-upload-placeholder" id="documents-upload-placeholder" onclick="document.getElementById('documents-upload').click()">
+                        <div class="media-upload-icon">
+                            <img src="/media/icon/mingcute_pdf-fill.svg" alt="" class="inner-icon" style="background:transparent;">
+                        </div>
+                        <div class="media-upload-text">+ загрузите документы в формате PDF, DOCX, XLSX, JPG, PNG (до 3 файлов)</div>
+                    </div>
                 </div>
+                <input type="file" id="documents-upload" name="documents" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" class="file-input-hidden" style="display:none;">
                 
                 <p class="advantages-text">Преимущества отметки: бейдж в профиле, повышенный доверительный рейтинг, приоритетное размещение в каталоге</p>
             </div>

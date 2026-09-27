@@ -118,17 +118,40 @@ def partner_dashboard(request):
             messages.success(request, "Видео-визитка удалена.")
             return redirect("partner:dashboard")
 
-        # Обработка загрузки документов
+        # Обработка загрузки документов (до 3 файлов за раз)
         if 'upload_documents' in request.POST:
-            document_form = DocumentUploadForm(request.POST, request.FILES, user=request.user)
-            if document_form.is_valid():
-                doc = document_form.save(commit=False)
-                doc.user = request.user
-                doc.save()
+            files = request.FILES.getlist('document')
+            uploaded = 0
+            errors = []
+            # Лимит 3 документа: лишние файлы игнорируем
+            for doc_file in files[:3]:
+                document_form = DocumentUploadForm(
+                    {}, {'document': doc_file}, user=request.user
+                )
+                if document_form.is_valid():
+                    doc = document_form.save(commit=False)
+                    doc.user = request.user
+                    doc.save()
+                    uploaded += 1
+                else:
+                    errors.extend(
+                        str(err) for err in document_form.errors.get('document', [])
+                    )
+            if uploaded:
                 request.user.organizer_status = 'pending'
                 request.user.save(update_fields=['organizer_status'])
-                messages.success(request, "Документы успешно загружены!")
+                messages.success(
+                    request,
+                    f"Документы успешно загружены ({uploaded})!"
+                )
+                if errors:
+                    messages.warning(request, "Часть файлов отклонена: " + "; ".join(errors))
                 return redirect("partner:dashboard")
+            messages.error(
+                request,
+                "Не удалось загрузить документы: " + ("; ".join(errors) or "файлы не выбраны"),
+            )
+            document_form = DocumentUploadForm()
         elif 'resubmit' in request.POST:
             request.user.organizer_status = 'pending'
             request.user.organizer_rejection_reason = None

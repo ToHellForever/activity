@@ -354,7 +354,21 @@ def register_view(request):
                         reviews=partner_form.cleaned_data.get("reviews", ""),
                         logo=partner_form.cleaned_data.get("logo"),
                     )
-                
+
+                    # Документы для отметки «надёжный организатор»:
+                    # до 3 файлов (лишние игнорируем). Раньше файлы из формы
+                    # вообще не сохранялись — терялись молча.
+                    from .models import PartnerDocument
+                    documents = request.FILES.getlist("documents")[:3]
+                    for doc_file in documents:
+                        PartnerDocument.objects.create(
+                            user=user, document=doc_file
+                        )
+                    if documents:
+                        # Документы загружены — отправляем на рассмотрение
+                        user.organizer_status = "pending"
+                        user.save(update_fields=["organizer_status"])
+
                 # Отправляем код подтверждения
                 form_instance = CustomUserCreationForm(instance=user)
                 form_instance.send_verification_code(request)

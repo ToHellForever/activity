@@ -207,4 +207,65 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // ===== Документы для верификации: до 3 файлов, список с удалением =====
+    // Работает для обеих форм загрузки (статусы rejected и none)
+    var MAX_DOCUMENTS = 3;
+    document.querySelectorAll('input[name="document"]').forEach(function(docInput) {
+        var form = docInput.closest('form');
+        if (!form) return;
+
+        // Контейнер списка создаём сразу после зоны загрузки
+        var uploadArea = form.querySelector('.upload-area');
+        var listEl = document.createElement('ul');
+        listEl.style.cssText = 'list-style:none; padding:0; margin:8px 0 0;';
+        if (uploadArea) {
+            uploadArea.parentNode.insertBefore(listEl, uploadArea.nextSibling);
+        }
+
+        function renderList() {
+            listEl.innerHTML = '';
+            var files = docInput.files;
+            if (!files || files.length === 0) return;
+            for (var i = 0; i < files.length; i++) {
+                (function (index) {
+                    var li = document.createElement('li');
+                    li.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;';
+                    var name = document.createElement('span');
+                    name.textContent = files[index].name;
+                    name.style.cssText = 'overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:320px;';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = '\u00d7';
+                    btn.title = 'Удалить';
+                    btn.style.cssText = 'width:20px; height:20px; border-radius:50%; border:none; background:#d9534f; color:#fff; font-size:12px; line-height:1; cursor:pointer; flex-shrink:0;';
+                    btn.addEventListener('click', function () {
+                        var current = docInput.files;
+                        var dt = new DataTransfer();
+                        for (var j = 0; j < current.length; j++) {
+                            if (j !== index) dt.items.add(current[j]);
+                        }
+                        docInput.files = dt.files;
+                        renderList();
+                    });
+                    li.appendChild(name);
+                    li.appendChild(btn);
+                    listEl.appendChild(li);
+                })(i);
+            }
+        }
+
+        docInput.addEventListener('change', function () {
+            // Лимит: не больше 3 документов — лишние молча отбрасываем
+            if (this.files && this.files.length > MAX_DOCUMENTS) {
+                var dt = new DataTransfer();
+                for (var i = 0; i < MAX_DOCUMENTS; i++) {
+                    dt.items.add(this.files[i]);
+                }
+                this.files = dt.files;
+                showSaveNotification('Можно загрузить не более ' + MAX_DOCUMENTS + ' документов. Оставлены первые ' + MAX_DOCUMENTS + '.', true);
+            }
+            renderList();
+        });
+    });
 });

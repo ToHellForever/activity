@@ -881,4 +881,68 @@ class RegistrationEmailCodeTestCase(TestCase):
         user.refresh_from_db()
         self.assertFalse(user.is_verified)
 
+    def test_partner_files_deleted_with_stale_unverified_account(self):
+        """
+        Файлы незавершённой регистрации не остаются в хранилище.
+
+        Сценарий: партнёр загрузил логотип и документы, но не ввёл код.
+        Через час аккаунт удаляется задачей — вместе с файлами. Если файлы
+        оставить, хранилище засоряется мусором от брошенных регистраций.
+        """
+        import tempfile
+        import os
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from core.tasks import cleanup_stale_unverified_accounts
+        from core.models import PartnerDocument
+        from partner_app.models import PartnerProfile
+
+        data = {
+            "form_type": "partner",
+            "email": "files@example.com",
+            "password1": "Own3r!Pass2026",
+            "password2": "Own3r!Pass2026",
+            "company_name": "ООО Файлы",
+            "short_name": "Файлы",
+            "registration_type": "legal",
+            "inn": "7707083893",
+            "kpp": "770701001",
+            "contact_person": "Иван Иванов",
+            "phone": "+79990001122",
+            "agree_terms": "on",
+            "agree_user_agreement": "on",
+            "agree_personal_data": "on",
+        }
+        logo = SimpleUploadedFile(
+            "logo.png", b"png-data", content_type="image/png"
+        )
+        document = SimpleUploadedFile(
+            "doc.pdf", b"pdf-data", content_type="application/pdf"
+        )
+        data["logo"] = logo
+        data["documents"] = document
+        response = self.client.post(self.REGISTER_URL, data)
+        self.assertRedirects(response, self.VERIFY_URL)
+
+        user = User.objects.get(email="files@example.com")
+        profile = PartnerProfile.objects.get(user=user)
+        doc = PartnerDocument.objects.get(user=user)
+
+        # Файлы реально записаны в хранилище
+        self.assertTrue(profile.logo.storage.exists(profile.logo.name))
+        self.assertTrue(doc.document.storage.exists(doc.document.name))
+
+        # Прошёл час — аккаунт уходит вместе с файлами
+        user.last_verification_sent_at = timezone.now() - timedelta(hours=2)
+        user.save(update_fields=["last_verification_sent_at"])
+
+        cleanup_stale_unverified_accounts()
+
+        self.assertFalse(
+            User.objects.filter(email="files@example.com").exists()
+        )
+        # Файлы удалены из хранилища, а не остались «висеть»
+        self.assertFalse(profile.logo.storage.exists(profile.logo.name))
+        self.assertFalse(doc.document.storage.exists(doc.document.name))
+
+
 

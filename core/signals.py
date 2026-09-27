@@ -1,10 +1,10 @@
 # signals.py
 import time
 import logging
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.conf import settings
-from .models import Event, CustomUser, Order, OrderTicket
+from .models import Event, CustomUser, Order, OrderTicket, PartnerDocument
 from partner_app.models import PartnerProfile
 from .tasks import process_video_task
 import os
@@ -42,6 +42,54 @@ def wait_for_file(file_path, max_attempts=20, delay=1):
             return True
         time.sleep(delay)
     return False
+
+
+@receiver(pre_delete, sender=PartnerProfile)
+def delete_partnerprofile_files(sender, instance, **kwargs):
+    """
+    Удаляем файлы профиля (логотип, видео-визитку) при удалении записи.
+
+    Каскадное удаление вместе с пользователем обходит кастомный
+    PartnerProfile.delete() (Django выполняет raw SQL), поэтому без
+    сигнала файлы оставались бы в хранилище навсегда — например, при
+    часовой очистке незавершённой регистрации партнёра.
+    """
+    try:
+        instance.delete_file_field("logo")
+        instance.delete_file_field("video_business_card")
+    except Exception:
+        logger.exception(
+            "Не удалось удалить файлы профиля партнёра %s", instance.pk
+        )
+
+
+@receiver(pre_delete, sender=PartnerDocument)
+def delete_partnerdocument_file(sender, instance, **kwargs):
+    """
+    Удаляем файл документа из хранилища при удалении записи.
+
+    Срабатывает при ЛЮБОМ пути удаления: каскад с удалением аккаунта
+    (незавершённая регистрация — часовая очистка или перезапись email),
+    отклонение документов, перезагрузка, bulk-delete в админке.
+    Без этого файлы документов оставались бы в хранилище навсегда.
+    """
+    document = getattr(instance, "document", None)
+    if not document:
+        return
+    try:
+        if getattr(settings, "USE_YANDEX_CLOUD", False):
+            document.storage.delete(document.name)
+        else:
+            try:
+                if os.path.exists(document.path):
+                    os.remove(document.path)
+            except (NotImplementedError, ValueError):
+                pass
+    except Exception:
+        logger.exception(
+            "Не удалось удалить файл документа %s из хранилища",
+            document.name,
+        )
 
 
 @receiver(post_save, sender=Order)
