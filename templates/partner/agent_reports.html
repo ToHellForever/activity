@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Отчёты агента{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/partner/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="partner-layout" style="display:flex; gap:14px;">
+    {% include 'includes/sidebar.html' with partner_profile=partner_profile %}
+    <div class="partner-main">
+        <h2 class="mt-1">Отчёты агента</h2>
+
+        {% if partner_profile.agent_contract_number %}
+        <p class="text-muted" style="font-size:13px;">
+            Ваш агентский договор № {{ partner_profile.agent_contract_number }}
+        </p>
+        {% endif %}
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card report-card mb-4">
+            <div class="card-header">
+                <span class="report-table-title">Ежемесячный отчёт агента по агентскому договору</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size:13px;">
+                    Отчёт формируется автоматически не позднее 5 числа месяца, следующего
+                    за отчётным. Вы также можете сформировать отчёт за любой прошедший
+                    месяц вручную — повторное формирование за тот же месяц не создаёт
+                    дубликат.
+                </p>
+                <form method="post" class="row g-2 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-auto">
+                        <label class="form-label" for="reportYear"style="font-size:13px;">Год</label>
+                        <select class="form-select" id="reportYear" name="year" required style="font-size:13px;">
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label" for="reportMonth" style="font-size:13px;">Месяц</label>
+                        <select class="form-select" id="reportMonth" name="month" required style="font-size:13px;">
+                            {% for value, name in months %}
+                            <option value="{{ value }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary" style="font-size:15px;">
+                            <i class="bi bi-file-earmark-text"></i> Сформировать отчёт
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card report-card mb-4 report-table">
+            <div class="card-header">
+                <span class="report-table-title">Сформированные отчёты агента</span>
+            </div>
+            <div class="card-body">
+                {% if agent_reports %}
+                <div class="table-responsive" >
+                    <table class="table table-hover align-middle" >
+                        <thead class="table-light">
+                            <tr>
+                                <th style="font-size:113px0px; !important">№ отчёта</th>
+                                <th style="font-size:13px; !important">Отчётный период</th>
+                                <th style="font-size:13px; !important">Чистая выручка</th>
+                                <th style="font-size:13px; !important">Вознаграждение агента</th>
+                                <th style="font-size:13px; !important">К перечислению</th>
+                                <th style="font-size:13px; !important">Дата формирования</th>
+                                <th style="font-size:13px; !important">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in agent_reports %}
+                            <tr>
+                                <td>{{ report.number }}</td>
+                                <td>{{ report.period_month }}.{{ report.period_year }}</td>
+                                <td>{{ report.net_revenue }} руб.</td>
+                                <td>{{ report.agent_fee }} руб.</td>
+                                <td>{{ report.payable_to_principal }} руб.</td>
+                                <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    {% if report.file_path %}
+                                    <a href="{{ report.file_path.url }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> Скачать PDF
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="bi bi-download"></i> Нет файла
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">
+                    Отчётов пока нет. Первый отчёт сформируется автоматически после
+                    первого отчётного месяца с продажами — не позднее 5 числа
+                    следующего месяца.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -38,6 +38,16 @@ class PartnerProfile(models.Model):
         verbose_name="Партнёр",
     )
 
+    # Номер агентского договора с платформой (присваивается при регистрации, от 1)
+    agent_contract_number = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+        unique=True,
+        verbose_name="Номер агентского договора",
+    )
+
+
     # === Тип регистрации ===
     registration_type = models.CharField(
         max_length=20,
@@ -579,6 +589,82 @@ class ReportSchedule(models.Model):
     class Meta:
         verbose_name = "Расписание отчётов"
         verbose_name_plural = "Расписания отчётов"
+
+
+class AgentReport(models.Model):
+    """
+    Ежемесячный отчёт агента (ООО «БизнесАфиша») перед принципалом
+    (организатором) по агентскому договору.
+
+    Формируется не позднее 5 числа месяца, следующего за отчётным,
+    и размещается в личном кабинете организатора. Нумерация отчётов —
+    сквозная (1, 2, 3...) в рамках одного принципала.
+    """
+
+    partner = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        limit_choices_to={"user_type": "partner"},
+        related_name="agent_reports",
+        verbose_name="Принципал (организатор)",
+    )
+    # Сквозной номер отчёта в рамках одного принципала
+    number = models.PositiveIntegerField(verbose_name="Номер отчёта")
+    period_year = models.PositiveIntegerField(verbose_name="Год отчётного периода")
+    period_month = models.PositiveIntegerField(verbose_name="Месяц отчётного периода")
+    file_path = models.FileField(
+        upload_to="agent_reports/",
+        verbose_name="Файл отчёта",
+        storage=None,  # Будет установлено в apps.py
+    )
+
+    # Финансовый итог расчёта (фиксируем на момент формирования)
+    gross_revenue = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Валовая выручка (принято от покупателей)",
+    )
+    refunds_total = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Возвраты покупателям",
+    )
+    net_revenue = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Чистая выручка",
+    )
+    agent_fee = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Вознаграждение агента",
+    )
+    payable_to_principal = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="К перечислению принципалу",
+    )
+    receipts_count = models.PositiveIntegerField(
+        default=0, verbose_name="Сформировано кассовых чеков",
+    )
+    receipts_total = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Сумма по кассовым чекам",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата формирования")
+
+    def __str__(self):
+        return (
+            f"Отчёт агента № {self.number} для {self.partner.email} "
+            f"({self.period_year}-{self.period_month:02d})"
+        )
+
+    class Meta:
+        verbose_name = "Отчёт агента"
+        verbose_name_plural = "Отчёты агента"
+        ordering = ["-period_year", "-period_month"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["partner", "period_year", "period_month"],
+                name="unique_agent_report_per_period",
+            )
+        ]
 
 
 class EventAccessLink(models.Model):
@@ -1267,3 +1353,40 @@ class EventChangeRequest(models.Model):
             send_mail(subject, message, get_from_email(), [self.partner.email])
         except Exception as e:
             logger.error("Не удалось отправить письмо о заявке #%s: %s", self.pk, e)
+
+
+def assign_agent_contract_number(profile):
+    """
+    Присваивает профилю партнёра номер агентского договора.
+
+    Номера идут с 1 по нарастающей. Присвоение атомарно: при параллельных
+    регистрациях две транзакции могут взять одинаковый max+1 — тогда
+    unique-констрейнт отклоняет вторую, и мы просто повторяем попытку.
+    Повторный вызов для профиля с уже присвоенным номером ничего не меняет.
+    """
+    if profile.agent_contract_number:
+        return profile.agent_contract_number
+
+    from django.db import transaction, IntegrityError
+
+    for _attempt in range(5):
+        try:
+            with transaction.atomic():
+                from django.db.models import Max
+
+                next_number = (
+                    PartnerProfile.objects.aggregate(
+                        num=Max("agent_contract_number")
+                    )["num"]
+                    or 0
+                ) + 1
+                profile.agent_contract_number = next_number
+                profile.save(update_fields=["agent_contract_number"])
+                return next_number
+        except IntegrityError:
+            # Конкурентная регистрация заняла этот номер — пробуем следующий
+            continue
+
+    raise RuntimeError(
+        "Не удалось присвоить номер агентского договора для профиля %s" % profile.pk
+    )

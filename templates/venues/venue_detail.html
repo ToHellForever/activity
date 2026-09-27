@@ -74,7 +74,7 @@
             
             <div class="venue-meta">
                 <img src="/media/icon/geo-gray.png" alt="" class="icon-geo">
-                <span>{{ venue.address }}</span>
+                <span class='venue-adress'>{{ venue.address }}</span>
             </div>
             
             <div class="venue-stats">
@@ -227,7 +227,20 @@
     </div>
 
     <script src="{% static 'js/pages/venues/venue_booking.js' %}"></script>
-    
+
+    <!-- Видео -->
+    {% if venue.video %}
+    <h2 class="section-title">ВИДЕООБЗОР</h2>
+    <div class="video-section full-width-video">
+        <div class="video-wrapper">
+            <video class="video-player" controls>
+                <source src="{{ venue.video.url }}" type="video/mp4">
+                Ваш браузер не поддерживает HTML5 видео.
+            </video>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Другие залы — мобильные: 2 карточки -->
     <div class="other-venues-section">
         <h2 class="section-title">ДРУГИЕ ЗАЛЫ</h2>

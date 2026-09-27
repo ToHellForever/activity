@@ -249,6 +249,20 @@ class EventAdmin(admin.ModelAdmin):
     Настройка отображения модели Event в админке.
     """
 
+    def delete_model(self, request, obj):
+        """Удаляем мероприятие через obj.delete() — так сработает кастомный
+        Event.delete(), который удаляет медиа (фото/видео/программу),
+        в том числе из Яндекс-хранилища."""
+        obj.delete()
+
+    def delete_queryset(self, request, queryset):
+        """Массовое удаление: queryset.delete() одним SQL-запросом обходит
+        кастомный Event.delete() и оставляет файлы в облаке. Поэтому удаляем
+        каждое мероприятие по одному через obj.delete()."""
+        for obj in queryset:
+            obj.delete()
+
+
     # Какие поля показывать в списке всех мероприятий
     list_display = (
         "title",
@@ -1175,9 +1189,10 @@ class PartnerProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name = "Данные регистрации партнёра"
     verbose_name_plural = "Данные регистрации партнёра"
+    readonly_fields = ("agent_contract_number",)
     fieldsets = (
         ("Основные данные", {
-            "fields": ("registration_type", "company_name", "short_name", "description"),
+            "fields": ("agent_contract_number", "registration_type", "company_name", "short_name", "description"),
         }),
         ("Реквизиты", {
             "fields": ("ogrn", "inn", "kpp"),
@@ -1204,7 +1219,8 @@ class PartnerAdmin(admin.ModelAdmin):
 
     list_display = (
         'username', 'email', 'get_company_name', 'get_contact_person',
-        'get_phone_number', 'get_organizer_status', 'get_permissions_status'
+        'get_phone_number', 'get_organizer_status', 'get_permissions_status',
+        'get_agent_contract_number'
     )
 
     list_filter = (
@@ -1267,6 +1283,14 @@ class PartnerAdmin(admin.ModelAdmin):
             return obj.partner_profile.phone or '-'
         return '-'
     get_phone_number.short_description = "Телефон"
+
+    def get_agent_contract_number(self, obj):
+        if hasattr(obj, 'partner_profile') and obj.partner_profile:
+            num = obj.partner_profile.agent_contract_number
+            return num if num else '-'
+        return '-'
+    get_agent_contract_number.short_description = "№ договора"
+    get_agent_contract_number.admin_order_field = 'partner_profile__agent_contract_number'
 
     def get_active_events(self, obj):
         """Количество активных мероприятий партнёра относительно лимита активного пакета."""

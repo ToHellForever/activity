@@ -487,4 +487,56 @@ class VenueAdditionRequest(models.Model):
     class Meta:
         verbose_name = "Заявка на добавление площадки"
         verbose_name_plural = "Заявки на добавление площадок"
-        ordering = ("-created_at",)
+
+
+class VenueView(models.Model):
+    """
+    Фиксация перехода (просмотра) страницы площадки.
+
+    Каждое открытие страницы площадки записывается отдельной строкой:
+    это позволяет строить статистику за произвольный период — по дням,
+    по уникальным посетителям, по источникам перехода.
+    """
+
+    venue = models.ForeignKey(
+        Venue,
+        on_delete=models.CASCADE,
+        related_name="views",
+        verbose_name="Площадка",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="venue_views",
+        verbose_name="Пользователь (если авторизован)",
+    )
+    session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        verbose_name="Ключ сессии (для анонимов)",
+    )
+    # Откуда пришли: referer или UTM-метка источника
+    source = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Источник перехода",
+    )
+    viewed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата и время перехода",
+    )
+
+    def __str__(self):
+        return f"Переход на «{self.venue.title}» {self.viewed_at:%d.%m.%Y %H:%M}"
+
+    class Meta:
+        verbose_name = "Переход на площадку"
+        verbose_name_plural = "Переходы на площадки"
+        ordering = ["-viewed_at"]
+        indexes = [
+            models.Index(fields=["venue", "viewed_at"]),
+        ]

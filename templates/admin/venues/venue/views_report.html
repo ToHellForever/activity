@@ -1,0 +1,192 @@
+{% extends "admin/base_site.html" %} {% load i18n %} {% block content %}
+<style>
+  .views-report-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .views-report-table th,
+  .views-report-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e5e5;
+    text-align: left;
+  }
+  .views-report-table th {
+    background: #f8f9fa;
+  }
+  .period-form input[type="text"] {
+    width: 120px;
+  }
+  .stat-cards {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+  }
+  .stat-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 180px;
+  }
+  .stat-cards .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .stat-cards .stat-label {
+    color: #666;
+    font-size: 12px;
+  }
+  .daily-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 160px;
+    margin: 20px 0;
+    padding: 10px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  .daily-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 34px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .daily-bar {
+    background: #417690;
+    border-radius: 3px 3px 0 0;
+    width: 24px;
+  }
+  .daily-bar-label {
+    font-size: 10px;
+    color: #666;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+  .daily-bar-value {
+    font-size: 11px;
+    font-weight: bold;
+  }
+</style>
+
+<h2>Статистика переходов{% if venue %}: {{ venue.title }}{% endif %}</h2>
+
+<div class="period-form" style="margin: 15px 0">
+  <form method="get">
+    <label>Период с</label>
+    <input
+      type="text"
+      name="period_start"
+      value="{{ period_start }}"
+      placeholder="ДД.ММ.ГГГГ"
+    />
+    <label>по</label>
+    <input
+      type="text"
+      name="period_end"
+      value="{{ period_end }}"
+      placeholder="ДД.ММ.ГГГГ"
+    />
+    <button type="submit" class="button">Показать</button>
+    {% if venue %}
+    <a class="button" href="views-report/">Сводка по всем площадкам</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="stat-cards">
+  <div class="stat-card">
+    <div class="stat-value">{{ total_views }}</div>
+    <div class="stat-label">Всего переходов</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ unique_visitors }}</div>
+    <div class="stat-label">Уникальных посетителей</div>
+  </div>
+</div>
+
+{% if venue %}
+<h3>Переходы по дням</h3>
+{% if daily_stats %}
+<div class="daily-chart">
+  {% for item in daily_stats %}
+  <div class="daily-bar-wrap">
+    <span class="daily-bar-value">{{ item.views }}</span>
+    <div class="daily-bar"></div>
+    <span class="daily-bar-label">{{ item.day }}</span>
+  </div>
+  {% endfor %}
+</div>
+<table class="views-report-table">
+  <thead>
+    <tr>
+      <th>Дата</th>
+      <th>Переходов</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in daily_stats %}
+    <tr>
+      <td>{{ item.day }}</td>
+      <td>{{ item.views }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %} {% if sources_stats %}
+<h3>Источники переходов (топ-10)</h3>
+<table class="views-report-table">
+  <thead>
+    <tr>
+      <th>Источник</th>
+      <th>Переходов</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in sources_stats %}
+    <tr>
+      <td>{{ item.source }}</td>
+      <td>{{ item.views }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %} {% else %}
+<h3>Сводка по площадкам (за период)</h3>
+{% if venues_summary %}
+<table class="views-report-table">
+  <thead>
+    <tr>
+      <th>Площадка</th>
+      <th>Переходов</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in venues_summary %}
+    <tr>
+      <td>{{ item.title }}</td>
+      <td>{{ item.views }}</td>
+      <td>
+        <a href="{% url 'admin:venues_venue_views' item.venue_id %}"
+          >Детальный отчёт</a
+        >
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>За выбранный период переходов не зафиксировано.</p>
+{% endif %} 
+{% endif %} 
+{% endblock %}

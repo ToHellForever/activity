@@ -3,15 +3,105 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.conf import settings
-from datetime import timedelta
-from .models import ReportSchedule, SalesReport
-from .utils import generate_sales_report
-from core.models import Order
+from datetime import timedelta, date
+import calendar
+from .models import ReportSchedule, SalesReport, AgentReport
+from .utils import generate_sales_report, generate_agent_report_pdf
+from core.models import Order, CustomUser
 from core.utils import get_from_email
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def create_agent_report_for_period(partner, year, month):
+    """
+    Создаёт ежемесячный отчёт агента для принципала (идемпотентно).
+
+    Если отчёт за период уже существует — возвращает его, ничего не делая.
+    Сквозной номер назначается в транзакции: count + 1.
+    Возвращает (report, created).
+    """
+    with transaction.atomic():
+        # Сквозной номер считаем ДО создания: number — NOT NULL
+        number = AgentReport.objects.filter(partner=partner).count() + 1
+        report, created = AgentReport.objects.get_or_create(
+            partner=partner,
+            period_year=year,
+            period_month=month,
+            defaults={"number": number},
+        )
+        if not created:
+            return report, False
+
+        pdf_buffer, data = generate_agent_report_pdf(
+            partner, year, month, report.number, timezone.now().date()
+        )
+
+        # Фиксируем финансовый итог на момент формирования
+        for field in (
+            "gross_revenue", "refunds_total", "net_revenue",
+            "agent_fee", "payable_to_principal",
+            "receipts_count", "receipts_total",
+        ):
+            setattr(report, field, data[field])
+
+        file_name = f"agent_report_{partner.id}_{year}-{month:02d}.pdf"
+        report.file_path.save(file_name, ContentFile(pdf_buffer.getvalue()))
+        report.save()
+        return report, True
+
+
+@shared_task
+def generate_monthly_agent_reports():
+    """
+    Ежемесячный отчёт агента перед принципалами.
+
+    Запускается ежедневно; с 1-го по 5-е число формирует отчёты за прошлый
+    месяц для всех организаторов, у которых были продажи в этом месяце.
+    Идемпотентно: повторные запуски не создают дубликаты
+    (unique partner + период).
+    """
+    today = timezone.now().date()
+    if today.day > settings.AGENT_REPORT_DUE_DAY:
+        return "not due yet"
+
+    # Прошлый месяц
+    if today.month == 1:
+        year, month = today.year - 1, 12
+    else:
+        year, month = today.year, today.month - 1
+
+    period_start = date(year, month, 1)
+    period_end = date(year, month, calendar.monthrange(year, month)[1])
+
+    # Организаторы с оплаченными заказами за отчётный месяц
+    organizer_ids = (
+        Order.objects.filter(
+            ticket__event__organizer__user_type="partner",
+            ticket__event__organizer__is_active=True,
+            is_paid=True,
+            created_at__date__range=[period_start, period_end],
+        )
+        .values_list("ticket__event__organizer_id", flat=True)
+        .distinct()
+    )
+    partners = CustomUser.objects.filter(id__in=organizer_ids)
+
+    created_count = 0
+    for partner in partners:
+        try:
+            _, created = create_agent_report_for_period(partner, year, month)
+            if created:
+                created_count += 1
+        except Exception:
+            logger.exception(
+                "Ошибка формирования отчёта агента для %s (%04d-%02d)",
+                partner.email, year, month,
+            )
+    return f"created {created_count} agent reports for {year}-{month:02d}"
 
 @shared_task
 def send_scheduled_reports():

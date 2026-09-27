@@ -1,10 +1,22 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-5">
     <h1>Формирование реестра продаж</h1>
     <form method="post" action="{% url 'sales_register' %}" class="mt-4">
         {% csrf_token %}
+        <div class="mb-3">
+            <label for="partner_search" class="form-label">Партнёр (необязательно — оставьте пустым для всех)</label>
+            <div class="partner-autocomplete">
+                <input type="text" class="form-control" id="partner_search"
+                       placeholder="Начните вводить email партнёра…" autocomplete="off">
+                <div class="partner-autocomplete-list d-none" id="partner_list"></div>
+            </div>
+            <!-- Выбранный партнёр: id подставляется сюда, пусто = все партнёры -->
+            <input type="hidden" name="partner_id" id="partner_id" value="">
+            <div class="form-text" id="partner_selected">Будут показаны все партнёры</div>
+        </div>
         <div class="mb-3">
             <label for="start_date" class="form-label">Начальная дата</label>
             <input type="date" class="form-control" id="start_date" name="start_date" required>
@@ -16,4 +28,59 @@
         <button type="submit" class="btn btn-primary">Сформировать реестр</button>
     </form>
 </div>
+
+<style>
+    .partner-autocomplete {
+        position: relative;
+    }
+    .partner-autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        max-height: 260px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        margin-top: 2px;
+    }
+    .partner-autocomplete-item {
+        padding: 8px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 0.92rem;
+    }
+    .partner-autocomplete-item:last-child {
+        border-bottom: none;
+    }
+    .partner-autocomplete-item:hover,
+    .partner-autocomplete-item.active {
+        background: #f0f6ff;
+    }
+    .partner-autocomplete-item .email {
+        font-weight: 600;
+    }
+    .partner-autocomplete-item .name {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    .partner-autocomplete-empty {
+        padding: 8px 14px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+
+<script src="{% static 'js/pages/admin/sales_register_partner_autocomplete.js' %}" defer></script>
+<script>
+    // Список партнёров передаём в JS одним блоком, чтобы не делать AJAX-запросы
+    window.SALES_REGISTER_PARTNERS = [
+        {% for partner in partners %}
+        { id: "{{ partner.id }}", email: "{{ partner.email|escapejs }}", name: "{{ partner.get_full_name|default:''|escapejs }}" },
+        {% endfor %}
+    ];
+</script>
 {% endblock %}

@@ -37,6 +37,7 @@ from .reports import (
     generate_report,
     report_schedule,
     delete_reports,
+    agent_reports,
 )
 from .finances import (
     finances,
@@ -95,6 +96,7 @@ __all__ = [
     "generate_report",
     "report_schedule",
     "delete_reports",
+    "agent_reports",
     # finances
     "finances",
     "request_payout",

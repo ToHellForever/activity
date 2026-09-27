@@ -12,6 +12,7 @@ urlpatterns = [
     path("bulk_delete_events/", views.bulk_delete_events, name="bulk_delete_events"),
     path("reports/", views.reports, name="reports"),
     path("reports/generate/", views.generate_report, name="generate_report"),
+    path("agent-reports/", views.agent_reports, name="agent_reports"),
     path("report_schedule/", views.report_schedule, name="report_schedule"),
     path(
         "participant_list/<int:event_id>/",

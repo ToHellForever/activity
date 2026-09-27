@@ -37,6 +37,16 @@ class PartnerAppConfig(AppConfig):
             EventChangeRequest._meta.get_field('new_video_url').storage = YandexVideoProcessingStorage(
                 subdirectory='change_request_videos'
             )
+
+            # Отчёты (о продажах и ежемесячные отчёты агента) — в облако.
+            # Обработка не нужна: PDF/Excel/CSV уже готовы к выдаче,
+            # поэтому чистое S3-хранилище без обработки.
+            from core.storage_backends import YandexCloudWithProcessingStorage
+            from partner_app.models import SalesReport, AgentReport
+            s3_reports = YandexCloudWithProcessingStorage()
+            SalesReport._meta.get_field('file_path').storage = s3_reports
+            AgentReport._meta.get_field('file_path').storage = s3_reports
+
             
         except ImportError as e:
             import logging

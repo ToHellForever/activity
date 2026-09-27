@@ -1,12 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.core.exceptions import ValidationError
+from django.db.models import Count
+from django.shortcuts import get_object_or_404
+from django.template.response import TemplateResponse
+from django.urls import path
 from .models import (
     VenueType,
     Venue,
     BookingRequest,
     VenueAdditionRequest,
     VenueImage,
+    VenueView,
     EquipmentCategory,
     EquipmentItem,
     VenueFormat,
@@ -85,6 +90,7 @@ class VenueAdmin(admin.ModelAdmin):
         "price",
         "status",
         "tariff",
+        "views_total",
     )
     list_filter = ("status", "tariff", "city", "venue_type")
     search_fields = ("title", "address")
@@ -242,6 +248,143 @@ class VenueAdmin(admin.ModelAdmin):
             "/static/js/equipment_admin.js",
         )
 
+    # ===== Статистика переходов =====
+
+    @admin.display(description="Переходы (всего)")
+    def views_total(self, obj):
+        """Всего переходов на страницу площадки (за всё время)."""
+        return obj.views.count()
+
+    views_total.admin_order_field = "views_count"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            views_count=Count("views"),
+        )
+
+    def get_urls(self):
+        """Добавляем страницу статистики переходов: /admin/venues/venue/<id>/views/."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<int:venue_id>/views/",
+                self.admin_site.admin_view(self.views_report),
+                name="venues_venue_views",
+            ),
+            path(
+                "views-report/",
+                self.admin_site.admin_view(self.views_report),
+                name="venues_views_report",
+            ),
+        ]
+        return custom_urls + urls
+
+    def views_report(self, request, venue_id=None):
+        """
+        Отчёт по переходам на площадки за выбранный период.
+
+        Без venue_id — сводка по всем площадкам;
+        с venue_id — детальная статистика по одной площадке (по дням,
+        уникальные посетители, источники переходов).
+        """
+        from django.db.models.functions import TruncDate
+        from django.utils import timezone as dj_timezone
+        from datetime import datetime, timedelta, date as date_cls
+
+        period_start = request.GET.get("period_start", "")
+        period_end = request.GET.get("period_end", "")
+
+        def parse_date(value):
+            try:
+                return datetime.strptime(value, "%d.%m.%Y").date()
+            except (ValueError, TypeError):
+                return None
+
+        start = parse_date(period_start)
+        end = parse_date(period_end)
+        # Период по умолчанию — последние 30 дней
+        if not start and not end:
+            end = dj_timezone.now().date()
+            start = end - timedelta(days=29)
+        elif start and not end:
+            end = start + timedelta(days=29)
+        elif end and not start:
+            start = end - timedelta(days=29)
+
+        qs = VenueView.objects.filter(viewed_at__date__range=[start, end])
+        if venue_id:
+            venue = get_object_or_404(Venue, pk=venue_id)
+            qs = qs.filter(venue=venue)
+        else:
+            venue = None
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": (
+                f"Переходы на «{venue.title}»" if venue else "Отчёт по переходам на площадки"
+            ),
+            "venue": venue,
+            "period_start": start.strftime("%d.%m.%Y"),
+            "period_end": end.strftime("%d.%m.%Y"),
+            "total_views": qs.count(),
+            "unique_visitors": qs.values("session_key", "user").distinct().count(),
+            # Сводка по всем площадкам (только для общего отчёта)
+            "venues_summary": None,
+            # Детализация по дням (только для одной площадки)
+            "daily_stats": None,
+            "sources_stats": None,
+            "opts": Venue._meta,
+        }
+
+        if venue:
+            daily = (
+                qs.annotate(day=TruncDate("viewed_at"))
+                .values("day")
+                .annotate(views=Count("id"))
+                .order_by("day")
+            )
+            daily_stats = [
+                {
+                    "day": item["day"].strftime("%d.%m.%Y"),
+                    "views": item["views"],
+                }
+                for item in daily
+            ]
+            context["daily_stats"] = daily_stats
+            context["max_daily_views"] = max(
+                (item["views"] for item in daily_stats), default=1
+            )
+            sources = (
+                qs.values("source")
+                .annotate(views=Count("id"))
+                .order_by("-views")[:10]
+            )
+            context["sources_stats"] = [
+                {
+                    "source": item["source"] or "(прямой переход)",
+                    "views": item["views"],
+                }
+                for item in sources
+            ]
+        else:
+            summary = (
+                qs.values("venue__id", "venue__title")
+                .annotate(views=Count("id"))
+                .order_by("-views")[:50]
+            )
+            context["venues_summary"] = [
+                {
+                    "venue_id": item["venue__id"],
+                    "title": item["venue__title"],
+                    "views": item["views"],
+                }
+                for item in summary
+            ]
+
+        return TemplateResponse(
+            request, "admin/venues/venue/views_report.html", context
+        )
+
 
 @admin.register(VenueImage)
 class VenueImageAdmin(admin.ModelAdmin):
@@ -257,6 +400,18 @@ class VenueImageAdmin(admin.ModelAdmin):
                 except NotImplementedError:
                     obj.image.delete(save=False)
         queryset.delete()
+
+
+@admin.register(VenueView)
+class VenueViewAdmin(admin.ModelAdmin):
+    """Журнал переходов на площадки — только просмотр и фильтры."""
+
+    list_display = ("venue", "viewed_at", "user", "session_key", "source")
+    list_filter = ("venue", "viewed_at")
+    search_fields = ("venue__title", "source", "session_key")
+    readonly_fields = ("venue", "viewed_at", "user", "session_key", "source")
+    date_hierarchy = "viewed_at"
+    list_select_related = ("venue", "user")
 
 
 @admin.register(BookingRequest)

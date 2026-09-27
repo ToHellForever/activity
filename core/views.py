@@ -329,6 +329,7 @@ def register_view(request):
                 
                 # Создаём профиль партнёра
                 from django.db import transaction
+                from partner_app.models import assign_agent_contract_number
                 with transaction.atomic():
                     profile = PartnerProfile.objects.create(
                         user=user,
@@ -368,6 +369,9 @@ def register_view(request):
                         # Документы загружены — отправляем на рассмотрение
                         user.organizer_status = "pending"
                         user.save(update_fields=["organizer_status"])
+
+                    # Присваиваем номер агентского договора (от 1, нарастающий)
+                    assign_agent_contract_number(profile)
 
                 # Отправляем код подтверждения
                 form_instance = CustomUserCreationForm(instance=user)
@@ -1278,8 +1282,18 @@ def sales_register(request):
             )
             return redirect("sales_register")
 
-        # Получаем всех партнёров
-        partners = CustomUser.objects.filter(user_type="partner")
+        # Партнёр (необязательно): если выбран конкретный — реестр только
+        # по нему, иначе — по всем партнёрам.
+        partner_id = request.POST.get("partner_id", "").strip()
+        if partner_id:
+            partners = CustomUser.objects.filter(
+                user_type="partner", pk=partner_id
+            )
+            if not partners.exists():
+                messages.error(request, "Выбранный партнёр не найден.")
+                return redirect("sales_register")
+        else:
+            partners = CustomUser.objects.filter(user_type="partner")
         register_data = []
 
         for partner in partners:
@@ -1306,10 +1320,16 @@ def sales_register(request):
             "register_data": register_data,
             "start_date": start_date,
             "end_date": end_date,
+            "selected_partner": partners.first() if partner_id else None,
         }
 
         return render(request, "admin/sales_register.html", context)
-    return render(request, "admin/sales_register_form.html")
+
+    # GET — форма с выбором партнёра (для автодополнения по email)
+    context = {
+        "partners": CustomUser.objects.filter(user_type="partner").order_by("email"),
+    }
+    return render(request, "admin/sales_register_form.html", context)
 
 def check_ticket(request, order_id):
     """

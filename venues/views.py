@@ -555,6 +555,59 @@ class VenueDetailView(DetailView):
     def get_queryset(self):
         return super().get_queryset().prefetch_related('images', 'formats')
 
+    def get(self, request, *args, **kwargs):
+        """
+        Сначала фиксируем переход на страницу площадки,
+        затем отдаём саму страницу.
+        """
+        response = super().get(request, *args, **kwargs)
+        self._record_view(request)
+        return response
+
+    def _record_view(self, request):
+        """Записываем переход в VenueView (ошибки логирования не ломают страницу)."""
+        try:
+            from .models import VenueView
+
+            # Django ленив: сессия анонима создаётся только при записи в неё.
+            # Без save() session_key пуст и уникальность не посчитать.
+            if not request.user.is_authenticated:
+                if not request.session.session_key:
+                    request.session.save()
+
+            VenueView.objects.create(
+                venue=self.object,
+                user=request.user if request.user.is_authenticated else None,
+                session_key=(
+                    request.session.session_key
+                    if hasattr(request, "session") and request.session.session_key
+                    else ""
+                ),
+                source=self._get_source(request),
+            )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Не удалось зафиксировать переход на площадку %s", self.object.pk
+            )
+
+    @staticmethod
+    def _get_source(request):
+        """Источник перехода: utm_source, иначе домен referer."""
+        utm = request.GET.get("utm_source", "").strip()
+        if utm:
+            return utm[:255]
+        referer = request.META.get("HTTP_REFERER", "").strip()
+        if referer:
+            try:
+                from urllib.parse import urlparse
+
+                return urlparse(referer).netloc[:255]
+            except Exception:
+                return referer[:255]
+        return ""
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         venue = self.object

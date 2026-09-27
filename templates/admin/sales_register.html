@@ -3,6 +3,9 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Реестр продаж за период с {{ start_date|date:"d.m.Y" }} по {{ end_date|date:"d.m.Y" }}</h1>
+    {% if selected_partner %}
+    <p class="text-muted">Партнёр: {{ selected_partner.get_full_name }} ({{ selected_partner.email }})</p>
+    {% endif %}
 
     <div class="mt-4">
         <a href="{% url 'sales_register' %}" class="btn btn-secondary mb-3">Вернуться к выбору периода</a>

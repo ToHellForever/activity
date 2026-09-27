@@ -346,6 +346,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.cleanup_stale_unverified_accounts",
         "schedule": 600.0,
     },
+    # Ежемесячные отчёты агента перед принципалами: задача запускается
+    # ежедневно, но сама формирует отчёты только 1–5 числа за прошлый месяц.
+    "generate-monthly-agent-reports-daily": {
+        "task": "partner_app.tasks.generate_monthly_agent_reports",
+        "schedule": 86400.0,
+    },
 }
 
 # Сколько дней должно пройти после даты мероприятия, чтобы считать его
@@ -369,6 +375,19 @@ ATOL_COMPANY_EMAIL = os.getenv("ATOL_COMPANY_EMAIL", "")
 ATOL_SNO = os.getenv("ATOL_SNO", "patent")
 # Тип агента в чеке: payment_agent — платёжный агент
 ATOL_AGENT_SIGN = os.getenv("ATOL_AGENT_SIGN", "payment_agent")
+
+# === Агентский договор: ежемесячный отчёт агента перед принципалом ===
+# Отчёт формируется не позднее 5 числа месяца, следующего за отчётным,
+# и размещается в личном кабинете организатора (принципала).
+AGENT_COMPANY_NAME = os.getenv("AGENT_COMPANY_NAME", "ООО «БизнесАфиша»")
+AGENT_INN = os.getenv("AGENT_INN", "")
+AGENT_OGRN = os.getenv("AGENT_OGRN", "")
+# Номер агентского договора (одинаков для всех принципалов)
+AGENT_CONTRACT_NUMBER = os.getenv("AGENT_CONTRACT_NUMBER", "")
+# Вознаграждение агента, % от чистой выручки
+AGENT_FEE_PERCENT = float(os.getenv("AGENT_FEE_PERCENT", "10"))
+# Не позднее какого числа месяца формируется отчёт за прошлый месяц
+AGENT_REPORT_DUE_DAY = int(os.getenv("AGENT_REPORT_DUE_DAY", "5"))
 
 USE_L10N = True
 LANGUAGE_CODE = 'ru-ru'

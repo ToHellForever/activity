@@ -569,3 +569,74 @@ def delete_reports(request):
         return JsonResponse(
             {"status": "error", "message": f"Произошла ошибка: {str(e)}"}, status=500
         )
+
+
+@login_required
+@check_partner_status('can_request_reports')
+def agent_reports(request):
+    """
+    Ежемесячные отчёты агента перед принципалом (организатором).
+
+    Список отчётов в личном кабинете + ручное формирование отчёта
+    за произвольный месяц (идемпотентно: повторный запрос за тот же
+    месяц возвращает существующий отчёт).
+    """
+    from ..models import AgentReport
+    from ..tasks import create_agent_report_for_period
+
+    partner_profile = getattr(request.user, 'partner_profile', None)
+
+    if request.method == "POST":
+        try:
+            year = int(request.POST.get("year"))
+            month = int(request.POST.get("month"))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, "Неверно указан период отчёта.")
+            return redirect("partner:agent_reports")
+
+        try:
+            report, created = create_agent_report_for_period(
+                request.user, year, month
+            )
+            if created:
+                messages.success(
+                    request,
+                    f"Отчёт агента № {report.number} за "
+                    f"{report.period_month:02d}.{report.period_year} сформирован.",
+                )
+            else:
+                messages.info(
+                    request,
+                    f"Отчёт за {report.period_month:02d}.{report.period_year} "
+                    f"уже сформирован (№ {report.number}).",
+                )
+        except Exception as e:
+            logger.exception("Ошибка формирования отчёта агента")
+            messages.error(request, f"Не удалось сформировать отчёт: {e}")
+        return redirect("partner:agent_reports")
+
+    reports_list = AgentReport.objects.filter(partner=request.user).order_by(
+        "-period_year", "-period_month"
+    )
+
+    # Списки для формы ручного формирования
+    from datetime import date as date_cls
+    current_year = date_cls.today().year
+    years = list(range(current_year, current_year - 5, -1))
+    months = [
+        (1, "Январь"), (2, "Февраль"), (3, "Март"), (4, "Апрель"),
+        (5, "Май"), (6, "Июнь"), (7, "Июль"), (8, "Август"),
+        (9, "Сентябрь"), (10, "Октябрь"), (11, "Ноябрь"), (12, "Декабрь"),
+    ]
+
+    context = {
+        "agent_reports": reports_list,
+        "partner_profile": partner_profile,
+        "rejection_messages": get_rejection_messages(request),
+        "years": years,
+        "months": months,
+        "current_year": current_year,
+    }
+    return render(request, "partner/agent_reports.html", context)
