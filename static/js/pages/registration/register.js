@@ -1,6 +1,9 @@
 ﻿document.addEventListener('DOMContentLoaded', function() {
-    // По умолчанию показываем форму участника
-    showForm('visitor');
+    // Если сервер вернул страницу с активным блоком партнёра (например, после
+    // ошибки валидации) — остаёмся на нём. Иначе показываем форму участника.
+    var partnerTab = document.getElementById('switch-partner');
+    showForm(partnerTab && partnerTab.checked ? 'partner' : 'visitor');
+
 
     // === Toggle password visibility ===
     document.querySelectorAll('.password-field .password-toggle').forEach(function(btn) {

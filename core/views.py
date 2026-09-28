@@ -294,9 +294,11 @@ def register_view(request):
     
     form = VisitorRegistrationForm()
     partner_form = PartnerRegistrationForm()
+    user_type = "visitor"  # По умолчанию активен блок участника
     
     if request.method == "POST":
         user_type = request.POST.get("form_type", "visitor")
+
         
         if user_type == "partner":
             partner_form = PartnerRegistrationForm(request.POST, request.FILES)
@@ -399,10 +401,13 @@ def register_view(request):
                 # Редирект на страницу ввода кода подтверждения
                 return redirect("verify_email")
 
-    return render(request, "registration/register.html", {
+    context = {
         "form": form,
         "partner_form": partner_form,
-    })
+        "active_form_type": user_type,
+    }
+    
+    return render(request, "registration/register.html", context)
 
 def verify_email_view(request):
     """Обрабатывает ввод кода подтверждения."""

@@ -30,6 +30,7 @@ ul {
 }
 
 .type-switcher-label {
+  position: relative;
   padding: 10px 24px;
   border: 1.5px solid #777a8d;
   border-radius: 20px;
@@ -51,6 +52,42 @@ ul {
   border-color: #ff6b35;
   background: #fff3ef;
   color: #ff6b35;
+}
+
+/* Тултипы у переключателя «Участник / Партнёр» */
+.type-switcher-label::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 130% !important;
+  z-index: 30;
+  width: max-content;
+  max-width: 280px;
+  padding: 10px 14px;
+  background: #807e7e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  /* Центрируем относительно label и приподнимаем для анимации появления */
+  transform: translate(-50%, -4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
+}
+
+.type-switcher-label:hover::after,
+.type-switcher-label:focus-within::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
 }
 
 /* ===== ТИП ЛИЦА — ЧЕКБОКСЫ-ВИД В СТРОКУ ===== */

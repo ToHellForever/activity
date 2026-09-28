@@ -12,11 +12,18 @@
 
         <!-- Переключатель типа регистрации -->
         <div class="type-switcher">
-            <input type="radio" id="switch-visitor" name="form_type" value="visitor" checked onchange="showForm('visitor')">
-            <label for="switch-visitor" class="type-switcher-label">Участник</label>
-            
-            <input type="radio" id="switch-partner" name="form_type" value="partner" onchange="showForm('partner')">
-            <label for="switch-partner" class="type-switcher-label">Партнёр</label>
+            <input type="radio" id="switch-visitor" name="form_type" value="visitor" {% if active_form_type != 'partner' %}checked{% endif %} onchange="showForm('visitor')">
+    <label for="switch-visitor" class="type-switcher-label" data-tooltip="Находите актуальные тренинги, конференции и нетворкинг в городе, покупайте билеты и участвуйте в событиях.">Участник</label>
+    
+    <input type="radio" id="switch-partner" name="form_type" value="partner" {% if active_form_type == 'partner' %}checked{% endif %} onchange="showForm('partner')">
+    <label for="switch-partner" class="type-switcher-label" data-tooltip="Подходит компаниям, ИП и самозанятым, которые проводят обучение, организуют встречи и продают билеты">Партнёр</label>
+
+
+
+
+
+
+
         </div>
 
         {% if form.non_field_errors or partner_form.non_field_errors %}
