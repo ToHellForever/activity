@@ -38,6 +38,15 @@ jobs:
             # (например, celerybeat-schedule перезаписывается демоном на сервере).
             # Production-код не должен иметь локальных правок на сервере.
             git checkout -- .
+
+            # staticfiles/ собирается collectstatic'ом на сервере, из-за чего там
+            # появляются неотслеживаемые файлы. Если такой же файл приходит в
+            # коммите из репозитория, git pull падает с "untracked working tree
+            # files would be overwritten by merge". Удаляем неотслеживаемые
+            # файлы только в staticfiles (media не трогаем!) — collectstatic
+            # всё равно пересоберёт их ниже.
+            git clean -fd staticfiles
+
             git pull --ff-only origin "${{ github.ref_name }}"
 
             # Конфигурация (.env) хранится только на сервере и НЕ перезаписывается

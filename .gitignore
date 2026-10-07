@@ -5,6 +5,8 @@ __pycache__/
 .env
 debug.log
 email_test.log
+# Собирается collectstatic на сервере — не хранится в VCS
+staticfiles/
 # Локальные артефакты Celery Beat — перезаписываются демоном, не должны быть в VCS
 celerybeat-schedule
 celerybeat-schedule.*
