@@ -1,0 +1,304 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Скроем стандартное поле organizer из fieldset */
+    .hide-organizer-field .field-organizer {
+        display: none !important;
+    }
+
+    .partner-autocomplete-wrapper {
+        position: relative;
+        margin-bottom: 8px;
+    }
+
+    .partner-autocomplete-input {
+        width: 100%;
+        max-width: 400px;
+        padding: 6px 10px;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .partner-autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        min-width: 300px;
+        max-width: 500px;
+        max-height: 250px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #999;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .partner-autocomplete-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+    }
+
+    .partner-autocomplete-item:hover,
+    .partner-autocomplete-item.active {
+        background: #c1dff0;
+    }
+
+    .partner-autocomplete-item .email {
+        font-weight: 600;
+    }
+
+    .partner-autocomplete-item .name {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .partner-autocomplete-empty {
+        padding: 8px 12px;
+        color: #999;
+        font-size: 13px;
+    }
+
+    .partner-selected-info {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .partner-selected-info.error {
+        color: #ba2121;
+        font-weight: bold;
+    }
+
+    .partner-selected-info.success {
+        color: #0c0;
+        font-weight: bold;
+    }
+
+    /* Блок информации о пакете */
+    .package-info-block {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        margin: 10px 0;
+        font-size: 13px;
+        color: #000;
+        display: none;
+    }
+
+    .package-info-block,
+    .package-info-block strong,
+    .package-info-block div,
+    .package-info-block span {
+        color: #000;
+    }
+
+    .package-info-block.visible {
+        display: block;
+    }
+
+    .package-info-block.error {
+        border-color: #ba2121;
+        background: #fff5f5;
+    }
+
+    .package-info-block.success {
+        border-color: #0c0;
+        background: #f5fff5;
+    }
+
+    /* Скроем select пакета если выбран партнёр */
+    .hide-package-field .field-package {
+        display: none !important;
+    }
+
+    /* Блок с подсказкой о выборе типа */
+    .organizer-type-hint {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 6px;
+        font-style: italic;
+    }
+
+    .package-info-block .pkg-line {
+        margin-top: 4px;
+    }
+
+    .package-info-block .pkg-active-ok {
+        color: #0a7a0a;
+        font-weight: bold;
+    }
+
+    .package-info-block .pkg-active-over {
+        color: #ba2121;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+<script>
+window.PARTNER_SUBSCRIPTION_CHECK_URL = "{% url 'admin:core_event_check_partner_subscription' %}";
+</script>
+<script>
+/**
+ * Логика пакетов в админке EventAdmin.
+ *
+ * Поле "organizer" — штатный Django-autocomplete (select2).
+ * При выборе организатора:
+ *   - партнёр с активной подпиской → подставляем его пакет, показываем
+ *     название пакета и счётчик активных мероприятий (N / лимит);
+ *   - партнёр без подписки или превышен лимит → блокируем сохранение;
+ *   - обычный пользователь (гость/участник) → пакет выбирается вручную.
+ *
+ * Скрипт встроен в шаблон (а не отдельным файлом), чтобы работать
+ * независимо от сборки статики (collectstatic).
+ */
+(function () {
+    function init() {
+        var organizerSelect = document.getElementById('id_organizer');
+        var checkUrl = window.PARTNER_SUBSCRIPTION_CHECK_URL;
+        if (!organizerSelect || !checkUrl) return;
+        if (organizerSelect.dataset.pkgInit === '1') return;
+        organizerSelect.dataset.pkgInit = '1';
+
+        // Блок информации вставляем сразу после поля организатора
+        var infoBlock = document.getElementById('partner-package-info');
+        if (!infoBlock) {
+            infoBlock = document.createElement('div');
+            infoBlock.id = 'partner-package-info';
+            infoBlock.className = 'package-info-block';
+            var organizerField = organizerSelect.closest('.field-organizer');
+            if (organizerField && organizerField.parentNode) {
+                organizerField.parentNode.insertBefore(infoBlock, organizerField.nextSibling);
+            } else {
+                var form = document.getElementById('event_form');
+                if (form) form.insertBefore(infoBlock, form.firstChild);
+            }
+        }
+
+        function setSaveDisabled(disabled) {
+            var buttons = document.querySelectorAll(
+                'input[name="_save"], input[name="_addanother"], input[name="_continue"]'
+            );
+            buttons.forEach(function (btn) {
+                btn.disabled = disabled;
+                btn.style.opacity = disabled ? '0.5' : '';
+                btn.style.cursor = disabled ? 'not-allowed' : '';
+            });
+        }
+
+        function applyPartnerPackage(packageId) {
+            var pkgSelect = document.getElementById('id_package');
+            if (!pkgSelect) return;
+            if (packageId) pkgSelect.value = String(packageId);
+            pkgSelect.disabled = true;
+            pkgSelect.style.backgroundColor = '#f0f0f0';
+            pkgSelect.title = 'Пакет взят из активной подписки партнёра';
+        }
+
+        function releasePackage() {
+            var pkgSelect = document.getElementById('id_package');
+            if (!pkgSelect) return;
+            pkgSelect.disabled = false;
+            pkgSelect.style.backgroundColor = '';
+            pkgSelect.title = '';
+        }
+
+        function resetInfo() {
+            infoBlock.classList.remove('visible', 'error', 'success');
+            infoBlock.innerHTML = '';
+            releasePackage();
+            setSaveDisabled(false);
+        }
+
+        function showInfo(kind, html) {
+            infoBlock.classList.add('visible');
+            infoBlock.classList.remove('error', 'success');
+            if (kind) infoBlock.classList.add(kind);
+            infoBlock.innerHTML = html;
+        }
+
+        function checkOrganizer(partnerId) {
+            if (!partnerId) { resetInfo(); return; }
+            fetch(checkUrl + '?partner_id=' + encodeURIComponent(partnerId), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function (resp) { return resp.json(); })
+                .then(function (data) {
+                    if (data.error) { resetInfo(); return; }
+
+                    if (data.is_partner === false) { resetInfo(); return; }
+
+                    if (!data.has_package) {
+                        releasePackage();
+                        showInfo('error', '<strong>⛔ ' + data.message + '</strong>');
+                        setSaveDisabled(true);
+                        return;
+                    }
+
+                    var limit = data.max_active_events;
+                    var active = data.current_active_events;
+                    var activeClass = active >= limit ? 'pkg-active-over' : 'pkg-active-ok';
+                    var infoHtml =
+                        '<div class="pkg-line"><strong>Пакет:</strong> ' +
+                        data.package_name + '</div>' +
+                        '<div class="pkg-line"><strong>Активных мероприятий:</strong> ' +
+                        '<span class="' + activeClass + '">' + active + '</span> / ' + limit +
+                        '</div>';
+
+                    if (!data.can_create) {
+                        applyPartnerPackage(data.package_id);
+                        showInfo('error',
+                            '<strong>⛔ Превышен лимит активных мероприятий</strong>' + infoHtml);
+                        setSaveDisabled(true);
+                        return;
+                    }
+
+                    applyPartnerPackage(data.package_id);
+                    showInfo('success', '<strong>✓ Пакет партнёра применён</strong>' + infoHtml);
+                    setSaveDisabled(false);
+                })
+                .catch(function () { resetInfo(); });
+        }
+
+        var lastValue = organizerSelect.value;
+        function onChange() {
+            if (organizerSelect.value === lastValue) return;
+            lastValue = organizerSelect.value;
+            checkOrganizer(organizerSelect.value);
+        }
+
+        organizerSelect.addEventListener('change', onChange);
+        // select2 (jQuery) события
+        if (window.django && window.django.jQuery) {
+            window.django.jQuery(organizerSelect).on('select2:select select2:clear', onChange);
+        }
+        // Страховка: опрос значения (select2 иногда не эмитит change)
+        setInterval(onChange, 500);
+
+        if (organizerSelect.value) checkOrganizer(organizerSelect.value);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.addEventListener('load', init);
+})();
+</script>
+{% endblock %}

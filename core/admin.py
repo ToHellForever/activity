@@ -329,6 +329,9 @@ class EventAdmin(admin.ModelAdmin):
     # Какие поля использовать для поиска
     search_fields = ("title", "organizer__username")
 
+    # Поиск организатора по email через штатный autocomplete Django
+    autocomplete_fields = ("organizer",)
+
     # Добавляем действия для пакетного изменения статусов
     actions = [
         "reject_events",
@@ -338,6 +341,8 @@ class EventAdmin(admin.ModelAdmin):
     ]
 
     # Группировка полей на странице редактирования
+    change_form_template = "admin/event_change_form.html"
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = [
             (
@@ -346,6 +351,7 @@ class EventAdmin(admin.ModelAdmin):
                     "fields": (
                         "title",
                         "organizer",
+                        "package",
                         "description",
                         "date_time",
                         "duration",
@@ -368,7 +374,6 @@ class EventAdmin(admin.ModelAdmin):
                         "category",
                         "format",
                         "tags",
-                        "get_tags_display",
                         "allow_booking_without_payment",
                         "allow_platform_requests",
                         "commission_rate",
@@ -378,15 +383,16 @@ class EventAdmin(admin.ModelAdmin):
             ),
         ]
 
-        # Добавляем блок для отображения статуса
-        fieldsets.append(
-            (
-                "Статусы",
-                {
-                    "fields": ("approved_status",),
-                },
+        # Добавляем блок "Теги" только при редактировании (obj есть)
+        if obj:
+            fieldsets.append(
+                (
+                    "Теги (отображение)",
+                    {
+                        "fields": ("get_tags_display",),
+                    },
+                )
             )
-        )
 
 
         if obj and obj.status == "rejected":
@@ -441,7 +447,10 @@ class EventAdmin(admin.ModelAdmin):
 
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
-        return ["approved_status", "get_tags_display"]
+        readonly = []
+        if obj:
+            readonly.append("get_tags_display")
+        return readonly
 
 
     # Метод для отображения статуса в виде галочки
@@ -592,6 +601,9 @@ class EventAdmin(admin.ModelAdmin):
             obj.tickets.prefetch_related('orders').all()  # Загружаем билеты с заказами
             obj.images.all()  # Загружаем фотографии мероприятия
 
+        # --- Добавляем скрытые поля для фильтрации партнёров по подписке ---
+        # (в JS реализуется, здесь просто помечаем что это нужно)
+
         return form
 
     def save_model(self, request, obj, form, change):
@@ -605,7 +617,7 @@ class EventAdmin(admin.ModelAdmin):
         if change and obj.pk:
             original_event = Event.objects.get(pk=obj.pk)
             original_status = original_event.status
-            
+
             # Удаляем видеофайл при отклонении мероприятия
             if original_status != "rejected" and obj.status == "rejected":
                 if obj.video_url:
@@ -621,10 +633,24 @@ class EventAdmin(admin.ModelAdmin):
                     obj.video_processing_status = None
                     obj.processed_video_url_hash = None
 
-        # Проверяем ограничение на количество активных мероприятий только при изменении статуса
-        if (obj.status in ["active", "on_moderation"] and
-            (not change or (change and original_status != obj.status))):
-            self._check_active_events_limit(request, obj, original_status)
+        # --- Подстановка пакета для партнёра ---
+        # (валидация партнёра выполняется в EventAdminForm.clean,
+        #  здесь только подставляем пакет из активной подписки)
+        organizer_id = form.data.get('organizer', '').strip()
+        if organizer_id:
+            try:
+                organizer = CustomUser.objects.get(id=int(organizer_id))
+                obj.organizer = organizer
+
+                if organizer.user_type == 'partner':
+                    active_subscription = UserPackageSubscription.objects.filter(
+                        user=organizer, is_active=True
+                    ).select_related('package').first()
+                    if active_subscription:
+                        obj.package = active_subscription.package
+                # Для обычных пользователей пакет выбирается вручную
+            except (CustomUser.DoesNotExist, ValueError):
+                pass
 
         super().save_model(request, obj, form, change)
  
@@ -638,6 +664,12 @@ class EventAdmin(admin.ModelAdmin):
     ):
         """Проверяет, не превышает ли количество активных мероприятий лимит пакета."""
         from .models import Event
+
+        # Лимиты пакетов применяются только к партнёрам.
+        # Для гостей/участников и отсутствующего организатора проверку пропускаем —
+        # иначе создание мероприятия в админке падало бы с 500 (нет подписки).
+        if not event.organizer or event.organizer.user_type != "partner":
+            return
 
         # Если это существующее мероприятие и статус не меняется, пропускаем проверку
         if event.pk and original_status == event.status:
@@ -663,14 +695,16 @@ class EventAdmin(admin.ModelAdmin):
             )
             raise forms.ValidationError("У пользователя не выбран пакет.")
 
-        # Считаем количество ТОЛЬКО активных мероприятий (status="active")
+        # Считаем активные мероприятия: "active" + "on_moderation"
+        # (та же семантика, что и в EventPackage.can_create_event,
+        # поэтому события, созданные из админки под этим партнёром, тоже учитываются)
         active_events_count = Event.objects.filter(
             organizer=event.organizer,
-            status="active"
+            status__in=["active", "on_moderation"],
         ).exclude(pk=event.pk).count()
 
-        # Если это активация мероприятия (перевод в статус "active"), учитываем его в лимитах
-        if is_activating or event.status == "active":
+        # Учитываем сохраняемое мероприятие, если оно попадёт в активные
+        if is_activating or event.status in ("active", "on_moderation"):
             active_events_count += 1
         active_events_count += additional_active_count
 
@@ -685,6 +719,103 @@ class EventAdmin(admin.ModelAdmin):
             raise forms.ValidationError(
                 f"Превышен лимит активных мероприятий ({package.max_active_events}) для пакета '{package.name}'."
             )
+    # --- AJAX-эндпоинты для поиска партнёров и проверки подписки ---
+
+    def get_urls(self):
+        from django.urls import path
+
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'search-partners/',
+                self.admin_site.admin_view(self.search_partners_view),
+                name='core_event_search_partners',
+            ),
+            path(
+                'check-partner-subscription/',
+                self.admin_site.admin_view(self.check_partner_subscription_view),
+                name='core_event_check_partner_subscription',
+            ),
+        ]
+        return custom_urls + urls
+
+    def search_partners_view(self, request):
+        """AJAX: поиск партнёров по email/имени для autocomplete."""
+        from django.http import JsonResponse
+
+        query = request.GET.get('q', '').strip()
+        if len(query) < 2:
+            return JsonResponse({'results': []})
+
+        partners = CustomUser.objects.filter(
+            user_type='partner',
+        ).filter(
+            models.Q(email__icontains=query) | models.Q(username__icontains=query)
+        ).order_by('email')[:20]
+
+        results = [
+            {
+                'id': p.id,
+                'email': p.email,
+                'name': p.username if p.username != p.email else '',
+            }
+            for p in partners
+        ]
+        return JsonResponse({'results': results})
+
+    def check_partner_subscription_view(self, request):
+        """AJAX: проверка активной подписки/пакета организатора."""
+        from django.http import JsonResponse
+
+        partner_id = request.GET.get('partner_id')
+        if not partner_id:
+            return JsonResponse({'error': 'partner_id обязателен'}, status=400)
+
+        try:
+            user = CustomUser.objects.get(id=partner_id)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+
+        # Не партнёр — пакет выбирается вручную, ничего не блокируем
+        if user.user_type != 'partner':
+            return JsonResponse({
+                'is_partner': False,
+                'has_package': True,
+                'can_create': True,
+                'message': 'Обычный пользователь — выберите пакет вручную.',
+            })
+
+        subscription = UserPackageSubscription.objects.filter(
+            user=user, is_active=True
+        ).select_related('package').first()
+
+        if not subscription:
+            return JsonResponse({
+                'is_partner': True,
+                'has_package': False,
+                'message': f'У партнёра {user.email} нет активной подписки. Создание мероприятия невозможно.',
+            })
+
+        # Считаем активные мероприятия партнёра (включая созданные из админки)
+        active_count = Event.objects.filter(
+            organizer=user,
+            status__in=['active', 'on_moderation'],
+        ).count()
+
+        return JsonResponse({
+            'is_partner': True,
+            'has_package': True,
+            'package_id': subscription.package.id,
+            'package_name': subscription.package.name,
+            'max_active_events': subscription.package.max_active_events,
+            'current_active_events': active_count,
+            'can_create': active_count < subscription.package.max_active_events,
+            'message': (
+                f'Пакет: {subscription.package.name} '
+                f'({active_count}/{subscription.package.max_active_events} активных)'
+            ),
+        })
+
     class Media:
         js = (
             "/static/js/event_admin.js",
@@ -1360,8 +1491,14 @@ class PartnerAdmin(admin.ModelAdmin):
     get_organizer_status.short_description = "Проверенный организатор"
 
     def get_queryset(self, request):
-        """Фильтруем только партнёров"""
+        """Фильтруем только партнёров.
+
+        Исключение — autocomplete (поиск организатора в форме мероприятия):
+        там нужны все пользователи, включая админов и посетителей.
+        """
         qs = super().get_queryset(request)
+        if request.path.endswith('/autocomplete/'):
+            return qs.order_by('email')
         return qs.filter(user_type='partner').prefetch_related(
             'userpackagesubscription_set',
             'payoutrequest_set',

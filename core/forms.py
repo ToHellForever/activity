@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from .models import Event
+from .models import UserPackageSubscription
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import CustomUser
@@ -55,6 +56,49 @@ class EventAdminForm(ModelForm):
                     # если поле модели пустое (иначе очищенное поле "воскресает")
                     if not self.initial.get(field):
                         self.initial[field] = place_data.get(field)
+
+    def clean(self):
+        """Валидация выбора партнёра при создании мероприятия из админки.
+
+        Проверяем на уровне формы (а не в save_model), иначе прерывание
+        сохранения ломает save_related → save_m2m и даёт 500.
+        """
+        cleaned = super().clean()
+        organizer = cleaned.get("organizer")
+        status = cleaned.get("status")
+
+        # Проверки применяем только при СОЗДАНИИ и только для партнёров
+        if (
+            organizer
+            and getattr(organizer, "user_type", None) == "partner"
+            and self.instance.pk is None
+        ):
+            subscription = (
+                UserPackageSubscription.objects.filter(
+                    user=organizer, is_active=True
+                )
+                .select_related("package")
+                .first()
+            )
+            if not subscription:
+                raise forms.ValidationError(
+                    f"У партнёра {organizer.email} нет активной подписки. "
+                    f"Создание мероприятия невозможно."
+                )
+
+            if status in ("active", "on_moderation"):
+                existing = Event.objects.filter(
+                    organizer=organizer,
+                    status__in=["active", "on_moderation"],
+                ).count()
+                if existing + 1 > subscription.package.max_active_events:
+                    raise forms.ValidationError(
+                        f"У партнёра {organizer.email} уже {existing} активных мероприятий. "
+                        f"Пакет «{subscription.package.name}» допускает максимум "
+                        f"{subscription.package.max_active_events}."
+                    )
+
+        return cleaned
 
     def save(self, commit=True):
         instance = super().save(commit=False)
