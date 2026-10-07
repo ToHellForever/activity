@@ -30,6 +30,7 @@ ul {
 }
 
 .type-switcher-label {
+  position: relative;
   padding: 10px 24px;
   border: 1.5px solid #777a8d;
   border-radius: 20px;
@@ -51,6 +52,42 @@ ul {
   border-color: #ff6b35;
   background: #fff3ef;
   color: #ff6b35;
+}
+
+/* Тултипы у переключателя «Участник / Партнёр» */
+.type-switcher-label::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 130% !important;
+  z-index: 30;
+  width: max-content;
+  max-width: 280px;
+  padding: 10px 14px;
+  background: #807e7e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  /* Центрируем относительно label и приподнимаем для анимации появления */
+  transform: translate(-50%, -4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
+}
+
+.type-switcher-label:hover::after,
+.type-switcher-label:focus-within::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
 }
 
 /* ===== ТИП ЛИЦА — ЧЕКБОКСЫ-ВИД В СТРОКУ ===== */
@@ -523,4 +560,123 @@ ul {
     border-radius: 16px;
     padding: 18px;
   }
+}
+
+/* ===== Media upload (Логотип/Документы) — стили как в event_form.css ===== */
+/* Скопированы точечно, без общих классов (.form-group и т.п.), чтобы не
+   конфликтовать со стилями страницы регистрации. */
+.media-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 1px solid rgba(119, 122, 141, 1);
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+  gap: 10px;
+}
+.media-upload-container.has-no-photos {
+  min-height: auto;
+  padding: 16px 24px;
+}
+.media-upload-container.has-photos {
+  border-radius: 0;
+  border: none;
+  align-items: start;
+  padding: 0;
+}
+
+.media-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.media-upload-text {
+  font-size: 13px;
+  color: #4a7cf7;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+
+.media-upload-text:hover {
+  color: #e67a35;
+  text-decoration: underline;
+}
+
+.inner-icon {
+  width: 55px;
+  height: auto;
+  background: rgba(217, 217, 217, 1);
+  border-radius: 50%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* ===== Placeholder (пустое состояние) ===== */
+.media-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 20px;
+  width: 100%;
+}
+
+.media-upload-placeholder .media-upload-icon {
+  transition: transform 0.2s;
+}
+
+.media-upload-placeholder:hover .media-upload-icon {
+  transform: scale(1.05);
+}
+
+.media-upload-placeholder .media-upload-text {
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  color: rgba(2, 54, 156, 1);
+  line-height: 1.4;
+  user-select: none;
+}
+
+.media-upload-placeholder .media-upload-text:hover {
+  color: #e67a35;
+  text-decoration: none;
+}
+
+/* Крестик удаления (как у программы в event_form) */
+.program-remove-btn {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  text-align: center;
+  color: #fd0202;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+/* Кнопка «Заменить»/«Добавить ещё» (как в event_form) */
+.media-program-button {
+  background: transparent;
+  border: none;
+  color: rgba(119, 122, 141, 1);
+  font-family: "Verdana";
+  font-weight: 400;
+  font-size: 12.53px;
+  cursor: pointer;
+}
+.media-program-button:hover {
+  color: #e67a35;
 }

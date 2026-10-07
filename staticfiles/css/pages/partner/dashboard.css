@@ -160,7 +160,7 @@
 }
 
 .status-pending-text {
-  color: #f57f17;
+  color: rgba(255, 131, 72, 1);
   font-weight: 700;
 }
 
@@ -819,7 +819,7 @@
 
 /* PENDING: жёлтый бейдж */
 .verified-badge--pending {
-  background: #ff9800;
+  background: rgba(255, 131, 72, 1);
   color: #fff;
 }
 
@@ -936,6 +936,7 @@
 /* Сообщение о проверке */
 .verification-pending-message {
   margin-top: 8px;
+  margin-bottom: 8px;
   padding: 8px 12px;
   background: #fff8e1;
   border: 1px solid #ffecb3;

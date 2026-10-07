@@ -108,16 +108,6 @@
   cursor: pointer;
 }
 
-.sidebar-name {
-  font-family: "Montserrat";
-  font-weight: 500;
-  font-size: clamp(0.7rem, 1vw, 0.8rem);
-  color: black;
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
 .sidebar-email {
   font-family: "Montserrat";
   font-weight: 500;

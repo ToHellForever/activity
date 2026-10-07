@@ -41,7 +41,7 @@
         {% endif %}
             
         <!-- ===== ФОРМА УЧАСТНИКА ===== -->
-        <form id="visitor-form" method="post" class="register-form">
+        <form id="visitor-form" method="post" class="register-form"{% if active_form_type == 'partner' %} style="display: none;"{% endif %}>
             {% csrf_token %}
             <input type="hidden" name="form_type" value="visitor">
 
@@ -90,7 +90,7 @@
         </form>
 
         <!-- ===== ФОРМА ПАРТНЁРА ===== -->
-        <form id="partner-form" method="post" enctype="multipart/form-data" class="register-form" style="display: none;">
+        <form id="partner-form" method="post" enctype="multipart/form-data" class="register-form"{% if active_form_type != 'partner' %} style="display: none;"{% endif %}>
             {% csrf_token %}
             <input type="hidden" name="form_type" value="partner">
             
@@ -126,16 +126,16 @@
             <!-- 3. Тип партнёра -->
             <div class="form-section">
                 <div class="registration-type-switcher">
-                    <input type="radio" id="type-physical" name="registration_type" value="physical" checked>
+                    <input type="radio" id="type-physical" name="registration_type" value="physical" {% if partner_form.registration_type.value == 'physical' %}checked{% endif %}>
                     <label for="type-physical" class="type-option">Физическое лицо</label>
                     
-                    <input type="radio" id="type-legal" name="registration_type" value="legal">
+                    <input type="radio" id="type-legal" name="registration_type" value="legal" {% if partner_form.registration_type.value == 'legal' %}checked{% endif %}>
                     <label for="type-legal" class="type-option">Юридическое лицо</label>
                     
-                    <input type="radio" id="type-ip" name="registration_type" value="ip">
+                    <input type="radio" id="type-ip" name="registration_type" value="ip" {% if partner_form.registration_type.value == 'ip' %}checked{% endif %}>
                     <label for="type-ip" class="type-option">ИП</label>
                     
-                    <input type="radio" id="type-self-employed" name="registration_type" value="self_employed">
+                    <input type="radio" id="type-self-employed" name="registration_type" value="self_employed" {% if partner_form.registration_type.value == 'self_employed' %}checked{% endif %}>
                     <label for="type-self-employed" class="type-option">Самозанятый</label>
                 </div>
             </div>
