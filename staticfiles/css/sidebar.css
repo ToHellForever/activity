@@ -113,7 +113,7 @@
   font-weight: 500;
   font-size: clamp(0.7rem, 1vw, 0.8rem);
   color: black;
-
+ 
   /* Основные свойства для усечения */
   white-space: nowrap; /* Запрещает любые переносы строк */
   overflow: hidden; /* Скрывает всё, что выходит за пределы блока */
