@@ -370,8 +370,9 @@ class PartnerRegistrationForm(forms.Form):
     )
     kpp = forms.CharField(
         max_length=9,
-        required=True,
+        required=False,
         label="КПП",
+        help_text="Обязателен только для юридических лиц",
         widget=forms.TextInput(attrs={"placeholder": "КПП", "pattern": "\d{8,9}", "title": "КПП должен содержать 8 или 9 цифр"}),
     )
 
@@ -559,9 +560,15 @@ class PartnerRegistrationForm(forms.Form):
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
         email = cleaned_data.get("email")
+        registration_type = cleaned_data.get("registration_type")
+        kpp = cleaned_data.get("kpp")
 
         if password1 and password2 and password1 != password2:
             self.add_error("password2", "Пароли не совпадают.")
+
+        # КПП обязателен только для юридических лиц
+        if registration_type == "legal" and not kpp:
+            self.add_error("kpp", "КПП обязателен для юридических лиц.")
 
         # «Email уже занят» показываем только для ПОДТВЕРЖДЁННОГО аккаунта.
         # Незавершённую регистрацию (код не введён) перезаписываем молча —
