@@ -21,12 +21,10 @@
 
             <!-- ===== Profile header ===== -->
             <div class="profile-header">
-                <div class="profile-avatar" {% if not partner_profile.logo %}onclick="document.getElementById('id_logo').click()"{% endif %}>
+                <div class="profile-avatar{% if not partner_profile or not partner_profile.logo %} profile-avatar--empty{% endif %}" data-logo-trigger title="Изменить логотип">
                     {% if partner_profile and partner_profile.logo %}
                         <img src="{{ partner_profile.logo.url }}" alt="Logo">
-                        <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
-                            <i class="bi bi-camera-fill"></i>
-                        </span>
+                        <button type="button" class="logo-remove-btn" title="Удалить логотип">&times;</button>
                     {% else %}
                         <img src="/media/icon/camera.svg" alt="">
                     {% endif %}

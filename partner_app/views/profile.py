@@ -279,7 +279,47 @@ def save_field(request):
             return JsonResponse({"status": "success"})
         return JsonResponse({"status": "error", "message": "Файл не найден"}, status=400)
 
+    # Обработка загрузки логотипа
+    if request.GET.get("action") == "upload_logo":
+        logo_file = request.FILES.get("logo")
+        if not logo_file:
+            return JsonResponse({"status": "error", "message": "Файл не найден"}, status=400)
+
+        allowed_ext = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+        ext = os.path.splitext(logo_file.name)[1].lower()
+        if ext not in allowed_ext:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Недопустимый формат. Разрешены: PNG, JPG, GIF, WEBP, SVG.",
+                },
+                status=400,
+            )
+        if logo_file.size > 5 * 1024 * 1024:
+            return JsonResponse(
+                {"status": "error", "message": "Размер логотипа не должен превышать 5 МБ."},
+                status=400,
+            )
+
+        profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+        # Замена: старый файл удаляем из хранилища, новое ставим на его место
+        if profile.logo:
+            profile.delete_file_field("logo")
+        profile.logo = logo_file
+        profile.save(update_fields=["logo"])
+        return JsonResponse({"status": "success", "logo_url": profile.logo.url})
+
+    # Обработка удаления логотипа (из БД и из хранилища)
+    if request.GET.get("action") == "delete_logo":
+        profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+        if profile.logo:
+            profile.delete_file_field("logo")
+            profile.logo = None
+            profile.save(update_fields=["logo"])
+        return JsonResponse({"status": "success"})
+
     field_name = request.POST.get("field_name")
+
     field_value = request.POST.get("field_value")
 
     if not field_name:

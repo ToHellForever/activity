@@ -1,5 +1,7 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+<script src="{% static 'js/pages/partner/partner_logo.js' %}"></script>
+
 
 <!-- ===== Mobile top nav ===== -->
 <div class="mobile-nav">
@@ -51,12 +53,11 @@
             <p class='sidebar-p'>Личный кабинет</p>
             <div class="sidebar-profile">
                 <div class="sidebar-profile-row">
-                    <div class="sidebar-avatar" {% if not partner_profile.logo %}onclick="document.getElementById('id_logo').click()"{% endif %}>
+                <div class="sidebar-avatar{% if not partner_profile or not partner_profile.logo %} sidebar-avatar--empty{% endif %}" data-logo-trigger title="Изменить логотип">
                         {% if partner_profile and partner_profile.logo %}
                             <img src="{{ partner_profile.logo.url }}" alt="Logo">
-                            <span class="camera-badge" onclick="document.getElementById('id_logo').click()">
-                                <i class="bi bi-camera-fill"></i>
-                            </span>
+                            
+                            <button type="button" class="logo-remove-btn" title="Удалить логотип">&times;</button>
                         {% else %}
                             <img src="/media/icon/camera.svg" alt="">
                         {% endif %}
@@ -112,3 +113,9 @@
                 </a>
             </nav>
         </aside>
+
+<!-- Скрытое поле загрузки логотипа партнёра (общее для всех страниц ЛК) -->
+<form id="partner-logo-csrf" style="display:none;">{% csrf_token %}</form>
+<input type="file" id="partner-logo-input" name="logo"
+       accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+       data-url="{% url 'partner:save_field' %}" style="display:none;">

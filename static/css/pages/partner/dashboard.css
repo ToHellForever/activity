@@ -32,17 +32,30 @@
   }
 }
 
+/* Аватар/логотип организации (моб. версия) — стиль как у .sidebar-avatar */
 .profile-avatar {
+  position: relative;
   width: 70px;
   height: 70px;
   min-width: 70px;
   border-radius: 50%;
-  background: #d9d9d9;
+  overflow: visible;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-  position: relative;
+  cursor: pointer;
+}
+
+/* Плейсхолдер: серый круг с белой иконкой камеры */
+.profile-avatar--empty {
+  background: #d9d9d9;
+}
+
+.profile-avatar--empty img {
+  box-sizing: border-box;
+  padding: 22%;
+  object-fit: contain;
 }
 
 .profile-avatar img {
@@ -50,24 +63,39 @@
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
-  padding: 10px;
 }
 
-.profile-avatar .camera-badge {
+/* Крестик удаления логотипа — всегда виден (моб. нет hover) */
+.profile-avatar .logo-remove-btn {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 22px;
-  height: 22px;
-  background: rgba(255, 131, 72, 1);
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  background: #f44336;
+  color: #fff;
   border: 2px solid #fff;
   border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  color: #fff;
-  cursor: pointer;
+  opacity: 0.9;
+  transition:
+    opacity 0.2s,
+    background 0.2s;
+  z-index: 10;
+  padding: 0;
+}
+
+.profile-avatar:hover .logo-remove-btn {
+  opacity: 1;
+}
+
+.profile-avatar .logo-remove-btn:hover {
+  background: #d32f2f;
 }
 
 .profile-avatar[onclick] {
