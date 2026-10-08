@@ -470,6 +470,41 @@ class AdminCrudRegressionTestCase(TestCase):
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     DEFAULT_FROM_EMAIL="no-reply@example.com",
 )
+class ForgotPasswordTestCase(TestCase):
+    URL = "/forgot-password/"
+
+    def test_unknown_email_shows_error_without_sending_email(self):
+        email = "unknown@example.com"
+
+        response = self.client.post(self.URL, {"email": email})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Пользователь с таким адресом электронной почты не найден.")
+        self.assertContains(response, f'value="{email}"')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_existing_email_receives_reset_link(self):
+        email = "known@example.com"
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password="Str0ng!Pass2026",
+        )
+
+        response = self.client.post(self.URL, {"email": email})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/forgot_password_success.html")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [email])
+        user.refresh_from_db()
+        self.assertTrue(user.password_reset_token)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="no-reply@example.com",
+)
 class RegistrationEmailCodeTestCase(TestCase):
     """
     Тесты логики регистрации с отправкой кода подтверждения на почту:
@@ -954,5 +989,4 @@ class RegistrationEmailCodeTestCase(TestCase):
         # Файлы удалены из хранилища, а не остались «висеть»
         self.assertFalse(profile.logo.storage.exists(profile.logo.name))
         self.assertFalse(doc.document.storage.exists(doc.document.name))
-
 

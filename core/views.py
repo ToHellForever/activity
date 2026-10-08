@@ -232,9 +232,13 @@ def forgot_password(request):
                 request, "registration/forgot_password_success.html", {"email": email}
             )
         except CustomUser.DoesNotExist:
-            # Не показываем, существует ли пользователь с таким email
             return render(
-                request, "registration/forgot_password_success.html", {"email": email}
+                request,
+                "registration/forgot_password.html",
+                {
+                    "email": email,
+                    "error": "Пользователь с таким адресом электронной почты не найден.",
+                },
             )
     return render(request, "registration/forgot_password.html")
 
