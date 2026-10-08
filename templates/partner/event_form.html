@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/events/event_detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/events/description_editor.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -250,11 +251,24 @@
     <!-- Описание -->
     <div class="form-group">
         <label for="id_description">{{ form.description.label }}</label>
+        <div class="event-description-editor-toolbar" data-description-toolbar>
+            <label for="id_description_font_size">{{ form.description_font_size.label }}</label>
+            {{ form.description_font_size }}
+            <button type="button" class="btn btn-outline-secondary" data-description-apply-size>
+                Применить к абзацу
+            </button>
+        </div>
+        <p class="description-editor-help">
+            Для нового абзаца нажмите Enter. Поставьте в него курсор, выберите размер —
+            он применится только к этому абзацу. Для нескольких абзацев выделите их и нажмите кнопку.
+        </p>
+        <div class="event-description-editor" data-description-editor></div>
         {{ form.description }}
         {% if form.description.help_text %}
             <small class="form-text text-muted-small">{{ form.description.help_text|safe }}</small>
         {% endif %}
         {% if form.description.errors %}{% for error in form.description.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
+        {% if form.description_font_size.errors %}{% for error in form.description_font_size.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}{% endif %}
     </div>
     <!-- Фото мероприятия -->
     <div class="form-group">
@@ -681,5 +695,6 @@
 <script src="/static/js/pages/partner/custom_media.js"></script>
 <script src="/static/js/pages/partner/dashboard.js?v=10"></script>
 <script src="{% static 'js/pages/events/event_form_extra.js' %}"></script>
+<script src="{% static 'js/pages/events/description_editor.js' %}"></script>
 <script src="/static/js/pages/other/calendar.js"></script>
 {% endblock %}

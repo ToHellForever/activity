@@ -90,6 +90,39 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
         self.assertNotIn("<script>", rendered)
         self.assertNotIn("<a ", rendered)
 
+    def test_paragraph_font_size_markers_render_as_limited_inline_styles(self):
+        rendered = str(
+            auto_format("[[size=13]]Обычный абзац[[/size]]\n[[size=20]]Крупный абзац[[/size]]")
+        )
+
+        self.assertIn('<span style="font-size:13px">Обычный абзац</span>', rendered)
+        self.assertIn('<span style="font-size:20px">Крупный абзац</span>', rendered)
+
+    def test_unsupported_paragraph_font_size_marker_is_escaped(self):
+        rendered = str(auto_format("[[size=99]]Текст[[/size]]"))
+
+        self.assertNotIn('<span style=', rendered)
+        self.assertIn("[[size=99]]Текст[[/size]]", rendered)
+
+    def test_internal_size_markers_do_not_use_description_character_limit(self):
+        from core.description_utils import (
+            description_character_count,
+            strip_description_size_markers,
+        )
+
+        description = (
+            "[[size=13]]Первый абзац[[/size]]\n"
+            "[[size=20]]Второй абзац[[/size]]"
+        )
+        self.assertEqual(
+            description_character_count(description),
+            len("Первый абзац\nВторой абзац"),
+        )
+        self.assertEqual(
+            strip_description_size_markers(description),
+            "Первый абзац\nВторой абзац",
+        )
+
 
 class VerifiedOrganizerStatusTestCase(SimpleTestCase):
     def test_email_verification_alone_does_not_verify_an_organizer(self):
@@ -1104,3 +1137,21 @@ class EventFormDescriptionFieldTestCase(SimpleTestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("3 символов", str(form.errors["description"]))
+
+    def test_description_font_size_is_selectable_from_standard_to_20px(self):
+        from partner_app.forms import EventForm
+
+        form = EventForm()
+
+        self.assertEqual(form.fields["description_font_size"].initial, 13)
+        self.assertEqual(
+            [value for value, _label in form.fields["description_font_size"].choices],
+            [13, 14, 15, 16, 17, 18, 19, 20],
+        )
+        self.assertTrue(form.fields["description_font_size"].help_text)
+
+    def test_admin_form_exposes_description_font_size(self):
+        form = EventAdminForm()
+
+        self.assertIn("description_font_size", form.fields)
+        self.assertTrue(form.fields["description_font_size"].choices)

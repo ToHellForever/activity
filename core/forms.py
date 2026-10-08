@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from .models import Event
 from .models import UserPackageSubscription
+from .description_utils import description_character_count
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import CustomUser
@@ -40,7 +41,10 @@ class EventAdminForm(ModelForm):
         fields = '__all__'
 
     class Media:
-        js = ('js/event_admin.js',)
+        js = ('js/event_admin.js', 'js/pages/events/description_editor.js')
+        css = {
+            'all': ('css/pages/events/description_editor.css',),
+        }
 
     # Поля местоположения, которые синхронизируются с place_data
     PLACE_FIELDS = ("latitude", "longitude", "address", "city", "district", "metro")
@@ -66,6 +70,12 @@ class EventAdminForm(ModelForm):
                     "Подробности: https://example.com"
                 ),
             }
+        )
+        self.fields["description_font_size"].widget.attrs["class"] = "form-control"
+        self.fields["description_font_size"].label = "Размер текста по умолчанию"
+        self.fields["description_font_size"].help_text = (
+            "Используется для новых абзацев. Чтобы изменить размер отдельного абзаца, "
+            "поставьте в него курсор, выберите размер и нажмите «Применить к абзацу»."
         )
         if self.instance and self.instance.package_id:
             self.fields["description"].widget.attrs["maxlength"] = (
@@ -108,7 +118,10 @@ class EventAdminForm(ModelForm):
         description_limit = (
             package.max_description_length if package else 1500
         )
-        if description is not None and len(description) > description_limit:
+        if (
+            description is not None
+            and description_character_count(description) > description_limit
+        ):
             package_context = f" (в пакете «{package.name}»)" if package else ""
             self.add_error(
                 "description",

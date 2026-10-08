@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 SERIALIZABLE_FIELDS = [
     "title",
     "description",
+    "description_font_size",
     "date_time",
     "place_data",
     "category",
@@ -555,4 +556,3 @@ def _change_request_context(request, event, form, ticket_data=None):
     context["change_request_event"] = event
     context["ticket_sold_counts"] = sold_counts
     return context
-

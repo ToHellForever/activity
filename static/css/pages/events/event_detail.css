@@ -81,6 +81,15 @@
   font-size: clamp(0.7rem, 1vw, 0.8rem);
   font-weight: 400;
   color: rgb(7, 7, 7);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.event-description > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 .event-description a {
   color: #0756b3;

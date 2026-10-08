@@ -6,7 +6,7 @@
 {% block title %}{{ event.title }} — {{ event.date_time|date:"d.m.Y" }} | Бизнес Афиша{% endblock %}
 {% block meta_description %}{{ event.title }}. {{ event.date_time|date:"d F Y, H:i" }}{% if event.category %}. Категория: {{ event.category.name }}{% endif %}. Билеты на деловое мероприятие — Бизнес Афиша.{% endblock %}
 {% block og_title %}{{ event.title }} — {{ event.date_time|date:"d.m.Y" }}{% endblock %}
-{% block og_description %}{{ event.description|striptags|truncatechars:200 }}{% endblock %}
+{% block og_description %}{{ event.description|strip_description_size_markers|striptags|truncatechars:200 }}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block content %}
 <meta name="event-id" content="{{ event.id }}">
@@ -238,7 +238,7 @@
     <div class='row mt-5'>
         <div class='col-12 col-md-6'>
             <h2 class='event_detail-h mb-3'>О МЕРОПРИЯТИИ</h2>
-            <div class="event-description">
+            <div class="event-description" style="font-size: {{ event.description_font_size }}px;">
                 {{ event.description|auto_format }}
             </div>
         </div>
@@ -355,7 +355,7 @@
                             <span class="badge">{{ ev.format.name }}</span>
                     </p>
                     {% endif %}
-                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">ПОДРОБНЕЕ</a>
                 </div>
             </div>
         </div>
@@ -390,7 +390,7 @@
                             <span class="badge">{{ ev.format.name }}</span>
                     </p>
                     {% endif %}
-                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">ПОДРОБНЕЕ</a>
                 </div>
             </div>
         </div>
@@ -424,7 +424,7 @@
                             <span class="badge">{{ ev.format.name }}</span>
                     </p>
                     {% endif %}
-                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">КУПИТЬ БИЛЕТ</a>
+                    <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-2">ПОДРОБНЕЕ</a>
                 </div>
             </div>
         </div>
@@ -464,7 +464,7 @@
   "@context": "https://schema.org",
   "@type": "Event",
   "name": "{{ event.title|escapejs }}",
-  "description": "{{ event.description|striptags|escapejs|truncatechars:300 }}",
+  "description": "{{ event.description|strip_description_size_markers|striptags|escapejs|truncatechars:300 }}",
   "startDate": "{{ event.date_time|date:'c' }}",
   {% if event.ends_at %}"endDate": "{{ event.ends_at|date:'c' }}",{% endif %}
   {% if event.image %}"image": "{% if 'http' in event.image.url %}{{ event.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ event.image.url }}{% endif %}",{% endif %}

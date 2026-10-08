@@ -70,10 +70,13 @@
         </a>
         <button class="find-button" id="createEventBtn" 
                 data-user-type="{% if request.user.is_authenticated %}{{ request.user.user_type }}{% else %}guest{% endif %}"
-                data-is-auth="{{ request.user.is_authenticated|lower }}">
+                data-is-auth="{{ request.user.is_authenticated|lower }}"
+                data-login-url="{% url 'login' %}"
+                data-event-list-url="{% url 'partner:partner_event_list' %}">
             РАЗМЕСТИТЬ СОБЫТИЕ
         </button>
 </div>
     </div>
 </div>
+<script src="{% static 'js/pages/other/landing_extra.js' %}"></script>
 {% endblock %}

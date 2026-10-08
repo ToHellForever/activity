@@ -353,6 +353,7 @@ class EventAdmin(admin.ModelAdmin):
                         "organizer",
                         "package",
                         "description",
+                        "description_font_size",
                         "date_time",
                         "duration",
                         "address",
@@ -2154,4 +2155,3 @@ class LegalDocumentAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-

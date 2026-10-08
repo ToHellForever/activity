@@ -472,6 +472,24 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         verbose_name="Описание",
         help_text="Лимит символов определяется пакетом мероприятия",
     )
+    description_font_size = models.PositiveSmallIntegerField(
+        choices=[
+            (13, "13 px — стандартный размер"),
+            (14, "14 px — немного крупнее"),
+            (15, "15 px — крупнее"),
+            (16, "16 px — большой"),
+            (17, "17 px — ещё больше"),
+            (18, "18 px — очень большой"),
+            (19, "19 px — почти максимальный"),
+            (20, "20 px — максимальный"),
+        ],
+        default=13,
+        verbose_name="Размер текста по умолчанию",
+        help_text=(
+            "Стандартный размер новых абзацев. В редакторе можно назначить "
+            "другой размер отдельному абзацу."
+        ),
+    )
     date_time = models.DateTimeField(
         verbose_name="Дата и время",
         help_text="Мероприятие должно быть не ранее чем через 24 часа от текущего момента",

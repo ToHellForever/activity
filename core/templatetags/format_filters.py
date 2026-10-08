@@ -5,8 +5,14 @@
 """
 import re
 from django import template
+from core.description_utils import strip_description_size_markers
 
 register = template.Library()
+
+
+@register.filter(name='strip_description_size_markers')
+def strip_description_size_markers_filter(text):
+    return strip_description_size_markers(text)
 
 
 @register.filter(name='format_price')
@@ -181,6 +187,14 @@ def auto_format(text):
     from django.utils.safestring import mark_safe
     
     text = html_escape(text)
+    text = re.sub(
+        r'\[\[size=(1[3-9]|20)\]\](.*?)\[\[/size\]\]',
+        lambda match: (
+            f'\x00SIZEOPEN{match.group(1)}\x00{match.group(2)}\x00SIZECLOSE\x00'
+        ),
+        text,
+        flags=re.DOTALL,
+    )
     return _advanced_format(text, mark_safe, re, apply_inline_formatting)
 
 
@@ -310,4 +324,10 @@ def apply_inline_formatting(text):
 
     for index, link in enumerate(links):
         text = text.replace(f"\x00LINK{index}\x00", link)
+    text = re.sub(
+        r'\x00SIZEOPEN(1[3-9]|20)\x00',
+        r'<span style="font-size:\1px">',
+        text,
+    )
+    text = text.replace('\x00SIZECLOSE\x00', '</span>')
     return text

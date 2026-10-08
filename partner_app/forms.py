@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from core.models import Event, PartnerDocument, PayoutDetails
+from core.description_utils import description_character_count
 from .models import ReportSchedule, PortfolioItem
 
 User = get_user_model()
@@ -54,6 +55,12 @@ class EventForm(forms.ModelForm):
                     "Подробности: https://example.com"
                 ),
             }
+        )
+        self.fields["description_font_size"].widget.attrs["class"] = "form-control"
+        self.fields["description_font_size"].label = "Размер текста по умолчанию"
+        self.fields["description_font_size"].help_text = (
+            "Используется для новых абзацев. Чтобы изменить размер отдельного абзаца, "
+            "поставьте в него курсор, выберите размер и нажмите «Применить к абзацу»."
         )
         # Настройка поля auto_close_sales_hours
         self.fields["auto_close_sales_hours"].required = True
@@ -154,7 +161,8 @@ class EventForm(forms.ModelForm):
             description = cleaned_data.get("description")
             if (
                 description is not None
-                and len(description) > package.max_description_length
+                and description_character_count(description)
+                > package.max_description_length
             ):
                 self.add_error(
                     "description",
@@ -297,6 +305,7 @@ class EventForm(forms.ModelForm):
         fields = [
             "title",
             "description",
+            "description_font_size",
             "date_time",
             "place_data",
             "video_url",
