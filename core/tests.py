@@ -34,9 +34,20 @@ from core.admin import (
     UserPackageSubscriptionAdmin,
 )
 from core.tasks import check_and_apply_scheduled_package_changes
-from core.validators import validate_video_duration
+from core.validators import validate_inn, validate_video_duration
 from core.video_storage import YandexVideoProcessingStorage
 from unittest.mock import patch, MagicMock
+
+
+class InnValidatorTestCase(SimpleTestCase):
+    def test_accepts_ten_or_twelve_digits_without_checksum_validation(self):
+        self.assertEqual(validate_inn("1234567890"), "1234567890")
+        self.assertEqual(validate_inn("123456789012"), "123456789012")
+
+    def test_rejects_other_lengths_and_non_digits(self):
+        for value in ("123456789", "12345678901", "1234567890123", "123456789a"):
+            with self.subTest(value=value), self.assertRaises(ValidationError):
+                validate_inn(value)
 
 
 class YandexVideoStorageTestCase(SimpleTestCase):
@@ -943,6 +954,5 @@ class RegistrationEmailCodeTestCase(TestCase):
         # Файлы удалены из хранилища, а не остались «висеть»
         self.assertFalse(profile.logo.storage.exists(profile.logo.name))
         self.assertFalse(doc.document.storage.exists(doc.document.name))
-
 
 

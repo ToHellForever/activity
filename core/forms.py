@@ -410,7 +410,7 @@ class PartnerRegistrationForm(forms.Form):
         max_length=20,
         required=True,
         label="ИНН",
-        widget=forms.TextInput(attrs={"placeholder": "ИНН", "pattern": "\d{10,12}", "title": "ИНН должен содержать 10 или 12 цифр"}),
+        widget=forms.TextInput(attrs={"placeholder": "ИНН", "pattern": r"\d{10}|\d{12}", "title": "ИНН должен содержать 10 или 12 цифр"}),
     )
     kpp = forms.CharField(
         max_length=9,
@@ -540,7 +540,7 @@ class PartnerRegistrationForm(forms.Form):
     )
     
     def clean_inn(self):
-        """Строгая валидация ИНН: только цифры, 10 или 12 знаков, контрольная сумма."""
+        """Проверяет обязательность ИНН и наличие 10 или 12 цифр."""
         from .validators import validate_inn
 
         value = self.cleaned_data.get("inn", "").strip()
@@ -690,13 +690,13 @@ class PartnerProfileForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # ИНН обязателен: он нужен для фискализации по агентской схеме (чек от Атола)
         self.fields["inn"].required = True
-        self.fields["inn"].widget.attrs.setdefault("pattern", r"\d{10,12}")
+        self.fields["inn"].widget.attrs.setdefault("pattern", r"\d{10}|\d{12}")
         self.fields["inn"].widget.attrs.setdefault(
             "title", "ИНН должен содержать 10 или 12 цифр"
         )
 
     def clean_inn(self):
-        """Строгая валидация ИНН: только цифры, 10 или 12 знаков, контрольная сумма."""
+        """Проверяет обязательность ИНН и наличие 10 или 12 цифр."""
         from .validators import validate_inn
 
         value = (self.cleaned_data.get("inn") or "").strip()
