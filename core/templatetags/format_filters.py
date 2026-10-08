@@ -171,29 +171,17 @@ def dict_get(dictionary, key):
 @register.filter(name='auto_format')
 def auto_format(text):
     """
-    Автоматически форматирует обычный текст в HTML:
-    - Если есть **жирный**, - списки, заголовки с : → применяем продвинутое форматирование
-    - Иначе → просто оборачиваем в <p> с переносами строк
+    Форматирует безопасный обычный текст: переносы, абзацы, списки,
+    жирный/курсивный текст и ссылки.
     """
     if not text:
         return ''
     
     from django.utils.html import escape as html_escape
     from django.utils.safestring import mark_safe
-    from django.template.defaultfilters import linebreaks
     
     text = html_escape(text)
-    
-    # Проверяем, есть ли продвинутое форматирование
-    has_advanced = ('**' in text or '__' in text or 
-                    re.search(r'^[-*]\s+', text, re.MULTILINE) or
-                    re.search(r'^\d+\.\s+', text, re.MULTILINE))
-    
-    if has_advanced:
-        return _advanced_format(text, mark_safe, re, apply_inline_formatting)
-    
-    # Простой текст — оборачиваем в абзацы
-    return mark_safe(linebreaks(text))
+    return _advanced_format(text, mark_safe, re, apply_inline_formatting)
 
 
 def _advanced_format(text, mark_safe, re, apply_inline_formatting):
@@ -283,10 +271,43 @@ def _advanced_format(text, mark_safe, re, apply_inline_formatting):
 
 def apply_inline_formatting(text):
     """Применяет форматирование внутри строки: жирный, курсив, ссылки."""
+    links = []
+
+    def replace_link(match):
+        markdown_label, markdown_url, plain_url = match.groups()
+        if markdown_url:
+            label = markdown_label
+            url = markdown_url
+            trailing = ""
+        else:
+            url = plain_url
+            trailing = ""
+            while url and url[-1] in ".,!?;:":
+                trailing = url[-1] + trailing
+                url = url[:-1]
+            label = url
+
+        link_index = len(links)
+        links.append(
+            f'<a href="{url}" target="_blank" rel="noopener noreferrer">'
+            f'{label}</a>'
+        )
+        return f"\x00LINK{link_index}\x00{trailing}"
+
+    text = re.sub(
+        r'\[([^\]]+)\]\((https?://[^\s)]+)\)|(https?://[^\s<]+)',
+        replace_link,
+        text,
+        flags=re.IGNORECASE,
+    )
+
     # Жирный: **текст** или __текст__
     text = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', text)
     text = re.sub(r'__([^_]+)__', r'<b>\1</b>', text)
     # Курсив: *текст* или _текст_
     text = re.sub(r'\*([^*]+)\*', r'<i>\1</i>', text)
     text = re.sub(r'(?<!\w)_([^_]+)_(?!\w)', r'<i>\1</i>', text)
+
+    for index, link in enumerate(links):
+        text = text.replace(f"\x00LINK{index}\x00", link)
     return text

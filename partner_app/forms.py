@@ -25,6 +25,36 @@ class EventForm(forms.ModelForm):
         self.fields["refund_deadline_hours"].required = True
         self.fields["duration"].required = True
         self.fields["place_data"].required = False
+        # Настройка поля description
+        self.fields["description"].help_text = (
+            "Пишите обычным текстом: переносы строк сохраняются. "
+            "Для выделения используйте **жирный** или *курсив*. "
+            "Ссылки вида https://example.com станут активными; "
+            "для подписи используйте [текст ссылки](https://example.com)."
+        )
+        description_package = self.current_package or self.instance.package
+        if description_package:
+            limit = description_package.max_description_length
+            self.fields["description"].widget.attrs["maxlength"] = limit
+            self.fields["description"].help_text += (
+                f" Максимум для пакета «{description_package.name}» — {limit} символов."
+            )
+        else:
+            self.fields["description"].help_text += (
+                " Максимальная длина зависит от пакета мероприятия."
+            )
+        self.fields["description"].widget.attrs.update(
+            {
+                "rows": 10,
+                "placeholder": (
+                    "О мероприятии\n\n"
+                    "**Что вас ждёт:**\n"
+                    "- Практические советы\n"
+                    "- *Общение с экспертами*\n\n"
+                    "Подробности: https://example.com"
+                ),
+            }
+        )
         # Настройка поля auto_close_sales_hours
         self.fields["auto_close_sales_hours"].required = True
         self.fields["auto_close_sales_hours"].widget.attrs["min"] = 24
@@ -121,6 +151,19 @@ class EventForm(forms.ModelForm):
             package = self.current_package
 
         if package:
+            description = cleaned_data.get("description")
+            if (
+                description is not None
+                and len(description) > package.max_description_length
+            ):
+                self.add_error(
+                    "description",
+                    forms.ValidationError(
+                        "Описание не должно превышать "
+                        f"{package.max_description_length} символов "
+                        f"(в пакете «{package.name}»)."
+                    ),
+                )
 
             # Проверка на наличие видео
             if not package.has_video and video_url:

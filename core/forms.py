@@ -47,6 +47,30 @@ class EventAdminForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields["description"].help_text = (
+            "Пишите обычным текстом: переносы строк сохраняются. "
+            "Для выделения используйте **жирный** или *курсив*. "
+            "Ссылки вида https://example.com станут активными; "
+            "для подписи используйте [текст ссылки](https://example.com). "
+            "Максимальная длина зависит от пакета мероприятия."
+        )
+        self.fields["description"].widget.attrs.update(
+            {
+                "rows": 10,
+                "placeholder": (
+                    "О мероприятии\n\n"
+                    "**Что вас ждёт:**\n"
+                    "- Практические советы\n"
+                    "- *Общение с экспертами*\n\n"
+                    "Подробности: https://example.com"
+                ),
+            }
+        )
+        if self.instance and self.instance.package_id:
+            self.fields["description"].widget.attrs["maxlength"] = (
+                self.instance.package.max_description_length
+            )
         
         if self.instance and self.instance.place_data:
             place_data = self.instance.place_data
@@ -66,13 +90,10 @@ class EventAdminForm(ModelForm):
         cleaned = super().clean()
         organizer = cleaned.get("organizer")
         status = cleaned.get("status")
+        package = cleaned.get("package") or self.instance.package
+        subscription = None
 
-        # Проверки применяем только при СОЗДАНИИ и только для партнёров
-        if (
-            organizer
-            and getattr(organizer, "user_type", None) == "partner"
-            and self.instance.pk is None
-        ):
+        if organizer and getattr(organizer, "user_type", None) == "partner":
             subscription = (
                 UserPackageSubscription.objects.filter(
                     user=organizer, is_active=True
@@ -80,6 +101,29 @@ class EventAdminForm(ModelForm):
                 .select_related("package")
                 .first()
             )
+            if subscription:
+                package = subscription.package
+
+        description = cleaned.get("description")
+        description_limit = (
+            package.max_description_length if package else 1500
+        )
+        if description is not None and len(description) > description_limit:
+            package_context = f" (в пакете «{package.name}»)" if package else ""
+            self.add_error(
+                "description",
+                forms.ValidationError(
+                    "Описание не должно превышать "
+                    f"{description_limit} символов{package_context}."
+                ),
+            )
+
+        # Проверки применяем только при СОЗДАНИИ и только для партнёров
+        if (
+            organizer
+            and getattr(organizer, "user_type", None) == "partner"
+            and self.instance.pk is None
+        ):
             if not subscription:
                 raise forms.ValidationError(
                     f"У партнёра {organizer.email} нет активной подписки. "

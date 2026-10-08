@@ -19,6 +19,7 @@ from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
 from core.models import (
     Event,
+    CustomUser,
     User,
     EventPackage,
     UserPackageSubscription,
@@ -34,7 +35,9 @@ from core.admin import (
     UserPackageSubscriptionAdmin,
 )
 from core.tasks import check_and_apply_scheduled_package_changes
+from core.forms import EventAdminForm
 from core.validators import validate_inn, validate_video_duration
+from core.templatetags.format_filters import auto_format
 from core.video_storage import YandexVideoProcessingStorage
 from unittest.mock import patch, MagicMock
 
@@ -48,6 +51,68 @@ class InnValidatorTestCase(SimpleTestCase):
         for value in ("123456789", "12345678901", "1234567890123", "123456789a"):
             with self.subTest(value=value), self.assertRaises(ValidationError):
                 validate_inn(value)
+
+
+class EventDescriptionFormattingTestCase(SimpleTestCase):
+    def test_admin_description_field_explains_simple_formatting(self):
+        description = EventAdminForm().fields["description"]
+
+        self.assertIn("**жирный**", description.help_text)
+        self.assertEqual(description.widget.attrs["rows"], 10)
+        self.assertIn("https://example.com", description.widget.attrs["placeholder"])
+
+    def test_plain_url_becomes_safe_active_link(self):
+        rendered = str(auto_format("Подробнее: https://example.com/event."))
+
+        self.assertIn(
+            '<a href="https://example.com/event" target="_blank" rel="noopener noreferrer">'
+            "https://example.com/event</a>.",
+            rendered,
+        )
+
+    def test_formatted_text_and_markdown_link_render(self):
+        rendered = str(
+            auto_format("**Важно**\n\n[Открыть сайт](https://example.com)")
+        )
+
+        self.assertIn("<b>Важно</b>", rendered)
+        self.assertIn(
+            '<a href="https://example.com" target="_blank" rel="noopener noreferrer">'
+            "Открыть сайт</a>",
+            rendered,
+        )
+
+    def test_unsafe_markup_and_non_http_links_are_not_rendered(self):
+        rendered = str(
+            auto_format('<script>alert(1)</script> [опасно](javascript:alert(1))')
+        )
+
+        self.assertNotIn("<script>", rendered)
+        self.assertNotIn("<a ", rendered)
+
+
+class VerifiedOrganizerStatusTestCase(SimpleTestCase):
+    def test_email_verification_alone_does_not_verify_an_organizer(self):
+        user = CustomUser(
+            user_type="visitor",
+            is_verified=True,
+            organizer_status="none",
+        )
+
+        self.assertFalse(user.is_verified_organizer)
+
+    def test_only_approved_partner_is_a_verified_organizer(self):
+        approved_partner = CustomUser(
+            user_type="partner",
+            organizer_status="approved",
+        )
+        pending_partner = CustomUser(
+            user_type="partner",
+            organizer_status="pending",
+        )
+
+        self.assertTrue(approved_partner.is_verified_organizer)
+        self.assertFalse(pending_partner.is_verified_organizer)
 
 
 class YandexVideoStorageTestCase(SimpleTestCase):
@@ -990,3 +1055,52 @@ class RegistrationEmailCodeTestCase(TestCase):
         self.assertFalse(profile.logo.storage.exists(profile.logo.name))
         self.assertFalse(doc.document.storage.exists(doc.document.name))
 
+
+class EventFormDescriptionFieldTestCase(SimpleTestCase):
+    """Тесты конфигурации поля description в EventForm партнёра."""
+
+    def test_event_form_description_field_has_help_text(self):
+        """EventForm.description должен иметь справку о форматировании."""
+        from partner_app.forms import EventForm
+
+        form = EventForm()
+
+        # Проверяем help_text
+        self.assertIn("жирный", form.fields["description"].help_text)
+        self.assertIn("курсив", form.fields["description"].help_text)
+        self.assertIn("https://example.com", form.fields["description"].help_text)
+
+    def test_event_form_description_field_has_textarea_attributes(self):
+        """EventForm.description должен быть 10-строчным textarea с плейсхолдером."""
+        from partner_app.forms import EventForm
+
+        form = EventForm()
+        widget = form.fields["description"].widget
+
+        # Проверяем attributes
+        self.assertEqual(widget.attrs.get("rows"), 10)
+        self.assertIn("О мероприятии", widget.attrs.get("placeholder", ""))
+        self.assertIn("**Что вас ждёт:**", widget.attrs.get("placeholder", ""))
+
+    def test_event_form_enforces_package_description_limit(self):
+        from partner_app.forms import EventForm
+
+        package = EventPackage(name="Тестовый пакет", max_description_length=3)
+        form = EventForm(
+            data={"description": "четыре"},
+            current_package=package,
+        )
+
+        self.assertEqual(form.fields["description"].widget.attrs["maxlength"], 3)
+        self.assertFalse(form.is_valid())
+        self.assertIn("3 символов", str(form.errors["description"]))
+
+    def test_admin_form_enforces_selected_package_description_limit(self):
+        package = EventPackage(name="Тестовый пакет", max_description_length=3)
+        form = EventAdminForm(
+            data={"description": "четыре"},
+            instance=Event(package=package),
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("3 символов", str(form.errors["description"]))

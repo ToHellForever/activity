@@ -3,7 +3,7 @@ from django.db import models
 import os
 import logging
 from django.contrib.auth import get_user_model
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.urls import reverse
@@ -147,6 +147,11 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
             minutes=self.UNVERIFIED_ACCOUNT_TTL_MINUTES
         )
 
+    @property
+    def is_verified_organizer(self):
+        """Подтверждён ли пользователь как организатор по документам."""
+        return self.user_type == "partner" and self.organizer_status == "approved"
+
     def is_stale_unverified(self):
         """Незавершённая регистрация просрочена и подлежит удалению."""
         expires_at = self.unverified_expires_at()
@@ -246,6 +251,12 @@ class EventPackage(models.Model):
         ('short', 'Краткое'),
         ('detailed', 'Подробное'),
     ], default='short', verbose_name="Тип описания")
+    max_description_length = models.PositiveIntegerField(
+        default=1500,
+        validators=[MinValueValidator(1)],
+        verbose_name="Максимум символов в описании мероприятия",
+        help_text="Укажите максимальное количество символов в описании мероприятий этого пакета.",
+    )
     description = models.TextField(verbose_name="Описание", default="", blank=True, null=True)
     priority_description = models.TextField(verbose_name="Описание приоритета", default="", blank=True, null=True)
     has_program_and_speakers = models.BooleanField(default=True, verbose_name="Программа и спикеры")
@@ -458,9 +469,8 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         max_length=100, verbose_name="Название", help_text="Максимум 100 символов"
     )
     description = models.TextField(
-        verbose_name="Краткое описание",
-        help_text="Максимум 1500 символов",
-        max_length=1500,
+        verbose_name="Описание",
+        help_text="Лимит символов определяется пакетом мероприятия",
     )
     date_time = models.DateTimeField(
         verbose_name="Дата и время",

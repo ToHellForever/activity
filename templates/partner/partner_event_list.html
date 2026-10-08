@@ -136,7 +136,7 @@
                                         <span class="card-edit-request">На рассмотрении</span>
                                     </p> 
                                     {% endif %}
-                                    {% if item.event.organizer.is_verified %}
+                                    {% if item.event.organizer.is_verified_organizer %}
                                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class="arrow-card"><span class="card-verified">Проверенный организатор</span></p>
                                     {% endif %}
                                     <div class="card-spacer"></div>
@@ -211,7 +211,7 @@
                                 </div>
                                 <div class="card-body">
                                     <h5 class="card-title">{{ item.event.title }}</h5>
-                                    {% if item.event.organizer.is_verified %}
+                                    {% if item.event.organizer.is_verified_organizer %}
                                     <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class="arrow-card"><span class="card-verified">Проверенный организатор</span></p>
                                     {% endif %}
                                     <div class="card-spacer"></div>

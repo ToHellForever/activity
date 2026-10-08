@@ -1291,3 +1291,31 @@ input[type="number"] {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ===== Textarea for event description ===== */
+.partner-main textarea.form-control {
+  border-radius: 12px;
+  border: 1px solid rgba(119, 122, 141, 0.3);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: "Montserrat", sans-serif;
+  background: #fff;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.partner-main textarea.form-control:focus {
+  border-color: rgba(255, 131, 72, 1);
+  box-shadow: 0 0 0 3px rgba(255, 131, 72, 0.1);
+}
+
+.partner-main .text-muted-small {
+  display: block;
+  font-size: clamp(0.65rem, 1vw, 0.8rem);
+  color: #777;
+  font-family: "Montserrat", sans-serif;
+  margin-top: 6px;
+}

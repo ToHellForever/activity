@@ -11,7 +11,7 @@
         {% endif %}
         <div class="card-body">
             <h5 class="card-title">{{ ev.title }}</h5>
-            {% if ev.organizer.is_verified %}
+            {% if ev.organizer.is_verified_organizer %}
             <p class="block-calendar"><img src="/media/icon/arrow-card.png" alt="" class='arrow-card'><span class="card-verified">Проверенный организатор</span></p>
             {% endif %}
             <div class="card-spacer"></div>
@@ -23,7 +23,7 @@
                 <span class="badge">{{ ev.format.name }}</span>
             </p>
             {% endif %}
-            <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-3">КУПИТЬ БИЛЕТ</a>
+            <a href="{% url 'event_detail' ev.id %}" class="buy-button mt-3">ПОДРОБНЕЕ</a>
         </div>
     </div>
 </div>

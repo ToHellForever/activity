@@ -1022,6 +1022,7 @@ class EventPackageAdmin(admin.ModelAdmin):
         "name",
         "price",
         "max_active_events",
+        "max_description_length",
         "event_card_type",
         "description_type",
         "has_video",
@@ -1048,6 +1049,7 @@ class EventPackageAdmin(admin.ModelAdmin):
                     "name",
                     "price",
                     "max_active_events",
+                    "max_description_length",
                 )
             },
         ),
@@ -2152,5 +2154,4 @@ class LegalDocumentAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
 
