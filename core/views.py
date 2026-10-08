@@ -1040,7 +1040,8 @@ def event_list(request):
 
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    tickets = event.tickets.all()
+    tickets = list(event.tickets.all())
+    has_only_free_tickets = bool(tickets) and all(ticket.price == 0 for ticket in tickets)
     now = timezone.now()
     
     # Получаем похожие мероприятия (максимально похожие, fallback на случайные)
@@ -1093,6 +1094,7 @@ def event_detail(request, event_id):
     return render(request, "events/event_detail.html", {
         "event": event, 
         "tickets": tickets,
+        "has_only_free_tickets": has_only_free_tickets,
         "similar_events_mobile": similar_events_mobile,
         "similar_events_tablet": similar_events_tablet,
         "similar_events_desktop": similar_events_desktop,

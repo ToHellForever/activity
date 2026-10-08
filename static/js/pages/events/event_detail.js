@@ -440,10 +440,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const countText = totalItems === 1 ? '1 билет' : (totalItems < 5 ? totalItems + ' билета' : totalItems + ' билетов');
                 document.querySelector('.cart-total-count').textContent = countText;
-                document.querySelector('.cart-total-price').textContent = totalPrice.toLocaleString('ru-RU') + ' руб.';
+                const priceText = totalPrice === 0
+                    ? 'Бесплатно'
+                    : totalPrice.toLocaleString('ru-RU') + ' руб.';
+                document.querySelector('.cart-total-price').textContent = priceText;
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
-                addLog('Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽', 'success');
+                confirmBtn.textContent = totalPrice === 0
+                    ? 'Зарегистрироваться'
+                    : 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
+                addLog(
+                    totalPrice === 0
+                        ? 'Корзина обновлена. Всего: ' + totalItems + ' бесплатных билетов.'
+                        : 'Корзина обновлена. Всего: ' + totalItems + ' билетов на сумму ' + totalPrice.toLocaleString('ru-RU') + ' ₽',
+                    'success'
+                );
             } else {
                 cartSection.style.display = 'none';
                 confirmBtn.disabled = true;

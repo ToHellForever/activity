@@ -225,7 +225,7 @@
                 <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
                 {% endif %}
                 <div class="d-flex align-items-center">
-                <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>КУПИТЬ БИЛЕТ</button>
+                <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>{% if has_only_free_tickets %}ЗАРЕГИСТРИРОВАТЬСЯ{% else %}КУПИТЬ БИЛЕТ{% endif %}</button>
                 <a href="{% url 'visitor:toggle_favorite' event.id %}" class="favourites-link" data-event-id="{{ event.id }}"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
             </div>
         </div>
