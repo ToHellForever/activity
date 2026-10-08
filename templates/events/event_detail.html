@@ -135,7 +135,7 @@
         {% endif %}
     {% else %}
         <div class="image-wrapper no-image">
-            <img src="/media/icon/logo-card.svg" class="card-logo-placeholder" alt="{{ event.title }}">
+            <img src="/media/icon/logo.svg" class="card-logo-placeholder" alt="{{ event.title }}">
         </div>
     {% endif %}
 </div>
@@ -339,7 +339,7 @@
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% else %}
-                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
+                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -374,7 +374,7 @@
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% else %}
-                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
+                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -408,7 +408,7 @@
                 {% elif ev.images.all %}
                 <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
                 {% else %}
-                <img src="/media/icon/logo-card.svg" class="card-img-top card-logo-placeholder" alt="">
+                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>

@@ -24,7 +24,7 @@
         {% if selected_ticket.event and selected_ticket.event.has_real_image %}
           <img src="{{ selected_ticket.event.primary_image_url }}" alt="{{ selected_ticket.event.title }}" class="chat-header-event-photo">
         {% else %}
-          <img src="/media/icon/logo-card.svg" alt="" class="chat-header-event-photo">
+          <img src="/media/icon/logo.svg" alt="" class="chat-header-event-photo">
         {% endif %}
         {% if selected_ticket.user.user_type == "guest" %}
           <div class="chat-header-user-badge chat-header-user-badge--guest" title="Неавторизованный пользователь">

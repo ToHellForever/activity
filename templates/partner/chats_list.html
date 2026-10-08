@@ -21,7 +21,7 @@
                             {% if ticket.event and ticket.event.has_real_image %}
                                 <img src="{{ ticket.event.primary_image_url }}" alt="{{ ticket.event.title }}" class="chat-list-event-photo">
                             {% else %}
-                                <img src="/media/icon/logo-card.svg" alt="" class="chat-list-event-photo">
+                                <img src="/media/icon/logo.svg" alt="" class="chat-list-event-photo">
                             {% endif %}
                             {% if ticket.user.user_type == "guest" %}
                                 <div class="chat-list-user-badge chat-list-user-badge--guest" title="Неавторизованный пользователь">
