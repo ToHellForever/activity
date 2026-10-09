@@ -41,8 +41,34 @@
         if (node.tagName === "BR") {
             return "\n";
         }
-        const childSeparator = ["DIV", "P"].includes(node.tagName) ? "\n" : "";
-        return Array.from(node.childNodes, serializeNode).join(childSeparator);
+        const children = Array.from(node.childNodes);
+        const isBlock = ["DIV", "P"].includes(node.tagName);
+        if (
+            isBlock &&
+            children.length === 1 &&
+            children[0].nodeType === Node.ELEMENT_NODE &&
+            children[0].tagName === "BR"
+        ) {
+            return "";
+        }
+
+        return children
+            .map((child, index) => {
+                const previous = children[index - 1];
+                const childIsBlock =
+                    child.nodeType === Node.ELEMENT_NODE &&
+                    ["DIV", "P"].includes(child.tagName);
+                const previousIsBlock =
+                    previous &&
+                    previous.nodeType === Node.ELEMENT_NODE &&
+                    ["DIV", "P"].includes(previous.tagName);
+                const separator =
+                    isBlock && index > 0 && (childIsBlock || previousIsBlock)
+                        ? "\n"
+                        : "";
+                return separator + serializeNode(child);
+            })
+            .join("");
     }
 
     function serializeParagraph(paragraph, defaultSize) {

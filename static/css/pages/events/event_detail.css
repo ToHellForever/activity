@@ -91,6 +91,24 @@
   overflow-wrap: anywhere;
   word-break: normal;
 }
+
+.event-description p {
+  margin: 0 0 0.5em;
+  line-height: 1.5;
+}
+
+.event-description ul,
+.event-description ol {
+  margin: 0.5em 0 0.75em 1.25em;
+  padding-left: 1.25em;
+  line-height: 1.5;
+}
+
+.event-description li {
+  margin: 0.2em 0;
+  padding-left: 0.15em;
+}
+
 .event-description a {
   color: #0756b3;
   font-weight: 600;

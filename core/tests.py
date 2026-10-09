@@ -82,6 +82,16 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
             rendered,
         )
 
+    def test_list_is_followed_by_a_new_paragraph_without_a_break(self):
+        rendered = str(auto_format("Перед списком\n- Пункт списка\nПосле списка"))
+
+        self.assertIn(
+            "<p>Перед списком</p><ul><li>Пункт списка</li></ul>"
+            "<p>После списка</p>",
+            rendered,
+        )
+        self.assertNotIn("</ul><br>", rendered)
+
     def test_unsafe_markup_and_non_http_links_are_not_rendered(self):
         rendered = str(
             auto_format('<script>alert(1)</script> [опасно](javascript:alert(1))')

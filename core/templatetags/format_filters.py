@@ -245,6 +245,12 @@ def _advanced_format(text, mark_safe, re, apply_inline_formatting):
         # Маркированный список
         bullet_match = re.match(r'^[-*]\s+(.+)$', stripped)
         if bullet_match:
+            if in_paragraph:
+                result.append('</p>')
+                in_paragraph = False
+            if in_list and in_list != 'ul':
+                result.append(f'</{in_list}>')
+                in_list = None
             if in_list is None:
                 result.append('<ul>')
                 in_list = 'ul'
@@ -255,6 +261,12 @@ def _advanced_format(text, mark_safe, re, apply_inline_formatting):
         # Нумерованный список
         numbered_match = re.match(r'^\d+\.\s+(.+)$', stripped)
         if numbered_match:
+            if in_paragraph:
+                result.append('</p>')
+                in_paragraph = False
+            if in_list and in_list != 'ol':
+                result.append(f'</{in_list}>')
+                in_list = None
             if in_list is None:
                 result.append('<ol>')
                 in_list = 'ol'
