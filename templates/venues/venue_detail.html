@@ -61,10 +61,12 @@
                     <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
                 </div>
             {% else %}
-                <!-- Нет фото -->
-                {% if venue.badge_text %}
-                <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
-                {% endif %}
+                <div class="image-wrapper no-image">
+                    {% if venue.badge_text %}
+                    <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
+                    {% endif %}
+                    <img src="/media/icon/logo.svg" class="card-logo-placeholder" alt="">
+                </div>
             {% endif %}
         </div>
 
@@ -255,6 +257,8 @@
                     {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% else %}
+                    <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}
                     <div class="venue-card-body">
                         <h5 class="venue-card-title">{{ other_venue.title }}</h5>
@@ -293,6 +297,8 @@
                     {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% else %}
+                    <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}
                     <div class="venue-card-body">
                         <h5 class="venue-card-title">{{ other_venue.title }}</h5>
@@ -331,6 +337,8 @@
                     {% endif %}
                     {% if other_venue.images.all %}
                     <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% else %}
+                    <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}
                     <div class="venue-card-body">
                         <h5 class="venue-card-title">{{ other_venue.title }}</h5>
@@ -369,7 +377,7 @@
   "@type": "Place",
   "name": "{{ venue.title|escapejs }}",
   {% if venue.description %}"description": "{{ venue.description|striptags|escapejs|truncatechars:300 }}",{% endif %}
-  {% if venue.images.all %}"image": "{% if 'http' in venue.images.all.0.image.url %}{{ venue.images.all.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ venue.images.all.0.image.url }}{% endif %}",{% endif %}
+  "image": "{% if venue.images.all %}{% if 'http' in venue.images.all.0.image.url %}{{ venue.images.all.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ venue.images.all.0.image.url }}{% endif %}{% else %}{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg{% endif %}",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "{{ venue.address|escapejs }}",

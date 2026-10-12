@@ -7,6 +7,8 @@
         {% endif %}
         {% if venue.images.all %}
         <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+        {% else %}
+        <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
         {% endif %}
 <div class="card-body">
     <h5 class="card-title">{{ venue.title }}</h5>
