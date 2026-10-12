@@ -32,8 +32,12 @@ Django при отправке письма молча глотает часть
 
 import logging
 import smtplib
+import ssl
 import traceback
+from copy import copy
+from functools import cached_property
 
+import certifi
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.mail.backends.smtp import EmailBackend as SmtpEmailBackend
@@ -89,11 +93,53 @@ def _log_recipients_raw(email_message):
 
 class LoggingEmailBackend(SmtpEmailBackend):
     """
-    SMTP-бэкенд Django с подробным логированием отправки.
+    SMTP-бэкенд Django с подробным логированием и резервной отправкой через Mail.ru.
 
-    Наследуется от штатного ``django.core.mail.backends.smtp.EmailBackend``,
-    поэтому вся остальная логика (TLS, пароли, fail_silently) не меняется.
+    Каждое письмо сначала отправляется через основной SMTP-сервер. При ошибке
+    отправки письмо повторяется через Mail.ru, если заданы его учётные данные.
     """
+
+    class VerifiedSmtpEmailBackend(SmtpEmailBackend):
+        @cached_property
+        def ssl_context(self):
+            context = ssl.create_default_context(cafile=certifi.where())
+            if self.ssl_certfile or self.ssl_keyfile:
+                context.load_cert_chain(self.ssl_certfile, self.ssl_keyfile)
+            return context
+
+    @staticmethod
+    def _smtp_backend(host, port, username, password, use_tls, use_ssl, timeout):
+        return LoggingEmailBackend.VerifiedSmtpEmailBackend(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            use_tls=use_tls,
+            use_ssl=use_ssl,
+            timeout=timeout,
+            fail_silently=False,
+        )
+
+    @staticmethod
+    def _mailru_is_configured():
+        return bool(
+            getattr(settings, "MAILRU_EMAIL", "")
+            and getattr(settings, "MAILRU_APP_PASSWORD", "")
+        )
+
+    def _send_via_mailru(self, message):
+        backup_message = copy(message)
+        backup_message.from_email = settings.MAILRU_EMAIL
+        backend = self._smtp_backend(
+            host=settings.MAILRU_EMAIL_HOST,
+            port=settings.MAILRU_EMAIL_PORT,
+            username=settings.MAILRU_EMAIL,
+            password=settings.MAILRU_APP_PASSWORD,
+            use_tls=settings.MAILRU_EMAIL_USE_TLS,
+            use_ssl=settings.MAILRU_EMAIL_USE_SSL,
+            timeout=settings.MAILRU_EMAIL_TIMEOUT,
+        )
+        return backend.send_messages([backup_message])
 
     def send_messages(self, email_messages):
         messages = list(email_messages or [])
@@ -130,32 +176,76 @@ class LoggingEmailBackend(SmtpEmailBackend):
             logger.info("MAIL [%s/%s] %s", index, len(messages), _describe_message(message))
             _log_recipients_raw(message)
 
-        # Отправляем через штатный механизм
-        try:
-            sent = super().send_messages(messages)
-        except Exception as exc:  # noqa: BLE001 - логируем и пробрасываем выше
-            logger.error(
-                "MAIL !!! исключение при отправке: %s: %s\n%s",
-                type(exc).__name__,
-                exc,
-                _shorten(traceback.format_exc(), 4000),
+        sent = 0
+        for index, message in enumerate(messages, start=1):
+            if not message.recipients():
+                logger.warning(
+                    "MAIL [%s/%s] письмо пропущено: нет получателей",
+                    index,
+                    len(messages),
+                )
+                continue
+
+            primary = self._smtp_backend(
+                host=settings.EMAIL_HOST,
+                port=settings.EMAIL_PORT,
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_tls=settings.EMAIL_USE_TLS,
+                use_ssl=getattr(settings, "EMAIL_USE_SSL", False),
+                timeout=getattr(settings, "EMAIL_TIMEOUT", 5),
             )
-            raise
+            try:
+                primary_sent = primary.send_messages([message])
+                if primary_sent:
+                    sent += primary_sent
+                    continue
+                primary_error = RuntimeError("Основной SMTP-сервер не принял письмо")
+            except (smtplib.SMTPException, OSError) as exc:
+                primary_error = exc
 
-        logger.info(
-            "MAIL ===== результат: принято сервером %s из %s "
-            "(sent < количества означает, что сервер отверг часть писем; "
-            "полный ответ SMTP-сервера ищите в строках smtplib в этом же файле)",
-            sent,
-            len(messages),
-        )
+            logger.error(
+                "MAIL !!! основной SMTP-сервер не отправил письмо [%s/%s]: %s: %s\n%s",
+                index,
+                len(messages),
+                type(primary_error).__name__,
+                primary_error,
+                _shorten("".join(traceback.format_exception(primary_error)), 4000),
+            )
 
-        if sent is not None and sent < len(messages):
-            # Django не сообщает, какое именно письмо не ушло, — пишем все
-            # получателей, чтобы можно было сопоставить с ответом smtplib.
-            for message in messages:
-                _log_recipients_raw(message)
+            if not self._mailru_is_configured():
+                logger.error(
+                    "MAIL !!! резерв Mail.ru не настроен: "
+                    "задайте MAILRU_EMAIL и MAILRU_APP_PASSWORD"
+                )
+                if not self.fail_silently:
+                    raise primary_error
+                continue
 
+            try:
+                backup_sent = self._send_via_mailru(message)
+            except (smtplib.SMTPException, OSError) as backup_error:
+                logger.error(
+                    "MAIL !!! резервный SMTP Mail.ru также не отправил письмо [%s/%s]: %s: %s\n%s",
+                    index,
+                    len(messages),
+                    type(backup_error).__name__,
+                    backup_error,
+                    _shorten("".join(traceback.format_exception(backup_error)), 4000),
+                )
+                if not self.fail_silently:
+                    raise backup_error from primary_error
+                continue
+
+            sent += backup_sent
+            logger.info(
+                "MAIL ===== письмо [%s/%s] отправлено через резерв Mail.ru (sent=%s)",
+                index,
+                len(messages),
+                backup_sent,
+            )
+
+        logger.info("MAIL ===== результат: принято SMTP-серверами %s из %s писем", sent, len(messages))
         return sent
 
 

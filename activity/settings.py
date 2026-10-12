@@ -220,10 +220,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # в логе). Это позволяет видеть отказы вроде
 # "550-5.7.26 Your email has been blocked because the sender is ..."
 # ещё до того, как пользователь принесёт отчёт о недоставке.
-# Переменная EMAIL_BACKEND в .env позволяет вернуть чистый бэкенд Django.
+# EMAIL_BACKEND для SMTP отправки использует failover-бэкенд ниже.
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND", "core.mail_logging.LoggingEmailBackend"
 )
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    EMAIL_BACKEND = "core.mail_logging.LoggingEmailBackend"
 
 # smtplib пишет полную SMTP-переписку (команды и ответы сервера, включая
 # тексты ошибок 550) на уровне DEBUG в свой логгер — подключаем его к
@@ -232,9 +234,21 @@ SMTP_DEBUG = os.getenv("SMTP_DEBUG", "True") == "True"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.yandex.ru")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "5"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "")
+
+# Резервный SMTP Mail.ru. Для включения достаточно указать почту аккаунта
+# и пароль приложения; параметры сервера Mail.ru заданы по умолчанию.
+MAILRU_EMAIL = os.getenv("MAILRU_EMAIL", "")
+MAILRU_APP_PASSWORD = os.getenv("MAILRU_APP_PASSWORD", "")
+MAILRU_EMAIL_HOST = os.getenv("MAILRU_EMAIL_HOST", "smtp.mail.ru")
+MAILRU_EMAIL_PORT = int(os.getenv("MAILRU_EMAIL_PORT", "465"))
+MAILRU_EMAIL_USE_TLS = os.getenv("MAILRU_EMAIL_USE_TLS", "False") == "True"
+MAILRU_EMAIL_USE_SSL = os.getenv("MAILRU_EMAIL_USE_SSL", "True") == "True"
+MAILRU_EMAIL_TIMEOUT = int(os.getenv("MAILRU_EMAIL_TIMEOUT", "5"))
 
 # Раздельные адреса отправителя.
 # TICKETS_FROM_EMAIL — письма, связанные с билетами и покупкой
