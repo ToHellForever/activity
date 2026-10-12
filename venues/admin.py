@@ -244,8 +244,8 @@ class VenueAdmin(admin.ModelAdmin):
 
     class Media:
         js = (
-            "/static/js/venue_admin.js",
-            "/static/js/equipment_admin.js",
+            "/static/js/pages/admin/venue_admin.js",
+            "/static/js/pages/admin/equipment_admin.js",
         )
 
     # ===== Статистика переходов =====
