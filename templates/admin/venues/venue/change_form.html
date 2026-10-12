@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
- {% load i18n admin_urls static %} 
+{% load i18n admin_urls static %} 
 {% block after_field_sets %}
 <div
   class="form-group"
@@ -25,12 +25,17 @@
     {% trans "Выберите несколько фотографий для загрузки." %}
   </p>
 </div>
+{% if original.pk %}
 <div class="form-group" style="margin-top: 10px">
-  <a href="{% url 'admin:venues_venue_views' original.id %}" class="button"
+  <a href="{% url 'admin:venues_venue_views' original.pk %}" class="button"
     >Отчёт по переходам на площадку</a
   >
 </div>
-{{ block.super }} {% endblock %} {% block extrahead %} {{ block.super }}
+{% endif %} 
+{{ block.super }} 
+{% endblock %} 
+{% block extrahead %} 
+{{ block.super }}
 <style>
   #equipment_items_group fieldset.module {
     min-height: 300px !important;
@@ -56,8 +61,6 @@
     margin-top: 0.25rem;
   }
 </style>
-{% endblock %} 
-{% block inline_fieldsets %} 
-{{ block.super }}
+{% endblock %} {% block inline_fieldsets %} {{ block.super }}
 <script src="{% static 'js/pages/admin/venue_admin.js' %}"></script>
 {% endblock %}
