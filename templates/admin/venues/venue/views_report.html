@@ -15,6 +15,7 @@
   }
   .views-report-table th {
     background: #f8f9fa;
+    color: #000;
   }
   .period-form input[type="text"] {
     width: 120px;
@@ -30,26 +31,28 @@
     border-radius: 8px;
     padding: 12px 20px;
     min-width: 180px;
+    color: #000;
   }
   .stat-cards .stat-value {
     font-size: 24px;
     font-weight: bold;
+    color: #000;
   }
   .stat-cards .stat-label {
-    color: #666;
+    color: #000;
     font-size: 12px;
   }
   .daily-chart {
     display: flex;
     align-items: flex-end;
     gap: 4px;
-    height: 160px;
     margin: 20px 0;
     padding: 10px;
     background: #fafafa;
     border: 1px solid #eee;
     border-radius: 8px;
     overflow-x: auto;
+    color: #000;
   }
   .daily-bar-wrap {
     display: flex;
@@ -66,7 +69,7 @@
   }
   .daily-bar-label {
     font-size: 10px;
-    color: #666;
+    color: #000;
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     margin-top: 4px;
@@ -75,6 +78,9 @@
   .daily-bar-value {
     font-size: 11px;
     font-weight: bold;
+    color: #000;
+    margin-bottom: 5px;
+    text-decoration: underline;
   }
 </style>
 
@@ -187,6 +193,4 @@
 </table>
 {% else %}
 <p>За выбранный период переходов не зафиксировано.</p>
-{% endif %} 
-{% endif %} 
-{% endblock %}
+{% endif %} {% endif %} {% endblock %}
