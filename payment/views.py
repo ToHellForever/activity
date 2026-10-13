@@ -750,18 +750,22 @@ def create_payment(request, ticket_id):
             # Создаём или получаем пользователя
             # Проверяем, не принадлежит ли email зарегистрированному пользователю
             existing_user = User.objects.filter(email=participant_data["email"]).first()
-            if existing_user and existing_user.user_type != "guest":
-                # Email принадлежит зарегистрированному пользователю —
-                # используем его аккаунт (пользователь авторизован при покупке)
+            if existing_user:
                 user = existing_user
+                if user.user_type == "guest":
+                    name_parts = participant_data["name"].strip().split()
+                    user.first_name = name_parts[0]
+                    user.last_name = " ".join(name_parts[1:])
+                    user.save(update_fields=["first_name", "last_name"])
             else:
-                # Email новый или принадлежит гостю — создаём/получаем guest-аккаунт
+                # Создаём guest-аккаунт для email, которого ещё нет на платформе
+                name_parts = participant_data["name"].strip().split()
                 user, created = User.objects.get_or_create(
                     username=participant_data["email"],
                     defaults={
                         "email": participant_data["email"],
-                        "first_name": participant_data["name"].split()[0] if participant_data["name"] else "",
-                        "last_name": " ".join(participant_data["name"].split()[1:]) if len(participant_data["name"].split()) > 1 else "",
+                        "first_name": name_parts[0],
+                        "last_name": " ".join(name_parts[1:]),
                         "user_type": "guest",
                     },
                 )
@@ -1366,4 +1370,3 @@ def pay_reserved_order(request, order_id):
     except Exception as e:
         logger.error("Ошибка при оплате забронированного заказа: %s", e, exc_info=True)
         return render(request, "payment/refund_error.html", {"error": str(e)})
-

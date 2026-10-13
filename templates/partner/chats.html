@@ -73,7 +73,7 @@
                   <div class="chat-message-bubble-row">
                     <div class="chat-message-bubble">
                       <div class="chat-message-guest-info">
-                        Имя: {{ message.user.get_first_name|default:"—" }}<br>
+                        Имя: {{ message.user.get_full_name|default:"—" }}<br>
                         e-mail: {{ message.user.email }}<br>
                         <div style='margin-top: 15px;'>
                           {% include 'includes/chat_attachments.html' with attachments=message.attachments.all %}

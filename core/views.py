@@ -1191,10 +1191,11 @@ def send_event_request(request, event_id, question=""):
             },
         )
 
-        # Не перезаписываем данные существующего гостя пустыми значениями
-        if not created and first_name and not user.first_name:
+        # Имя из формы вопроса должно отображаться в чате даже для уже
+        # существующего гостевого аккаунта.
+        if not created and first_name and user.first_name != first_name:
             user.first_name = first_name
-            user.save()
+            user.save(update_fields=["first_name"])
 
         if created:
             user.set_unusable_password()

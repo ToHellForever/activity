@@ -7,6 +7,7 @@ import re
 import tempfile
 from datetime import timedelta
 
+from django.contrib.auth.models import AnonymousUser
 from django.core import mail
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.admin.sites import AdminSite
@@ -36,6 +37,7 @@ from core.admin import (
 )
 from core.tasks import check_and_apply_scheduled_package_changes
 from core.forms import EventAdminForm
+from core.views import send_event_request
 from core.validators import validate_inn, validate_video_duration
 from core.templatetags.format_filters import auto_format
 from core.video_storage import YandexVideoProcessingStorage
@@ -132,6 +134,44 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
             strip_description_size_markers(description),
             "Первый абзац\nВторой абзац",
         )
+
+
+class EventRequestGuestNameTestCase(TestCase):
+    def test_question_updates_name_on_existing_guest_account(self):
+        organizer = User.objects.create_user(
+            username="event-organizer",
+            email="organizer@example.com",
+            password="test-password",
+            user_type="partner",
+        )
+        guest = User.objects.create_user(
+            username="guest@example.com",
+            email="guest@example.com",
+            password="test-password",
+            user_type="guest",
+        )
+        event = Event.objects.create(
+            organizer=organizer,
+            title="Мероприятие",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=1),
+        )
+        request = RequestFactory().post(
+            f"/send-event-request/{event.pk}/",
+            {
+                "email": guest.email,
+                "first_name": "Ирина Иванова",
+                "question": "Вопрос организатору",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        request.user = AnonymousUser()
+
+        response = send_event_request(request, event.pk)
+
+        guest.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(guest.first_name, "Ирина Иванова")
 
 
 class VerifiedOrganizerStatusTestCase(SimpleTestCase):

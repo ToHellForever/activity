@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
+from core.utils import mark_ticket_messages_read
 from core.models import (
     Event,
     Order,
