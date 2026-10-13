@@ -280,14 +280,14 @@ class VenueAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
-                "<int:venue_id>/views/",
-                self.admin_site.admin_view(self.views_report),
-                name="venues_venue_views",
-            ),
-            path(
                 "views-report/",
                 self.admin_site.admin_view(self.views_report),
                 name="venues_views_report",
+            ),
+            path(
+                "<int:venue_id>/views/",
+                self.admin_site.admin_view(self.views_report),
+                name="venues_venue_views",
             ),
         ]
         return custom_urls + urls

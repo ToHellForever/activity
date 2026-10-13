@@ -104,7 +104,9 @@
     />
     <button type="submit" class="button">Показать</button>
     {% if venue %}
-    <a class="button" href="views-report/">Сводка по всем площадкам</a>
+    <a class="button" href="{% url 'admin:venues_views_report' %}"
+      >Сводка по всем площадкам</a
+    >
     {% endif %}
   </form>
 </div>
