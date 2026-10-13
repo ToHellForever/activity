@@ -802,6 +802,18 @@ class EventAdmin(admin.ModelAdmin):
             organizer=user,
             status__in=['active', 'on_moderation'],
         ).count()
+        editing_active_event = False
+        event_id = request.GET.get('event_id')
+        if event_id:
+            editing_active_event = Event.objects.filter(
+                pk=event_id,
+                organizer=user,
+                status__in=['active', 'on_moderation'],
+            ).exists()
+        can_create = (
+            active_count < subscription.package.max_active_events
+            or editing_active_event
+        )
 
         return JsonResponse({
             'is_partner': True,
@@ -810,7 +822,7 @@ class EventAdmin(admin.ModelAdmin):
             'package_name': subscription.package.name,
             'max_active_events': subscription.package.max_active_events,
             'current_active_events': active_count,
-            'can_create': active_count < subscription.package.max_active_events,
+            'can_create': can_create,
             'message': (
                 f'Пакет: {subscription.package.name} '
                 f'({active_count}/{subscription.package.max_active_events} активных)'

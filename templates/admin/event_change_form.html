@@ -151,6 +151,7 @@
 {{ block.super }}
 <script>
 window.PARTNER_SUBSCRIPTION_CHECK_URL = "{% url 'admin:core_event_check_partner_subscription' %}";
+window.PARTNER_EVENT_ID = "{{ original.pk|default:''|escapejs }}";
 </script>
 <script>
 /**
@@ -233,7 +234,11 @@ window.PARTNER_SUBSCRIPTION_CHECK_URL = "{% url 'admin:core_event_check_partner_
 
         function checkOrganizer(partnerId) {
             if (!partnerId) { resetInfo(); return; }
-            fetch(checkUrl + '?partner_id=' + encodeURIComponent(partnerId), {
+            var query = '?partner_id=' + encodeURIComponent(partnerId);
+            if (window.PARTNER_EVENT_ID) {
+                query += '&event_id=' + encodeURIComponent(window.PARTNER_EVENT_ID);
+            }
+            fetch(checkUrl + query, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 credentials: 'same-origin'
             })

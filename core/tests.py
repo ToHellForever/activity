@@ -543,6 +543,44 @@ class AdminCrudRegressionTestCase(TestCase):
         self.assertEqual(pending_event.status, "on_moderation")
         self.assertEqual(active_event.status, "active")
 
+    def test_admin_subscription_check_allows_editing_existing_active_event_at_limit(self):
+        package = EventPackage.objects.create(
+            name="One Event Package",
+            max_active_events=1,
+        )
+        UserPackageSubscription.objects.create(
+            user=self.partner,
+            package=package,
+            is_active=True,
+            subscription_type="monthly",
+        )
+        event = Event.objects.create(
+            organizer=self.partner,
+            title="Уже активно",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=2),
+            status="active",
+            package=package,
+        )
+        admin_obj = EventAdmin(Event, self.site)
+
+        request = self.factory.get(
+            "/admin/core/event/check-partner-subscription/",
+            {"partner_id": self.partner.pk, "event_id": event.pk},
+        )
+        response = admin_obj.check_partner_subscription_view(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["current_active_events"], 1)
+        self.assertTrue(response.json()["can_create"])
+
+        create_request = self.factory.get(
+            "/admin/core/event/check-partner-subscription/",
+            {"partner_id": self.partner.pk},
+        )
+        create_response = admin_obj.check_partner_subscription_view(create_request)
+        self.assertFalse(create_response.json()["can_create"])
+
     def test_reject_payout_action_saves_admin_comment(self):
         details = PayoutDetails.objects.create(
             partner=self.partner,
