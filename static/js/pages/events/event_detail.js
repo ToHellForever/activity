@@ -345,23 +345,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const reserveCheckbox = document.getElementById('reserve_without_payment');
     if (reserveCheckbox) {
         reserveCheckbox.addEventListener('change', function() {
-            if (!this.checked) return;
-            let clamped = false;
-            document.querySelectorAll('.ticket-card').forEach(card => {
-                const ticketId = card.dataset.ticketId;
-                const input = document.getElementById('qty_' + ticketId);
-                const price = parseFloat(card.dataset.ticketPrice) || 0;
-                if (price <= 0) return;
-                const val = parseInt(input.value) || 0;
-                const limited = enforceReservedLimit(ticketId, val, card, true);
-                if (limited !== val) {
-                    input.value = limited;
-                    clamped = true;
+            if (this.checked) {
+                let clamped = false;
+                document.querySelectorAll('.ticket-card').forEach(card => {
+                    const ticketId = card.dataset.ticketId;
+                    const input = document.getElementById('qty_' + ticketId);
+                    const price = parseFloat(card.dataset.ticketPrice) || 0;
+                    if (price <= 0) return;
+                    const val = parseInt(input.value) || 0;
+                    const limited = enforceReservedLimit(ticketId, val, card, true);
+                    if (limited !== val) {
+                        input.value = limited;
+                        clamped = true;
+                    }
+                });
+                if (clamped) {
+                    showToast('При бронировании без оплаты можно выбрать не более ' +
+                        MAX_RESERVED_TICKETS + ' билетов на мероприятие. Количество уменьшено.', true);
                 }
-            });
-            if (clamped) {
-                showToast('При бронировании без оплаты можно выбрать не более ' +
-                    MAX_RESERVED_TICKETS + ' билетов на мероприятие. Количество уменьшено.', true);
             }
             updateCartDisplay();
         });
@@ -423,9 +424,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     : totalPrice.toLocaleString('ru-RU') + ' руб.';
                 document.querySelector('.cart-total-price').textContent = priceText;
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = totalPrice === 0
-                    ? 'Зарегистрироваться'
-                    : 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
+                confirmBtn.textContent = isReserveMode()
+                    ? 'Забронировать'
+                    : totalPrice === 0
+                        ? 'Зарегистрироваться'
+                        : 'Оплатить ' + totalPrice.toLocaleString('ru-RU') + ' ₽';
                 addLog(
                     totalPrice === 0
                         ? 'Корзина обновлена. Всего: ' + totalItems + ' бесплатных билетов.'
