@@ -104,39 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         html += '</div>';
                         equipmentItemsContainer.innerHTML = html;
 
-                        // Добавляем обработчики изменений для всех чекбоксов
-                        document.querySelectorAll('input[name="equipment_items"]').forEach(checkbox => {
-                            checkbox.addEventListener('change', function() {
-                                const equipmentId = this.value;
-                                const isChecked = this.checked;
-
-                                // Отправляем данные на сервер только если это существующая площадка
-                                // (для формы добавления новой площадки сохранение происходит при сохранении формы)
-                                if (isExistingVenue) {
-                                    fetch('/venues/save_venue_equipment/', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/x-www-form-urlencoded',
-                                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                                        },
-                                        body: `venue_id=${venueId}&equipment_id=${equipmentId}&is_checked=${isChecked}`
-                                    })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (!data.success) {
-                                            console.error('Ошибка при сохранении:', data.error);
-                                            // Возвращаем чекбокс в исходное состояние
-                                            this.checked = !isChecked;
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Ошибка:', error);
-                                        // Возвращаем чекбокс в исходное состояние
-                                        this.checked = !isChecked;
-                                    });
-                                }
-                            });
-                        });
+                        // Чекбоксы сохраняются вместе с формой при нажатии "Сохранить"
+                        // (см. VenueAdmin.save_related в venues/admin.py)
                     })
                     .catch(error => {
                         console.error('Ошибка при загрузке выбранных элементов:', error);

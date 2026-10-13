@@ -183,9 +183,23 @@ class VenueAdmin(admin.ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
 
+        venue = form.instance
+
+        # Сохраняем equipment_items из чекбоксов, созданных JavaScript
+        equipment_item_ids = request.POST.getlist("equipment_items")
+        if equipment_item_ids:
+            from .models import EquipmentItem
+            item_ids = [int(id) for id in equipment_item_ids if id.isdigit()]
+            if item_ids:
+                # Валидация: проверяем что все ID существуют
+                valid_ids = list(
+                    EquipmentItem.objects.filter(pk__in=item_ids).values_list("pk", flat=True)
+                )
+                if valid_ids:
+                    venue.equipment_items.set(valid_ids)
+
         images = request.FILES.getlist("images")
         if images:
-            venue = form.instance
             limits = venue.TARIFF_LIMITS.get(venue.tariff, {})
             max_photos = limits.get("max_photos", 1)
             current_count = VenueImage.objects.filter(venue=venue).count()
@@ -198,7 +212,6 @@ class VenueAdmin(admin.ModelAdmin):
                 current_count += 1
 
         if "video-clear" in request.POST:
-            venue = form.instance
             if venue.video:
                 try:
                     if os.path.isfile(venue.video.path):

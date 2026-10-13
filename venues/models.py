@@ -290,9 +290,15 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     meta_description = models.TextField(blank=True)
 
     def save(self, *args, **kwargs):
-        # Создаём slug если его нет
+        # Создаём уникальный slug если его нет
         if not self.slug:
-            self.slug = slugify(unidecode(self.title))
+            base_slug = slugify(unidecode(self.title))
+            slug = base_slug
+            counter = 1
+            while Venue.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
 
         # Сохраняем старые значения для проверки замены видео
         old_video = None
