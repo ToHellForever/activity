@@ -316,9 +316,12 @@ class VenueListView(ListView):
 
         metro = self.request.GET.get("metro")
         if metro:
-            # Добавляем "метро " для поиска в БД, где значения хранятся как "метро <название>"
-            metro_filter = f"метро {metro}"
-            qs = qs.filter(metro__iexact=metro_filter)
+            # Ищем по подстроке без учёта регистра: в БД значения могут быть
+            # записаны как "метро <название>", "м. <название>", "ст. м. <название>"
+            # или просто "<название>". Список станций в фильтре уже отдаётся
+            # без префикса "метро " (см. get_context_data), поэтому точное
+            # iexact-сравнение не работало.
+            qs = qs.filter(metro__icontains=metro)
 
         venue_type = self.request.GET.get("venue_type")
         if venue_type:
