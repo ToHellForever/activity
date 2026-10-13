@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const eventMeta = document.querySelector('meta[name="event-id"]');
     const eventId = eventMeta ? eventMeta.content : '';
     const logPrefix = '[Event:' + eventId + ']';
-    const purchaseLog = [];
     const MAX_FREE_TICKETS = 2;
     // Лимит бронирования без оплаты: не более 3 платных билетов на мероприятие.
     // Дублирует серверную проверку в payment/views.py (bulk_buy_tickets / create_payment).
@@ -171,28 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function addLog(message, type) {
         type = type || 'info';
-        const timestamp = new Date().toLocaleTimeString();
-        const logEntry = timestamp + ' ' + message;
-        purchaseLog.push(logEntry);
-        
         console.log(logPrefix, '[' + type.toUpperCase() + ']', message);
-        
-        const logEl = document.getElementById('purchaseLog');
-        if (logEl) {
-            logEl.style.display = 'block';
-            const entry = document.createElement('div');
-            entry.className = 'log-entry log-' + type;
-            entry.style.cssText = 'padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 12px; font-family: monospace;';
-            switch(type) {
-                case 'success': entry.style.background = '#d4edda'; entry.style.color = '#155724'; break;
-                case 'error': entry.style.background = '#f8d7da'; entry.style.color = '#721c24'; break;
-                case 'warning': entry.style.background = '#fff3cd'; entry.style.color = '#856404'; break;
-                default: entry.style.background = '#e7f3ff'; entry.style.color = '#004085'; break;
-            }
-            entry.textContent = logEntry;
-            logEl.appendChild(entry);
-            logEl.scrollTop = logEl.scrollHeight;
-        }
     }
     
     // === ПОЛУЧЕНИЕ CSRF-ТОКЕНА ===
@@ -507,7 +485,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('purchaseSpinner').style.display = 'block';
         document.getElementById('purchaseStatusText').textContent = 'Формирование заказа...';
         document.getElementById('purchaseStatusDetail').textContent = 'Пожалуйста, подождите';
-        document.getElementById('purchaseLog').innerHTML = '';
         
         // Отправляем запрос
         const payload = {
@@ -575,28 +552,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('purchaseStatusDetail').textContent = 'Перенаправление на оплату...';
                     addLog('Перенаправление на оплату: ' + data.payment_url, 'success');
                     
-                    // Показываем финальное сообщение перед редиректом
-                    setTimeout(function() {
-                        document.getElementById('purchaseLog').innerHTML += 
-                            '<div style="padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-top: 10px;">' +
-                            'Заказ #' + data.order_id + ' создан. Перенаправляем на оплату...' +
-                            '</div>';
-                    }, 500);
-                    
                     window.location.href = data.payment_url;
                 } else if (data.message) {
                     document.getElementById('purchaseStatusDetail').textContent = data.message;
                     addLog(data.message, 'success');
-                    
-                    // Если это бронирование без оплаты — показываем сообщение об успехе
-                    if (data.message.includes('забронированы') || data.message.includes('Бронирование')) {
-                        setTimeout(function() {
-                            document.getElementById('purchaseLog').innerHTML += 
-                                '<div style="padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-top: 10px;">' +
-                                'Бронь создана! Письмо с ссылкой для оплаты отправлено на ' + email + '.' +
-                                '</div>';
-                        }, 500);
-                    }
                 }
             } else {
                 throw new Error(data.error || 'Неизвестная ошибка');
@@ -608,11 +567,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('purchaseStatusText').textContent = 'Ошибка оформления';
             document.getElementById('purchaseStatusDetail').textContent = error.message;
             
-            // Показываем лог для отладки
-            document.getElementById('purchaseLog').innerHTML += 
-                '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; margin-top: 10px;">' +
-                '<strong>Детали ошибки:</strong><br>' + error.message +
-                '</div>';
             });
         });
     }
