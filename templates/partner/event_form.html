@@ -71,6 +71,7 @@
             <div class="package-subtitle">{{ package.subtitle }}</div>
             <div class="package-features">
                 <div class="feature-item"><span class="feature-label">Описание:</span> {{ package.description }}</div>
+                <div class="feature-item"><span class="feature-label">Активных мероприятий:</span> {{ package.max_active_events }}</div>
                 <div class="feature-item"><span class="feature-label">Фото:</span> до {{ package.max_photos }} шт.</div>
                 <div class="feature-item"><span class="feature-label">Видео:</span> {% if package.has_video %}Да{% else %}Нет{% endif %}</div>
                 <div class="feature-item"><span class="feature-label">Программа мероприятия:</span> {% if package.has_program_and_speakers %}Да{% else %}Нет{% endif %}</div>
@@ -491,6 +492,7 @@
         <input type="hidden" name="clear_program_file" id="clear_program_file" value="0">
     </div>
 
+    {% if form.current_package.has_platform_request %}
     <!-- Заявки через платформу -->
     <div class="form-group" style="display: flex; align-items: center;">
         <label style='margin-right: 5px;'>Заявки через платформу (может ли пользователь оставить заявку с вопросом?)</label>
@@ -502,6 +504,7 @@
             </span>
         </div>
     </div>
+    {% endif %}
 
     <!-- Разрешить бронирование без оплаты -->
     <div class="form-group" style="display: flex; align-items: center;">

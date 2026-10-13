@@ -185,6 +185,7 @@
                     <h3 class="package-name">{{ package.name }}</h3>
                     <div class="package-features">
                         <div class="feature-item"><span class="feature-label">Описание:</span> {{ package.description }}</div>
+                        <div class="feature-item"><span class="feature-label">Активных мероприятий:</span> {{ package.max_active_events }}</div>
                         <div class="feature-item"><span class="feature-label">Фото:</span> до {{ package.max_photos }} шт.</div>
                         <div class="feature-item"><span class="feature-label">Видео:</span> {% if package.has_video %}Да{% else %}Нет{% endif %}</div>
                         <div class="feature-item"><span class="feature-label">Программа мероприятия:</span> {% if package.has_program_and_speakers %}Да{% else %}Нет{% endif %}</div>
