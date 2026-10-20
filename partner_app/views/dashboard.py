@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
+from django.utils import timezone
 
 from core.utils import mark_ticket_messages_read
 from core.models import (
@@ -15,6 +16,7 @@ from core.models import (
     SupportTicket,
     PartnerDocument,
     EventPackage,
+    PartnerAgreement,
 )
 from core.forms import PartnerProfileForm
 from ..forms import DocumentUploadForm
@@ -68,6 +70,7 @@ def partner_dashboard(request):
 
     # Получаем профиль партнёра
     partner_profile, _ = PartnerProfile.objects.get_or_create(user=request.user)
+    partner_agreement = PartnerAgreement.objects.filter(is_active=True).first()
 
     # Получаем последний отклонённый документ
     last_rejected_document = None
@@ -85,18 +88,16 @@ def partner_dashboard(request):
 
     # Обработка формы редактирования профиля
     if request.method == 'POST':
-        # Обновление согласия на рассылку (можно отказаться в любой момент)
+        # Согласие сохраняется сразу при изменении чекбокса.
         if 'save_consent' in request.POST:
-            from django.utils import timezone
-            request.user.consent_marketing = 'consent_marketing' in request.POST
-            request.user.consent_marketing_at = timezone.now()
-            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
-            messages.success(
-                request,
-                "Согласие на рассылку сохранено."
-                if request.user.consent_marketing
-                else "Вы отказались от рассылок.",
-            )
+            was_consent = request.user.consent_marketing
+            new_consent = 'consent_marketing' in request.POST
+            if new_consent != was_consent:
+                request.user.set_marketing_consent(new_consent)
+                if new_consent:
+                    messages.success(request, "Согласие на рассылку сохранено.")
+                else:
+                    messages.error(request, "Вы отказались от рассылок.")
             return redirect("partner:dashboard")
 
         profile_form = PartnerProfileForm(request.POST, request.FILES, instance=partner_profile)
@@ -188,6 +189,7 @@ def partner_dashboard(request):
         "user_subscription": user_subscription,
         "has_active_subscription": user_subscription is not None,
         "partner_profile": partner_profile,
+        "partner_agreement": partner_agreement,
         "profile_form": profile_form,
         "document_form": document_form,
         "last_rejected_document": last_rejected_document,

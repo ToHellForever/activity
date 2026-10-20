@@ -277,6 +277,7 @@ class VisitorRegistrationForm(UserCreationForm):
         user.consent_marketing_at = timezone.now()
         if commit:
             user.save()
+            user.set_marketing_consent(user.consent_marketing, record_unchanged=True)
         return user
 
 

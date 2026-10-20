@@ -185,16 +185,12 @@ def settings(request):
             # Если форма не валидна, мы продолжим рендерить страницу с ошибками
         elif 'save_consent' in request.POST:
             # Обновление согласия на рассылку (можно отказаться в любой момент)
-            from django.utils import timezone
-            request.user.consent_marketing = 'consent_marketing' in request.POST
-            request.user.consent_marketing_at = timezone.now()
-            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
-            messages.success(
-                request,
-                "Согласие на рассылку сохранено."
-                if request.user.consent_marketing
-                else "Вы отказались от рассылок.",
-            )
+            new_consent = 'consent_marketing' in request.POST
+            if request.user.set_marketing_consent(new_consent):
+                if new_consent:
+                    messages.success(request, "Согласие на рассылку сохранено.")
+                else:
+                    messages.error(request, "Вы отказались от рассылок.")
             return redirect("visitor:settings")
         else:
             # Здесь можно обработать обновление имени/телефона, если добавите такие формы
@@ -505,4 +501,3 @@ def favorites(request):
         'favorites': favorites,
         'events': events,
     })
-

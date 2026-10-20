@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from moviepy import VideoFileClip
 
 from core.models import PartnerDocument
@@ -90,16 +91,14 @@ def profile_edit(request):
 
         # Обновление согласия на рассылку (можно отказаться в любой момент)
         if "save_consent" in request.POST:
-            from django.utils import timezone
-            request.user.consent_marketing = "consent_marketing" in request.POST
-            request.user.consent_marketing_at = timezone.now()
-            request.user.save(update_fields=["consent_marketing", "consent_marketing_at"])
-            messages.success(
-                request,
-                "Согласие на рассылку сохранено."
-                if request.user.consent_marketing
-                else "Вы отказались от рассылок.",
-            )
+            was_consent = request.user.consent_marketing
+            new_consent = "consent_marketing" in request.POST
+            if new_consent != was_consent:
+                request.user.set_marketing_consent(new_consent)
+                if new_consent:
+                    messages.success(request, "Согласие на рассылку сохранено.")
+                else:
+                    messages.error(request, "Вы отказались от рассылок.")
             return redirect("partner:dashboard")
 
 

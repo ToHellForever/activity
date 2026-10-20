@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Event, Ticket, Order, EventImage, PartnerDocument, PayoutRequest, PayoutDetails
 from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
-from .models import LegalDocument
+from .models import (
+    LegalDocument,
+    PartnerAgreement,
+    FAQCategory,
+    FAQItem,
+    MarketingConsentEvent,
+)
 from .proxy_models import VisitorUser
 from .forms import EventAdminForm, PartnerAdminForm, SupportTicketAdminForm
 from django import forms
@@ -21,6 +27,38 @@ import logging
 logger = logging.getLogger(__name__)
 
 CustomUser = get_user_model()
+
+
+@admin.register(MarketingConsentEvent)
+class MarketingConsentEventAdmin(admin.ModelAdmin):
+    """История изменений согласия на рассылку."""
+
+    list_display = ("email", "status", "changed_at")
+    list_display_links = None
+    list_filter = ("consent",)
+    search_fields = ("email",)
+    ordering = ("-changed_at", "-pk")
+    date_hierarchy = "changed_at"
+    list_per_page = 100
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["title"] = "Просмотреть историю согласий на рассылку"
+        return super().changelist_view(request, extra_context=extra_context)
+
+    @admin.display(description="Статус")
+    def status(self, obj):
+        return "Согласен" if obj.consent else "Не согласен"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(VisitorUser)
 class VisitorUserAdmin(admin.ModelAdmin):
@@ -1364,7 +1402,8 @@ class PartnerAdmin(admin.ModelAdmin):
     """
 
     list_display = (
-        'username', 'email', 'get_company_name', 'get_contact_person',
+        'username', 'email', 'get_marketing_consent', 'consent_marketing_at',
+        'get_company_name', 'get_contact_person',
         'get_phone_number', 'get_organizer_status', 'get_permissions_status',
         'get_agent_contract_number'
     )
@@ -1374,6 +1413,7 @@ class PartnerAdmin(admin.ModelAdmin):
         'is_verified',
         'verification_status',
         'organizer_status',
+        'consent_marketing',
     )
 
     search_fields = (
@@ -1394,13 +1434,19 @@ class PartnerAdmin(admin.ModelAdmin):
         ('Аккаунт', {
             'fields': ('user_type', 'first_name', 'last_name', 'username', 'date_joined'),
         }),
+        ('Согласие на рассылку', {
+            'fields': ('consent_marketing', 'consent_marketing_at'),
+        }),
         ('Права доступа', {
             'fields': ('can_create_events', 'can_request_reports', 'can_request_payments'),
             'description': 'Функции, доступные партнёру'
         }),
     )
 
-    readonly_fields = ('username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined')
+    readonly_fields = (
+        'username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined',
+        'consent_marketing', 'consent_marketing_at',
+    )
 
     change_form_template = "admin/partner_change_form.html"
     form = PartnerAdminForm
@@ -1417,6 +1463,10 @@ class PartnerAdmin(admin.ModelAdmin):
             return obj.partner_profile.company_name or '-'
         return '-'
     get_company_name.short_description = "Компания"
+
+    @admin.display(description="Согласие на рассылку")
+    def get_marketing_consent(self, obj):
+        return "Согласен" if obj.consent_marketing else "Не согласен"
 
     def get_contact_person(self, obj):
         if hasattr(obj, 'partner_profile') and obj.partner_profile:
@@ -2154,16 +2204,64 @@ class LegalDocumentAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.display(description='Страница')
-    def open_page(self, obj):
-        url = obj.get_absolute_url()
-        if not url:
-            return '—'
-        return format_html('<a href="{}" target="_blank">открыть</a>', url)
 
-    def has_add_permission(self, request):
-        # новые страницы создаёт миграция заполнения, админ только правит текст
-        return False
+@admin.register(PartnerAgreement)
+class PartnerAgreementAdmin(admin.ModelAdmin):
+    """Договор для партнёров — загружается через админку."""
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    list_display = ('file_link', 'is_active', 'created_at', 'updated_at')
+    list_filter = ('is_active',)
+    readonly_fields = ('created_at', 'updated_at')
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset.iterator():
+            obj.delete()
+
+    def file_link(self, obj):
+        if obj.file:
+            return format_html('<a href="{}" target="_blank">Открыть файл</a>', obj.file.url)
+        return '—'
+    file_link.short_description = 'Файл'
+
+
+class FAQItemInline(admin.TabularInline):
+    model = FAQItem
+    extra = 0
+    fields = ('question', 'answer', 'order', 'is_active')
+    ordering = ('order',)
+
+
+@admin.register(FAQCategory)
+class FAQCategoryAdmin(admin.ModelAdmin):
+    """Категории FAQ."""
+
+    list_display = ('name', 'icon_preview', 'order', 'items_count')
+    list_editable = ('order',)
+    inlines = [FAQItemInline]
+
+    def delete_queryset(self, request, queryset):
+        for category in queryset.iterator():
+            category.delete()
+
+    @admin.display(description="Иконка")
+    def icon_preview(self, obj):
+        if not obj.icon:
+            return "—"
+        return format_html(
+            '<img src="{}" alt="" style="max-width: 40px; max-height: 40px;">',
+            obj.icon.url,
+        )
+
+    def items_count(self, obj):
+        return obj.items.count()
+    items_count.short_description = 'Вопросов'
+
+
+@admin.register(FAQItem)
+class FAQItemAdmin(admin.ModelAdmin):
+    """Вопросы FAQ."""
+
+    list_display = ('question', 'category', 'order', 'is_active')
+    list_filter = ('is_active', 'category')
+    list_editable = ('category', 'order', 'is_active')
+    search_fields = ('question', 'answer')

@@ -369,20 +369,23 @@
             <div class="change-password-wrapper">
                 <button type="button" id="open-password-modal" class="btn-change-password">Изменить пароль</button>
             </div>
-            <p><a href="{% url 'organizer_contract_download' %}" class='contract-download-link'>Скачать договор для организаторов</a></p>
+            {% if partner_agreement and partner_agreement.file %}
+            <p><a href="{% url 'organizer_contract_download' %}" class='contract-download-link'>Скачать договор для партнёров</a></p>
+            {% endif %}
 
             <!-- ===== Согласие на рассылку ===== -->
             <form method="post" class="consent-form">
                 {% csrf_token %}
                 <div class="form-check" style="margin: 14px 0;">
                     <input type="checkbox" class="form-check-input" name="consent_marketing" id="partner_consent_marketing"
-                           {% if user.consent_marketing %}checked{% endif %}>
+                           {% if user.consent_marketing %}checked{% endif %}
+                           onchange="this.form.requestSubmit()">
+                    <input type="hidden" name="save_consent" value="1">
                     <label class="form-check-label partner-consent-label" for="partner_consent_marketing">
                         Согласен(на) на получение рассылок
                         (<a href="{% url 'mailing_consent_view' %}">согласие на рассылку</a>)
                     </label>
                 </div>
-                <button type="submit" name="save_consent" class="btn-change-password">Сохранить согласие</button>
             </form>
 
             <!-- ===== Modal: Change password ===== -->

@@ -34,6 +34,7 @@ import string
 import base64
 from datetime import datetime, timedelta
 from django.db.models import Q
+from django.db.models import Prefetch
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
 from venues.models import Venue
@@ -324,14 +325,14 @@ def register_view(request):
                 from django.utils import timezone as _tz
                 user.consent_personal_data = partner_form.cleaned_data.get("agree_personal_data", False)
                 user.consent_personal_data_at = _tz.now()
-                user.consent_marketing = partner_form.cleaned_data.get("agree_marketing", False)
-                user.consent_marketing_at = _tz.now()
                 user.save(update_fields=[
                     "consent_personal_data",
                     "consent_personal_data_at",
-                    "consent_marketing",
-                    "consent_marketing_at",
                 ])
+                user.set_marketing_consent(
+                    partner_form.cleaned_data.get("agree_marketing", False),
+                    record_unchanged=True,
+                )
                 
                 # Создаём профиль партнёра
                 from django.db import transaction
@@ -393,6 +394,10 @@ def register_view(request):
                 user = form.save(commit=False)
                 user.backend = "core.backends.EmailBackend"
                 user.save()
+                user.set_marketing_consent(
+                    form.cleaned_data.get("agree_marketing", False),
+                    record_unchanged=True,
+                )
 
                 # Отправляем код подтверждения на почту
                 from .forms import CustomUserCreationForm
@@ -1402,15 +1407,20 @@ def offer_view(request):
 
 
 def organizer_contract_download(request):
-    """Скачать договор для организаторов."""
-    contract_path = settings.BASE_DIR / "ДОГОВОР для организаторов.docx"
-    if not contract_path.is_file():
+    """Скачать актуальный договор для партнёров из настроенного хранилища."""
+    from .models import PartnerAgreement
+    import mimetypes
+
+    active = PartnerAgreement.objects.filter(is_active=True).first()
+    if not active or not active.file:
         raise Http404("Файл договора не найден")
 
+    filename = os.path.basename(active.file.name)
     return FileResponse(
-        contract_path.open("rb"),
+        active.file.open("rb"),
         as_attachment=True,
-        filename="ДОГОВОР для организаторов.docx",
+        filename=filename,
+        content_type=mimetypes.guess_type(filename)[0] or "application/octet-stream",
     )
 
 
@@ -1430,7 +1440,20 @@ def mailing_consent_view(request):
 
 def faq_view(request):
     """FAQ — часто задаваемые вопросы"""
-    return render(request, "other/faq.html")
+    from .models import FAQCategory, FAQItem
+
+    categories = (
+        FAQCategory.objects.filter(items__is_active=True)
+        .prefetch_related(
+            Prefetch(
+                "items",
+                queryset=FAQItem.objects.filter(is_active=True).order_by("order", "id"),
+            )
+        )
+        .distinct()
+        .order_by("order", "name")
+    )
+    return render(request, "other/faq.html", {"categories": categories})
 
 
 def contacts_view(request):

@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
@@ -17,6 +18,18 @@ except ImportError:
     REDIS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+def validate_partner_agreement_size(uploaded_file):
+    max_size = 10 * 1024 * 1024
+    if uploaded_file.size > max_size:
+        raise ValidationError("Размер файла договора не должен превышать 10 МБ.")
+
+
+def validate_faq_icon_size(uploaded_file):
+    max_size = 2 * 1024 * 1024
+    if uploaded_file.size > max_size:
+        raise ValidationError("Размер иконки FAQ не должен превышать 2 МБ.")
 
  
 class CustomUser(AbstractUser, VideoWatermarkMixin):
@@ -157,6 +170,35 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         expires_at = self.unverified_expires_at()
         return expires_at is not None and timezone.now() > expires_at
 
+    def set_marketing_consent(self, consent, *, changed_at=None, record_unchanged=False):
+        """Persist a consent change and append it to the audit history."""
+        if not self.pk:
+            raise ValueError("Нельзя записать согласие для несохранённого пользователя.")
+
+        consent = bool(consent)
+        changed_at = changed_at or timezone.now()
+
+        with transaction.atomic():
+            current = type(self).objects.select_for_update().get(pk=self.pk)
+            if current.consent_marketing == consent and not record_unchanged:
+                self.consent_marketing = current.consent_marketing
+                self.consent_marketing_at = current.consent_marketing_at
+                return False
+
+            current.consent_marketing = consent
+            current.consent_marketing_at = changed_at
+            current.save(update_fields=["consent_marketing", "consent_marketing_at"])
+            MarketingConsentEvent.objects.create(
+                user=current,
+                email=current.email,
+                consent=consent,
+                changed_at=changed_at,
+            )
+
+        self.consent_marketing = consent
+        self.consent_marketing_at = changed_at
+        return True
+
     def delete(self, *args, **kwargs):
         """Удаляет все связанные объекты перед удалением пользователя."""
         # Удаляем все подписки пользователя
@@ -164,6 +206,30 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         super().delete(*args, **kwargs)
 
 User = get_user_model()
+
+
+class MarketingConsentEvent(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="marketing_consent_events",
+        verbose_name="Пользователь",
+    )
+    email = models.EmailField("Почта")
+    consent = models.BooleanField("Статус согласия")
+    changed_at = models.DateTimeField("Дата изменения")
+
+    class Meta:
+        verbose_name = "История согласия на рассылку"
+        verbose_name_plural = "История согласий на рассылку"
+        ordering = ("-changed_at", "-pk")
+
+    def __str__(self):
+        status = "Согласен" if self.consent else "Не согласен"
+        return f"{self.email} — {status} ({self.changed_at})"
+
 
 class PartnerDocument(models.Model):
     """
@@ -1580,3 +1646,156 @@ class LegalDocument(models.Model):
     def get_absolute_url(self):
         url_name = self.PAGE_URL_NAMES.get(self.slug)
         return reverse(url_name) if url_name else ''
+
+
+class PartnerAgreement(models.Model):
+    """Договор для партнёров — файл, загружаемый через админку."""
+
+    file = models.FileField(
+        upload_to="partner_agreements/",
+        verbose_name="Файл договора",
+        help_text="DOCX или PDF, не более 10 МБ",
+        validators=[
+            FileExtensionValidator(allowed_extensions=("docx", "pdf")),
+            validate_partner_agreement_size,
+        ],
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активен",
+        help_text="Если снят — ссылка скачивания скрыта в ЛК партнёра",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата загрузки",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления",
+    )
+
+    class Meta:
+        verbose_name = "Договор для партнёров"
+        verbose_name_plural = "Договоры для партнёров"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Договор для партнёров ({self.file.name})"
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        saves_file = (
+            update_fields is None
+            or "file" in update_fields
+            or self._meta.get_field("file").attname in update_fields
+        )
+        old_file_name = None
+        if self.pk:
+            old_file_name = (
+                type(self).objects.filter(pk=self.pk)
+                .values_list("file", flat=True)
+                .first()
+            )
+
+        super().save(*args, **kwargs)
+
+        if saves_file and old_file_name and old_file_name != self.file.name:
+            self.file.storage.delete(old_file_name)
+
+    def delete(self, *args, **kwargs):
+        # Удаляем файл из хранилища вместе с записью в БД
+        if self.file:
+            self.file.delete(save=False)
+        super().delete(*args, **kwargs)
+
+
+class FAQCategory(models.Model):
+    """Категория FAQ — например, «Вопросы для участников»."""
+
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Название категории",
+    )
+    icon = models.FileField(
+        upload_to="faq/icons/",
+        blank=True,
+        verbose_name="Иконка",
+        help_text="Загрузите SVG, PNG, JPG или WebP, не более 2 МБ.",
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=("svg", "png", "jpg", "jpeg", "webp")
+            ),
+            validate_faq_icon_size,
+        ],
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок отображения",
+    )
+
+    class Meta:
+        verbose_name = "Категория FAQ"
+        verbose_name_plural = "Категории FAQ"
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        saves_icon = (
+            update_fields is None
+            or "icon" in update_fields
+            or self._meta.get_field("icon").attname in update_fields
+        )
+        old_icon_name = None
+        if self.pk:
+            old_icon_name = (
+                type(self).objects.filter(pk=self.pk)
+                .values_list("icon", flat=True)
+                .first()
+            )
+
+        super().save(*args, **kwargs)
+
+        if saves_icon and old_icon_name and old_icon_name != self.icon.name:
+            self.icon.storage.delete(old_icon_name)
+
+    def delete(self, *args, **kwargs):
+        if self.icon:
+            self.icon.delete(save=False)
+        super().delete(*args, **kwargs)
+
+
+class FAQItem(models.Model):
+    """Один вопрос-ответ внутри категории FAQ."""
+
+    category = models.ForeignKey(
+        FAQCategory,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Категория",
+    )
+    question = models.CharField(
+        max_length=500,
+        verbose_name="Вопрос",
+    )
+    answer = models.TextField(
+        verbose_name="Ответ",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок в категории",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активен",
+    )
+
+    class Meta:
+        verbose_name = "Вопрос FAQ"
+        verbose_name_plural = "Вопросы FAQ"
+        ordering = ["category__order", "order"]
+
+    def __str__(self):
+        return self.question

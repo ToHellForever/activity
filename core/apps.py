@@ -37,7 +37,15 @@ class CoreConfig(AppConfig):
             from .image_storage import YandexImageProcessingStorage
             from .video_storage import YandexVideoProcessingStorage
             from .document_storage import YandexDocumentProcessingStorage
-            from .models import Event, EventImage, PartnerDocument, SupportAttachment
+            from .storage_backends import YandexCloudWithProcessingStorage
+            from .models import (
+                Event,
+                EventImage,
+                FAQCategory,
+                PartnerDocument,
+                SupportAttachment,
+                PartnerAgreement,
+            )
             from partner_app.models import PartnerProfile
             from partner_app.models import EventChangeRequest, SalesReport
             from venues.models import Venue
@@ -68,6 +76,12 @@ class CoreConfig(AppConfig):
             # Применяем хранилище к полю logo модели PartnerProfile
             PartnerProfile._meta.get_field('logo').storage = YandexImageProcessingStorage()
             
+            # Применяем хранилище к полю file модели PartnerAgreement
+            PartnerAgreement._meta.get_field('file').storage = YandexDocumentProcessingStorage()
+
+            # Иконки FAQ хранятся в Object Storage без обрезки и водяного знака.
+            FAQCategory._meta.get_field('icon').storage = YandexCloudWithProcessingStorage()
+
         except ImportError as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -76,5 +90,3 @@ class CoreConfig(AppConfig):
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Ошибка при применении хранилищ: {e}")
-
-
