@@ -474,7 +474,7 @@ def _process_booking_request(request):
     except Venue.DoesNotExist:
         return False, {"__all__": "Указанная площадка не найдена"}, None
 
-    form = BookingRequestForm(request.POST, venue=venue)
+    form = BookingRequestForm(request.POST, venue=venue, user=request.user if request.user.is_authenticated else None)
 
     if form.is_valid():
         booking_request = form.save(commit=False)
@@ -526,7 +526,10 @@ def process_booking_request(request):
 def venue_addition_request(request):
     """Публичная форма заявки на добавление площадки в каталог."""
     if request.method == "POST":
-        form = VenueAdditionRequestForm(request.POST)
+        form = VenueAdditionRequestForm(
+            request.POST,
+            user=request.user if request.user.is_authenticated else None,
+        )
         if form.is_valid():
             addition_request = form.save(commit=False)
             if request.user.is_authenticated:

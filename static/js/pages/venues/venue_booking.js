@@ -75,6 +75,12 @@ document.addEventListener('DOMContentLoaded', function() {
             errors.push('Выберите формат мероприятия.');
         }
 
+        // Проверка согласия на обработку персональных данных
+        const consentCheckbox = form.querySelector('[name="personal_data_consent"]');
+        if (!consentCheckbox || !consentCheckbox.checked) {
+            errors.push('Необходимо дать согласие на обработку персональных данных.');
+        }
+
         if (errors.length > 0) {
             errorsBlock.innerHTML = errors.map(msg => '<div>' + msg + '</div>').join('');
             errorsBlock.classList.remove('d-none');
@@ -131,6 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
             successBlock.classList.add('d-none');
             successContacts.classList.add('d-none');
             errorsBlock.classList.add('d-none');
+            // Сброс чекбокса согласия
+            const consentCheckbox = form.querySelector('[name="personal_data_consent"]');
+            if (consentCheckbox) {
+                consentCheckbox.checked = false;
+            }
             // Сброс календаря и формата
             if (window.bookingCalendar) {
                 window.bookingCalendar.clear();

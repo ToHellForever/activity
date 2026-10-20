@@ -144,6 +144,14 @@
                     <span class="venue-request-field-error" data-error-for="comment"></span>
                 </div>
             </div>
+            {% if not user.is_authenticated %}
+            <div class="venue-request-consent mb-3">
+                <label class="consent-label">
+                    <input type="checkbox" name="personal_data_consent" id="venue-request-consent-checkbox" required>
+                    <span>Я даю согласие на обработку <a href="{% url 'privacy_policy' %}" target="_blank" rel="noopener">персональных данных</a></span>
+                </label>
+            </div>
+            {% endif %}
             <div class="venue-request-modal__actions">
                 <button type="button" class="venue-request-modal__cancel" data-close-venue-request>Отмена</button>
                 <button type="submit" class="venue-request-modal__submit">Отправить заявку</button>

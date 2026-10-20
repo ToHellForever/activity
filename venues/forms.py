@@ -125,12 +125,21 @@ class VenueForm(forms.ModelForm):
                     % {"tariff": tariff_name}
                 )
 
+        # Для незарегистрированных пользователей согласие обязательно
+        if not self.request_user and not cleaned_data.get("personal_data_consent"):
+            raise ValidationError("Необходимо дать согласие на обработку персональных данных.")
+
         return cleaned_data
 
 
 class BookingRequestForm(forms.ModelForm):
+    personal_data_consent = forms.BooleanField(
+        required=False,
+        label="Согласие на обработку персональных данных",
+    )
+
     def __init__(self, *args, **kwargs):
-        self.venue = kwargs.pop("venue", None)
+        self.request_user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
         # name max 50
@@ -211,6 +220,11 @@ class BookingRequestForm(forms.ModelForm):
 
 
 class VenueAdditionRequestForm(forms.ModelForm):
+    personal_data_consent = forms.BooleanField(
+        required=False,
+        label="Согласие на обработку персональных данных",
+    )
+
     class Meta:
         model = VenueAdditionRequest
         fields = [
@@ -229,6 +243,19 @@ class VenueAdditionRequestForm(forms.ModelForm):
             "applicant_email": forms.EmailInput(attrs={"required": "required"}),
             "comment": forms.Textarea(attrs={"maxlength": "1000", "rows": 4}),
         }
+
+    def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Для незарегистрированных пользователей согласие обязательно
+        if not self.request_user and not cleaned_data.get("personal_data_consent"):
+            raise ValidationError("Необходимо дать согласие на обработку персональных данных.")
+
+        return cleaned_data
 
     def clean_applicant_phone(self):
         phone = self.cleaned_data["applicant_phone"].strip()

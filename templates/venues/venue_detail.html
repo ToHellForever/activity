@@ -212,6 +212,14 @@
                             <textarea name="comment" id="booking-comment" class="form-control" rows="3" maxlength="300"></textarea>
                         </div>
                         <div id="booking-errors" class="alert alert-danger d-none"></div>
+                        {% if not user.is_authenticated %}
+                        <div class="booking-consent mb-3">
+                            <label class="consent-label">
+                                <input type="checkbox" name="personal_data_consent" id="booking-consent-checkbox" required>
+                                <span>Я даю согласие на обработку <a href="{% url 'privacy_policy' %}" target="_blank" rel="noopener">персональных данных</a></span>
+                            </label>
+                        </div>
+                        {% endif %}
                         <button type="submit" class="book-button w-100 mt-3" id="booking-submit">ОТПРАВИТЬ ЗАЯВКУ</button>
                     </form>
                     <div id="booking-success" class="d-none text-center">

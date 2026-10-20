@@ -379,6 +379,38 @@
   border-color: #777a8d !important;
 }
 
+/* Стили для чекбокса согласия на обработку персональных данных */
+.booking-consent {
+  padding: 0 4px;
+}
+
+.booking-consent .consent-label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #333;
+}
+
+.booking-consent .consent-label input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.booking-consent .consent-label a {
+  color: #0033a0;
+  text-decoration: underline;
+}
+
+.booking-consent .consent-label a:hover {
+  color: #0055cc;
+}
+
 /* Бейдж на странице детали площадки — на фото */
 .venue-image-wrapper {
   position: relative;

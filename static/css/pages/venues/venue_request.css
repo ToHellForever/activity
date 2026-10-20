@@ -162,18 +162,17 @@
 }
 
 .venue-add-request-link {
-        font-family: "Verdana", sans-serif;
-    font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-family: "Verdana", sans-serif;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
   display: flex;
   align-items: center;
   gap: 13px;
   margin-top: 10px;
-margin-bottom: 10px;
+  margin-bottom: 10px;
   border-radius: 6px;
   color: white;
   text-decoration: none;
 }
-
 
 .venue-request-modal {
   position: fixed;
@@ -340,6 +339,37 @@ margin-bottom: 10px;
 
 .venue-request-modal__result.is-visible {
   display: block;
+}
+
+.venue-request-consent {
+  padding: 0 4px;
+}
+
+.consent-label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #333;
+}
+
+.consent-label input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.consent-label a {
+  color: #0033a0;
+  text-decoration: underline;
+}
+
+.consent-label a:hover {
+  color: #0055cc;
 }
 
 @media (max-width: 640px) {

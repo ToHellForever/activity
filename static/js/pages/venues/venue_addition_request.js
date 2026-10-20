@@ -56,6 +56,13 @@
         event.preventDefault();
         clearErrors();
 
+        const consentCheckbox = form.querySelector('[name="personal_data_consent"]');
+        if (!consentCheckbox || !consentCheckbox.checked) {
+            result.textContent = 'Необходимо дать согласие на обработку персональных данных.';
+            result.classList.add('is-visible');
+            return;
+        }
+
         const submitButton = form.querySelector('.venue-request-modal__submit');
         submitButton.disabled = true;
         submitButton.textContent = 'Отправляем...';
@@ -82,6 +89,11 @@
             }
 
             form.reset();
+            // Сброс чекбокса согласия
+            const consentCheckbox = form.querySelector('[name="personal_data_consent"]');
+            if (consentCheckbox) {
+                consentCheckbox.checked = false;
+            }
             result.textContent = 'Заявка отправлена. Администратор свяжется с вами по указанным контактам.';
             result.classList.add('is-visible');
         } catch (error) {
