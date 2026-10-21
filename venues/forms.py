@@ -62,6 +62,9 @@ class VenueForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Пользователь из запроса может быть передан через user (например, из views),
+        # в админке используется request.user
+        self.request_user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
         # Перемещаем поле tariff в начало
@@ -124,10 +127,6 @@ class VenueForm(forms.ModelForm):
                     _("Для тарифа %(tariff)s загрузка видео не разрешена.")
                     % {"tariff": tariff_name}
                 )
-
-        # Для незарегистрированных пользователей согласие обязательно
-        if not self.request_user and not cleaned_data.get("personal_data_consent"):
-            raise ValidationError("Необходимо дать согласие на обработку персональных данных.")
 
         return cleaned_data
 
