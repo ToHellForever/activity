@@ -185,18 +185,13 @@ class VenueAdmin(admin.ModelAdmin):
 
         venue = form.instance
 
-        # Сохраняем equipment_items из чекбоксов, созданных JavaScript
-        equipment_item_ids = request.POST.getlist("equipment_items")
-        if equipment_item_ids:
-            from .models import EquipmentItem
-            item_ids = [int(id) for id in equipment_item_ids if id.isdigit()]
-            if item_ids:
-                # Валидация: проверяем что все ID существуют
-                valid_ids = list(
-                    EquipmentItem.objects.filter(pk__in=item_ids).values_list("pk", flat=True)
-                )
-                if valid_ids:
-                    venue.equipment_items.set(valid_ids)
+        if "equipment_items_present" in request.POST:
+            equipment_item_ids = request.POST.getlist("equipment_items")
+            item_ids = [int(item_id) for item_id in equipment_item_ids if item_id.isdigit()]
+            valid_ids = list(
+                EquipmentItem.objects.filter(pk__in=item_ids).values_list("pk", flat=True)
+            )
+            venue.equipment_items.set(valid_ids)
 
         images = request.FILES.getlist("images")
         if images:

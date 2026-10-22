@@ -4,9 +4,18 @@ from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 from django.core.files.uploadedfile import SimpleUploadedFile
+from unittest.mock import Mock
 
 from .forms import VenueAdditionRequestForm
-from .models import Venue, VenueAdditionRequest, VenueImage, VenueType, VenueView
+from .models import (
+	EquipmentCategory,
+	EquipmentItem,
+	Venue,
+	VenueAdditionRequest,
+	VenueImage,
+	VenueType,
+	VenueView,
+)
 from .admin import VenueAdmin
 from .forms import VenueForm
 
@@ -51,6 +60,48 @@ class VenueAdditionRequestTests(TestCase):
 
 
 class VenueAdminCrudTests(TestCase):
+	def test_save_related_keeps_equipment_items_from_multiple_categories(self):
+		venue_type = VenueType.objects.create(name="Конференц-зал")
+		venue = Venue.objects.create(
+			title="Тестовая площадка",
+			slug="test-venue-equipment",
+			venue_type=venue_type,
+			address="ул. Тестовая, 1",
+			city="Новосибирск",
+			area=100,
+			max_capacity=50,
+			price=1000,
+			status="draft",
+		)
+		first_category = EquipmentCategory.objects.create(name="Звук")
+		second_category = EquipmentCategory.objects.create(name="Свет")
+		first_item = EquipmentItem.objects.create(category=first_category, name="Колонки")
+		second_item = EquipmentItem.objects.create(category=second_category, name="Прожектор")
+		admin_obj = VenueAdmin(Venue, AdminSite())
+		form = Mock(instance=venue)
+
+		request = RequestFactory().post(
+			"/admin/venues/venue/1/change/",
+			{
+				"equipment_items_present": "1",
+				"equipment_items": [str(first_item.pk), str(second_item.pk)],
+			},
+		)
+		admin_obj.save_related(request, form, [], change=True)
+
+		self.assertSetEqual(
+			set(venue.equipment_items.values_list("pk", flat=True)),
+			{first_item.pk, second_item.pk},
+		)
+
+		request = RequestFactory().post(
+			"/admin/venues/venue/1/change/",
+			{"equipment_items_present": "1"},
+		)
+		admin_obj.save_related(request, form, [], change=True)
+
+		self.assertFalse(venue.equipment_items.exists())
+
 	def test_uploaded_image_is_created_after_venue_is_saved(self):
 		venue_type = VenueType.objects.create(name="Конференц-зал")
 		form = VenueForm(data={
