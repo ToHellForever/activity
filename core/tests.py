@@ -40,6 +40,7 @@ from core.forms import EventAdminForm
 from core.views import send_event_request
 from core.validators import validate_inn, validate_video_duration
 from core.templatetags.format_filters import auto_format
+from core.image_storage import YandexEventImageProcessingStorage
 from core.video_storage import YandexVideoProcessingStorage
 from unittest.mock import patch, MagicMock
 
@@ -62,6 +63,19 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
         self.assertIn("**жирный**", description.help_text)
         self.assertEqual(description.widget.attrs["rows"], 10)
         self.assertIn("https://example.com", description.widget.attrs["placeholder"])
+
+    def test_event_image_storage_skips_watermark(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            image_path = os.path.join(temp_dir, "event.jpg")
+            Image.new("RGB", (40, 40), color="blue").save(image_path)
+            storage = YandexEventImageProcessingStorage()
+            with patch.object(storage, "_add_watermark") as add_watermark:
+                processed_path, _ = storage._process_file(
+                    image_path, "event_images/test.jpg"
+                )
+
+            add_watermark.assert_not_called()
+            self.assertEqual(processed_path, image_path)
 
     def test_plain_url_becomes_safe_active_link(self):
         rendered = str(auto_format("Подробнее: https://example.com/event."))
@@ -109,6 +123,35 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
 
         self.assertIn('<span style="font-size:13px">Обычный абзац</span>', rendered)
         self.assertIn('<span style="font-size:20px">Крупный абзац</span>', rendered)
+
+    def test_sized_paragraph_does_not_append_span_markup_to_plain_url(self):
+        rendered = str(
+            auto_format(
+                "[[size=20]]Источник фото: "
+                "https://example.com/image.jpg[[/size]]"
+            )
+        )
+
+        self.assertIn(
+            '<a href="https://example.com/image.jpg" target="_blank" '
+            'rel="noopener noreferrer">https://example.com/image.jpg</a></span>',
+            rendered,
+        )
+        self.assertNotIn('href="https://example.com/image.jpg</span>"', rendered)
+
+    def test_sized_paragraph_does_not_append_span_markup_to_markdown_url(self):
+        rendered = str(
+            auto_format(
+                "[[size=20]][Источник фото](https://example.com/image.jpg)[[/size]]"
+            )
+        )
+
+        self.assertIn(
+            '<a href="https://example.com/image.jpg" target="_blank" '
+            'rel="noopener noreferrer">Источник фото</a></span>',
+            rendered,
+        )
+        self.assertNotIn('href="https://example.com/image.jpg</span>"', rendered)
 
     def test_unsupported_paragraph_font_size_marker_is_escaped(self):
         rendered = str(auto_format("[[size=99]]Текст[[/size]]"))

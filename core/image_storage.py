@@ -17,6 +17,8 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
     - Сжатие с качеством 85%
     - Добавление водяного знака
     """
+
+    apply_watermark = True
     
     def _process_file(self, temp_path, name):
         """
@@ -63,7 +65,7 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             watermark_path = getattr(settings, 'WATERMARK_PATH', 
                                    os.path.join(settings.MEDIA_ROOT, 'watermark.png'))
             
-            if os.path.exists(watermark_path):
+            if self.apply_watermark and os.path.exists(watermark_path):
                 try:
                     # Используем os.path.join для правильного формирования пути
                     base_processed = os.path.splitext(processed_path)[0]
@@ -103,7 +105,7 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
             # При ошибке возвращаем исходный файл
             logger.error(f"Ошибка при обработке изображения {name}: {e}", exc_info=True)
             return temp_path, []
-    
+
     def _add_watermark(self, input_path, watermark_path, output_path):
         """
         Добавляет водяной знак к изображению.
@@ -148,3 +150,9 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
         except Exception as e:
             logger.error(f"Ошибка при добавлении водяного знака: {e}")
             return False
+
+
+class YandexEventImageProcessingStorage(YandexImageProcessingStorage):
+    """Хранилище фотографий мероприятий без водяного знака."""
+
+    apply_watermark = False

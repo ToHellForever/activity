@@ -183,7 +183,7 @@ if USE_YANDEX_CLOUD:
     DEFAULT_FILE_STORAGE = 'core.storage_backends.YandexCloudWithProcessingStorage'
     
     # Специальные хранилища для разных типов файлов
-    EVENT_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
+    EVENT_IMAGE_STORAGE = 'core.image_storage.YandexEventImageProcessingStorage'
     EVENT_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
     EVENT_DOCUMENT_STORAGE = 'core.document_storage.YandexDocumentProcessingStorage'
     VENUE_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'

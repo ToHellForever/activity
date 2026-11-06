@@ -321,7 +321,7 @@ def apply_inline_formatting(text):
         return f"\x00LINK{link_index}\x00{trailing}"
 
     text = re.sub(
-        r'\[([^\]]+)\]\((https?://[^\s)]+)\)|(https?://[^\s<]+)',
+        r'\[([^\]]+)\]\((https?://[^\s)\x00]+)\)|(https?://[^\s<\x00]+)',
         replace_link,
         text,
         flags=re.IGNORECASE,

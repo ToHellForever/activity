@@ -34,7 +34,10 @@ class CoreConfig(AppConfig):
             return
         
         try:
-            from .image_storage import YandexImageProcessingStorage
+            from .image_storage import (
+                YandexEventImageProcessingStorage,
+                YandexImageProcessingStorage,
+            )
             from .video_storage import YandexVideoProcessingStorage
             from .document_storage import YandexDocumentProcessingStorage
             from .storage_backends import YandexCloudWithProcessingStorage
@@ -51,7 +54,7 @@ class CoreConfig(AppConfig):
             from venues.models import Venue
             
             # Применяем хранилище к полю image модели Event
-            Event._meta.get_field('image').storage = YandexImageProcessingStorage()
+            Event._meta.get_field('image').storage = YandexEventImageProcessingStorage()
             
             # Применяем хранилище к полю document модели EventImage
             Event._meta.get_field('program_file').storage = YandexDocumentProcessingStorage()
@@ -68,7 +71,7 @@ class CoreConfig(AppConfig):
             Venue._meta.get_field('video').storage = YandexVideoProcessingStorage(subdirectory='venue_videos')
             
             # Применяем хранилище к полю image модели EventImage
-            EventImage._meta.get_field('image').storage = YandexImageProcessingStorage()
+            EventImage._meta.get_field('image').storage = YandexEventImageProcessingStorage()
             
             # Применяем хранилище к полю document модели PartnerDocument
             PartnerDocument._meta.get_field('document').storage = YandexDocumentProcessingStorage()
