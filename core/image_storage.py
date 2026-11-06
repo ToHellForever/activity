@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
     """
     Хранилище для изображений с обработкой:
-    - Изменение размера до 800x600
     - Сжатие с качеством 85%
     - Добавление водяного знака
     """
@@ -47,26 +46,6 @@ class YandexImageProcessingStorage(YandexCloudWithProcessingStorage):
                 image = background
             elif image.mode != 'RGB':
                 image = image.convert('RGB')
-            
-            # Центрированная обрезка до пропорций 4:3 (800x600)
-            target_ratio = 4 / 3
-            width, height = image.size
-            current_ratio = width / height
-            
-            if current_ratio > target_ratio:
-                # Фото шире, чем 4:3 -> обрезаем по ширине
-                new_width = int(height * target_ratio)
-                left = (width - new_width) // 2
-                image = image.crop((left, 0, left + new_width, height))
-            else:
-                # Фото выше, чем 4:3 -> обрезаем по высоте
-                new_height = int(width / target_ratio)
-                top = (height - new_height) // 2
-                image = image.crop((0, top, width, top + new_height))
-            
-            # Ресайз до фиксированного размера 800x600
-            image = image.resize((800, 600), Image.Resampling.LANCZOS)
-            
             # Путь для обработанного файла
             base_name = os.path.splitext(temp_path)[0]
             ext = os.path.splitext(temp_path)[1].lower()
