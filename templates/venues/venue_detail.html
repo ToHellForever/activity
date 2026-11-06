@@ -34,11 +34,11 @@
                         {% endfor %}
                     </div>
                     <div class="carousel-inner">
-                        <div class="carousel-item active">
+                        <div class="carousel-item photo-frame active" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
                             <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
                         </div>
                         {% for img in venue.images.all %}
-                        <div class="carousel-item">
+                        <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image.url }}')">
                             <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
                         </div>
                         {% endfor %}
@@ -54,7 +54,7 @@
                 </div>
             {% elif venue.images.count == 1 %}
                 <!-- Одиночное фото — без карусели -->
-                <div class="image-wrapper">
+                <div class="image-wrapper photo-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
                     {% if venue.badge_text %}
                     <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
                     {% endif %}
@@ -264,7 +264,9 @@
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
                     {% if other_venue.images.all %}
-                    <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
+                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}
@@ -304,7 +306,9 @@
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
                     {% if other_venue.images.all %}
-                    <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
+                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}
@@ -344,7 +348,9 @@
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
                     {% if other_venue.images.all %}
-                    <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
+                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
                     {% endif %}

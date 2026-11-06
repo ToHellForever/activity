@@ -435,7 +435,7 @@ input[type="number"] {
   .card-img-top {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .card-body {

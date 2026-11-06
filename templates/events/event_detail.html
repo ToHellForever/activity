@@ -50,11 +50,11 @@
                     {% endfor %}
                 </div>
                 <div class="carousel-inner">
-                    <div class="carousel-item active">
+                    <div class="carousel-item photo-frame active" style="--photo-background: url('{{ event.primary_image_url }}')">
                         <img src="{{ event.primary_image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
                     {% for img in event.images.all %}
-                    <div class="carousel-item">
+                    <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image.url }}')">
                         <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
                     {% endfor %}
@@ -90,7 +90,7 @@
                 </div>
                 <div class="carousel-inner">
                     {% for img in event.images.all %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="carousel-item photo-frame {% if forloop.first %}active{% endif %}" style="--photo-background: url('{{ img.image.url }}')">
                         <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
                     {% endfor %}
@@ -106,7 +106,7 @@
             </div>
         {% elif event.image %}
             <!-- Одиночное основное фото -->
-            <div class="image-wrapper">
+            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.primary_image_url }}')">
                 {% if event.badge_text %}
                 <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
                 {% endif %}
@@ -120,7 +120,7 @@
             </div>
         {% else %}
             <!-- Одиночное дополнительное фото -->
-            <div class="image-wrapper">
+            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image.url }}')">
                 {% if event.badge_text %}
                 <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
                 {% endif %}
@@ -335,9 +335,13 @@
         <div class="col-6 mb-4">
             <div class="card">
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
@@ -370,9 +374,13 @@
         <div class="col-4 mb-4">
             <div class="card">
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
@@ -404,9 +412,13 @@
         <div class="col-md-3 mb-4">
             <div class="card">
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}

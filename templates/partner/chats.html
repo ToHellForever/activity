@@ -22,9 +22,13 @@
       </a>
       <div class="chat-header-event-card">
         {% if selected_ticket.event and selected_ticket.event.has_real_image %}
-          <img src="{{ selected_ticket.event.primary_image_url }}" alt="{{ selected_ticket.event.title }}" class="chat-header-event-photo">
+          <div class="chat-event-photo-frame" style="--chat-photo-background: url('{{ selected_ticket.event.primary_image_url }}')">
+            <img src="{{ selected_ticket.event.primary_image_url }}" alt="{{ selected_ticket.event.title }}" class="chat-header-event-photo">
+          </div>
         {% else %}
-          <img src="/media/icon/logo.svg" alt="" class="chat-header-event-photo">
+          <div class="chat-event-photo-frame chat-event-photo-frame--placeholder">
+            <img src="/media/icon/logo.svg" alt="" class="chat-header-event-photo">
+          </div>
         {% endif %}
         {% if selected_ticket.user.user_type == "guest" %}
           <div class="chat-header-user-badge chat-header-user-badge--guest" title="Неавторизованный пользователь">

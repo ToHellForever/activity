@@ -7,9 +7,11 @@
   <div class="message-attachments{% if attachments|length > 1 %} message-attachments--multiple{% endif %}">
     {% for attachment in attachments %}
       {% if attachment.is_image %}
-        <a class="message-attachment" href="{{ attachment.file.url }}" target="_blank" rel="noopener" title="{{ attachment.filename }}">
-          <img class="message-attachment-image" src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" loading="lazy">
-        </a>
+        <div class="message-attachment" style="--chat-photo-background: url('{{ attachment.file.url }}')">
+          <a class="message-attachment-link" href="{{ attachment.file.url }}" target="_blank" rel="noopener" title="{{ attachment.filename }}">
+            <img class="message-attachment-image" src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" loading="lazy">
+          </a>
+        </div>
       {% else %}
         <a class="attachment-link" href="{{ attachment.file.url }}" target="_blank">📄 {{ attachment.filename }}</a>
       {% endif %}

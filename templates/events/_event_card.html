@@ -5,7 +5,9 @@
         <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
         {% endif %}
         {% if ev.has_real_image %}
-        <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+        <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+            <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+        </div>
         {% else %}
         <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
         {% endif %}

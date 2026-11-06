@@ -60,7 +60,7 @@ window.ChatAttachments = (function () {
                 const url = escapeHtml(attachment.url);
                 const name = escapeHtml(attachment.name || 'Фото');
                 return (
-                    '<div class="message-attachment">' +
+                    `<div class="message-attachment" style="--chat-photo-background: url('${url}')">` +
                         `<a href="${url}" target="_blank" rel="noopener" class="message-attachment-link">` +
                             `<img class="message-attachment-image" src="${url}" alt="${name}" loading="lazy">` +
                         '</a>' +

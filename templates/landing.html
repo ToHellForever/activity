@@ -98,9 +98,13 @@
                     {% for ev in active_events_desktop %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
                             {% if ev.has_real_image %}
-                                <img src="{{ ev.primary_image_url }}" alt="{{ ev.title }}">
+                                <div class="photo-frame carousel-photo-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                                    <img src="{{ ev.primary_image_url }}" alt="{{ ev.title }}">
+                                </div>
                             {% elif ev.images.all %}
-                                <img src="{{ ev.images.all.0.image.url }}" alt="{{ ev.title }}">
+                                <div class="photo-frame carousel-photo-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                                    <img src="{{ ev.images.all.0.image.url }}" alt="{{ ev.title }}">
+                                </div>
                             {% else %}
                                 <img src="/media/icon/logo.svg" class="card-logo-placeholder" alt="">
                             {% endif %}
@@ -153,9 +157,13 @@
                 <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
                 {% endif %}
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
@@ -189,9 +197,13 @@
                 <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
                 {% endif %}
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
@@ -225,9 +237,13 @@
                 <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
                 {% endif %}
                 {% if ev.has_real_image %}
-                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                    <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% elif ev.images.all %}
-                <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
+                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                </div>
                 {% else %}
                 <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
                 {% endif %}
@@ -323,7 +339,9 @@
             <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
             {% endif %}
             {% if venue.images.all %}
-            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
+                <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            </div>
             {% else %}
             <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
             {% endif %}
@@ -356,7 +374,9 @@
             <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
             {% endif %}
             {% if venue.images.all %}
-            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
+                <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            </div>
             {% else %}
             <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
             {% endif %}
@@ -389,7 +409,9 @@
             <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
             {% endif %}
             {% if venue.images.all %}
-            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
+                <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+            </div>
             {% else %}
             <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
             {% endif %}

@@ -6,7 +6,9 @@
         <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
         {% endif %}
         {% if venue.images.all %}
-        <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+        <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
+            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+        </div>
         {% else %}
         <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
         {% endif %}

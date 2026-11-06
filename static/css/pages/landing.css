@@ -189,8 +189,44 @@
   border-top-right-radius: 23.14px;
 }
 
+.photo-frame {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #e9ecef;
+}
+
+.photo-frame::before {
+  position: absolute;
+  z-index: -1;
+  inset: -12px;
+  content: "";
+  background-image: var(--photo-background);
+  background-position: center;
+  background-size: cover;
+  filter: blur(16px);
+  transform: scale(1.08);
+}
+
+.photo-frame > img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.card-image-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-top-left-radius: 23.14px;
+  border-top-right-radius: 23.14px;
+}
+
 .card-img-top.card-logo-placeholder {
-  height: 180px;
+  height: auto;
+  aspect-ratio: 4 / 3;
   padding: 50px;
   box-sizing: border-box;
   object-fit: contain;
@@ -358,6 +394,17 @@
   height: 100% !important;
   border-radius: 20px;
   object-fit: cover;
+}
+
+.carousel-photo-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+}
+
+.carousel-item .carousel-photo-frame > img {
+  object-fit: contain;
+  border-radius: 20px;
 }
 
 .carousel-item img.card-logo-placeholder {
@@ -874,7 +921,11 @@
   .card-img-top {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
-    object-fit: cover;
+  }
+
+  .card-image-frame {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
   }
 
   .card-label {

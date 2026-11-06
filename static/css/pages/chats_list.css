@@ -70,7 +70,32 @@
   aspect-ratio: 1 / 1;
 }
 
+.chat-event-photo-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+}
+
+.chat-event-photo-frame::before {
+  position: absolute;
+  inset: -10px;
+  content: "";
+  background-image: var(--chat-photo-background);
+  background-position: center;
+  background-size: cover;
+  filter: blur(12px);
+  transform: scale(1.08);
+}
+
+.chat-event-photo-frame--placeholder::before {
+  content: none;
+}
+
 .chat-list-event-photo {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -189,6 +214,9 @@
   }
   .chat-list-event-photo,
   .chat-list-event-photo--placeholder {
+    border-radius: 10px;
+  }
+  .chat-event-photo-frame {
     border-radius: 10px;
   }
   .chats-list-wrapper {
