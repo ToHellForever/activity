@@ -167,10 +167,18 @@ def participant_list(request, event_id):
         export_orders = orders.exclude(payment_status__in=["canceled", "refunded"])
         return export_participant_list(export_orders, event, export_format)
 
+    orders_page = Paginator(orders.order_by("-created_at"), 25).get_page(
+        request.GET.get("page", 1)
+    )
+    pagination_query = request.GET.copy()
+    pagination_query.pop("page", None)
+    pagination_query.pop("export", None)
     partner_profile = getattr(request.user, 'partner_profile', None)
     context = {
         "event": event,
-        "orders": orders,
+        "orders": orders_page,
+        "orders_page": orders_page,
+        "pagination_query": pagination_query.urlencode(),
         "partner_profile": partner_profile,
     }
     context["rejection_messages"] = get_rejection_messages(request)

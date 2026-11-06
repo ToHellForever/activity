@@ -6,7 +6,6 @@
 <link rel="stylesheet" href="{% static 'css/pages/partner/partner_event_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/partner/entry_control.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/other/show_more.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -106,7 +105,7 @@
                                             title="Заявка на рассмотрении">
                                         <img src="/media/icon/tdesign_edit-filled.svg" alt="">
                                     </button>
-                                    {% elif item.event.has_sold_tickets %}
+                                    {% elif item.has_sold_tickets %}
                                     <a href="{% url 'partner:request_event_change' item.event.id %}"
                                        class="card-edit-btn" title="Заявка на изменение">
                                         <img src="/media/icon/tdesign_edit-filled.svg" alt="">
@@ -157,7 +156,7 @@
              КОНТРОЛЬ
         </button>
     </div>
-    {% if not item.event.has_sold_tickets %}
+    {% if not item.has_sold_tickets %}
         <label class="card-check">
             <input type="checkbox" name="event_ids"
                    value="{{ item.event.id }}" class="event-checkbox"
@@ -184,6 +183,35 @@
                     </div>
                 {% else %}
                     <p class="empty-hint">Актуальных событий нет.</p>
+                {% endif %}
+                {% if active_page and active_page.paginator.num_pages > 1 %}
+                <div class="events-pagination-bar">
+                    <span class="events-pagination-info">
+                        Мероприятия {{ active_page.start_index }}–{{ active_page.end_index }}
+                        из {{ active_page.paginator.count }}
+                    </span>
+                    <nav class="events-pagination" aria-label="Страницы актуальных мероприятий">
+                    {% if active_page.has_previous %}
+                    <a class="page-arrow events-pagination-link" href="?{{ pagination_query }}&active_page={{ active_page.previous_page_number }}" aria-label="Предыдущая страница"><i class="bi bi-chevron-left"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                    {% endif %}
+                    {% for page_num in active_page_range %}
+                        {% if page_num == '…' %}
+                        <span class="page-dots" aria-hidden="true">&hellip;</span>
+                        {% else %}
+                        <a class="page-num events-pagination-link {% if page_num == active_page.number %}active{% endif %}"
+                           href="?{{ pagination_query }}&active_page={{ page_num }}"
+                           {% if page_num == active_page.number %}aria-current="page"{% endif %}>{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if active_page.has_next %}
+                    <a class="page-arrow events-pagination-link" href="?{{ pagination_query }}&active_page={{ active_page.next_page_number }}" aria-label="Следующая страница"><i class="bi bi-chevron-right"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                    {% endif %}
+                    </nav>
+                </div>
                 {% endif %}
 
                 <!-- ==================== АРХИВ ==================== -->
@@ -236,6 +264,35 @@
                 {% else %}
                     <p class="empty-hint">Архив пуст.</p>
                 {% endif %}
+                {% if archived_page and archived_page.paginator.num_pages > 1 %}
+                <div class="events-pagination-bar">
+                    <span class="events-pagination-info">
+                        Мероприятия {{ archived_page.start_index }}–{{ archived_page.end_index }}
+                        из {{ archived_page.paginator.count }}
+                    </span>
+                    <nav class="events-pagination" aria-label="Страницы архива мероприятий">
+                    {% if archived_page.has_previous %}
+                    <a class="page-arrow events-pagination-link" href="?{{ pagination_query }}&archived_page={{ archived_page.previous_page_number }}" aria-label="Предыдущая страница"><i class="bi bi-chevron-left"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                    {% endif %}
+                    {% for page_num in archived_page_range %}
+                        {% if page_num == '…' %}
+                        <span class="page-dots" aria-hidden="true">&hellip;</span>
+                        {% else %}
+                        <a class="page-num events-pagination-link {% if page_num == archived_page.number %}active{% endif %}"
+                           href="?{{ pagination_query }}&archived_page={{ page_num }}"
+                           {% if page_num == archived_page.number %}aria-current="page"{% endif %}>{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if archived_page.has_next %}
+                    <a class="page-arrow events-pagination-link" href="?{{ pagination_query }}&archived_page={{ archived_page.next_page_number }}" aria-label="Следующая страница"><i class="bi bi-chevron-right"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                    {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
 
 <!-- Кнопка массового удаления удалена -->
             </form>
@@ -243,6 +300,97 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        const mobileViewport = window.matchMedia('(max-width: 767.98px)');
+
+        function syncPageSize() {
+            const params = new URLSearchParams(window.location.search);
+            const pageSize = mobileViewport.matches ? '8' : '9';
+            if (params.get('page_size') === pageSize) return;
+
+            params.set('page_size', pageSize);
+            const query = params.toString();
+            window.location.replace(
+                window.location.pathname + (query ? '?' + query : '') + window.location.hash
+            );
+        }
+
+        syncPageSize();
+        if (mobileViewport.addEventListener) {
+            mobileViewport.addEventListener('change', syncPageSize);
+        } else {
+            mobileViewport.addListener(syncPageSize);
+        }
+    })();
+</script>
+
+<script>
+    document.addEventListener('click', async function (event) {
+        const link = event.target.closest('.events-pagination-link');
+        if (
+            !link ||
+            link.classList.contains('active') ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+        const currentNav = link.closest('.events-pagination');
+        if (currentNav.getAttribute('aria-busy') === 'true') return;
+        const sectionLabel = currentNav.getAttribute('aria-label');
+        const isActiveSection = sectionLabel.includes('актуальных');
+        const rowId = isActiveSection ? 'activeEventsRow' : 'archivedEventsRow';
+        const pageParam = isActiveSection ? 'active_page' : 'archived_page';
+        const currentRow = document.getElementById(rowId);
+        const currentBar = currentNav.closest('.events-pagination-bar');
+
+        link.setAttribute('aria-busy', 'true');
+        currentNav.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(link.href, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) {
+                throw new Error('Сервер вернул ошибку ' + response.status);
+            }
+
+            const html = await response.text();
+            const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+            const nextRow = nextDocument.getElementById(rowId);
+            const nextNav = nextDocument.querySelector(
+                '.events-pagination[aria-label="' + sectionLabel + '"]'
+            );
+            const nextBar = nextNav && nextNav.closest('.events-pagination-bar');
+
+            if (!currentRow || !nextRow || !currentBar || !nextBar) {
+                throw new Error('Не удалось найти карточки или пагинатор в ответе сервера');
+            }
+
+            currentRow.replaceWith(nextRow);
+            currentBar.replaceWith(nextBar);
+            window.history.pushState({ [pageParam]: true }, '', link.href);
+
+            const activePage = nextNav.querySelector('.page-num.active');
+            if (activePage) {
+                activePage.focus({ preventScroll: true });
+            }
+        } catch (error) {
+            console.error('Не удалось загрузить страницу мероприятий:', error);
+            showToast('Не удалось загрузить мероприятия. Попробуйте ещё раз.', true);
+        } finally {
+            link.removeAttribute('aria-busy');
+            currentNav.removeAttribute('aria-busy');
+        }
+    });
+</script>
 
 <script>
     // === Toast ===
@@ -277,15 +425,6 @@
 
 <!-- Скрипт календаря -->
 <script src="{% static 'js/pages/other/calendar.js' %}"></script>
-<!-- Скрипт "Показать ещё" -->
-<script src="{% static 'js/pages/other/show_more.js' %}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        initShowMore('activeEventsRow');
-        initShowMore('archivedEventsRow');
-    });
-</script>
-
 <!-- Modal контроля входа -->
 <div class="modal fade entry-control-modal" id="entryControlModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

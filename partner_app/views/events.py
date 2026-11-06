@@ -10,6 +10,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
+from django.db.models import Case, Exists, F, IntegerField, OuterRef, Prefetch, Sum, Value, When
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.conf import settings
 from moviepy import VideoFileClip
@@ -24,7 +27,9 @@ from core.models import (
     EventPackage,
     UserPackageSubscription,
     EventImage,
+    Order,
 )
+from ..models import EventChangeRequest
 from core.utils import get_from_email
 from ..forms import EventForm
 from .decorators import check_partner_status, get_rejection_messages
@@ -917,26 +922,56 @@ def partner_event_list(request):
     # ---------- Разделяем на актуальные и архивные ----------
     now = timezone.now()
 
-    def build_event_data(event_qs):
-        """Формирует список словарей с продажами по каждому событию."""
+    ticket_data = Ticket.objects.annotate(
+        sold_quantity=Coalesce(
+            Sum(
+                Case(
+                    When(
+                        orders__payment_status__in=("canceled", "refunded"),
+                        then=Value(0),
+                    ),
+                    default=F("orders__quantity"),
+                    output_field=IntegerField(),
+                )
+            ),
+            Value(0),
+        ),
+        has_sold_orders=Exists(
+            Order.objects.filter(
+                ticket_id=OuterRef("pk"),
+                payment_status__in=("succeeded", "pending", "reserved", "refunded"),
+            )
+        ),
+    )
+
+    def with_list_data(event_qs):
+        return event_qs.select_related("organizer", "category", "format").prefetch_related(
+            "images",
+            "tags",
+            Prefetch("tickets", queryset=ticket_data),
+            Prefetch(
+                "change_requests",
+                queryset=EventChangeRequest.objects.filter(status="pending"),
+                to_attr="pending_change_requests",
+            ),
+        )
+
+    def build_event_data(event_page):
+        """Формирует данные только для мероприятий текущей страницы."""
         result = []
-        for event in event_qs:
+        for event in event_page:
             sold_tickets = 0
             total = 0
+            has_sold_tickets = False
             for ticket in event.tickets.all():
-                sold = sum(
-                    order.quantity
-                    for order in ticket.orders.exclude(
-                        payment_status__in=("canceled", "refunded")
-                    )
-                )
-                sold_tickets += sold
-                total += sold + ticket.available_quantity
+                sold_tickets += ticket.sold_quantity
+                total += ticket.sold_quantity + ticket.available_quantity
+                has_sold_tickets = has_sold_tickets or ticket.has_sold_orders
 
             # Есть ли активная (pending) заявка на изменение по мероприятию
             pending_change_request = (
-                event.change_requests.filter(status="pending").first()
-                if event.has_sold_tickets
+                event.pending_change_requests[0]
+                if has_sold_tickets and event.pending_change_requests
                 else None
             )
 
@@ -944,25 +979,65 @@ def partner_event_list(request):
                 "event": event,
                 "sold": sold_tickets,
                 "total": total,
+                "has_sold_tickets": has_sold_tickets,
                 "pending_change_request": pending_change_request,
             })
         return result
 
-    active_qs = events.filter(date_time__gte=now)
-    archived_qs = events.filter(date_time__lt=now)
+    active_qs = with_list_data(events.filter(date_time__gte=now))
+    archived_qs = with_list_data(events.filter(date_time__lt=now))
 
     # ---------- Учитываем чекбоксы "Действующие" / "Истёкшие" ----------
     # Если ни один не выбран — показываем оба (поведение по умолчанию)
     show_active = not status_filter or "active" in status_filter
     show_archived = not status_filter or "archived" in status_filter
 
-    active_events = build_event_data(active_qs) if show_active else []
-    archived_events = build_event_data(archived_qs) if show_archived else []
+    requested_page_size = request.GET.get("page_size")
+    page_size = int(requested_page_size) if requested_page_size in {"8", "9"} else 9
+    active_page = (
+        Paginator(active_qs, page_size).get_page(request.GET.get("active_page", 1))
+        if show_active
+        else None
+    )
+    archived_page = (
+        Paginator(archived_qs, page_size).get_page(request.GET.get("archived_page", 1))
+        if show_archived
+        else None
+    )
+    active_events = build_event_data(active_page.object_list) if active_page else []
+    archived_events = build_event_data(archived_page.object_list) if archived_page else []
+    active_page_range = (
+        active_page.paginator.get_elided_page_range(
+            active_page.number,
+            on_each_side=1,
+            on_ends=1,
+        )
+        if active_page
+        else ()
+    )
+    archived_page_range = (
+        archived_page.paginator.get_elided_page_range(
+            archived_page.number,
+            on_each_side=1,
+            on_ends=1,
+        )
+        if archived_page
+        else ()
+    )
+    pagination_query = request.GET.copy()
+    pagination_query.pop("active_page", None)
+    pagination_query.pop("archived_page", None)
+    pagination_query["page_size"] = str(page_size)
 
     # ---------- Контекст ----------
     context = {
         "active_events": active_events,
         "archived_events": archived_events,
+        "active_page": active_page,
+        "archived_page": archived_page,
+        "active_page_range": active_page_range,
+        "archived_page_range": archived_page_range,
+        "pagination_query": pagination_query.urlencode(),
         "rejection_messages": get_rejection_messages(request),
     }
     return render(request, "partner/partner_event_list.html", context)

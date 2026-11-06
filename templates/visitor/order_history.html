@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="{% static 'css/pages/visitor/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/visitor/order_history.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
-<link rel="stylesheet" href="{% static 'css/pages/other/show_more.css' %}">
 {% endblock %}
 {% block content %}
 <div>
@@ -77,16 +76,39 @@
                     <a href="{% url 'event_list' %}" class="find-button">Посмотреть мероприятия</a>
                 </div>
             {% endif %}
+            {% if orders_page.paginator.num_pages > 1 %}
+                <div class="visitor-pagination-bar" data-row-id="orderHistoryRow">
+                    <span class="visitor-pagination-info">
+                        Заказы {{ orders_page.start_index }}–{{ orders_page.end_index }}
+                        из {{ orders_page.paginator.count }}
+                    </span>
+                    <nav class="visitor-pagination" aria-label="Страницы истории заказов">
+                    {% if orders_page.has_previous %}
+                    <a class="page-arrow visitor-pagination-link" href="?page={{ orders_page.previous_page_number }}" aria-label="Предыдущая страница"><i class="bi bi-chevron-left"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                    {% endif %}
+                    {% for page_num in orders_page_range %}
+                        {% if page_num == '…' %}
+                        <span class="page-dots" aria-hidden="true">&hellip;</span>
+                        {% else %}
+                        <a class="page-num visitor-pagination-link {% if page_num == orders_page.number %}active{% endif %}"
+                           href="?page={{ page_num }}"
+                           {% if page_num == orders_page.number %}aria-current="page"{% endif %}>{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if orders_page.has_next %}
+                    <a class="page-arrow visitor-pagination-link" href="?page={{ orders_page.next_page_number }}" aria-label="Следующая страница"><i class="bi bi-chevron-right"></i></a>
+                    {% else %}
+                    <span class="page-arrow disabled" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                    {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
         </main>
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
-<script src="{% static 'js/pages/other/show_more.js' %}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        initShowMore('orderHistoryRow');
-    });
-</script>
+<script src="{% static 'js/pages/visitor/ajax_pagination.js' %}"></script>
 {% endblock %}

@@ -262,6 +262,118 @@
   text-transform: uppercase;
 }
 
+.visitor-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0 24px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #eceef2;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(30, 35, 55, 0.06);
+}
+
+.visitor-pagination-info {
+  color: #777b89;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.visitor-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.visitor-pagination .page-num,
+.visitor-pagination .page-arrow {
+  display: inline-flex;
+  min-width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  color: #343847;
+  background: #fff;
+  border: 1px solid #e6e7ec;
+  border-radius: 12px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.visitor-pagination a.page-num:hover,
+.visitor-pagination a.page-arrow:hover {
+  color: #d9541e;
+  background: #fff3ec;
+  border-color: #ffb37a;
+  transform: translateY(-1px);
+}
+
+.visitor-pagination .page-num.active {
+  color: #fff;
+  background: #ff8348;
+  border-color: #ff8348;
+  box-shadow: 0 3px 8px rgba(255, 131, 72, 0.25);
+}
+
+.visitor-pagination .page-arrow.disabled {
+  color: #c5c7ce;
+  background: #f7f7f9;
+  border-color: #eceef2;
+}
+
+.visitor-pagination .page-dots {
+  min-width: 18px;
+  color: #999daa;
+  text-align: center;
+}
+
+.visitor-pagination-error {
+  margin: 8px 0;
+  color: #b42318;
+  font-size: 13px;
+  text-align: center;
+}
+
+[aria-busy="true"].visitor-pagination-bar .visitor-pagination {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .visitor-pagination-bar {
+    justify-content: center;
+    padding: 12px 8px;
+  }
+
+  .visitor-pagination-info {
+    width: 100%;
+    text-align: center;
+  }
+
+  .visitor-pagination {
+    gap: 4px;
+  }
+
+  .visitor-pagination .page-num,
+  .visitor-pagination .page-arrow {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 7px;
+  }
+}
+
 @media (max-width: 1199.98px) {
   .tickets-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

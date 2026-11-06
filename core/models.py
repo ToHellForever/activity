@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 import os
 import logging
@@ -1324,6 +1325,9 @@ class Order(models.Model):
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
+        indexes = [
+            GinIndex(fields=["participant_data"], name="order_participant_data_gin"),
+        ]
 
 
 class OrderTicket(models.Model):

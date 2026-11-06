@@ -3,11 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.db.models import Q
 from core.models import (
     Event,
     Ticket,
     SupportTicket,
     Order,
+    OrderTicket,
     EventPackage,
     UserPackageSubscription,
 )
@@ -35,35 +38,42 @@ def visitor_dashboard(request):
 
     now = timezone.now()
 
-    # Получаем заказы текущего пользователя по email
-    all_orders = (
-        Order.objects.filter(participant_data__email=request.user.email)
+    active_orders = (
+        Order.objects.filter(participant_data__contains={"email": request.user.email})
         .exclude(payment_status="canceled")
-        .only("id", "participant_data", "created_at", "total_price", "quantity", "attended", "is_paid", "payment_deadline", "payment_status", "purchase_type", "ticket")
+        .exclude(payment_status="refunded")
+        .filter(
+            ticket__event__date_time__gte=now,
+            attended=False,
+        )
+        .filter(
+            Q(tickets__isnull=True)
+            | Q(tickets__is_refunded=False, tickets__attended=False)
+        )
         .select_related("ticket", "ticket__event")
         .prefetch_related("tickets")
         .order_by("-created_at")
+        .distinct()
+    )
+    orders_page = Paginator(active_orders, 12).get_page(request.GET.get("page", 1))
+    orders_page_range = orders_page.paginator.get_elided_page_range(
+        orders_page.number,
+        on_each_side=1,
+        on_ends=1,
     )
 
     # Распределяем билеты отдельно: посещённый билет сразу попадает в историю,
     # а остальные билеты того же заказа остаются активными.
     ticket_items = []
-    past_ticket_items = []
-    active_orders = []
-    past_orders = []
 
-    for order in all_orders:
+    for order in orders_page:
         event = order.ticket.event
-        event_is_past = event.date_time < now
-        order_is_past = (
-            event_is_past
-            or order.payment_status == "refunded"
-            or order.attended
-        )
         tickets = list(order.tickets.all())
 
         if tickets:
             for ot in tickets:
+                if ot.is_refunded or ot.attended:
+                    continue
                 item = {
                     "order": order,
                     "order_ticket": ot,
@@ -71,25 +81,16 @@ def visitor_dashboard(request):
                     "ticket": order.ticket,
                     "participant_data": order.participant_data,
                 }
-                if ot.is_refunded or ot.attended or order_is_past:
-                    past_ticket_items.append(item)
-                else:
-                    ticket_items.append(item)
+                ticket_items.append(item)
         else:
-            target = past_ticket_items if order_is_past else ticket_items
             for _ in range(order.quantity):
-                target.append({
+                ticket_items.append({
                     "order": order,
                     "order_ticket": None,
                     "event": event,
                     "ticket": order.ticket,
                     "participant_data": order.participant_data,
                 })
-
-        if order_is_past or order.attended:
-            past_orders.append(order)
-        else:
-            active_orders.append(order)
 
     # Получаем активную подписку пользователя
     user_subscription = (
@@ -101,10 +102,10 @@ def visitor_dashboard(request):
 
     context = {
         "user": request.user,
-        "user_orders": active_orders,
+        "user_orders": orders_page,
         "ticket_items": ticket_items,
-        "past_ticket_items": past_ticket_items,
-        "past_user_orders": past_orders,
+        "orders_page": orders_page,
+        "orders_page_range": orders_page_range,
         "now": now,
         "user_subscription": user_subscription,
         "has_active_subscription": user_subscription is not None,
@@ -118,51 +119,62 @@ def visitor_order_history(request):
 
     now = timezone.now()
 
-    all_orders = (
-        Order.objects.filter(participant_data__email=request.user.email)
+    history_orders = (
+        Order.objects.filter(participant_data__contains={"email": request.user.email})
         .exclude(payment_status="canceled")
+        .filter(
+            Q(ticket__event__date_time__lt=now)
+            | Q(payment_status="refunded")
+            | Q(tickets__is_refunded=True)
+            | Q(tickets__attended=True)
+        )
         .select_related("ticket", "ticket__event")
         .prefetch_related("tickets")
         .order_by("-created_at")
+        .distinct()
+    )
+    orders_page = Paginator(history_orders, 12).get_page(request.GET.get("page", 1))
+    orders_page_range = orders_page.paginator.get_elided_page_range(
+        orders_page.number,
+        on_each_side=1,
+        on_ends=1,
     )
 
-    def expand_orders_history(orders):
-        items = []
-        for order in orders:
-            event = order.ticket.event
-            tickets = order.tickets.all()
-            if tickets.exists():
-                for ot in tickets:
-                    is_past_event = event.date_time < now
-                    is_refunded_ticket = ot.is_refunded
-                    is_refunded_order = order.payment_status == "refunded"
-
-                    # Посещённые билеты архивируются сразу после отметки.
-                    if is_past_event or is_refunded_ticket or is_refunded_order or ot.attended:
-                        items.append({
-                            "order": order,
-                            "order_ticket": ot,
-                            "event": event,
-                            "ticket": order.ticket,
-                            "participant_data": order.participant_data,
-                        })
-            else:
-                if event.date_time < now or order.payment_status == "refunded":
-                    for i in range(order.quantity):
-                        items.append({
-                            "order": order,
-                            "order_ticket": None,
-                            "event": event,
-                            "ticket": order.ticket,
-                            "participant_data": order.participant_data,
-                        })
-        return items
-
-    past_ticket_items = expand_orders_history(all_orders)
+    past_ticket_items = []
+    for order in orders_page:
+        event = order.ticket.event
+        tickets = list(order.tickets.all())
+        if tickets:
+            for order_ticket in tickets:
+                if (
+                    event.date_time >= now
+                    and order.payment_status != "refunded"
+                    and not order_ticket.is_refunded
+                    and not order_ticket.attended
+                ):
+                    continue
+                past_ticket_items.append({
+                    "order": order,
+                    "order_ticket": order_ticket,
+                    "event": event,
+                    "ticket": order.ticket,
+                    "participant_data": order.participant_data,
+                })
+        else:
+            for _ in range(order.quantity):
+                past_ticket_items.append({
+                    "order": order,
+                    "order_ticket": None,
+                    "event": event,
+                    "ticket": order.ticket,
+                    "participant_data": order.participant_data,
+                })
 
     context = {
         "user": request.user,
         "past_ticket_items": past_ticket_items,
+        "orders_page": orders_page,
+        "orders_page_range": orders_page_range,
     }
     return render(request, "visitor/order_history.html", context)
 

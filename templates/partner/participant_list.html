@@ -243,6 +243,17 @@
         </div>
         {% endfor %}
     </div>
+    {% if orders_page.paginator.num_pages > 1 %}
+    <nav class="d-flex justify-content-center align-items-center gap-2 my-3" aria-label="Страницы списка участников">
+        {% if orders_page.has_previous %}
+        <a class="btn btn-outline-primary" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ orders_page.previous_page_number }}">Назад</a>
+        {% endif %}
+        <span>Страница {{ orders_page.number }} из {{ orders_page.paginator.num_pages }}</span>
+        {% if orders_page.has_next %}
+        <a class="btn btn-outline-primary" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ orders_page.next_page_number }}">Далее</a>
+        {% endif %}
+    </nav>
+    {% endif %}
 
 </div>
     </div>
