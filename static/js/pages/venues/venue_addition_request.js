@@ -23,18 +23,29 @@
         document.body.classList.remove('venue-request-modal-open');
     }
 
-    function openModal(event) {
-        event.preventDefault();
+    function openModal(event, focusInput = true) {
+        if (event) {
+            event.preventDefault();
+        }
         clearErrors();
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('venue-request-modal-open');
-        modal.querySelector('input:not([type=hidden])').focus();
+        if (focusInput) {
+            modal.querySelector('input:not([type=hidden])').focus();
+        }
     }
 
     document.querySelectorAll('[data-open-venue-request]').forEach((trigger) => {
         trigger.addEventListener('click', openModal);
     });
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('open_venue_request') === '1') {
+        url.searchParams.delete('open_venue_request');
+        window.history.replaceState(window.history.state, '', url);
+        openModal(null, false);
+    }
 
     modal.querySelectorAll('[data-close-venue-request]').forEach((trigger) => {
         trigger.addEventListener('click', closeModal);
