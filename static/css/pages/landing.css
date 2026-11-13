@@ -698,6 +698,11 @@
 }
 
 /* Скрывать мобильные карточки на экранах >= 900px */
+.landing-block > .row.d-none.d-900-flex.d-1300-none,
+.landing-block > .row.d-none.d-1300-flex {
+  display: none;
+}
+
 @media (min-width: 900px) {
   .d-900-none {
     display: none !important;
