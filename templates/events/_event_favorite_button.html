@@ -1,0 +1,10 @@
+<a href="{% url 'visitor:toggle_favorite' favorite_event.id %}"
+   class="favourites-link event-favorite-overlay{% if favorite_event.id in favorite_event_ids %} is-favorite{% endif %}"
+   data-event-id="{{ favorite_event.id }}"
+   data-csrf-token="{{ csrf_token }}"
+   data-is-partner="{% if request.user.is_authenticated and request.user.user_type == 'partner' %}true{% else %}false{% endif %}"
+   data-login-url="{% url 'login' %}"
+   aria-label="{% if favorite_event.id in favorite_event_ids %}Удалить из избранного{% else %}Добавить в избранное{% endif %}"
+   title="{% if favorite_event.id in favorite_event_ids %}Удалить из избранного{% else %}Добавить в избранное{% endif %}">
+    <img src="/media/icon/favourites.png" alt="" class="favourites-icon">
+</a>

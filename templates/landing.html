@@ -159,13 +159,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
             <div class="card-body">
                 <h5 class="card-title">{{ ev.title }}</h5>
@@ -199,13 +204,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
 <div class="card-body">
     <h5 class="card-title">{{ ev.title }}</h5>
@@ -239,13 +249,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
             <div class="card-body">
                 <h5 class="card-title">{{ ev.title }}</h5>
@@ -456,6 +471,7 @@
 </div>
 </div>
 
+<script src="{% static 'js/pages/events/favorites.js' %}"></script>
 <script src="{% static 'js/pages/other/landing_extra.js' %}"></script>
 <script type="application/ld+json">
 {

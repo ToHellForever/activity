@@ -15,6 +15,7 @@ from django.test import RequestFactory
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from django.utils import timezone
 from PIL import Image, ImageDraw
 from core.utils import add_watermark_to_image, add_watermark_to_video
@@ -87,9 +88,7 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
         )
 
     def test_formatted_text_and_markdown_link_render(self):
-        rendered = str(
-            auto_format("**Важно**\n\n[Открыть сайт](https://example.com)")
-        )
+        rendered = str(auto_format("**Важно**\n\n[Открыть сайт](https://example.com)"))
 
         self.assertIn("<b>Важно</b>", rendered)
         self.assertIn(
@@ -102,15 +101,14 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
         rendered = str(auto_format("Перед списком\n- Пункт списка\nПосле списка"))
 
         self.assertIn(
-            "<p>Перед списком</p><ul><li>Пункт списка</li></ul>"
-            "<p>После списка</p>",
+            "<p>Перед списком</p><ul><li>Пункт списка</li></ul>" "<p>После списка</p>",
             rendered,
         )
         self.assertNotIn("</ul><br>", rendered)
 
     def test_unsafe_markup_and_non_http_links_are_not_rendered(self):
         rendered = str(
-            auto_format('<script>alert(1)</script> [опасно](javascript:alert(1))')
+            auto_format("<script>alert(1)</script> [опасно](javascript:alert(1))")
         )
 
         self.assertNotIn("<script>", rendered)
@@ -118,7 +116,9 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
 
     def test_paragraph_font_size_markers_render_as_limited_inline_styles(self):
         rendered = str(
-            auto_format("[[size=13]]Обычный абзац[[/size]]\n[[size=20]]Крупный абзац[[/size]]")
+            auto_format(
+                "[[size=13]]Обычный абзац[[/size]]\n[[size=20]]Крупный абзац[[/size]]"
+            )
         )
 
         self.assertIn('<span style="font-size:13px">Обычный абзац</span>', rendered)
@@ -127,8 +127,7 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
     def test_sized_paragraph_does_not_append_span_markup_to_plain_url(self):
         rendered = str(
             auto_format(
-                "[[size=20]]Источник фото: "
-                "https://example.com/image.jpg[[/size]]"
+                "[[size=20]]Источник фото: " "https://example.com/image.jpg[[/size]]"
             )
         )
 
@@ -156,7 +155,7 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
     def test_unsupported_paragraph_font_size_marker_is_escaped(self):
         rendered = str(auto_format("[[size=99]]Текст[[/size]]"))
 
-        self.assertNotIn('<span style=', rendered)
+        self.assertNotIn("<span style=", rendered)
         self.assertIn("[[size=99]]Текст[[/size]]", rendered)
 
     def test_internal_size_markers_do_not_use_description_character_limit(self):
@@ -166,8 +165,7 @@ class EventDescriptionFormattingTestCase(SimpleTestCase):
         )
 
         description = (
-            "[[size=13]]Первый абзац[[/size]]\n"
-            "[[size=20]]Второй абзац[[/size]]"
+            "[[size=13]]Первый абзац[[/size]]\n" "[[size=20]]Второй абзац[[/size]]"
         )
         self.assertEqual(
             description_character_count(description),
@@ -217,6 +215,106 @@ class EventRequestGuestNameTestCase(TestCase):
         self.assertEqual(guest.first_name, "Ирина Иванова")
 
 
+class EventDetailActionsWithoutTicketsTestCase(TestCase):
+    def setUp(self):
+        organizer = User.objects.create_user(
+            username="event-organizer",
+            email="organizer@example.com",
+            password="test-password",
+        )
+        self.event = Event.objects.create(
+            organizer=organizer,
+            title="Мероприятие без билетов",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=1),
+            allow_platform_requests=True,
+        )
+
+    def test_platform_request_and_favorite_are_shown_without_tickets(self):
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertContains(response, "question-organizator")
+        self.assertContains(
+            response,
+            reverse("visitor:toggle_favorite", args=[self.event.pk]),
+        )
+        self.assertNotContains(response, 'id="openBuyModal"')
+
+    def test_platform_request_is_hidden_when_disabled_but_favorite_remains(self):
+        self.event.allow_platform_requests = False
+        self.event.save(update_fields=["allow_platform_requests"])
+
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertNotContains(response, "question-organizator")
+        self.assertContains(
+            response,
+            reverse("visitor:toggle_favorite", args=[self.event.pk]),
+        )
+
+    def test_event_cards_show_favorite_overlay_in_catalog_and_landing(self):
+        self.event.status = "active"
+        self.event.save(update_fields=["status"])
+
+        for page_name in ("event_list", "landing_page"):
+            with self.subTest(page=page_name):
+                response = self.client.get(reverse(page_name))
+
+                self.assertContains(response, "event-favorite-overlay")
+                self.assertContains(
+                    response,
+                    reverse("visitor:toggle_favorite", args=[self.event.pk]),
+                )
+
+    def test_favorite_button_is_active_for_favorited_event(self):
+        from visitor_app.models import Favorite
+
+        visitor = User.objects.create_user(
+            username="visitor-user",
+            email="visitor@example.com",
+            password="test-password",
+            user_type="visitor",
+        )
+        Favorite.objects.create(user=visitor, event=self.event)
+        self.client.force_login(visitor)
+
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertContains(response, "event-favorite-overlay is-favorite")
+        self.assertContains(response, "Удалить из избранного")
+
+    def test_toggled_favorite_stays_active_after_page_reload(self):
+        self.event.status = "active"
+        self.event.save(update_fields=["status"])
+
+        visitor = User.objects.create_user(
+            username="favorite-visitor",
+            email="favorite-visitor@example.com",
+            password="test-password",
+            user_type="visitor",
+        )
+        self.client.force_login(visitor)
+
+        toggle_response = self.client.post(
+            reverse("visitor:toggle_favorite", args=[self.event.pk])
+        )
+
+        self.assertEqual(toggle_response.status_code, 200)
+        self.assertEqual(toggle_response.json()["status"], "added")
+
+        page_urls = (
+            reverse("event_detail", args=[self.event.pk]),
+            reverse("event_list"),
+            reverse("landing_page"),
+        )
+        for page_url in page_urls:
+            with self.subTest(page=page_url):
+                page_response = self.client.get(page_url)
+                self.assertContains(
+                    page_response, "event-favorite-overlay is-favorite"
+                )
+
+
 class VerifiedOrganizerStatusTestCase(SimpleTestCase):
     def test_email_verification_alone_does_not_verify_an_organizer(self):
         user = CustomUser(
@@ -249,7 +347,10 @@ class YandexVideoStorageTestCase(SimpleTestCase):
         storage = YandexVideoProcessingStorage(subdirectory="partner_video")
         storage.cloud_storage = MagicMock()
 
-        with patch("os.path.exists", return_value=True), patch("os.remove") as remove_mock:
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.remove") as remove_mock,
+        ):
             storage.delete("partner_video/test.mp4")
 
         storage.cloud_storage.delete.assert_called_once_with("partner_video/test.mp4")
@@ -380,7 +481,9 @@ class WatermarkTestCase(TestCase):
             try:
                 validate_video_duration(mock_file)
             except ValidationError:
-                self.fail("validate_video_duration raised ValidationError unexpectedly!")
+                self.fail(
+                    "validate_video_duration raised ValidationError unexpectedly!"
+                )
 
         # Удаляем временный файл
         if os.path.exists(test_video_path):
@@ -502,9 +605,7 @@ class PackageSubscriptionLifecycleTestCase(TestCase):
 
     def test_expired_without_scheduled_change_leaves_no_active_subscription(self):
         """После истечения подписки без запланированной смены активных нет."""
-        self._create_subscription(
-            end_date=timezone.now() - timedelta(days=1)
-        )
+        self._create_subscription(end_date=timezone.now() - timedelta(days=1))
 
         check_and_apply_scheduled_package_changes()
 
@@ -548,7 +649,9 @@ class AdminCrudRegressionTestCase(TestCase):
             user_type="partner",
         )
         self.package_basic = EventPackage.objects.create(name="Admin Basic", price=100)
-        self.package_priority = EventPackage.objects.create(name="Admin Priority", price=300)
+        self.package_priority = EventPackage.objects.create(
+            name="Admin Priority", price=300
+        )
 
     def test_document_rejection_updates_partner_status(self):
         document = PartnerDocument.objects.create(
@@ -567,7 +670,9 @@ class AdminCrudRegressionTestCase(TestCase):
         self.partner.refresh_from_db()
         document.refresh_from_db()
         self.assertEqual(self.partner.organizer_status, "rejected")
-        self.assertEqual(self.partner.organizer_rejection_reason, "Нужен читаемый документ")
+        self.assertEqual(
+            self.partner.organizer_rejection_reason, "Нужен читаемый документ"
+        )
         self.assertEqual(document.reviewer_id, self.admin_user.id)
         self.assertIsNotNone(document.reviewed_at)
 
@@ -594,7 +699,9 @@ class AdminCrudRegressionTestCase(TestCase):
                 UserPackageSubscription.objects.filter(pk__in=[first.pk, second.pk]),
             )
 
-        active = UserPackageSubscription.objects.filter(user=self.partner, is_active=True)
+        active = UserPackageSubscription.objects.filter(
+            user=self.partner, is_active=True
+        )
         self.assertEqual(active.count(), 1)
         self.assertEqual(active.first().pk, second.pk)
 
@@ -619,14 +726,19 @@ class AdminCrudRegressionTestCase(TestCase):
         request.user = self.admin_user
         admin_obj = EventAdmin(Event, self.site)
 
-        with patch.object(admin_obj, "message_user"), self.assertRaises(ValidationError):
+        with (
+            patch.object(admin_obj, "message_user"),
+            self.assertRaises(ValidationError),
+        ):
             admin_obj.to_active(request, Event.objects.filter(pk=pending_event.pk))
 
         pending_event.refresh_from_db()
         self.assertEqual(pending_event.status, "on_moderation")
         self.assertEqual(active_event.status, "active")
 
-    def test_admin_subscription_check_allows_editing_existing_active_event_at_limit(self):
+    def test_admin_subscription_check_allows_editing_existing_active_event_at_limit(
+        self,
+    ):
         package = EventPackage.objects.create(
             name="One Event Package",
             max_active_events=1,
@@ -688,11 +800,15 @@ class AdminCrudRegressionTestCase(TestCase):
         admin_obj = PayoutRequestAdmin(PayoutRequest, self.site)
 
         with patch.object(admin_obj, "message_user"):
-            admin_obj.mark_as_rejected(request, PayoutRequest.objects.filter(pk=payout.pk))
+            admin_obj.mark_as_rejected(
+                request, PayoutRequest.objects.filter(pk=payout.pk)
+            )
 
         payout.refresh_from_db()
         self.assertEqual(payout.status, "rejected")
-        self.assertEqual(payout.rejection_comment, "Не хватает подтверждающих документов")
+        self.assertEqual(
+            payout.rejection_comment, "Не хватает подтверждающих документов"
+        )
 
 
 @override_settings(
@@ -708,7 +824,9 @@ class ForgotPasswordTestCase(TestCase):
         response = self.client.post(self.URL, {"email": email})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Пользователь с таким адресом электронной почты не найден.")
+        self.assertContains(
+            response, "Пользователь с таким адресом электронной почты не найден."
+        )
         self.assertContains(response, f'value="{email}"')
         self.assertEqual(len(mail.outbox), 0)
 
@@ -759,7 +877,8 @@ class RegistrationEmailCodeTestCase(TestCase):
     def _extract_code_from_email(self, message):
         """Достаёт 5-значный код из HTML-альтернативы письма."""
         html = next(
-            content for content, mimetype in message.alternatives
+            content
+            for content, mimetype in message.alternatives
             if mimetype == "text/html"
         )
         match = re.search(r'class="code-value">(\d{5})<', html)
@@ -777,9 +896,7 @@ class RegistrationEmailCodeTestCase(TestCase):
         self.assertEqual(user.username, "newvisitor@example.com")
         self.assertEqual(user.user_type, "visitor")
         self.assertFalse(user.is_verified)
-        self.assertEqual(
-            self.client.session.get("unverified_user_id"), user.id
-        )
+        self.assertEqual(self.client.session.get("unverified_user_id"), user.id)
 
     def test_registration_without_personal_data_consent_fails(self):
         """Без согласия на обработку ПД регистрация не проходит (152-ФЗ)."""
@@ -787,9 +904,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         # Форма невалидна — пользователь не создан, редиректа нет
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(
-            User.objects.filter(email="newvisitor@example.com").exists()
-        )
+        self.assertFalse(User.objects.filter(email="newvisitor@example.com").exists())
 
     def test_registration_stores_consents(self):
         """Согласия сохраняются на пользователе вместе с датой."""
@@ -812,7 +927,6 @@ class RegistrationEmailCodeTestCase(TestCase):
         self.assertIsNotNone(user.consent_personal_data_at)
         self.assertTrue(user.consent_marketing)
         self.assertIsNotNone(user.consent_marketing_at)
-
 
     def test_registration_sends_verification_code_email(self):
         """На почту уходит письмо с темой и кодом, совпадающим с кодом в БД."""
@@ -854,9 +968,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         user.refresh_from_db()
         self.assertTrue(user.is_verified)
-        self.assertTrue(
-            EmailVerificationCode.objects.get(user=user).is_used
-        )
+        self.assertTrue(EmailVerificationCode.objects.get(user=user).is_used)
         self.assertNotIn("unverified_user_id", self.client.session)
         self.assertEqual(self.client.session.get("_auth_user_id"), str(user.id))
 
@@ -903,9 +1015,7 @@ class RegistrationEmailCodeTestCase(TestCase):
             EmailVerificationCode.objects.get(user=user, code=old_code).is_used
         )
         # Создан новый активный код
-        new_active = EmailVerificationCode.objects.filter(
-            user=user, is_used=False
-        )
+        new_active = EmailVerificationCode.objects.filter(user=user, is_used=False)
         self.assertEqual(new_active.count(), 1)
         self.assertNotEqual(new_active.first().code, old_code)
 
@@ -970,7 +1080,6 @@ class RegistrationEmailCodeTestCase(TestCase):
         # Письмо с новым кодом ушло
         self.assertEqual(len(mail.outbox), 1)
 
-
     def test_reregistration_overwrites_stale_unverified_account(self):
         """
         Повторная регистрация на email незавершённой заявки проходит как обычно.
@@ -1000,7 +1109,6 @@ class RegistrationEmailCodeTestCase(TestCase):
         )
         self.assertRedirects(second, self.VERIFY_URL)
 
-
         # Старый аккаунт удалён, создан новый с паролем владельца
         self.assertFalse(User.objects.filter(pk=attacker.pk).exists())
         owner = User.objects.get(email="owner@example.com")
@@ -1012,9 +1120,7 @@ class RegistrationEmailCodeTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
 
         # Код из письма подтверждается — владелец получает контроль
-        code = EmailVerificationCode.objects.get(
-            user=owner, is_used=False
-        ).code
+        code = EmailVerificationCode.objects.get(user=owner, is_used=False).code
         verify_response = self.client.post(
             self.VERIFY_URL,
             {
@@ -1097,9 +1203,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         cleanup_stale_unverified_accounts()
 
-        self.assertFalse(
-            User.objects.filter(email="newvisitor@example.com").exists()
-        )
+        self.assertFalse(User.objects.filter(email="newvisitor@example.com").exists())
 
     def test_fresh_unverified_account_survives_cleanup(self):
         """Свежая незавершённая регистрация задачей не удаляется."""
@@ -1109,9 +1213,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         cleanup_stale_unverified_accounts()
 
-        self.assertTrue(
-            User.objects.filter(email="newvisitor@example.com").exists()
-        )
+        self.assertTrue(User.objects.filter(email="newvisitor@example.com").exists())
 
     def test_verified_account_never_deleted_by_cleanup(self):
         """Подтверждённый аккаунт не удаляется задачей, даже «старый»."""
@@ -1125,9 +1227,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         cleanup_stale_unverified_accounts()
 
-        self.assertTrue(
-            User.objects.filter(email="newvisitor@example.com").exists()
-        )
+        self.assertTrue(User.objects.filter(email="newvisitor@example.com").exists())
 
     def test_verification_code_expires_after_15_minutes(self):
         """Код из письма не принимается после истечения срока действия."""
@@ -1187,9 +1287,7 @@ class RegistrationEmailCodeTestCase(TestCase):
             "agree_user_agreement": "on",
             "agree_personal_data": "on",
         }
-        logo = SimpleUploadedFile(
-            "logo.png", b"png-data", content_type="image/png"
-        )
+        logo = SimpleUploadedFile("logo.png", b"png-data", content_type="image/png")
         document = SimpleUploadedFile(
             "doc.pdf", b"pdf-data", content_type="application/pdf"
         )
@@ -1212,9 +1310,7 @@ class RegistrationEmailCodeTestCase(TestCase):
 
         cleanup_stale_unverified_accounts()
 
-        self.assertFalse(
-            User.objects.filter(email="files@example.com").exists()
-        )
+        self.assertFalse(User.objects.filter(email="files@example.com").exists())
         # Файлы удалены из хранилища, а не остались «висеть»
         self.assertFalse(profile.logo.storage.exists(profile.logo.name))
         self.assertFalse(doc.document.storage.exists(doc.document.name))

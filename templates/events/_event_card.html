@@ -4,13 +4,16 @@
         {% if ev.badge_text %}
         <span class="event-badge {{ ev.badge_css_class }}">{{ ev.badge_text }}</span>
         {% endif %}
-        {% if ev.has_real_image %}
-        <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
-            <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+        <div class="event-card-image-container">
+            {% if ev.has_real_image %}
+            <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
+                <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+            </div>
+            {% else %}
+            <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+            {% endif %}
+            {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
         </div>
-        {% else %}
-        <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
-        {% endif %}
         <div class="card-body">
             <h5 class="card-title">{{ ev.title }}</h5>
             {% if ev.organizer.is_verified_organizer %}

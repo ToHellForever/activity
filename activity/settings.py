@@ -7,7 +7,7 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # encoding='utf-8-sig' автоматически убирает BOM, если файл сохранён в UTF-8 with BOM
-load_dotenv(os.path.join(BASE_DIR, '.env'), encoding='utf-8-sig')
+load_dotenv(os.path.join(BASE_DIR, ".env"), encoding="utf-8-sig")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -18,42 +18,42 @@ YANDEX_MAPS_API_KEY = os.getenv("YANDEX_MAPS_API_KEY")
 DEBUG = os.getenv("DEBUG_MODE", "False").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '201.51.30.31',
-    'bizafisha.ru',
-    'biznesafisha.ru',
-    'бизафиша.рф',
-    'бизнесафиша.рф',
+    "localhost",
+    "127.0.0.1",
+    "201.51.30.31",
+    "bizafisha.ru",
+    "biznesafisha.ru",
+    "бизафиша.рф",
+    "бизнесафиша.рф",
     # Punycode-версии кириллических доменов — браузер присылает Host в ASCII
-    'xn--80aabyec7f7a.xn--p1ai',
-    'xn--80aabqjfd1bzb5a9b.xn--p1ai',
+    "xn--80aabyec7f7a.xn--p1ai",
+    "xn--80aabqjfd1bzb5a9b.xn--p1ai",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost',
-    'http://127.0.0.1',
-    'http://201.51.30.31',
-    'https://201.51.30.31',
-    'https://bizafisha.ru',
-    'https://biznesafisha.ru',
-    'https://бизафиша.рф',
-    'https://бизнесафиша.рф',
-    'http://bizafisha.ru',
-    'http://biznesafisha.ru',
-    'http://бизафиша.рф',
-    'http://бизнесафиша.рф',
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://201.51.30.31",
+    "https://201.51.30.31",
+    "https://bizafisha.ru",
+    "https://biznesafisha.ru",
+    "https://бизафиша.рф",
+    "https://бизнесафиша.рф",
+    "http://bizafisha.ru",
+    "http://biznesafisha.ru",
+    "http://бизафиша.рф",
+    "http://бизнесафиша.рф",
     # Punycode-версии кириллических доменов
-    'https://xn--80aabyec7f7a.xn--p1ai',
-    'https://xn--80aabqjfd1bzb5a9b.xn--p1ai',
-    'http://xn--80aabyec7f7a.xn--p1ai',
-    'http://xn--80aabqjfd1bzb5a9b.xn--p1ai',
-    ] 
+    "https://xn--80aabyec7f7a.xn--p1ai",
+    "https://xn--80aabqjfd1bzb5a9b.xn--p1ai",
+    "http://xn--80aabyec7f7a.xn--p1ai",
+    "http://xn--80aabqjfd1bzb5a9b.xn--p1ai",
+]
 # URL сайта для генерации QR-кодов
-SITE_URL = os.getenv('SITE_URL', 'https://bizafisha.ru')
+SITE_URL = os.getenv("SITE_URL", "https://bizafisha.ru")
 
 # Nginx/reverse proxy сообщает Django исходную схему запроса.
 # Это позволяет sitemap.xml и canonical URL использовать HTTPS в production.
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     "venues",
     "core",
     "payment",
-    'storages',
+    "storages",
     "imagekit",
     "django_celery_beat",
 ]
@@ -95,12 +95,13 @@ TEMPLATES = [
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
-        "context_processors": [
+            "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.admin_quick_links",
                 "core.context_processors.unread_badges",
+                "core.context_processors.favorite_event_ids",
             ],
         },
     },
@@ -156,59 +157,62 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, "static"),
 ]
 
 # MIME types для .js.html файлов (чтобы Django отдавал их как JavaScript)
 import mimetypes
-mimetypes.add_type('text/javascript', '.js.html')
-mimetypes.add_type('text/javascript', '.js')
+
+mimetypes.add_type("text/javascript", ".js.html")
+mimetypes.add_type("text/javascript", ".js")
 
 # MIME types для .css.html файлов
-mimetypes.add_type('text/css', '.css.html')
+mimetypes.add_type("text/css", ".css.html")
 
 FIXTURE_DIRS = [
-    os.path.join(BASE_DIR, 'fixtures'),
+    os.path.join(BASE_DIR, "fixtures"),
 ]
 
-USE_YANDEX_CLOUD = os.getenv('USE_YANDEX_CLOUD', 'False').lower() == 'true'
+USE_YANDEX_CLOUD = os.getenv("USE_YANDEX_CLOUD", "False").lower() == "true"
 
 # Путь к водяному знаку
-WATERMARK_PATH = os.path.join(BASE_DIR, 'media', 'watermark.png')
+WATERMARK_PATH = os.path.join(BASE_DIR, "media", "watermark.png")
 
 # Временная директория для обработки файлов
-MEDIA_TEMP_DIR = os.path.join(BASE_DIR, 'media_temp')
+MEDIA_TEMP_DIR = os.path.join(BASE_DIR, "media_temp")
 
 if USE_YANDEX_CLOUD:
     # Используем кастомные хранилища с обработкой
-    DEFAULT_FILE_STORAGE = 'core.storage_backends.YandexCloudWithProcessingStorage'
-    
+    DEFAULT_FILE_STORAGE = "core.storage_backends.YandexCloudWithProcessingStorage"
+
     # Специальные хранилища для разных типов файлов
-    EVENT_IMAGE_STORAGE = 'core.image_storage.YandexEventImageProcessingStorage'
-    EVENT_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
-    EVENT_DOCUMENT_STORAGE = 'core.document_storage.YandexDocumentProcessingStorage'
-    VENUE_IMAGE_STORAGE = 'core.image_storage.YandexImageProcessingStorage'
-    VENUE_VIDEO_STORAGE = 'core.video_storage.YandexVideoProcessingStorage'
+    EVENT_IMAGE_STORAGE = "core.image_storage.YandexEventImageProcessingStorage"
+    EVENT_VIDEO_STORAGE = "core.video_storage.YandexVideoProcessingStorage"
+    EVENT_DOCUMENT_STORAGE = "core.document_storage.YandexDocumentProcessingStorage"
+    VENUE_IMAGE_STORAGE = "core.image_storage.YandexImageProcessingStorage"
+    VENUE_VIDEO_STORAGE = "core.video_storage.YandexVideoProcessingStorage"
     # Настройки Yandex Object Storage (S3-совместимый)
-    AWS_ACCESS_KEY_ID = os.getenv('YANDEX_CLOUD_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('YANDEX_CLOUD_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('YANDEX_CLOUD_BUCKET_NAME')
-    AWS_S3_ENDPOINT_URL = os.getenv('YANDEX_CLOUD_ENDPOINT_URL', 'https://storage.yandexcloud.net')
-    AWS_S3_REGION_NAME = 'ru-central1'
+    AWS_ACCESS_KEY_ID = os.getenv("YANDEX_CLOUD_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("YANDEX_CLOUD_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("YANDEX_CLOUD_BUCKET_NAME")
+    AWS_S3_ENDPOINT_URL = os.getenv(
+        "YANDEX_CLOUD_ENDPOINT_URL", "https://storage.yandexcloud.net"
+    )
+    AWS_S3_REGION_NAME = "ru-central1"
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None  # Yandex Cloud не требует ACL
-    
+
     # CDN URL для изображений (опционально)
-    YANDEX_CLOUD_CDN_URL = os.getenv('YANDEX_CLOUD_CDN_URL', '')
-    
+    YANDEX_CLOUD_CDN_URL = os.getenv("YANDEX_CLOUD_CDN_URL", "")
+
     # Отключаем локальное хранение медиа в продакшене (опционально)
-    MEDIA_ROOT = '' 
+    MEDIA_ROOT = ""
 else:
     # Локальное хранилище для разработки
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
     # Для локального режима тоже создаем медиа-директорию
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 
@@ -222,9 +226,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # "550-5.7.26 Your email has been blocked because the sender is ..."
 # ещё до того, как пользователь принесёт отчёт о недоставке.
 # EMAIL_BACKEND для SMTP отправки использует failover-бэкенд ниже.
-EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND", "core.mail_logging.LoggingEmailBackend"
-)
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "core.mail_logging.LoggingEmailBackend")
 if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
     EMAIL_BACKEND = "core.mail_logging.LoggingEmailBackend"
 
@@ -280,7 +282,7 @@ LOGGING = {
             "handlers": ["file"],
             "level": "DEBUG",
         },
-        "venues": { 
+        "venues": {
             "handlers": ["file"],
             "level": "DEBUG",
         },
@@ -406,7 +408,7 @@ AGENT_FEE_PERCENT = float(os.getenv("AGENT_FEE_PERCENT", "10"))
 AGENT_REPORT_DUE_DAY = int(os.getenv("AGENT_REPORT_DUE_DAY", "5"))
 
 USE_L10N = True
-LANGUAGE_CODE = 'ru-ru'
+LANGUAGE_CODE = "ru-ru"
 
 # === ВАЛИДАЦИЯ ОБЯЗАТЕЛЬНЫХ ПЕРЕМЕННЫХ ===
 from django.core.exceptions import ImproperlyConfigured

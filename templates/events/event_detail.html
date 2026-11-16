@@ -138,6 +138,7 @@
             <img src="/media/icon/logo.svg" class="card-logo-placeholder" alt="{{ event.title }}">
         </div>
     {% endif %}
+    {% include 'events/_event_favorite_button.html' with favorite_event=event %}
 </div>
         <div class='col-12 col-md-6 event-detail-info'>
             <div class='event-info'>
@@ -220,17 +221,24 @@
                 </div>
                 {% endfor %}
         </div>
-            <div class="mt-2 d-flex flex-column">
-                {% if event.allow_platform_requests %}
-                <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
-                {% endif %}
-                <div class="d-flex align-items-center">
+        <div class="mt-2 d-flex flex-column">
+            {% if event.allow_platform_requests %}
+            <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+            {% endif %}
+            <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>{% if has_only_free_tickets %}ЗАРЕГИСТРИРОВАТЬСЯ{% else %}КУПИТЬ БИЛЕТ{% endif %}</button>
-                <a href="{% url 'visitor:toggle_favorite' event.id %}" class="favourites-link" data-event-id="{{ event.id }}"><img src="/media/icon/favourites.png" alt="" class="favourites-icon ml-2"></a>
             </div>
         </div>
     </div>
     {% endwith %}
+    {% else %}
+    <div class="mt-2">
+        <div class="d-flex align-items-center">
+        {% if event.allow_platform_requests %}
+        <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+        {% endif %}
+        </div>
+    </div>
     {% endif %}
 </div>
 </div>
@@ -337,13 +345,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -376,13 +389,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -414,13 +432,18 @@
                 {% if ev.has_real_image %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.primary_image_url }}')">
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% elif ev.images.all %}
                 <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
                     <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
-                <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                <div class="event-card-image-container">
+                    <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
+                    {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ ev.title }}</h5>
@@ -448,6 +471,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/pages/events/favorites.js' %}"></script>
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
 <script>
     window.BULK_BUY_URL = "{% url 'payment:bulk_buy_tickets' event.id %}";
