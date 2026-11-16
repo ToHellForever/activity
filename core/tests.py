@@ -252,6 +252,22 @@ class EventDetailActionsWithoutTicketsTestCase(TestCase):
             reverse("visitor:toggle_favorite", args=[self.event.pk]),
         )
 
+    def test_event_package_badge_is_below_verified_organizer_badge(self):
+        self.event.organizer.user_type = "partner"
+        self.event.organizer.organizer_status = "approved"
+        self.event.organizer.save(update_fields=["user_type", "organizer_status"])
+        package = EventPackage.objects.create(
+            name="Партнёрский",
+            event_card_type="extended",
+        )
+        self.event.package = package
+        self.event.image = "event_images/test.jpg"
+        self.event.save(update_fields=["package", "image"])
+
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertContains(response, "event-badge--below-verified")
+
     def test_event_cards_show_favorite_overlay_in_catalog_and_landing(self):
         self.event.status = "active"
         self.event.save(update_fields=["status"])

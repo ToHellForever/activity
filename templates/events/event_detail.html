@@ -72,7 +72,7 @@
             <!-- Карусель только из дополнительных фото (без основного) -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
                 {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
                 {% endif %}
                 {% if event.organizer.is_verified_organizer %}
                 <div class="verified-badge">
@@ -108,7 +108,7 @@
             <!-- Одиночное основное фото -->
             <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.primary_image_url }}')">
                 {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
                 {% endif %}
                 <img src="{{ event.primary_image_url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
@@ -122,7 +122,7 @@
             <!-- Одиночное дополнительное фото -->
             <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image.url }}')">
                 {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}">{{ event.badge_text }}</span>
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
                 {% endif %}
                 <img src="{{ event.images.first.image.url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
