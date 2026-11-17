@@ -679,6 +679,17 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         }.get(self.package.event_card_type, "")
 
     @property
+    def badge_text_detail(self):
+        """Текст бейджа на странице мероприятия.
+
+        Бейдж «РЕКОМЕНДУЕМ» показываем только в карточках каталога,
+        в деталях мероприятия он не нужен.
+        """
+        if self.package and self.package.event_card_type == "priority":
+            return ""
+        return self.badge_text
+
+    @property
     def ends_at(self):
         """Вычисляет время окончания мероприятия на основе даты и длительности."""
         if not self.duration or not self.date_time:

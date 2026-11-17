@@ -30,8 +30,8 @@
         {% if event.image and event.images.count > 1 %}
             <!-- Карусель: основное фото + дополнительные -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
-                {% if event.badge_text %}
-                <span class="event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
+                {% if event.badge_text_detail %}
+                <span class="event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text_detail }}</span>
                 {% endif %}
                 {% if event.organizer.is_verified_organizer %}
                 <div class="verified-badge">
@@ -73,8 +73,8 @@
         {% elif event.images.count > 1 %}
             <!-- Карусель только из дополнительных фото (без основного) -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
-                {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
+                {% if event.badge_text_detail %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text_detail }}</span>
                 {% endif %}
                 {% if event.organizer.is_verified_organizer %}
                 <div class="verified-badge">
@@ -111,8 +111,8 @@
         {% elif event.image %}
             <!-- Одиночное основное фото -->
             <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.primary_image_url }}')">
-                {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
+                {% if event.badge_text_detail %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text_detail }}</span>
                 {% endif %}
                 <img src="{{ event.primary_image_url }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
@@ -125,8 +125,8 @@
         {% else %}
             <!-- Одиночное дополнительное фото -->
             <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}')">
-                {% if event.badge_text %}
-                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
+                {% if event.badge_text_detail %}
+                <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text_detail }}</span>
                 {% endif %}
                 <img src="{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
