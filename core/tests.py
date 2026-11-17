@@ -29,6 +29,7 @@ from core.models import (
     PayoutDetails,
     PayoutRequest,
     EmailVerificationCode,
+    EventBookingRequest,
 )
 from core.admin import (
     EventAdmin,
@@ -240,13 +241,14 @@ class EventDetailActionsWithoutTicketsTestCase(TestCase):
         )
         self.assertNotContains(response, 'id="openBuyModal"')
 
-    def test_platform_request_is_hidden_when_disabled_but_favorite_remains(self):
+    def test_question_to_organizer_is_hidden_when_disabled_but_favorite_remains(self):
         self.event.allow_platform_requests = False
         self.event.save(update_fields=["allow_platform_requests"])
 
         response = self.client.get(reverse("event_detail", args=[self.event.pk]))
 
-        self.assertNotContains(response, "question-organizator")
+        self.assertContains(response, "Оставить заявку на участие")
+        self.assertNotContains(response, "Задать вопрос организатору")
         self.assertContains(
             response,
             reverse("visitor:toggle_favorite", args=[self.event.pk]),
@@ -326,9 +328,7 @@ class EventDetailActionsWithoutTicketsTestCase(TestCase):
         for page_url in page_urls:
             with self.subTest(page=page_url):
                 page_response = self.client.get(page_url)
-                self.assertContains(
-                    page_response, "event-favorite-overlay is-favorite"
-                )
+                self.assertContains(page_response, "event-favorite-overlay is-favorite")
 
 
 class VerifiedOrganizerStatusTestCase(SimpleTestCase):
@@ -1398,3 +1398,136 @@ class EventFormDescriptionFieldTestCase(SimpleTestCase):
 
         self.assertIn("description_font_size", form.fields)
         self.assertTrue(form.fields["description_font_size"].choices)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="no-reply@example.com",
+    SUPPORT_FROM_EMAIL="no-reply@example.com",
+)
+class EventBookingRequestTestCase(TestCase):
+    """Заявка на участие в мероприятии — как заявка на площадку."""
+
+    def setUp(self):
+        self.organizer = User.objects.create_user(
+            username="organizer@example.com",
+            email="organizer@example.com",
+            password="test-password",
+        )
+        self.event = Event.objects.create(
+            organizer=self.organizer,
+            title="Деловой завтрак",
+            description="Описание",
+            date_time=timezone.now() + timedelta(days=3),
+            allow_platform_requests=True,
+        )
+        self.url = reverse("send_event_booking_request", args=[self.event.pk])
+
+    def _payload(self, **overrides):
+        payload = {
+            "name": "Иван Петров",
+            "phone": "+79996052164",
+            "email": "ivan@example.com",
+            "participants_count": "2",
+            "comment": "Нужны два места",
+            "personal_data_consent": "on",
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_request_is_saved_and_emailed_to_organizer(self):
+        response = self.client.post(
+            self.url,
+            self._payload(),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        booking = EventBookingRequest.objects.get()
+        self.assertEqual(booking.event, self.event)
+        self.assertEqual(booking.name, "Иван Петров")
+        self.assertEqual(booking.phone, "+79996052164")
+        self.assertEqual(booking.email, "ivan@example.com")
+        self.assertEqual(booking.participants_count, 2)
+        self.assertEqual(booking.status, "new")
+
+        # Письмо организатору + копия администратору платформы
+        self.assertEqual(len(mail.outbox), 2)
+        organizer_letter = mail.outbox[0]
+        self.assertEqual(organizer_letter.to, ["organizer@example.com"])
+        self.assertIn(self.event.title, organizer_letter.subject)
+        self.assertIn("Иван Петров", organizer_letter.body)
+        self.assertIn("+79996052164", organizer_letter.body)
+
+    def test_anonymous_without_consent_is_rejected(self):
+        response = self.client.post(
+            self.url,
+            self._payload(personal_data_consent=""),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])
+        self.assertFalse(EventBookingRequest.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_invalid_phone_is_rejected(self):
+        response = self.client.post(
+            self.url,
+            self._payload(phone="123"),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("phone", response.json()["errors"])
+        self.assertFalse(EventBookingRequest.objects.exists())
+
+    def test_event_without_platform_requests_still_accepts_booking(self):
+        self.event.allow_platform_requests = False
+        self.event.save(update_fields=["allow_platform_requests"])
+
+        response = self.client.post(
+            self.url,
+            self._payload(),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        self.assertTrue(EventBookingRequest.objects.exists())
+
+    def test_authenticated_user_request_links_to_account(self):
+        visitor = User.objects.create_user(
+            username="visitor@example.com",
+            email="visitor@example.com",
+            password="test-password",
+            user_type="visitor",
+        )
+        self.client.force_login(visitor)
+
+        response = self.client.post(
+            self.url,
+            self._payload(personal_data_consent=""),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        booking = EventBookingRequest.objects.get()
+        self.assertEqual(booking.user, visitor)
+
+    def test_booking_link_and_modal_are_shown_on_event_page(self):
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertContains(response, "Оставить заявку на участие")
+        self.assertContains(response, 'id="eventBookingModal"')
+        self.assertContains(response, self.url)
+
+    def test_booking_modal_always_shown_even_when_requests_disabled(self):
+        self.event.allow_platform_requests = False
+        self.event.save(update_fields=["allow_platform_requests"])
+
+        response = self.client.get(reverse("event_detail", args=[self.event.pk]))
+
+        self.assertContains(response, 'id="eventBookingModal"')

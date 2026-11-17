@@ -276,10 +276,12 @@ a {
   color: #00056e;
   font-family: "Verdana";
   font-weight: 700;
-  font-size: clamp(0.7rem, 1vw, 1rem);
-  margin-left: 5px;
+  font-size: clamp(0.8rem, 1vw, 1rem);
   cursor: pointer;
+  display: block;
+  width: fit-content;
 }
+
 .buy-button-detail {
   width: 300px;
   background: #ff8348;

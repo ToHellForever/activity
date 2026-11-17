@@ -10,7 +10,12 @@ from django.http import FileResponse, Http404
 from django.core.files.base import ContentFile
 from django.contrib.auth import login, logout
 from django.contrib.auth import logout as auth_logout
-from .forms import CustomAuthenticationForm, CustomUserCreationForm, PartnerRegistrationForm
+from .forms import (
+    CustomAuthenticationForm,
+    CustomUserCreationForm,
+    PartnerRegistrationForm,
+    EventBookingRequestForm,
+)
 from django.views.decorators.cache import never_cache
 from .models import Event, MainTag
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -24,7 +29,7 @@ from . import legal_pages
 from partner_app.models import PartnerProfile
 from .models import EmailVerificationCode
 from django.views.decorators.http import require_POST, require_http_methods
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, EmailMessage, send_mail
 from django.contrib import messages
 from django.template.loader import render_to_string
 import logging
@@ -53,8 +58,8 @@ logger = logging.getLogger(__name__)
 # (для проверки отображения плейсхолдеров).
 # Вернуть обратно: поставить False или удалить эти строки.
 # ═══════════════════════════════════════════════════════════════════
-TEMP_HIDE_EVENTS = False   # True = скрывать все мероприятия (показывать плейсхолдер)
-TEMP_HIDE_VENUES = False   # True = скрывать все площадки (показывать плейсхолдер)
+TEMP_HIDE_EVENTS = False  # True = скрывать все мероприятия (показывать плейсхолдер)
+TEMP_HIDE_VENUES = False  # True = скрывать все площадки (показывать плейсхолдер)
 
 
 def landing_page(request):
@@ -79,6 +84,7 @@ def landing_page(request):
     if selected_date_from:
         try:
             from datetime import datetime, timedelta
+
             date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
             base_events = base_events.filter(date_time__gte=date_from)
         except ValueError:
@@ -86,6 +92,7 @@ def landing_page(request):
     if selected_date_to:
         try:
             from datetime import datetime, timedelta
+
             date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
             base_events = base_events.filter(date_time__lte=date_to + timedelta(days=1))
         except ValueError:
@@ -94,8 +101,8 @@ def landing_page(request):
         base_events = base_events.filter(title__icontains=search_title)
 
     # Три переменные с разным лимитом для разных экранов
-    active_events_mobile = base_events[:2]   # Мобильные: 2 события
-    active_events_tablet = base_events[:3]   # Планшет: 3 события
+    active_events_mobile = base_events[:2]  # Мобильные: 2 события
+    active_events_tablet = base_events[:3]  # Планшет: 3 события
     active_events_desktop = base_events[:4]  # Десктоп: 4 события
 
     # Get published venues for the carousel
@@ -107,8 +114,8 @@ def landing_page(request):
     )
 
     # Три переменные с разным лимитом для разных экранов
-    active_venues_mobile = active_venues[:2]   # Мобильные: 2 площадки
-    active_venues_tablet = active_venues[:3]   # Планшет: 3 площадки
+    active_venues_mobile = active_venues[:2]  # Мобильные: 2 площадки
+    active_venues_tablet = active_venues[:3]  # Планшет: 3 площадки
     active_venues_desktop = active_venues[:4]  # Десктоп: 4 площадки
 
     # Флаги для проверки наличия данных
@@ -118,13 +125,18 @@ def landing_page(request):
     # ВРЕМЕННО: принудительно скрываем мероприятия/площадки для проверки плейсхолдеров
     if TEMP_HIDE_EVENTS:
         has_events = False
-        active_events_mobile = active_events_tablet = active_events_desktop = Event.objects.none()
+        active_events_mobile = active_events_tablet = active_events_desktop = (
+            Event.objects.none()
+        )
     if TEMP_HIDE_VENUES:
         has_venues = False
-        active_venues_mobile = active_venues_tablet = active_venues_desktop = Venue.objects.none()
+        active_venues_mobile = active_venues_tablet = active_venues_desktop = (
+            Venue.objects.none()
+        )
 
     # Получаем все категории для выпадающего списка
     from core.models import Category
+
     categories = Category.objects.all().order_by("name")
 
     return render(
@@ -146,6 +158,8 @@ def landing_page(request):
             "has_venues": has_venues,
         },
     )
+
+
 @never_cache
 def login_view(request):
     if request.user.is_authenticated:
@@ -184,6 +198,7 @@ def login_view(request):
 
     return render(request, "registration/login.html", {"form": form})
 
+
 def generate_temporary_password(length=10):
     """Генерация временного пароля (остается для обратной совместимости)."""
     characters = string.ascii_letters + string.digits
@@ -202,8 +217,10 @@ def forgot_password(request):
             # Сохраняем токен (будет проверен на странице reset_password)
             user.password_reset_token = reset_token
             user.password_reset_created_at = timezone.now()
-            user.save(update_fields=["password_reset_token", "password_reset_created_at"])
-            
+            user.save(
+                update_fields=["password_reset_token", "password_reset_created_at"]
+            )
+
             # Формируем ссылку на страницу сброса пароля
             reset_url = request.build_absolute_uri(
                 reverse("reset_password", kwargs={"token": reset_token})
@@ -256,55 +273,78 @@ def reset_password(request, token):
         user.password_reset_token = None
         user.password_reset_created_at = None
         user.save(update_fields=["password_reset_token", "password_reset_created_at"])
-        return render(request, "registration/reset_password.html", {
-            "error": "Срок действия ссылки истёк. Запросите восстановление пароля ещё раз.",
-        }, status=400)
-    
+        return render(
+            request,
+            "registration/reset_password.html",
+            {
+                "error": "Срок действия ссылки истёк. Запросите восстановление пароля ещё раз.",
+            },
+            status=400,
+        )
+
     if request.method == "POST":
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
-        
+
         if not password1 or not password2:
-            return render(request, "registration/reset_password.html", {
-                "error": "Заполните оба поля.",
-                "token": token,
-            })
-        
+            return render(
+                request,
+                "registration/reset_password.html",
+                {
+                    "error": "Заполните оба поля.",
+                    "token": token,
+                },
+            )
+
         if password1 != password2:
-            return render(request, "registration/reset_password.html", {
-                "error": "Пароли не совпадают.",
-                "token": token,
-            })
-        
+            return render(
+                request,
+                "registration/reset_password.html",
+                {
+                    "error": "Пароли не совпадают.",
+                    "token": token,
+                },
+            )
+
         if len(password1) < 8:
-            return render(request, "registration/reset_password.html", {
-                "error": "Пароль должен быть не менее 8 символов.",
-                "token": token,
-            })
-        
+            return render(
+                request,
+                "registration/reset_password.html",
+                {
+                    "error": "Пароль должен быть не менее 8 символов.",
+                    "token": token,
+                },
+            )
+
         # Устанавливаем новый пароль
         user.set_password(password1)
         user.password_reset_token = None  # Очищаем токен
         user.password_reset_created_at = None
-        user.save(update_fields=["password", "password_reset_token", "password_reset_created_at"])
-        
+        user.save(
+            update_fields=[
+                "password",
+                "password_reset_token",
+                "password_reset_created_at",
+            ]
+        )
+
         return redirect("login")
-    
+
     return render(request, "registration/reset_password.html", {"token": token})
+
 
 @never_cache
 def register_view(request):
     """Обрабатывает регистрацию нового пользователя."""
     from .forms import CustomUserCreationForm, VisitorRegistrationForm
-    
+
     form = VisitorRegistrationForm()
     partner_form = PartnerRegistrationForm()
     user_type = "visitor"  # По умолчанию активен блок участника
-    
+
     if request.method == "POST":
         user_type = request.POST.get("form_type", "visitor")
 
-        
         if user_type == "partner":
             partner_form = PartnerRegistrationForm(request.POST, request.FILES)
             if partner_form.is_valid():
@@ -323,41 +363,57 @@ def register_view(request):
 
                 # Фиксируем согласия с датой (152-ФЗ)
                 from django.utils import timezone as _tz
-                user.consent_personal_data = partner_form.cleaned_data.get("agree_personal_data", False)
+
+                user.consent_personal_data = partner_form.cleaned_data.get(
+                    "agree_personal_data", False
+                )
                 user.consent_personal_data_at = _tz.now()
-                user.save(update_fields=[
-                    "consent_personal_data",
-                    "consent_personal_data_at",
-                ])
+                user.save(
+                    update_fields=[
+                        "consent_personal_data",
+                        "consent_personal_data_at",
+                    ]
+                )
                 user.set_marketing_consent(
                     partner_form.cleaned_data.get("agree_marketing", False),
                     record_unchanged=True,
                 )
-                
+
                 # Создаём профиль партнёра
                 from django.db import transaction
                 from partner_app.models import assign_agent_contract_number
+
                 with transaction.atomic():
                     profile = PartnerProfile.objects.create(
                         user=user,
                         company_name=partner_form.cleaned_data["company_name"],
                         short_name=partner_form.cleaned_data.get("short_name", ""),
-                        registration_type=partner_form.cleaned_data.get("registration_type", "legal"),
+                        registration_type=partner_form.cleaned_data.get(
+                            "registration_type", "legal"
+                        ),
                         description=partner_form.cleaned_data.get("description", ""),
                         ogrn=partner_form.cleaned_data.get("ogrn", ""),
                         inn=partner_form.cleaned_data.get("inn", ""),
                         kpp=partner_form.cleaned_data.get("kpp", ""),
-                        legal_address=partner_form.cleaned_data.get("legal_address", ""),
+                        legal_address=partner_form.cleaned_data.get(
+                            "legal_address", ""
+                        ),
                         postal_code=partner_form.cleaned_data.get("postal_code", ""),
-                        actual_address=partner_form.cleaned_data.get("actual_address", ""),
+                        actual_address=partner_form.cleaned_data.get(
+                            "actual_address", ""
+                        ),
                         website=partner_form.cleaned_data.get("website", ""),
                         contact_person=partner_form.cleaned_data["contact_person"],
                         phone=partner_form.cleaned_data["phone"],
                         email=partner_form.cleaned_data["email"],
-                        additional_email=partner_form.cleaned_data.get("additional_email", ""),
+                        additional_email=partner_form.cleaned_data.get(
+                            "additional_email", ""
+                        ),
                         vk_link=partner_form.cleaned_data.get("vk_link", ""),
                         max_link=partner_form.cleaned_data.get("max_link", ""),
-                        telegram_link=partner_form.cleaned_data.get("telegram_link", ""),
+                        telegram_link=partner_form.cleaned_data.get(
+                            "telegram_link", ""
+                        ),
                         cases=partner_form.cleaned_data.get("cases", ""),
                         reviews=partner_form.cleaned_data.get("reviews", ""),
                         logo=partner_form.cleaned_data.get("logo"),
@@ -367,11 +423,10 @@ def register_view(request):
                     # до 3 файлов (лишние игнорируем). Раньше файлы из формы
                     # вообще не сохранялись — терялись молча.
                     from .models import PartnerDocument
+
                     documents = request.FILES.getlist("documents")[:3]
                     for doc_file in documents:
-                        PartnerDocument.objects.create(
-                            user=user, document=doc_file
-                        )
+                        PartnerDocument.objects.create(user=user, document=doc_file)
                     if documents:
                         # Документы загружены — отправляем на рассмотрение
                         user.organizer_status = "pending"
@@ -383,7 +438,7 @@ def register_view(request):
                 # Отправляем код подтверждения
                 form_instance = CustomUserCreationForm(instance=user)
                 form_instance.send_verification_code(request)
-                request.session['unverified_user_id'] = user.id
+                request.session["unverified_user_id"] = user.id
                 return redirect("verify_email")
         else:
             form = VisitorRegistrationForm(request.POST)
@@ -401,11 +456,12 @@ def register_view(request):
 
                 # Отправляем код подтверждения на почту
                 from .forms import CustomUserCreationForm
+
                 verification_form = CustomUserCreationForm(instance=user)
                 verification_form.send_verification_code(request)
 
                 # Сохраняем пользователя в сессии для дальнейшего подтверждения
-                request.session['unverified_user_id'] = user.id
+                request.session["unverified_user_id"] = user.id
 
                 # Редирект на страницу ввода кода подтверждения
                 return redirect("verify_email")
@@ -415,15 +471,16 @@ def register_view(request):
         "partner_form": partner_form,
         "active_form_type": user_type,
     }
-    
+
     return render(request, "registration/register.html", context)
+
 
 def verify_email_view(request):
     """Обрабатывает ввод кода подтверждения."""
-    if 'unverified_user_id' not in request.session:
-        return redirect('login')
+    if "unverified_user_id" not in request.session:
+        return redirect("login")
 
-    user_id = request.session['unverified_user_id']
+    user_id = request.session["unverified_user_id"]
     user = get_object_or_404(CustomUser, id=user_id)
 
     if request.method == "POST":
@@ -437,6 +494,7 @@ def verify_email_view(request):
 
         # Проверяем код (только активный, не отменённый и не просроченный)
         from .models import EmailVerificationCode
+
         verification_code = EmailVerificationCode.objects.filter(
             user=user,
             code=entered_code,
@@ -457,8 +515,8 @@ def verify_email_view(request):
             login(request, user)
 
             # Очищаем сессию
-            if 'unverified_user_id' in request.session:
-                del request.session['unverified_user_id']
+            if "unverified_user_id" in request.session:
+                del request.session["unverified_user_id"]
 
             # Редирект в зависимости от роли
             if user.user_type == "partner":
@@ -467,43 +525,67 @@ def verify_email_view(request):
                 return redirect("visitor:dashboard")
         else:
             # Код неверный
-            return render(request, "registration/verify_email.html", {
-                "error_message": "Неверный код подтверждения. Пожалуйста, попробуйте еще раз."
-            })
+            return render(
+                request,
+                "registration/verify_email.html",
+                {
+                    "error_message": "Неверный код подтверждения. Пожалуйста, попробуйте еще раз."
+                },
+            )
 
     return render(request, "registration/verify_email.html")
+
 
 @require_POST
 def resend_verification_code(request):
     """Повторная отправка кода подтверждения."""
-    if 'unverified_user_id' not in request.session:
-        return JsonResponse({'success': False, 'message': 'Сессия истекла. Пожалуйста, начните регистрацию заново.'}, status=400)
+    if "unverified_user_id" not in request.session:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Сессия истекла. Пожалуйста, начните регистрацию заново.",
+            },
+            status=400,
+        )
 
-    user_id = request.session['unverified_user_id']
+    user_id = request.session["unverified_user_id"]
     user = get_object_or_404(CustomUser, id=user_id)
 
     # Лимит отправок (3 на регистрацию) проверяется в форме; при его
     # превышении сообщаем пользователю, что нужно начать регистрацию заново
     # (аккаунт будет удалён по истечении часа с последней отправки).
     if user.verification_send_count >= CustomUser.VERIFICATION_MAX_SENDS:
-        return JsonResponse({
-            'success': False,
-            'message': 'Превышен лимит повторных отправок кода. '
-                       'Пожалуйста, начните регистрацию заново через час.',
-        }, status=429)
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Превышен лимит повторных отправок кода. "
+                "Пожалуйста, начните регистрацию заново через час.",
+            },
+            status=429,
+        )
 
     # Отправляем новый код (форма сама гасит прежние коды)
     from .forms import CustomUserCreationForm
+
     form = CustomUserCreationForm(instance=user)
     sent = form.send_verification_code(request)
 
     if not sent:
-        return JsonResponse({
-            'success': False,
-            'message': 'Не удалось отправить код. Попробуйте позже.',
-        }, status=500)
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Не удалось отправить код. Попробуйте позже.",
+            },
+            status=500,
+        )
 
-    return JsonResponse({'success': True, 'message': 'Код подтверждения был успешно отправлен повторно.'})
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Код подтверждения был успешно отправлен повторно.",
+        }
+    )
+
 
 def custom_logout(request):
     """
@@ -515,6 +597,7 @@ def custom_logout(request):
 
     # Редиректим на страницу входа по имени URL
     return redirect("login")
+
 
 # --- Ограничения для вложений в чатах и поддержке ---
 ATTACHMENT_ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"]
@@ -557,10 +640,7 @@ def validate_attachments(files):
 
 def save_attachments(message, files):
     """Сохраняет вложения сообщения и возвращает их для ответа фронтенду."""
-    return [
-        SupportAttachment.objects.create(message=message, file=f)
-        for f in files
-    ]
+    return [SupportAttachment.objects.create(message=message, file=f) for f in files]
 
 
 def attachments_payload(attachments):
@@ -601,7 +681,7 @@ def support_dashboard(request):
             ticket = SupportTicket.objects.create(
                 subject=new_subject,
                 user=request.user,
-                ticket_type='support',
+                ticket_type="support",
                 status="new",
                 event=None,
             )
@@ -622,8 +702,7 @@ def support_dashboard(request):
 
     # Показываем ТОЛЬКО support-тикеты текущего пользователя
     tickets = SupportTicket.objects.filter(
-        user=request.user,
-        ticket_type='support'
+        user=request.user, ticket_type="support"
     ).order_by("-created_at")
 
     if ticket_filter != "all":
@@ -633,11 +712,13 @@ def support_dashboard(request):
 
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
-        selected_ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
+        selected_ticket = get_object_or_404(
+            SupportTicket, id=ticket_id, user=request.user
+        )
         chat_messages = selected_ticket.messages.all()
         mark_ticket_messages_read(selected_ticket, request.user)
 
-    partner_profile = getattr(request.user, 'partner_profile', None)
+    partner_profile = getattr(request.user, "partner_profile", None)
     context = {
         "tickets": tickets,
         "selected_ticket": selected_ticket,
@@ -645,6 +726,7 @@ def support_dashboard(request):
         "partner_profile": partner_profile,
     }
     return render(request, "support_dashboard.html", context)
+
 
 def can_access_ticket(user, ticket):
     """
@@ -668,14 +750,17 @@ def can_access_ticket(user, ticket):
 
 @login_required
 def send_support_message(request):
-    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        ticket_id = request.POST.get('ticket_id')
-        text = request.POST.get('text', '').strip()
-        files = request.FILES.getlist('attachment')
+    if (
+        request.method == "POST"
+        and request.headers.get("x-requested-with") == "XMLHttpRequest"
+    ):
+        ticket_id = request.POST.get("ticket_id")
+        text = request.POST.get("text", "").strip()
+        files = request.FILES.getlist("attachment")
 
         if not text and not files:
             return JsonResponse(
-                {'success': False, 'message': 'Введите сообщение или прикрепите фото'},
+                {"success": False, "message": "Введите сообщение или прикрепите фото"},
                 status=400,
             )
 
@@ -684,7 +769,7 @@ def send_support_message(request):
 
             if not can_access_ticket(request.user, ticket):
                 return JsonResponse(
-                    {'success': False, 'message': 'Нет доступа к этому обращению'},
+                    {"success": False, "message": "Нет доступа к этому обращению"},
                     status=403,
                 )
 
@@ -700,7 +785,7 @@ def send_support_message(request):
 
             error = validate_attachments(files)
             if error:
-                return JsonResponse({'success': False, 'message': error}, status=400)
+                return JsonResponse({"success": False, "message": error}, status=400)
 
             # Создаем сообщение.
             # is_from_user=True только если пишет владелец тикета;
@@ -708,41 +793,42 @@ def send_support_message(request):
             # чтобы корректно отображать стороны диалога у обоих собеседников.
             is_from_user = ticket.user_id == request.user.id
             message = SupportMessage.objects.create(
-                ticket=ticket,
-                user=request.user,
-                text=text,
-                is_from_user=is_from_user
+                ticket=ticket, user=request.user, text=text, is_from_user=is_from_user
             )
 
             attachments = save_attachments(message, files)
 
             # Формируем ОДИНАКОВЫЙ формат ответа
             created_dt = timezone.localtime(message.created_at)
-            
+
             response_data = {
-                'success': True,
-                'message': {
-                    'id': message.id,
-                    'text': message.text,
-                    'is_from_user': is_from_user,
-                    'user_first_name': request.user.first_name or '',
-                    'user_email': request.user.email or '',
-                    'full_created_at': created_dt.isoformat(), 
-                    'created_at': created_dt.strftime('%H:%M'), 
-                    'attachments': attachments_payload(attachments),
-                }
+                "success": True,
+                "message": {
+                    "id": message.id,
+                    "text": message.text,
+                    "is_from_user": is_from_user,
+                    "user_first_name": request.user.first_name or "",
+                    "user_email": request.user.email or "",
+                    "full_created_at": created_dt.isoformat(),
+                    "created_at": created_dt.strftime("%H:%M"),
+                    "attachments": attachments_payload(attachments),
+                },
             }
             return JsonResponse(response_data)
 
         except SupportTicket.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Билет не найден'}, status=404)
+            return JsonResponse(
+                {"success": False, "message": "Билет не найден"}, status=404
+            )
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
-    
-    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+
+    return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+
 
 def is_moderator(user):
     return user.is_superuser or user.groups.filter(name="Модераторы").exists()
+
 
 @user_passes_test(is_moderator, login_url="/login/")
 @login_required
@@ -761,13 +847,10 @@ def moderator_dashboard(request):
     # Базовый queryset тикетов для таба (без фильтра по статусу)
     if tab == "participants":
         tab_tickets = SupportTicket.objects.filter(
-            ticket_type="support",
-            user__user_type__in=["visitor", "guest"]
+            ticket_type="support", user__user_type__in=["visitor", "guest"]
         )
     else:
-        tab_tickets = SupportTicket.objects.filter(
-            user__user_type="partner"
-        )
+        tab_tickets = SupportTicket.objects.filter(user__user_type="partner")
 
     # Получаем тикеты по табу и статусу
     tickets = tab_tickets.filter(status=filter_status).order_by("-created_at")
@@ -776,9 +859,7 @@ def moderator_dashboard(request):
 
     # Суммарные счётчики непрочитанных по каждому табу (для бейджей)
     organizers_unread = total_unread_count(
-        SupportTicket.objects.filter(
-            ticket_type="support", user__user_type="partner"
-        ),
+        SupportTicket.objects.filter(ticket_type="support", user__user_type="partner"),
         request.user,
     )
     participants_unread = total_unread_count(
@@ -802,7 +883,7 @@ def moderator_dashboard(request):
     if request.GET.get("ticket_id"):
         ticket_id = request.GET.get("ticket_id")
         selected_ticket = get_object_or_404(SupportTicket, id=ticket_id)
-        chat_messages = selected_ticket.messages.all().order_by('created_at')
+        chat_messages = selected_ticket.messages.all().order_by("created_at")
         mark_ticket_messages_read(selected_ticket, request.user)
 
     context = {
@@ -817,6 +898,7 @@ def moderator_dashboard(request):
         "compose": request.GET.get("compose") == "1",
     }
     return render(request, "moderator_dashboard.html", context)
+
 
 def update_ticket_status(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)
@@ -908,9 +990,9 @@ def moderator_create_ticket(request):
 
     tab = "organizers" if target_user.user_type == "partner" else "participants"
     return redirect(
-        reverse("moderator_dashboard")
-        + f"?tab={tab}&status=new&ticket_id={ticket.id}"
+        reverse("moderator_dashboard") + f"?tab={tab}&status=new&ticket_id={ticket.id}"
     )
+
 
 def event_list(request):
     now = timezone.now()
@@ -921,12 +1003,14 @@ def event_list(request):
         .order_by("date_time")
     )
     # Получаем все основные теги с их подтегами
-    main_tags = MainTag.objects.prefetch_related('subtags').all()
+    main_tags = MainTag.objects.prefetch_related("subtags").all()
 
     # Получаем выбранные теги из GET-запроса (теперь по ID)
     selected_tags = request.GET.getlist("tags")
     # Разбиваем значения по запятой (от скрытого инпута) и убираем пустые
-    selected_tags = [t.strip() for t_str in selected_tags for t in t_str.split(",") if t.strip()]
+    selected_tags = [
+        t.strip() for t_str in selected_tags for t in t_str.split(",") if t.strip()
+    ]
 
     # Фильтруем мероприятия по выбранным тегам, если они есть
     # Поддерживаем и ID (числа), и имена тегов (строки)
@@ -960,12 +1044,15 @@ def event_list(request):
     if selected_date_from:
         try:
             from datetime import datetime, timedelta
+
             date_from = datetime.strptime(selected_date_from, "%Y-%m-%d")
             # Если выбрана только дата "с", фильтруем >= этой даты
             if not selected_date_to or selected_date_from == selected_date_to:
                 # Одна дата — показываем только мероприятия этого дня
                 date_to = date_from + timedelta(days=1)
-                active_events = active_events.filter(date_time__gte=date_from, date_time__lt=date_to)
+                active_events = active_events.filter(
+                    date_time__gte=date_from, date_time__lt=date_to
+                )
             else:
                 # Диапазон дат — фильтруем >= date_from
                 active_events = active_events.filter(date_time__gte=date_from)
@@ -974,9 +1061,12 @@ def event_list(request):
     if selected_date_to and selected_date_from != selected_date_to:
         try:
             from datetime import datetime, timedelta
+
             date_to = datetime.strptime(selected_date_to, "%Y-%m-%d")
             # Добавляем один день, чтобы включить всю конечную дату в диапазоне
-            active_events = active_events.filter(date_time__lte=date_to + timedelta(days=1))
+            active_events = active_events.filter(
+                date_time__lte=date_to + timedelta(days=1)
+            )
         except ValueError:
             pass
     if search_title:
@@ -1002,6 +1092,7 @@ def event_list(request):
 
     # Пагинация: 12 карточек за раз + кнопка "Показать ещё"
     from django.core.paginator import Paginator
+
     paginator = Paginator(active_events, 12)
     try:
         events_page = paginator.get_page(request.GET.get("page", 1))
@@ -1011,6 +1102,7 @@ def event_list(request):
     # AJAX-подгрузка следующей страницы ("Показать ещё")
     if request.GET.get("ajax") == "1":
         from django.template.loader import render_to_string
+
         html = render_to_string(
             "events/_event_cards_page.html",
             {"events_page": events_page},
@@ -1021,6 +1113,7 @@ def event_list(request):
 
     # Получаем все категории и форматы для выпадающих списков
     from core.models import Category, Format
+
     categories = Category.objects.all().order_by("name")
     formats = Format.objects.all().order_by("name")
 
@@ -1043,28 +1136,47 @@ def event_list(request):
         },
     )
 
+
 def event_detail(request, event_id):
-    event = get_object_or_404(Event, id=event_id)
+    event = get_object_or_404(
+        Event.objects.select_related(
+            "organizer",
+            "organizer__partner_profile",
+            "category",
+            "format",
+            "package",
+        ),
+        id=event_id,
+    )
+    event_images = list(event.images.all())
+    event_tag_ids = list(event.tags.values_list("id", flat=True))
     tickets = list(event.tickets.all())
-    has_only_free_tickets = bool(tickets) and all(ticket.price == 0 for ticket in tickets)
+    has_only_free_tickets = bool(tickets) and all(
+        ticket.price == 0 for ticket in tickets
+    )
     now = timezone.now()
-    
+
     # Получаем похожие мероприятия (максимально похожие, fallback на случайные)
-    base_events = Event.objects.filter(status='active', date_time__gte=now).exclude(id=event.id)
+    base_events = (
+        Event.objects.filter(status="active", date_time__gte=now)
+        .exclude(id=event.id)
+        .select_related("organizer", "category", "format", "package")
+        .prefetch_related("images", "tags")
+    )
     similar_events = []  # Используем список для гибкого объединения результатов
 
     # 1. Строгий поиск (совпадение по ВСЕМ доступным параметрам)
-    if event.category or event.format or event.tags.exists():
+    if event.category or event.format or event_tag_ids:
         match_q = Q()
         if event.category:
             match_q &= Q(category=event.category)
         if event.format:
             match_q &= Q(format=event.format)
-        if event.tags.exists():
-            match_q &= Q(tags__in=event.tags.all())
-        
+        if event_tag_ids:
+            match_q &= Q(tags__in=event_tag_ids)
+
         if match_q:
-            strict_matches = list(base_events.filter(match_q).distinct())
+            strict_matches = list(base_events.filter(match_q).distinct()[:4])
             similar_events.extend(strict_matches)
 
     # 2. Частичный поиск (совпадение по ЛЮБОМУ параметру), если нужно дополнить
@@ -1074,36 +1186,50 @@ def event_detail(request, event_id):
             partial_q |= Q(category=event.category)
         if event.format:
             partial_q |= Q(format=event.format)
-        if event.tags.exists():
-            partial_q |= Q(tags__in=event.tags.all())
-        
+        if event_tag_ids:
+            partial_q |= Q(tags__in=event_tag_ids)
+
         if partial_q:
             existing_ids = [e.id for e in similar_events]
-            partial_matches = list(base_events.filter(partial_q).exclude(id__in=existing_ids).distinct())
+            partial_matches = list(
+                base_events.filter(partial_q)
+                .exclude(id__in=existing_ids)
+                .distinct()[: 4 - len(similar_events)]
+            )
             similar_events.extend(partial_matches)
 
     # 3. Случайные мероприятия, если всё ещё меньше 4
     if len(similar_events) < 4:
         existing_ids = [e.id for e in similar_events]
-        random_matches = list(base_events.exclude(id__in=existing_ids).order_by('?'))
+        random_matches = list(
+            base_events.exclude(id__in=existing_ids).order_by("?")[
+                : 4 - len(similar_events)
+            ]
+        )
         similar_events.extend(random_matches)
 
     # 4. Ограничиваем ровно до 4
     similar_events = similar_events[:4]
-    
+
     # Срезы для разных экранов (как на лендинге)
-    similar_events_mobile = similar_events[:2]   # мобильные: 2 карточки
-    similar_events_tablet = similar_events[:3]   # планшет: 3 карточки
+    similar_events_mobile = similar_events[:2]  # мобильные: 2 карточки
+    similar_events_tablet = similar_events[:3]  # планшет: 3 карточки
     similar_events_desktop = similar_events[:4]  # десктоп: 4 карточки
-    
-    return render(request, "events/event_detail.html", {
-        "event": event, 
-        "tickets": tickets,
-        "has_only_free_tickets": has_only_free_tickets,
-        "similar_events_mobile": similar_events_mobile,
-        "similar_events_tablet": similar_events_tablet,
-        "similar_events_desktop": similar_events_desktop,
-    })
+
+    return render(
+        request,
+        "events/event_detail.html",
+        {
+            "event": event,
+            "event_images": event_images,
+            "tickets": tickets,
+            "has_only_free_tickets": has_only_free_tickets,
+            "similar_events_mobile": similar_events_mobile,
+            "similar_events_tablet": similar_events_tablet,
+            "similar_events_desktop": similar_events_desktop,
+        },
+    )
+
 
 @require_http_methods(["GET", "POST"])
 def handle_platform_request(request, event, user, ticket, quantity):
@@ -1119,7 +1245,7 @@ def handle_platform_request(request, event, user, ticket, quantity):
     ticket_request = SupportTicket.objects.create(
         user=user,
         subject=f"Заявка на участие в мероприятии: {event.title}",
-        ticket_type='participant',
+        ticket_type="participant",
         event=event,
     )
 
@@ -1137,6 +1263,7 @@ def handle_platform_request(request, event, user, ticket, quantity):
             "message": "Ваша заявка успешно отправлена организатору. Мы свяжемся с вами в ближайшее время.",
         }
     )
+
 
 @require_http_methods(["GET", "POST"])
 def send_event_request(request, event_id, question=""):
@@ -1214,7 +1341,7 @@ def send_event_request(request, event_id, question=""):
             ticket = SupportTicket.objects.create(
                 user=user,
                 subject=f"Заявка на участие в мероприятии: {event.title}",
-                ticket_type='participant',
+                ticket_type="participant",
                 event=event,
             )
 
@@ -1259,12 +1386,127 @@ def send_event_request(request, event_id, question=""):
             )
             return redirect("event_detail", event_id=event_id)
 
+
+def _send_event_booking_notification(booking_request):
+    """Отправляет организатору письмо о новой заявке на мероприятие."""
+    event = booking_request.event
+    organizer_email = (getattr(event.organizer, "email", "") or "").strip()
+    if not organizer_email:
+        logger.warning(
+            "Заявка #%s: у организатора мероприятия %s не указан e-mail",
+            booking_request.pk,
+            event.pk,
+        )
+        return
+
+    context = {
+        "booking": booking_request,
+        "event": event,
+        "event_date": timezone.localtime(event.date_time).strftime("%d.%m.%Y %H:%M"),
+    }
+    subject = f"Новая заявка на мероприятие {event.title}"
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=render_to_string("emails/event_booking_notification.html", context),
+            from_email=get_from_email(),
+            to=[organizer_email],
+        )
+        email.content_subtype = "html"
+        email.send()
+    except Exception as error:
+        logger.error(
+            "Не удалось отправить письмо организатору по заявке #%s: %s",
+            booking_request.pk,
+            error,
+            exc_info=True,
+        )
+
+
+def _send_admin_event_booking_notification(booking_request):
+    """Отправляет администратору платформы копию заявки на мероприятие."""
+    event = booking_request.event
+    event_date = timezone.localtime(event.date_time).strftime("%d.%m.%Y %H:%M")
+    subject = f"Новая заявка на мероприятие {event.title}"
+    message = (
+        f"Новая заявка на участие в мероприятии.\n\n"
+        f"Мероприятие: {event.title}\n"
+        f"Дата и время: {event_date}\n"
+        f"Организатор: {event.organizer.get_full_name() or event.organizer.email}\n"
+        f"Имя: {booking_request.name}\n"
+        f"Телефон: {booking_request.phone}\n"
+        f"E-mail: {booking_request.email}\n"
+        f"Количество участников: {booking_request.participants_count}\n"
+        f"Комментарий: {booking_request.comment or '-'}\n"
+        f"Статус заявки: {booking_request.get_status_display()}\n"
+    )
+    try:
+        send_mail(
+            subject,
+            message,
+            get_from_email(),
+            [get_from_email()],
+            fail_silently=True,
+        )
+    except Exception:
+        logger.error(
+            "Не удалось отправить копию заявки #%s администратору",
+            booking_request.pk,
+            exc_info=True,
+        )
+
+
+@require_POST
+def send_event_booking_request(request, event_id):
+    """Приём заявки на участие в мероприятии (AJAX).
+
+    Работает так же, как заявка на площадку: сохраняем данные в БД,
+    письмо уходит организатору и копия — администратору платформы.
+    """
+    event = get_object_or_404(Event, id=event_id)
+
+    form = EventBookingRequestForm(
+        request.POST,
+        user=request.user if request.user.is_authenticated else None,
+    )
+
+    if not form.is_valid():
+        return JsonResponse(
+            {
+                "success": False,
+                "errors": {
+                    field: [str(error) for error in errors]
+                    for field, errors in form.errors.items()
+                },
+            },
+            status=400,
+        )
+
+    booking_request = form.save(commit=False)
+    booking_request.event = event
+    if request.user.is_authenticated:
+        booking_request.user = request.user
+    booking_request.session_key = request.session.session_key or ""
+    booking_request.save()
+
+    _send_event_booking_notification(booking_request)
+    _send_admin_event_booking_notification(booking_request)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Заявка отправлена организатору. Он свяжется с вами.",
+            "request_id": booking_request.id,
+        }
+    )
+
+
 @never_cache
 def activate_account(request, token):
-    '''
+    """
     Представление для активации аккаунта по токену.
     Токен генерируется при регистрации и отправляется на email.
-    '''
+    """
     user = get_object_or_404(CustomUser, password_reset_token=token)
     if request.method == "POST":
         password = request.POST.get("password")
@@ -1279,6 +1521,7 @@ def activate_account(request, token):
         user.save()
         return redirect("login")
     return render(request, "registration/activate_account.html", {"token": token})
+
 
 @staff_member_required
 def sales_register(request):
@@ -1303,9 +1546,7 @@ def sales_register(request):
         # по нему, иначе — по всем партнёрам.
         partner_id = request.POST.get("partner_id", "").strip()
         if partner_id:
-            partners = CustomUser.objects.filter(
-                user_type="partner", pk=partner_id
-            )
+            partners = CustomUser.objects.filter(user_type="partner", pk=partner_id)
             if not partners.exists():
                 messages.error(request, "Выбранный партнёр не найден.")
                 return redirect("sales_register")
@@ -1318,17 +1559,18 @@ def sales_register(request):
             sales_register = generate_sales_register(partner, start_date, end_date)
             logger.info(
                 "sales_register: Partner=%s, Sales=%s",
-                partner.email, sales_register['total_sales']
+                partner.email,
+                sales_register["total_sales"],
             )
             if sales_register["total_sales"] > 0:  # Только если есть продажи
                 register_data.append(
                     {
                         "partner": partner,
-                        "total_sales": sales_register['total_sales'],
-                        "total_commission": sales_register['total_commission'],
-                        "total_refunds": sales_register['total_refunds'],
-                        "net_amount": sales_register['net_amount'],
-                        "orders": sales_register['orders'],
+                        "total_sales": sales_register["total_sales"],
+                        "total_commission": sales_register["total_commission"],
+                        "total_refunds": sales_register["total_refunds"],
+                        "net_amount": sales_register["net_amount"],
+                        "orders": sales_register["orders"],
                     }
                 )
 
@@ -1347,6 +1589,7 @@ def sales_register(request):
         "partners": CustomUser.objects.filter(user_type="partner").order_by("email"),
     }
     return render(request, "admin/sales_register_form.html", context)
+
 
 def check_ticket(request, order_id):
     """
@@ -1388,22 +1631,32 @@ def check_ticket(request, order_id):
     }
     return render(request, "partner/ticket_check.html", context)
 
+
 # ─── Статические страницы ─────────────────────────────────────────────
+
 
 def privacy_policy_view(request):
     """Политика конфиденциальности"""
-    return render(request, "other/privacy_policy.html", {
-        "content": legal_pages.get_content("privacy-policy"),
-    })
+    return render(
+        request,
+        "other/privacy_policy.html",
+        {
+            "content": legal_pages.get_content("privacy-policy"),
+        },
+    )
 
 
 def offer_view(request):
     """Публичная оферта"""
-    return render(request, "other/offer.html", {
-        "content_participant": legal_pages.get_content("offer-participant"),
-        "content_organizer": legal_pages.get_content("offer-organizer"),
-        "content_venue": legal_pages.get_content("offer-venue"),
-    })
+    return render(
+        request,
+        "other/offer.html",
+        {
+            "content_participant": legal_pages.get_content("offer-participant"),
+            "content_organizer": legal_pages.get_content("offer-organizer"),
+            "content_venue": legal_pages.get_content("offer-venue"),
+        },
+    )
 
 
 def organizer_contract_download(request):
@@ -1426,16 +1679,24 @@ def organizer_contract_download(request):
 
 def personal_data_consent_view(request):
     """Страница согласия на обработку персональных данных."""
-    return render(request, "other/consent_personal_data.html", {
-        "content": legal_pages.get_content("personal-data-consent"),
-    })
+    return render(
+        request,
+        "other/consent_personal_data.html",
+        {
+            "content": legal_pages.get_content("personal-data-consent"),
+        },
+    )
 
 
 def mailing_consent_view(request):
     """Страница согласия на рассылку."""
-    return render(request, "other/consent_mailing.html", {
-        "content": legal_pages.get_content("mailing-consent"),
-    })
+    return render(
+        request,
+        "other/consent_mailing.html",
+        {
+            "content": legal_pages.get_content("mailing-consent"),
+        },
+    )
 
 
 def faq_view(request):

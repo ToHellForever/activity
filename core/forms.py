@@ -1,6 +1,9 @@
 from django import forms
 from django.forms import ModelForm
+from django.core.exceptions import ValidationError
+import re
 from .models import Event
+from .models import EventBookingRequest
 from .models import UserPackageSubscription
 from .description_utils import description_character_count
 from django.contrib.auth import authenticate
@@ -34,16 +37,15 @@ def _purge_unverified_account(email):
     return True
 
 
-
 class EventAdminForm(ModelForm):
     class Meta:
         model = Event
-        fields = '__all__'
+        fields = "__all__"
 
     class Media:
-        js = ('js/event_admin.js', 'js/pages/events/description_editor.js')
+        js = ("js/event_admin.js", "js/pages/events/description_editor.js")
         css = {
-            'all': ('css/pages/events/description_editor.css',),
+            "all": ("css/pages/events/description_editor.css",),
         }
 
     # Поля местоположения, которые синхронизируются с place_data
@@ -78,10 +80,10 @@ class EventAdminForm(ModelForm):
             "поставьте в него курсор, выберите размер и нажмите «Применить к абзацу»."
         )
         if self.instance and self.instance.package_id:
-            self.fields["description"].widget.attrs["maxlength"] = (
-                self.instance.package.max_description_length
-            )
-        
+            self.fields["description"].widget.attrs[
+                "maxlength"
+            ] = self.instance.package.max_description_length
+
         if self.instance and self.instance.place_data:
             place_data = self.instance.place_data
             if isinstance(place_data, dict):
@@ -105,9 +107,7 @@ class EventAdminForm(ModelForm):
 
         if organizer and getattr(organizer, "user_type", None) == "partner":
             subscription = (
-                UserPackageSubscription.objects.filter(
-                    user=organizer, is_active=True
-                )
+                UserPackageSubscription.objects.filter(user=organizer, is_active=True)
                 .select_related("package")
                 .first()
             )
@@ -115,9 +115,7 @@ class EventAdminForm(ModelForm):
                 package = subscription.package
 
         description = cleaned.get("description")
-        description_limit = (
-            package.max_description_length if package else 1500
-        )
+        description_limit = package.max_description_length if package else 1500
         if (
             description is not None
             and description_character_count(description) > description_limit
@@ -159,15 +157,16 @@ class EventAdminForm(ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
+
         place_data = instance.place_data or {}
         if isinstance(place_data, str):
             import json
+
             try:
                 place_data = json.loads(place_data)
             except json.JSONDecodeError:
                 place_data = {}
-        
+
         for field in self.PLACE_FIELDS:
             if field in self.cleaned_data:
                 value = self.cleaned_data[field]
@@ -178,12 +177,97 @@ class EventAdminForm(ModelForm):
                     place_data[field] = (
                         float(value) if field in ("latitude", "longitude") else value
                     )
-        
+
         instance.place_data = place_data
-        
+
         if commit:
             instance.save()
         return instance
+
+
+class EventBookingRequestForm(forms.ModelForm):
+    """Заявка на участие в мероприятии.
+
+    Повторяет логику формы заявки на площадку (venues.BookingRequestForm):
+    имя, телефон, e-mail, количество участников и комментарий. Для
+    неавторизованных пользователей требуется согласие на обработку
+    персональных данных.
+    """
+
+    personal_data_consent = forms.BooleanField(
+        required=False,
+        label="Согласие на обработку персональных данных",
+    )
+
+    class Meta:
+        model = EventBookingRequest
+        fields = [
+            "name",
+            "phone",
+            "email",
+            "participants_count",
+            "comment",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"maxlength": "50", "required": "required"}),
+            "phone": forms.TextInput(
+                attrs={
+                    "type": "tel",
+                    "required": "required",
+                    "placeholder": "9996052164 или +79996052164",
+                }
+            ),
+            "email": forms.EmailInput(attrs={"required": "required"}),
+            "participants_count": forms.NumberInput(
+                attrs={"min": "1", "required": "required"}
+            ),
+            "comment": forms.Textarea(attrs={"maxlength": "300", "rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Для незарегистрированных пользователей согласие обязательно
+        if not self.request_user and not cleaned_data.get("personal_data_consent"):
+            raise ValidationError(
+                "Необходимо дать согласие на обработку персональных данных."
+            )
+
+        return cleaned_data
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone")
+        if not phone:
+            return phone
+        phone = phone.strip()
+        digits = re.sub(r"\D", "", phone)
+
+        if phone.startswith("+"):
+            # Международный формат: + и 10–15 цифр (код страны + номер)
+            if not (10 <= len(digits) <= 15):
+                raise ValidationError(
+                    "Номер телефона должен содержать от 10 до 15 цифр "
+                    "(например, +79996052164)."
+                )
+            return "+" + digits
+
+        # Местный формат: 10 цифр (без кода страны) или 11 (с 7/8 в начале)
+        if len(digits) not in (10, 11):
+            raise ValidationError(
+                "Номер телефона должен содержать 10 или 11 цифр "
+                "(например, 9996052164, 89996052164 или +79996052164)."
+            )
+        return digits
+
+    def clean_participants_count(self):
+        participants_count = self.cleaned_data.get("participants_count")
+        if participants_count is not None and participants_count < 1:
+            raise ValidationError("Количество участников должно быть не меньше 1.")
+        return participants_count
 
 
 class SupportTicketAdminForm(forms.ModelForm):
@@ -197,7 +281,14 @@ class SupportTicketAdminForm(forms.ModelForm):
 
     class Meta:
         model = SupportTicket
-        fields = ("user", "subject", "event", "ticket_type", "status", "initial_message")
+        fields = (
+            "user",
+            "subject",
+            "event",
+            "ticket_type",
+            "status",
+            "initial_message",
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -208,6 +299,8 @@ class SupportTicketAdminForm(forms.ModelForm):
         if not message and not self.instance.pk:
             raise forms.ValidationError("Введите текст сообщения.")
         return message
+
+
 # --- ФОРМА ВХОДА ---
 class CustomAuthenticationForm(forms.Form):
     """Форма для входа с автоматической проверкой роли."""
@@ -271,6 +364,7 @@ class VisitorRegistrationForm(UserCreationForm):
         user.user_type = "visitor"
         # Фиксируем согласия с датой (для подтверждения по 152-ФЗ)
         from django.utils import timezone
+
         user.consent_personal_data = self.cleaned_data.get("agree_personal_data", False)
         user.consent_personal_data_at = timezone.now()
         user.consent_marketing = self.cleaned_data.get("agree_marketing", False)
@@ -315,14 +409,11 @@ class CustomUserCreationForm(UserCreationForm):
             # Неподтверждённый (прерванная регистрация) будет перезаписан —
             # иначе владелец почты, не дошедший до ввода кода, получил бы
             # полную блокировку на повторную регистрацию.
-            if CustomUser.objects.filter(
-                email=email, is_verified=True
-            ).exists():
+            if CustomUser.objects.filter(email=email, is_verified=True).exists():
                 raise forms.ValidationError(
                     "Пользователь с таким email уже существует."
                 )
         return email
-
 
     def clean(self):
         cleaned_data = super().clean()
@@ -361,10 +452,7 @@ class CustomUserCreationForm(UserCreationForm):
         # Лимит отправок: не больше VERIFICATION_MAX_SENDS на регистрацию.
         # Без лимита атакующий мог бы бесконечно продлевать резервацию
         # чужого email, долбя «отправить код снова».
-        if (
-            self.instance.verification_send_count
-            >= CustomUser.VERIFICATION_MAX_SENDS
-        ):
+        if self.instance.verification_send_count >= CustomUser.VERIFICATION_MAX_SENDS:
             logger.warning(
                 "Превышен лимит отправок кода: user_id=%s email=%s",
                 self.instance.pk,
@@ -375,6 +463,7 @@ class CustomUserCreationForm(UserCreationForm):
         # Создаём код в БД (create_for_user гасит прежние коды и задаёт
         # срок действия); в письмо уходит тот же код, что сохранён в БД.
         from .models import EmailVerificationCode
+
         verification = EmailVerificationCode.create_for_user(
             self.instance, self.instance.email
         )
@@ -382,10 +471,10 @@ class CustomUserCreationForm(UserCreationForm):
 
         # Отправляем код на почту
         subject = "Подтверждение почты"
-        context = {'code': code}
-        html_content = render_to_string('emails/email_verification.html', context)
+        context = {"code": code}
+        html_content = render_to_string("emails/email_verification.html", context)
         from_email = get_from_email()
-        msg = EmailMultiAlternatives(subject, '', from_email, [self.instance.email])
+        msg = EmailMultiAlternatives(subject, "", from_email, [self.instance.email])
         msg.attach_alternative(html_content, "text/html")
 
         logger.info(
@@ -442,7 +531,9 @@ class PartnerRegistrationForm(forms.Form):
         max_length=255,
         required=True,
         label="Краткое наименование, бренд/торговое имя",
-        widget=forms.TextInput(attrs={"placeholder": "Краткое наименование, бренд/торговое имя"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": "Краткое наименование, бренд/торговое имя"}
+        ),
     )
     registration_type = forms.ChoiceField(
         choices=PartnerProfile.REGISTRATION_TYPE_CHOICES,
@@ -454,7 +545,12 @@ class PartnerRegistrationForm(forms.Form):
         required=False,
         max_length=500,
         label="Описание организации",
-        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Описание организации. Кратко о деятельности (до 500 символов)"}),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Описание организации. Кратко о деятельности (до 500 символов)",
+            }
+        ),
     )
 
     # Реквизиты
@@ -468,14 +564,26 @@ class PartnerRegistrationForm(forms.Form):
         max_length=20,
         required=True,
         label="ИНН",
-        widget=forms.TextInput(attrs={"placeholder": "ИНН", "pattern": r"\d{10}|\d{12}", "title": "ИНН должен содержать 10 или 12 цифр"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "ИНН",
+                "pattern": r"\d{10}|\d{12}",
+                "title": "ИНН должен содержать 10 или 12 цифр",
+            }
+        ),
     )
     kpp = forms.CharField(
         max_length=9,
         required=False,
         label="КПП",
         help_text="Обязателен только для юридических лиц",
-        widget=forms.TextInput(attrs={"placeholder": "КПП", "pattern": "\d{8,9}", "title": "КПП должен содержать 8 или 9 цифр"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "КПП",
+                "pattern": "\d{8,9}",
+                "title": "КПП должен содержать 8 или 9 цифр",
+            }
+        ),
     )
 
     # Адреса
@@ -495,7 +603,9 @@ class PartnerRegistrationForm(forms.Form):
         max_length=255,
         required=False,
         label="Фактический адрес (если отличается)",
-        widget=forms.TextInput(attrs={"placeholder": "Фактический адрес (если отличается)"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": "Фактический адрес (если отличается)"}
+        ),
     )
 
     # Контакты
@@ -546,12 +656,19 @@ class PartnerRegistrationForm(forms.Form):
     cases = forms.CharField(
         required=False,
         label="Кейсы/прошедшие мероприятия",
-        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Кейсы/прошедшие мероприятия. Ссылки или краткое описание"}),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Кейсы/прошедшие мероприятия. Ссылки или краткое описание",
+            }
+        ),
     )
     reviews = forms.CharField(
         required=False,
         label="Отзывы и публикации в СМИ",
-        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Отзывы и публикации в СМИ. Ссылки"}),
+        widget=forms.Textarea(
+            attrs={"rows": 3, "placeholder": "Отзывы и публикации в СМИ. Ссылки"}
+        ),
     )
 
     # Файлы
@@ -596,7 +713,7 @@ class PartnerRegistrationForm(forms.Form):
         widget=forms.PasswordInput,
         min_length=8,
     )
-    
+
     def clean_inn(self):
         """Проверяет обязательность ИНН и наличие 10 или 12 цифр."""
         from .validators import validate_inn
@@ -610,7 +727,13 @@ class PartnerRegistrationForm(forms.Form):
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "")
         if phone:
-            digits = phone.replace("+", "").replace("-", "").replace("(", "").replace(")", "").replace(" ", "")
+            digits = (
+                phone.replace("+", "")
+                .replace("-", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace(" ", "")
+            )
             if not digits.isdigit() or len(digits) < 10:
                 raise forms.ValidationError("Введите корректный номер телефона")
         return phone
@@ -652,9 +775,13 @@ class PartnerRegistrationForm(forms.Form):
             MAX_SIZE = 5 * 1024 * 1024  # 5 MB
             ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"]
             if logo.size > MAX_SIZE:
-                raise forms.ValidationError(f"Размер логотипа не должен превышать 5 МБ. Размер вашего файла: {logo.size / 1024 / 1024:.2f} МБ")
+                raise forms.ValidationError(
+                    f"Размер логотипа не должен превышать 5 МБ. Размер вашего файла: {logo.size / 1024 / 1024:.2f} МБ"
+                )
             if logo.content_type not in ALLOWED_TYPES:
-                raise forms.ValidationError(f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}")
+                raise forms.ValidationError(
+                    f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}"
+                )
         return logo
 
     def clean(self):
@@ -682,7 +809,7 @@ class PartnerRegistrationForm(forms.Form):
                 self.add_error("email", "Пользователь с таким email уже существует.")
 
         return cleaned_data
-    
+
 
 # --- ФОРМА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ПАРТНЕРА ---
 class PartnerProfileForm(forms.ModelForm):
@@ -769,11 +896,21 @@ class PartnerProfileForm(forms.ModelForm):
         logo = self.cleaned_data.get("logo")
         if logo:
             MAX_SIZE = 10 * 1024 * 1024  # 10 MB
-            ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
+            ALLOWED_TYPES = [
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+                "image/gif",
+                "image/webp",
+            ]
             if logo.size > MAX_SIZE:
-                raise forms.ValidationError(f"Размер логотипа не должен превышать 10 МБ.")
+                raise forms.ValidationError(
+                    f"Размер логотипа не должен превышать 10 МБ."
+                )
             if logo.content_type not in ALLOWED_TYPES:
-                raise forms.ValidationError(f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}")
+                raise forms.ValidationError(
+                    f"Недопустимый формат логотипа. Разрешены: {', '.join(ALLOWED_TYPES)}"
+                )
         return logo
 
 
@@ -811,56 +948,74 @@ class SupportTicketForm(forms.ModelForm):
 # --- ФОРМА ДЛЯ АДМИНКИ ПАРТНЁРОВ ---
 class PartnerAdminForm(forms.ModelForm):
     """Кастомная форма для админки партнёров с чекбоксами прав."""
-    
+
     can_create_events = forms.BooleanField(
         required=False,
         label="Создавать мероприятия",
-        help_text="Разрешить партнёру создавать и управлять мероприятиями"
+        help_text="Разрешить партнёру создавать и управлять мероприятиями",
     )
     can_request_reports = forms.BooleanField(
         required=False,
         label="Запрашивать отчёты",
-        help_text="Разрешить партнёру генерировать и скачивать отчёты"
+        help_text="Разрешить партнёру генерировать и скачивать отчёты",
     )
     can_request_payments = forms.BooleanField(
         required=False,
         label="Запрашивать выплаты",
-        help_text="Разрешить партнёру запрашивать выплаты средств"
+        help_text="Разрешить партнёру запрашивать выплаты средств",
     )
     rejection_reason = forms.CharField(
         required=False,
         label="Причина отклонения",
-        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Укажите причину, по которой заявка партнёра была отклонена..."}),
-        help_text="Эта причина будет показана партнёру в его кабинете"
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Укажите причину, по которой заявка партнёра была отклонена...",
+            }
+        ),
+        help_text="Эта причина будет показана партнёру в его кабинете",
     )
-    
+
     class Meta:
         model = CustomUser
-        fields = ['permissions', 'verification_status', 'is_verified', 'organizer_status', 'rejection_reason', 'organizer_rejection_reason']
-    
+        fields = [
+            "permissions",
+            "verification_status",
+            "is_verified",
+            "organizer_status",
+            "rejection_reason",
+            "organizer_rejection_reason",
+        ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Загружаем текущие права из JSON
         if self.instance and self.instance.permissions:
             perms = self.instance.permissions
-            self.fields['can_create_events'].initial = perms.get('can_create_events', False)
-            self.fields['can_request_reports'].initial = perms.get('can_request_reports', False)
-            self.fields['can_request_payments'].initial = perms.get('can_request_payments', False)
-    
+            self.fields["can_create_events"].initial = perms.get(
+                "can_create_events", False
+            )
+            self.fields["can_request_reports"].initial = perms.get(
+                "can_request_reports", False
+            )
+            self.fields["can_request_payments"].initial = perms.get(
+                "can_request_payments", False
+            )
+
     def clean(self):
         cleaned_data = super().clean()
         # Собираем права обратно в JSON
         permissions = {
-            'can_create_events': cleaned_data.get('can_create_events', False),
-            'can_request_reports': cleaned_data.get('can_request_reports', False),
-            'can_request_payments': cleaned_data.get('can_request_payments', False),
+            "can_create_events": cleaned_data.get("can_create_events", False),
+            "can_request_reports": cleaned_data.get("can_request_reports", False),
+            "can_request_payments": cleaned_data.get("can_request_payments", False),
         }
-        cleaned_data['permissions'] = permissions
+        cleaned_data["permissions"] = permissions
         return cleaned_data
-    
+
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.permissions = self.cleaned_data['permissions']
+        instance.permissions = self.cleaned_data["permissions"]
         if commit:
             instance.save()
         return instance

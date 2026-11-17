@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Новая заявка на мероприятие</title>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+            color: rgba(38, 37, 37, 1);
+        }
+
+        .section-heading {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            margin-top: 0;
+        }
+
+        .detail-table {
+            width: 100%;
+        }
+
+        .detail-label {
+            color: rgba(119, 122, 141, 1);
+            vertical-align: top;
+            font-size: 14px;
+            padding-bottom: 16px;
+            padding-top: 16px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+        }
+
+        .cta-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: rgba(2, 54, 156, 1);
+            text-align: center;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .footer-note {
+            font-size: 14px;
+            color: #888888;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-title">НОВАЯ ЗАЯВКА НА МЕРОПРИЯТИЕ</div>
+
+    <div class="section-heading">Данные заявителя:</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="detail-label">Имя:</td>
+            <td class="detail-value">{{ booking.name }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Телефон:</td>
+            <td class="detail-value">{{ booking.phone }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Email:</td>
+            <td class="detail-value">{{ booking.email }}</td>
+        </tr>
+    </table>
+
+    <div class="section-heading">Информация о мероприятии:</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="detail-label">Мероприятие:</td>
+            <td class="detail-value">{{ event.title }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Дата и время:</td>
+            <td class="detail-value">{{ event_date }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Количество участников:</td>
+            <td class="detail-value">{{ booking.participants_count }}</td>
+        </tr>
+        <tr>
+            <td class="detail-label">Комментарий:</td>
+            <td class="detail-value">{% if booking.comment %}{{ booking.comment }}{% else %}-{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="cta-text">Свяжитесь с заявителем, чтобы подтвердить участие</div>
+
+    <p class="footer-note">Это автоматическое уведомление. Пожалуйста, не отвечайте на это письмо.</p>
+
+</body>
+</html>

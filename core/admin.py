@@ -1,7 +1,25 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Event, Ticket, Order, EventImage, PartnerDocument, PayoutRequest, PayoutDetails
-from .models import SupportTicket, SupportMessage, Tag, EventPackage, MainTag, UserPackageSubscription, Category, Format
+from .models import (
+    Event,
+    Ticket,
+    Order,
+    EventImage,
+    PartnerDocument,
+    PayoutRequest,
+    PayoutDetails,
+)
+from .models import (
+    SupportTicket,
+    SupportMessage,
+    Tag,
+    EventPackage,
+    MainTag,
+    UserPackageSubscription,
+    Category,
+    Format,
+)
+from .models import EventBookingRequest
 from .models import (
     LegalDocument,
     PartnerAgreement,
@@ -24,6 +42,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from partner_app.models import EventChangeRequest, PartnerProfile
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 CustomUser = get_user_model()
@@ -65,10 +84,17 @@ class VisitorUserAdmin(admin.ModelAdmin):
     """
     Админ-панель для управления обычными пользователями (не партнёрами).
     """
-    
-    list_display = ('username', 'email', 'first_name', 'last_name', 'date_joined', 'is_active')
-    search_fields = ('username', 'email')
-    list_filter = ('is_active', 'date_joined')
+
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "date_joined",
+        "is_active",
+    )
+    search_fields = ("username", "email")
+    list_filter = ("is_active", "date_joined")
 
     def get_queryset(self, request):
         """
@@ -77,13 +103,14 @@ class VisitorUserAdmin(admin.ModelAdmin):
         # Получаем базовый QuerySet
         qs = super().get_queryset(request)
 
-        return qs.exclude(user_type='partner') 
+        return qs.exclude(user_type="partner")
 
     def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):
         return True
+
 
 @admin.register(PayoutDetails)
 class PayoutDetailsAdmin(admin.ModelAdmin):
@@ -92,14 +119,22 @@ class PayoutDetailsAdmin(admin.ModelAdmin):
     """
 
     list_display = ("partner",)
-    
+
+
 @admin.register(PartnerDocument)
 class PartnerDocumentAdmin(admin.ModelAdmin):
     """
     Админка для управления документами партнёров.
     """
 
-    list_display = ("user", "document", "uploaded_at", "is_approved", "reviewer", "get_status")
+    list_display = (
+        "user",
+        "document",
+        "uploaded_at",
+        "is_approved",
+        "reviewer",
+        "get_status",
+    )
     list_filter = ("is_approved", "uploaded_at")
     search_fields = ("user__username", "user__company_name", "user__email")
     readonly_fields = ("uploaded_at",)
@@ -113,15 +148,30 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
             )
         return (
             (None, {"fields": ("user", "document", "uploaded_at")}),
-            ("Модерация", {"fields": ("is_approved", "reviewer", "reviewed_at", "rejection_reason")}),
+            (
+                "Модерация",
+                {
+                    "fields": (
+                        "is_approved",
+                        "reviewer",
+                        "reviewed_at",
+                        "rejection_reason",
+                    )
+                },
+            ),
         )
 
     def get_status(self, obj):
         if obj.is_approved:
-            return mark_safe('<span style="color: green; font-weight: bold;">✓ Подтверждён</span>')
+            return mark_safe(
+                '<span style="color: green; font-weight: bold;">✓ Подтверждён</span>'
+            )
         elif obj.rejection_reason:
-            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонён</span>')
+            return mark_safe(
+                '<span style="color: red; font-weight: bold;">✗ Отклонён</span>'
+            )
         return mark_safe('<span style="color: orange;">На проверке</span>')
+
     get_status.short_description = "Статус"
 
     def save_model(self, request, obj, form, change):
@@ -138,59 +188,65 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
             change
             and not obj.is_approved
             and bool(obj.rejection_reason)
-            and (not previous.rejection_reason or previous.rejection_reason != obj.rejection_reason)
+            and (
+                not previous.rejection_reason
+                or previous.rejection_reason != obj.rejection_reason
+            )
         )
-        
+
         # Сохраняем объект
         super().save_model(request, obj, form, change)
- 
+
         # Обновляем статус пользователя и отправляем уведомления
         if is_new_approval:
             # Документ только что одобрен
             obj.reviewed_at = timezone.now()
             obj.reviewer = request.user
-            obj.save(update_fields=['reviewed_at', 'reviewer'])
-            
+            obj.save(update_fields=["reviewed_at", "reviewer"])
+
             obj.user.is_verified = True
             obj.user.organizer_status = "approved"
-            obj.user.save(update_fields=['is_verified', 'organizer_status'])
-            
+            obj.user.save(update_fields=["is_verified", "organizer_status"])
+
             # Отправляем уведомление партнёру
             try:
                 send_mail(
-                    subject='Ваши документы подтверждены',
-                    message=f'''Здравствуйте, {obj.user.get_full_name()}!
+                    subject="Ваши документы подтверждены",
+                    message=f"""Здравствуйте, {obj.user.get_full_name()}!
 
 Ваши документы успешно проверены. Ваш статус: Подтверждённый организатор ✓
 
 Теперь вы можете использовать все возможности платформы.
 
 С уважением,
-Администрация платформы''',
+Администрация платформы""",
                     from_email=get_from_email("support"),
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
             except Exception as e:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.error(f"Не удалось отправить email об одобрении: {e}")
-                
+
         elif is_rejection:
             # Документ отклонён
             obj.reviewed_at = timezone.now()
             obj.reviewer = request.user
-            obj.save(update_fields=['reviewed_at', 'reviewer'])
+            obj.save(update_fields=["reviewed_at", "reviewer"])
             obj.user.organizer_status = "rejected"
             obj.user.organizer_rejection_reason = obj.rejection_reason or None
-            obj.user.save(update_fields=['organizer_status', 'organizer_rejection_reason'])
-            
+            obj.user.save(
+                update_fields=["organizer_status", "organizer_rejection_reason"]
+            )
+
             # Отправляем уведомление с причиной
             reason_text = obj.rejection_reason or "Причина не указана"
             try:
                 send_mail(
-                    subject='Ваши документы отклонены',
-                    message=f'''Здравствуйте, {obj.user.get_full_name()}!
+                    subject="Ваши документы отклонены",
+                    message=f"""Здравствуйте, {obj.user.get_full_name()}!
 
 Ваши документы были отклонены модератором.
 
@@ -199,15 +255,17 @@ class PartnerDocumentAdmin(admin.ModelAdmin):
 Пожалуйста, исправьте указанные недочёты и загрузите документы повторно.
 
 С уважением,
-Администрация платформы''',
+Администрация платформы""",
                     from_email=get_from_email("support"),
                     recipient_list=[obj.user.email],
                     fail_silently=False,
                 )
             except Exception as e:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.error(f"Не удалось отправить email об отклонении: {e}")
+
 
 @admin.register(MainTag)
 class MainTagAdmin(admin.ModelAdmin):
@@ -229,23 +287,38 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "main_tag")
     list_filter = ("main_tag",)
     search_fields = ("name", "main_tag__name")
-    ordering = ("main_tag__name", "name",)
+    ordering = (
+        "main_tag__name",
+        "name",
+    )
+
 
 class TicketInline(admin.TabularInline):
     model = Ticket
     extra = 1
-    fields = ('name', 'price', 'available_quantity', 'get_sold_count', 'get_available_count')
-    readonly_fields = ('get_sold_count', 'get_available_count')
+    fields = (
+        "name",
+        "price",
+        "available_quantity",
+        "get_sold_count",
+        "get_available_count",
+    )
+    readonly_fields = ("get_sold_count", "get_available_count")
 
     def get_queryset(self, request):
         """Оптимизируем загрузку связанных заказов для всех билетов."""
         queryset = super().get_queryset(request)
-        return queryset.prefetch_related('orders')
+        return queryset.prefetch_related("orders")
 
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""
         if obj.pk:
-            return sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
+            return sum(
+                order.quantity
+                for order in obj.orders.exclude(
+                    payment_status__in=["refunded", "canceled"]
+                )
+            )
         return 0
 
     def get_available_count(self, obj):
@@ -300,7 +373,6 @@ class EventAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.delete()
 
-
     # Какие поля показывать в списке всех мероприятий
     list_display = (
         "title",
@@ -321,6 +393,7 @@ class EventAdmin(admin.ModelAdmin):
                 f'<span style="color:#888;">(лимит: {obj.package.max_active_events})</span>'
             )
         return mark_safe('<span style="color:red;">— без пакета</span>')
+
     get_package.short_description = "Пакет"
     get_package.allow_tags = True
 
@@ -334,19 +407,28 @@ class EventAdmin(admin.ModelAdmin):
             package=obj.package,
         ).count()
         if obj.package:
-            color = "red" if active_events_count >= obj.package.max_active_events else "green"
+            color = (
+                "red"
+                if active_events_count >= obj.package.max_active_events
+                else "green"
+            )
             return mark_safe(
                 f'<span style="color:{color}; font-weight:bold;">{active_events_count}</span> '
-                f'/ {obj.package.max_active_events}'
+                f"/ {obj.package.max_active_events}"
             )
         return active_events_count
-    get_organizer_active_events.short_description = "Активных мероприятий у партнёра (пакет)"
+
+    get_organizer_active_events.short_description = (
+        "Активных мероприятий у партнёра (пакет)"
+    )
     get_organizer_active_events.allow_tags = True
 
     def get_queryset(self, request):
         """Оптимизируем загрузку связанных данных для списка мероприятий."""
         queryset = super().get_queryset(request)
-        return queryset.select_related('organizer', 'category', 'package').prefetch_related('tags', 'images')
+        return queryset.select_related(
+            "organizer", "category", "package"
+        ).prefetch_related("tags", "images")
 
     def get_duration(self, obj):
         if obj.duration:
@@ -433,7 +515,6 @@ class EventAdmin(admin.ModelAdmin):
                 )
             )
 
-
         if obj and obj.status == "rejected":
             fieldsets.append(
                 (
@@ -443,7 +524,6 @@ class EventAdmin(admin.ModelAdmin):
                     },
                 )
             )
-
 
         return fieldsets
 
@@ -474,7 +554,9 @@ class EventAdmin(admin.ModelAdmin):
         primaries = list(event.images.filter(is_primary=True).order_by("id"))
         if len(primaries) > 1:
             # Отмечено несколько основных — оставляем первую по порядку загрузки
-            event.images.filter(is_primary=True).exclude(pk=primaries[0].pk).update(is_primary=False)
+            event.images.filter(is_primary=True).exclude(pk=primaries[0].pk).update(
+                is_primary=False
+            )
         elif not primaries:
             first = event.images.order_by("id").first()
             if first:
@@ -483,14 +565,12 @@ class EventAdmin(admin.ModelAdmin):
         # Основное фото должно быть видно и в карточке мероприятия (Event.image)
         event.set_primary_from_event_images()
 
-
     # Добавляем поле для отображения статуса в виде галочки
     def get_readonly_fields(self, request, obj=None):
         readonly = []
         if obj:
             readonly.append("get_tags_display")
         return readonly
-
 
     # Метод для отображения статуса в виде галочки
     def approved_status(self, obj):
@@ -513,7 +593,9 @@ class EventAdmin(admin.ModelAdmin):
             updated = 0
             for event in queryset:
                 # Удаляем видеофайл при отклонении (он больше не нужен)
-                print(f"[DEBUG] Event {event.id}: video_url={event.video_url}, status={event.status}")
+                print(
+                    f"[DEBUG] Event {event.id}: video_url={event.video_url}, status={event.status}"
+                )
                 if event.video_url:
                     video_path = event.video_url.path
                     video_name = event.video_url.name
@@ -522,8 +604,11 @@ class EventAdmin(admin.ModelAdmin):
                         event.video_url.delete(save=False)
                         print(f"[DEBUG] Видео удалено для Event {event.id}")
                     except Exception as e:
-                        print(f"[DEBUG] ОШИБКА удаления видео для Event {event.id}: {e}")
+                        print(
+                            f"[DEBUG] ОШИБКА удаления видео для Event {event.id}: {e}"
+                        )
                         import traceback
+
                         traceback.print_exc()
                     event.video_url = None
                     event.video_processing_status = None
@@ -592,10 +677,15 @@ class EventAdmin(admin.ModelAdmin):
     # Действие для установки статуса "Активно"
     def to_active(self, request, queryset):
         from core.tasks import process_video_task
+
         activation_offsets = {}
         for event in queryset:
-            active_subscription = event.organizer.userpackagesubscription_set.filter(is_active=True).first()
-            package = event.package or (active_subscription.package if active_subscription else None)
+            active_subscription = event.organizer.userpackagesubscription_set.filter(
+                is_active=True
+            ).first()
+            package = event.package or (
+                active_subscription.package if active_subscription else None
+            )
             key = (event.organizer_id, package.id if package else None)
             self._check_active_events_limit(
                 request,
@@ -605,14 +695,17 @@ class EventAdmin(admin.ModelAdmin):
             )
             activation_offsets[key] = activation_offsets.get(key, 0) + 1
             # Запускаем обработку видео, если оно есть и статус pending/processing
-            if event.video_url and event.video_processing_status in ('pending', 'processing'):
+            if event.video_url and event.video_processing_status in (
+                "pending",
+                "processing",
+            ):
                 logger.info(f"to_active: Запуск обработки видео для Event {event.id}")
                 process_video_task.delay(
-                    model_name='Event',
+                    model_name="Event",
                     instance_id=event.id,
-                    video_field_name='video_url',
-                    hash_field_name='processed_video_url_hash',
-                    status_field_name='video_processing_status'
+                    video_field_name="video_url",
+                    hash_field_name="processed_video_url_hash",
+                    status_field_name="video_processing_status",
                 )
         updated = queryset.update(status="active")
         self.message_user(request, f"{updated} мероприятий активировано.")
@@ -630,14 +723,14 @@ class EventAdmin(admin.ModelAdmin):
         """Оптимизируем загрузку связанных данных для формы редактирования."""
         form = super().get_form(request, obj, **kwargs)
 
-        form.base_fields['description'].required = False
-        form.base_fields['city'].required = False
+        form.base_fields["description"].required = False
+        form.base_fields["city"].required = False
 
         # Если редактируется существующее мероприятие, оптимизируем загрузку связанных данных
         if obj:
             # Загружаем все связанные данные заранее
             obj.tags.prefetch_related(None)  # Сбрасываем предыдущий prefetch
-            obj.tickets.prefetch_related('orders').all()  # Загружаем билеты с заказами
+            obj.tickets.prefetch_related("orders").all()  # Загружаем билеты с заказами
             obj.images.all()  # Загружаем фотографии мероприятия
 
         # --- Добавляем скрытые поля для фильтрации партнёров по подписке ---
@@ -660,13 +753,18 @@ class EventAdmin(admin.ModelAdmin):
             # Удаляем видеофайл при отклонении мероприятия
             if original_status != "rejected" and obj.status == "rejected":
                 if obj.video_url:
-                    print(f"[DEBUG SAVE_MODEL] Event {obj.id}: удаляю видео {obj.video_url.name}")
+                    print(
+                        f"[DEBUG SAVE_MODEL] Event {obj.id}: удаляю видео {obj.video_url.name}"
+                    )
                     try:
                         obj.video_url.delete(save=False)
                         print(f"[DEBUG SAVE_MODEL] Видео удалено для Event {obj.id}")
                     except Exception as e:
-                        print(f"[DEBUG SAVE_MODEL] ОШИБКА удаления видео для Event {obj.id}: {e}")
+                        print(
+                            f"[DEBUG SAVE_MODEL] ОШИБКА удаления видео для Event {obj.id}: {e}"
+                        )
                         import traceback
+
                         traceback.print_exc()
                     obj.video_url = None
                     obj.video_processing_status = None
@@ -675,16 +773,20 @@ class EventAdmin(admin.ModelAdmin):
         # --- Подстановка пакета для партнёра ---
         # (валидация партнёра выполняется в EventAdminForm.clean,
         #  здесь только подставляем пакет из активной подписки)
-        organizer_id = form.data.get('organizer', '').strip()
+        organizer_id = form.data.get("organizer", "").strip()
         if organizer_id:
             try:
                 organizer = CustomUser.objects.get(id=int(organizer_id))
                 obj.organizer = organizer
 
-                if organizer.user_type == 'partner':
-                    active_subscription = UserPackageSubscription.objects.filter(
-                        user=organizer, is_active=True
-                    ).select_related('package').first()
+                if organizer.user_type == "partner":
+                    active_subscription = (
+                        UserPackageSubscription.objects.filter(
+                            user=organizer, is_active=True
+                        )
+                        .select_related("package")
+                        .first()
+                    )
                     if active_subscription:
                         obj.package = active_subscription.package
                 # Для обычных пользователей пакет выбирается вручную
@@ -692,7 +794,7 @@ class EventAdmin(admin.ModelAdmin):
                 pass
 
         super().save_model(request, obj, form, change)
- 
+
     def _check_active_events_limit(
         self,
         request,
@@ -715,14 +817,18 @@ class EventAdmin(admin.ModelAdmin):
             return
 
         # Получаем активную подписку пользователя
-        active_subscription = event.organizer.userpackagesubscription_set.filter(is_active=True).first()
+        active_subscription = event.organizer.userpackagesubscription_set.filter(
+            is_active=True
+        ).first()
         if not active_subscription:
             self.message_user(
                 request,
                 f"У пользователя {event.organizer.username} нет активной подписки на пакет.",
-                level=messages.ERROR
+                level=messages.ERROR,
             )
-            raise forms.ValidationError("У пользователя нет активной подписки на пакет.")
+            raise forms.ValidationError(
+                "У пользователя нет активной подписки на пакет."
+            )
 
         # Получаем пакет пользователя
         package = event.package or active_subscription.package
@@ -730,17 +836,21 @@ class EventAdmin(admin.ModelAdmin):
             self.message_user(
                 request,
                 f"У пользователя {event.organizer.username} не выбран пакет.",
-                level=messages.ERROR
+                level=messages.ERROR,
             )
             raise forms.ValidationError("У пользователя не выбран пакет.")
 
         # Считаем активные мероприятия: "active" + "on_moderation"
         # (та же семантика, что и в EventPackage.can_create_event,
         # поэтому события, созданные из админки под этим партнёром, тоже учитываются)
-        active_events_count = Event.objects.filter(
-            organizer=event.organizer,
-            status__in=["active", "on_moderation"],
-        ).exclude(pk=event.pk).count()
+        active_events_count = (
+            Event.objects.filter(
+                organizer=event.organizer,
+                status__in=["active", "on_moderation"],
+            )
+            .exclude(pk=event.pk)
+            .count()
+        )
 
         # Учитываем сохраняемое мероприятие, если оно попадёт в активные
         if is_activating or event.status in ("active", "on_moderation"):
@@ -753,11 +863,12 @@ class EventAdmin(admin.ModelAdmin):
                 request,
                 f"У пользователя {event.organizer.username} уже {active_events_count-1} активных мероприятий. "
                 f"Его пакет '{package.name}' позволяет максимум {package.max_active_events} активных мероприятий.",
-                level=messages.ERROR
+                level=messages.ERROR,
             )
             raise forms.ValidationError(
                 f"Превышен лимит активных мероприятий ({package.max_active_events}) для пакета '{package.name}'."
             )
+
     # --- AJAX-эндпоинты для поиска партнёров и проверки подписки ---
 
     def get_urls(self):
@@ -766,14 +877,14 @@ class EventAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
-                'search-partners/',
+                "search-partners/",
                 self.admin_site.admin_view(self.search_partners_view),
-                name='core_event_search_partners',
+                name="core_event_search_partners",
             ),
             path(
-                'check-partner-subscription/',
+                "check-partner-subscription/",
                 self.admin_site.admin_view(self.check_partner_subscription_view),
-                name='core_event_check_partner_subscription',
+                name="core_event_check_partner_subscription",
             ),
         ]
         return custom_urls + urls
@@ -782,96 +893,107 @@ class EventAdmin(admin.ModelAdmin):
         """AJAX: поиск партнёров по email/имени для autocomplete."""
         from django.http import JsonResponse
 
-        query = request.GET.get('q', '').strip()
+        query = request.GET.get("q", "").strip()
         if len(query) < 2:
-            return JsonResponse({'results': []})
+            return JsonResponse({"results": []})
 
-        partners = CustomUser.objects.filter(
-            user_type='partner',
-        ).filter(
-            models.Q(email__icontains=query) | models.Q(username__icontains=query)
-        ).order_by('email')[:20]
+        partners = (
+            CustomUser.objects.filter(
+                user_type="partner",
+            )
+            .filter(
+                models.Q(email__icontains=query) | models.Q(username__icontains=query)
+            )
+            .order_by("email")[:20]
+        )
 
         results = [
             {
-                'id': p.id,
-                'email': p.email,
-                'name': p.username if p.username != p.email else '',
+                "id": p.id,
+                "email": p.email,
+                "name": p.username if p.username != p.email else "",
             }
             for p in partners
         ]
-        return JsonResponse({'results': results})
+        return JsonResponse({"results": results})
 
     def check_partner_subscription_view(self, request):
         """AJAX: проверка активной подписки/пакета организатора."""
         from django.http import JsonResponse
 
-        partner_id = request.GET.get('partner_id')
+        partner_id = request.GET.get("partner_id")
         if not partner_id:
-            return JsonResponse({'error': 'partner_id обязателен'}, status=400)
+            return JsonResponse({"error": "partner_id обязателен"}, status=400)
 
         try:
             user = CustomUser.objects.get(id=partner_id)
         except CustomUser.DoesNotExist:
-            return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+            return JsonResponse({"error": "Пользователь не найден"}, status=404)
 
         # Не партнёр — пакет выбирается вручную, ничего не блокируем
-        if user.user_type != 'partner':
-            return JsonResponse({
-                'is_partner': False,
-                'has_package': True,
-                'can_create': True,
-                'message': 'Обычный пользователь — выберите пакет вручную.',
-            })
+        if user.user_type != "partner":
+            return JsonResponse(
+                {
+                    "is_partner": False,
+                    "has_package": True,
+                    "can_create": True,
+                    "message": "Обычный пользователь — выберите пакет вручную.",
+                }
+            )
 
-        subscription = UserPackageSubscription.objects.filter(
-            user=user, is_active=True
-        ).select_related('package').first()
+        subscription = (
+            UserPackageSubscription.objects.filter(user=user, is_active=True)
+            .select_related("package")
+            .first()
+        )
 
         if not subscription:
-            return JsonResponse({
-                'is_partner': True,
-                'has_package': False,
-                'message': f'У партнёра {user.email} нет активной подписки. Создание мероприятия невозможно.',
-            })
+            return JsonResponse(
+                {
+                    "is_partner": True,
+                    "has_package": False,
+                    "message": f"У партнёра {user.email} нет активной подписки. Создание мероприятия невозможно.",
+                }
+            )
 
         # Считаем активные мероприятия партнёра (включая созданные из админки)
         active_count = Event.objects.filter(
             organizer=user,
-            status__in=['active', 'on_moderation'],
+            status__in=["active", "on_moderation"],
         ).count()
         editing_active_event = False
-        event_id = request.GET.get('event_id')
+        event_id = request.GET.get("event_id")
         if event_id:
             editing_active_event = Event.objects.filter(
                 pk=event_id,
                 organizer=user,
-                status__in=['active', 'on_moderation'],
+                status__in=["active", "on_moderation"],
             ).exists()
         can_create = (
             active_count < subscription.package.max_active_events
             or editing_active_event
         )
 
-        return JsonResponse({
-            'is_partner': True,
-            'has_package': True,
-            'package_id': subscription.package.id,
-            'package_name': subscription.package.name,
-            'max_active_events': subscription.package.max_active_events,
-            'current_active_events': active_count,
-            'can_create': can_create,
-            'message': (
-                f'Пакет: {subscription.package.name} '
-                f'({active_count}/{subscription.package.max_active_events} активных)'
-            ),
-        })
+        return JsonResponse(
+            {
+                "is_partner": True,
+                "has_package": True,
+                "package_id": subscription.package.id,
+                "package_name": subscription.package.name,
+                "max_active_events": subscription.package.max_active_events,
+                "current_active_events": active_count,
+                "can_create": can_create,
+                "message": (
+                    f"Пакет: {subscription.package.name} "
+                    f"({active_count}/{subscription.package.max_active_events} активных)"
+                ),
+            }
+        )
 
     class Media:
-        js = (
-            "/static/js/event_admin.js",
-        )
-        
+        js = ("/static/js/event_admin.js",)
+
+
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     """
@@ -893,8 +1015,10 @@ class TicketAdmin(admin.ModelAdmin):
 
     def get_sold_count(self, obj):
         """Возвращает количество проданных билетов."""
-        return sum(order.quantity for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"]))
-
+        return sum(
+            order.quantity
+            for order in obj.orders.exclude(payment_status__in=["refunded", "canceled"])
+        )
 
     get_sold_count.short_description = "Продано"
 
@@ -903,6 +1027,41 @@ class TicketAdmin(admin.ModelAdmin):
         return obj.get_available_count()
 
     get_available_count.short_description = "Доступно"
+
+
+@admin.register(EventBookingRequest)
+class EventBookingRequestAdmin(admin.ModelAdmin):
+    """Заявки на участие в мероприятиях, отправленные с сайта."""
+
+    list_display = (
+        "id",
+        "event",
+        "name",
+        "phone",
+        "email",
+        "participants_count",
+        "status",
+        "created_at",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = ("name", "phone", "email", "event__title")
+    list_select_related = ("event",)
+    date_hierarchy = "created_at"
+    readonly_fields = ("created_at", "session_key", "user")
+    fields = (
+        "event",
+        "user",
+        "name",
+        "phone",
+        "email",
+        "participants_count",
+        "comment",
+        "status",
+        "session_key",
+        "created_at",
+    )
+    list_editable = ("status",)
+
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -913,16 +1072,18 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "ticket", "created_at", "total_price", "is_paid")
     list_filter = ("created_at",)
 
+
 class SubscriptionInline(admin.TabularInline):
     model = UserPackageSubscription
     extra = 0
-    readonly_fields = ('package', 'start_date', 'end_date', 'is_active')
+    readonly_fields = ("package", "start_date", "end_date", "is_active")
 
     def has_add_permission(self, request, obj=None):
         return False
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
@@ -989,7 +1150,11 @@ class SupportTicketAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.filter(ticket_type='support').select_related("user", "event").prefetch_related("messages")
+        return (
+            qs.filter(ticket_type="support")
+            .select_related("user", "event")
+            .prefetch_related("messages")
+        )
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -1010,6 +1175,8 @@ class SupportTicketAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+
 @admin.register(PayoutRequest)
 class PayoutRequestAdmin(admin.ModelAdmin):
     list_display = (
@@ -1026,21 +1193,37 @@ class PayoutRequestAdmin(admin.ModelAdmin):
     actions = ["mark_as_paid", "mark_as_rejected"]
 
     fieldsets = (
-        ("Информация о заявке", {
-            "fields": ("organizer", "amount", "status", "created_at", "balance_at_request"),
-        }),
-        ("Реквизиты", {
-            "fields": ("payment_details",),
-        }),
-        ("Комментарии", {
-            "fields": ("comment", "rejection_comment"),
-        }),
+        (
+            "Информация о заявке",
+            {
+                "fields": (
+                    "organizer",
+                    "amount",
+                    "status",
+                    "created_at",
+                    "balance_at_request",
+                ),
+            },
+        ),
+        (
+            "Реквизиты",
+            {
+                "fields": ("payment_details",),
+            },
+        ),
+        (
+            "Комментарии",
+            {
+                "fields": ("comment", "rejection_comment"),
+            },
+        ),
     )
 
     def mark_as_paid(self, request, queryset):
         """Action: отметить заявки как выплаченные."""
         updated = queryset.update(status="paid")
         self.message_user(request, f"Отмечено как выплаченные: {updated} заявок.")
+
     mark_as_paid.short_description = "Отметить как выплаченные"
 
     def mark_as_rejected(self, request, queryset):
@@ -1049,7 +1232,9 @@ class PayoutRequestAdmin(admin.ModelAdmin):
         if request.POST.get("apply_rejection"):
             rejection_comment = request.POST.get("rejection_comment", "").strip()
             if not rejection_comment:
-                self.message_user(request, "Укажите причину отклонения.", level=messages.ERROR)
+                self.message_user(
+                    request, "Укажите причину отклонения.", level=messages.ERROR
+                )
             else:
                 updated = queryset.filter(pk__in=selected_ids).update(
                     status="rejected",
@@ -1063,7 +1248,9 @@ class PayoutRequestAdmin(admin.ModelAdmin):
             "admin/payout_rejection_form.html",
             {"queryset": queryset, "selected_ids": selected_ids},
         )
+
     mark_as_rejected.short_description = "Отклонить заявки"
+
 
 @admin.register(EventPackage)
 class EventPackageAdmin(admin.ModelAdmin):
@@ -1114,7 +1301,8 @@ class EventPackageAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Описание",
+        (
+            "Описание",
             {
                 "fields": (
                     "description",
@@ -1138,12 +1326,19 @@ class EventPackageAdmin(admin.ModelAdmin):
         ),
     )
 
+
 # Кастомная админка для партнёров
 class PartnerSubscriptionInline(admin.TabularInline):
     model = UserPackageSubscription
     extra = 0
-    readonly_fields = ('package', 'start_date', 'end_date', 'is_active', 'subscription_type')
-    fields = ('package', 'subscription_type', 'start_date', 'end_date', 'is_active')
+    readonly_fields = (
+        "package",
+        "start_date",
+        "end_date",
+        "is_active",
+        "subscription_type",
+    )
+    fields = ("package", "subscription_type", "start_date", "end_date", "is_active")
 
     def has_add_permission(self, request, obj=None):
         return True
@@ -1155,7 +1350,7 @@ class PartnerSubscriptionInline(admin.TabularInline):
         formset = super().get_formset(request, obj=None, **kwargs)
         formset.extra = 1
         if obj:
-            formset.queryset = obj.userpackagesubscription_set.order_by('-start_date')
+            formset.queryset = obj.userpackagesubscription_set.order_by("-start_date")
         return formset
 
 
@@ -1165,22 +1360,46 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
 
     change_form_template = "admin/userpackagesubscription_change_form.html"
 
-    list_display = ('id', 'package', 'applicant_name', 'applicant_phone', 'applicant_email', 'subscription_type', 'start_date', 'end_date', 'is_active', 'payment_status_display')
-    list_filter = ('is_active', 'subscription_type', 'package')
-    search_fields = ('user__email', 'user__username', 'package__name', 'applicant_name', 'applicant_phone', 'applicant_email')
-    date_hierarchy = 'start_date'
-    actions = ('activate_subscriptions',)
+    list_display = (
+        "id",
+        "package",
+        "applicant_name",
+        "applicant_phone",
+        "applicant_email",
+        "subscription_type",
+        "start_date",
+        "end_date",
+        "is_active",
+        "payment_status_display",
+    )
+    list_filter = ("is_active", "subscription_type", "package")
+    search_fields = (
+        "user__email",
+        "user__username",
+        "package__name",
+        "applicant_name",
+        "applicant_phone",
+        "applicant_email",
+    )
+    date_hierarchy = "start_date"
+    actions = ("activate_subscriptions",)
 
     fieldsets = (
-        (None, {
-            'fields': ('user', 'package', 'applicant_name', 'applicant_phone', 'applicant_email', 'subscription_type')
-        }),
-        ('Даты', {
-            'fields': ('start_date', 'end_date')
-        }),
-        ('Статус', {
-            'fields': ('is_active',)
-        }),
+        (
+            None,
+            {
+                "fields": (
+                    "user",
+                    "package",
+                    "applicant_name",
+                    "applicant_phone",
+                    "applicant_email",
+                    "subscription_type",
+                )
+            },
+        ),
+        ("Даты", {"fields": ("start_date", "end_date")}),
+        ("Статус", {"fields": ("is_active",)}),
     )
 
     def payment_status_display(self, obj):
@@ -1189,13 +1408,16 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
             return mark_safe(
                 '<span style="color:#ba8b00; font-weight:bold;">⏳ Ожидает оплаты по счёту</span>'
             )
-        return mark_safe('<span style="color:green; font-weight:bold;">✓ Активна</span>')
+        return mark_safe(
+            '<span style="color:green; font-weight:bold;">✓ Активна</span>'
+        )
+
     payment_status_display.short_description = "Статус оплаты"
 
     def response_change(self, request, obj):
-        if '_assign_package' in request.POST:
+        if "_assign_package" in request.POST:
             return self.assign_package_action(request, obj)
-        if '_activate_subscription' in request.POST:
+        if "_activate_subscription" in request.POST:
             return self.activate_subscription_action(request, obj)
         return super().response_change(request, obj)
 
@@ -1210,8 +1432,8 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         from django.db import transaction
 
         with transaction.atomic():
-            subscription = (
-                UserPackageSubscription.objects.select_for_update().get(pk=subscription.pk)
+            subscription = UserPackageSubscription.objects.select_for_update().get(
+                pk=subscription.pk
             )
             if subscription.is_active:
                 return False
@@ -1220,7 +1442,7 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
                 user=subscription.user, is_active=True
             ).exclude(pk=subscription.pk).update(is_active=False)
 
-            if subscription.subscription_type == 'monthly':
+            if subscription.subscription_type == "monthly":
                 subscription.end_date = timezone.now() + timezone.timedelta(days=30)
             else:
                 subscription.end_date = timezone.now() + timezone.timedelta(days=365)
@@ -1234,25 +1456,29 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         if self.activate_subscription(obj):
             self.message_user(
                 request,
-                f'Подписка #{obj.id} на пакет «{obj.package.name}» активирована. '
-                f'Прежние активные подписки пользователя закрыты.',
+                f"Подписка #{obj.id} на пакет «{obj.package.name}» активирована. "
+                f"Прежние активные подписки пользователя закрыты.",
                 messages.SUCCESS,
             )
         else:
             self.message_user(
                 request,
-                f'Подписка #{obj.id} уже активна — ничего не изменено.',
+                f"Подписка #{obj.id} уже активна — ничего не изменено.",
                 messages.INFO,
             )
-        return redirect(request.META.get('HTTP_REFERER', '/admin/core/userpackagesubscription/'))
+        return redirect(
+            request.META.get("HTTP_REFERER", "/admin/core/userpackagesubscription/")
+        )
 
-    @admin.action(description='Активировать выбранные подписки (оплата по счёту получена)')
+    @admin.action(
+        description="Активировать выбранные подписки (оплата по счёту получена)"
+    )
     def activate_subscriptions(self, request, queryset):
         """Массовая активация подписок из списка."""
         activated = 0
         skipped = 0
         selected_by_user = {}
-        for subscription in queryset.order_by('user_id', '-id'):
+        for subscription in queryset.order_by("user_id", "-id"):
             selected_by_user.setdefault(subscription.user_id, subscription)
 
         for subscription in selected_by_user.values():
@@ -1261,13 +1487,15 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         skipped = queryset.count() - len(selected_by_user)
         self.message_user(
             request,
-            f'Активировано подписок: {activated}. Пропущено дубликатов пользователя: {skipped}.',
+            f"Активировано подписок: {activated}. Пропущено дубликатов пользователя: {skipped}.",
             messages.SUCCESS if activated else messages.INFO,
         )
 
     def assign_package_action(self, request, obj):
         """Просто редирект — основная логика через action."""
-        return redirect(request.META.get('HTTP_REFERER', '/admin/core/userpackagesubscription/'))
+        return redirect(
+            request.META.get("HTTP_REFERER", "/admin/core/userpackagesubscription/")
+        )
 
     def get_urls(self):
         from django.urls import path
@@ -1275,9 +1503,9 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
-                'assign_package/',
+                "assign_package/",
                 self.admin_site.admin_view(self.assign_package_view),
-                name='assign_package',
+                name="assign_package",
             ),
         ]
         return custom_urls + urls
@@ -1288,30 +1516,39 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
         from django.shortcuts import render, get_object_or_404
         from django.http import JsonResponse
 
-        users = CustomUser.objects.filter(user_type='partner').order_by('email')
+        users = CustomUser.objects.filter(user_type="partner").order_by("email")
         packages = EventPackage.objects.all()
 
-        if request.method == 'POST':
-            user_id = request.POST.get('user_id')
-            package_id = request.POST.get('package_id')
-            start_date = request.POST.get('start_date')
-            end_date = request.POST.get('end_date')
+        if request.method == "POST":
+            user_id = request.POST.get("user_id")
+            package_id = request.POST.get("package_id")
+            start_date = request.POST.get("start_date")
+            end_date = request.POST.get("end_date")
 
             user = get_object_or_404(CustomUser, id=user_id)
             package = get_object_or_404(EventPackage, id=package_id)
 
             from django.forms import DateTimeField
+
             try:
-                start = DateTimeField().clean(start_date) if start_date else timezone.now()
+                start = (
+                    DateTimeField().clean(start_date) if start_date else timezone.now()
+                )
             except Exception:
                 start = timezone.now()
             try:
-                end = DateTimeField().clean(end_date) if end_date else start + timezone.timedelta(days=30)
+                end = (
+                    DateTimeField().clean(end_date)
+                    if end_date
+                    else start + timezone.timedelta(days=30)
+                )
             except Exception:
                 end = start + timezone.timedelta(days=30)
 
             # Если была активная подписка — деактивируем
-            UserPackageSubscription.objects.filter(user=user, is_active=True).update(is_active=False)
+            UserPackageSubscription.objects.filter(user=user, is_active=True).update(
+                is_active=False
+            )
 
             subscription = UserPackageSubscription.objects.create(
                 user=user,
@@ -1319,28 +1556,34 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
                 start_date=start,
                 end_date=end,
                 is_active=True,
-                subscription_type='monthly' if package.is_monthly else 'one_time',
+                subscription_type="monthly" if package.is_monthly else "one_time",
             )
 
             # Если это AJAX — вернём JSON
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'status': 'ok',
-                    'message': f'Пакет "{package.name}" выдан {user.email} до {end_date}',
-                })
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "status": "ok",
+                        "message": f'Пакет "{package.name}" выдан {user.email} до {end_date}',
+                    }
+                )
 
             self.message_user(
                 request,
                 f'Пакет "{package.name}" успешно выдан {user.get_full_name()} ({user.email}) до {end.strftime("%d.%m.%Y %H:%M")}',
                 messages.SUCCESS,
             )
-            return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
+            return redirect(request.META.get("HTTP_REFERER", "/admin/core/customuser/"))
 
-        return render(request, 'admin/assign_package.html', {
-            'users': users,
-            'packages': packages,
-            'title': 'Выдать пакет партнёру',
-        })
+        return render(
+            request,
+            "admin/assign_package.html",
+            {
+                "users": users,
+                "packages": packages,
+                "title": "Выдать пакет партнёру",
+            },
+        )
 
     def assign_package(self, request, queryset):
         """Выдать выбранным партнёрам пакет (через модальное окно)."""
@@ -1351,13 +1594,14 @@ class UserPackageSubscriptionAdmin(admin.ModelAdmin):
             messages.INFO,
         )
 
-    assign_package.short_description = 'Выдать пакет'
+    assign_package.short_description = "Выдать пакет"
+
 
 class PartnerPayoutInline(admin.TabularInline):
     model = PayoutRequest
     extra = 0
-    readonly_fields = ('amount', 'status', 'created_at', 'payment_details', 'comment')
-    fields = ('amount', 'status', 'created_at', 'payment_details', 'comment')
+    readonly_fields = ("amount", "status", "created_at", "payment_details", "comment")
+    fields = ("amount", "status", "created_at", "payment_details", "comment")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -1375,25 +1619,56 @@ class PartnerProfileInline(admin.StackedInline):
     verbose_name_plural = "Данные регистрации партнёра"
     readonly_fields = ("agent_contract_number",)
     fieldsets = (
-        ("Основные данные", {
-            "fields": ("agent_contract_number", "registration_type", "company_name", "short_name", "description"),
-        }),
-        ("Реквизиты", {
-            "fields": ("ogrn", "inn", "kpp"),
-        }),
-        ("Адреса", {
-            "fields": ("postal_code", "legal_address", "actual_address"),
-        }),
-        ("Контакты", {
-            "fields": ("website", "contact_person", "phone", "email", "additional_email"),
-        }),
-        ("Ссылки и портфолио", {
-            "fields": ("vk_link", "max_link", "telegram_link", "cases", "reviews"),
-        }),
-        ("Логотип", {
-            "fields": ("logo", "video_business_card"),
-        }),
+        (
+            "Основные данные",
+            {
+                "fields": (
+                    "agent_contract_number",
+                    "registration_type",
+                    "company_name",
+                    "short_name",
+                    "description",
+                ),
+            },
+        ),
+        (
+            "Реквизиты",
+            {
+                "fields": ("ogrn", "inn", "kpp"),
+            },
+        ),
+        (
+            "Адреса",
+            {
+                "fields": ("postal_code", "legal_address", "actual_address"),
+            },
+        ),
+        (
+            "Контакты",
+            {
+                "fields": (
+                    "website",
+                    "contact_person",
+                    "phone",
+                    "email",
+                    "additional_email",
+                ),
+            },
+        ),
+        (
+            "Ссылки и портфолио",
+            {
+                "fields": ("vk_link", "max_link", "telegram_link", "cases", "reviews"),
+            },
+        ),
+        (
+            "Логотип",
+            {
+                "fields": ("logo", "video_business_card"),
+            },
+        ),
     )
+
 
 @admin.register(CustomUser)
 class PartnerAdmin(admin.ModelAdmin):
@@ -1402,66 +1677,110 @@ class PartnerAdmin(admin.ModelAdmin):
     """
 
     list_display = (
-        'username', 'email', 'get_marketing_consent', 'consent_marketing_at',
-        'get_company_name', 'get_contact_person',
-        'get_phone_number', 'get_organizer_status', 'get_permissions_status',
-        'get_agent_contract_number'
+        "username",
+        "email",
+        "get_marketing_consent",
+        "consent_marketing_at",
+        "get_company_name",
+        "get_contact_person",
+        "get_phone_number",
+        "get_organizer_status",
+        "get_permissions_status",
+        "get_agent_contract_number",
     )
 
     list_filter = (
-        'user_type',
-        'is_verified',
-        'verification_status',
-        'organizer_status',
-        'consent_marketing',
+        "user_type",
+        "is_verified",
+        "verification_status",
+        "organizer_status",
+        "consent_marketing",
     )
 
     search_fields = (
-        'username', 'email', 'partner_profile__company_name', 'partner_profile__contact_person', 'partner_profile__phone'
+        "username",
+        "email",
+        "partner_profile__company_name",
+        "partner_profile__contact_person",
+        "partner_profile__phone",
     )
 
     inlines = [PartnerProfileInline]
 
     fieldsets = (
-        ('Статус партнёра', {
-            'fields': ('verification_status', 'rejection_reason'),
-            'description': 'Статус заявки партнёра: на рассмотрении (после регистрации), подтверждено/отклонено админом. Причина отказа — если отклонено.'
-        }),
-        ('Проверенный организатор', {
-            'fields': ('organizer_status', 'organizer_rejection_reason'),
-            'description': 'Статус на основе загруженных документов: нет отметки, на рассмотрении, подтверждено, отклонено.'
-        }),
-        ('Аккаунт', {
-            'fields': ('user_type', 'first_name', 'last_name', 'username', 'date_joined'),
-        }),
-        ('Согласие на рассылку', {
-            'fields': ('consent_marketing', 'consent_marketing_at'),
-        }),
-        ('Права доступа', {
-            'fields': ('can_create_events', 'can_request_reports', 'can_request_payments'),
-            'description': 'Функции, доступные партнёру'
-        }),
+        (
+            "Статус партнёра",
+            {
+                "fields": ("verification_status", "rejection_reason"),
+                "description": "Статус заявки партнёра: на рассмотрении (после регистрации), подтверждено/отклонено админом. Причина отказа — если отклонено.",
+            },
+        ),
+        (
+            "Проверенный организатор",
+            {
+                "fields": ("organizer_status", "organizer_rejection_reason"),
+                "description": "Статус на основе загруженных документов: нет отметки, на рассмотрении, подтверждено, отклонено.",
+            },
+        ),
+        (
+            "Аккаунт",
+            {
+                "fields": (
+                    "user_type",
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "date_joined",
+                ),
+            },
+        ),
+        (
+            "Согласие на рассылку",
+            {
+                "fields": ("consent_marketing", "consent_marketing_at"),
+            },
+        ),
+        (
+            "Права доступа",
+            {
+                "fields": (
+                    "can_create_events",
+                    "can_request_reports",
+                    "can_request_payments",
+                ),
+                "description": "Функции, доступные партнёру",
+            },
+        ),
     )
 
     readonly_fields = (
-        'username', 'email', 'first_name', 'last_name', 'user_type', 'date_joined',
-        'consent_marketing', 'consent_marketing_at',
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "user_type",
+        "date_joined",
+        "consent_marketing",
+        "consent_marketing_at",
     )
 
     change_form_template = "admin/partner_change_form.html"
     form = PartnerAdminForm
 
-    def change_view(self, request, object_id, form_url='', extra_context=None):
+    def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
-        extra_context['admin_context'] = {
-            'users': CustomUser.objects.filter(user_type='partner').order_by('email'),
+        extra_context["admin_context"] = {
+            "users": CustomUser.objects.filter(user_type="partner").order_by("email"),
         }
-        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context
+        )
 
     def get_company_name(self, obj):
-        if hasattr(obj, 'partner_profile') and obj.partner_profile:
-            return obj.partner_profile.company_name or '-'
-        return '-'
+        if hasattr(obj, "partner_profile") and obj.partner_profile:
+            return obj.partner_profile.company_name or "-"
+        return "-"
+
     get_company_name.short_description = "Компания"
 
     @admin.display(description="Согласие на рассылку")
@@ -1469,35 +1788,41 @@ class PartnerAdmin(admin.ModelAdmin):
         return "Согласен" if obj.consent_marketing else "Не согласен"
 
     def get_contact_person(self, obj):
-        if hasattr(obj, 'partner_profile') and obj.partner_profile:
-            return obj.partner_profile.contact_person or '-'
-        return '-'
+        if hasattr(obj, "partner_profile") and obj.partner_profile:
+            return obj.partner_profile.contact_person or "-"
+        return "-"
+
     get_contact_person.short_description = "Контактное лицо"
 
     def get_phone_number(self, obj):
-        if hasattr(obj, 'partner_profile') and obj.partner_profile:
-            return obj.partner_profile.phone or '-'
-        return '-'
+        if hasattr(obj, "partner_profile") and obj.partner_profile:
+            return obj.partner_profile.phone or "-"
+        return "-"
+
     get_phone_number.short_description = "Телефон"
 
     def get_agent_contract_number(self, obj):
-        if hasattr(obj, 'partner_profile') and obj.partner_profile:
+        if hasattr(obj, "partner_profile") and obj.partner_profile:
             num = obj.partner_profile.agent_contract_number
-            return num if num else '-'
-        return '-'
+            return num if num else "-"
+        return "-"
+
     get_agent_contract_number.short_description = "№ договора"
-    get_agent_contract_number.admin_order_field = 'partner_profile__agent_contract_number'
+    get_agent_contract_number.admin_order_field = (
+        "partner_profile__agent_contract_number"
+    )
 
     def get_active_events(self, obj):
         """Количество активных мероприятий партнёра относительно лимита активного пакета."""
         active_subscription = (
-            obj.userpackagesubscription_set
-            .filter(is_active=True)
+            obj.userpackagesubscription_set.filter(is_active=True)
             .select_related("package")
             .first()
         )
         if not active_subscription:
-            return mark_safe('<span style="color:#888;">— (нет активного пакета)</span>')
+            return mark_safe(
+                '<span style="color:#888;">— (нет активного пакета)</span>'
+            )
         package = active_subscription.package
         active_events_count = Event.objects.filter(
             organizer=obj,
@@ -1507,15 +1832,17 @@ class PartnerAdmin(admin.ModelAdmin):
         color = "red" if active_events_count >= package.max_active_events else "green"
         return mark_safe(
             f'<span style="color:{color}; font-weight:bold;">{active_events_count}</span> '
-            f'/ {package.max_active_events} '
+            f"/ {package.max_active_events} "
             f'<span style="color:#888;">({package.name})</span>'
         )
+
     get_active_events.short_description = "Активных мероприятий"
     get_active_events.allow_tags = True
 
     def get_active_subscriptions(self, obj):
         """Возвращает количество активных подписок партнёра"""
         return obj.userpackagesubscription_set.filter(is_active=True).count()
+
     get_active_subscriptions.short_description = "Активные подписки"
 
     def has_active_subscription(self, obj):
@@ -1525,34 +1852,50 @@ class PartnerAdmin(admin.ModelAdmin):
             return mark_safe('<span style="color: green; font-weight: bold;">✓</span>')
         else:
             return mark_safe('<span style="color: red; font-weight: bold;">✗</span>')
+
     has_active_subscription.short_description = "Активная подписка"
     has_active_subscription.allow_tags = True
 
     def get_total_purchases(self, obj):
         """Возвращает общее количество покупок пакетов"""
         return obj.userpackagesubscription_set.count()
+
     get_total_purchases.short_description = "Всего покупок"
 
     def get_permissions_status(self, obj):
         """Показывает статус прав партнёра"""
-        if obj.verification_status == 'approved':
-            return mark_safe('<span style="color: green; font-weight: bold;">✓ Одобрено</span>')
-        elif obj.verification_status == 'rejected':
-            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонено</span>')
-        elif obj.verification_status == 'pending':
-            return mark_safe('<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>')
+        if obj.verification_status == "approved":
+            return mark_safe(
+                '<span style="color: green; font-weight: bold;">✓ Одобрено</span>'
+            )
+        elif obj.verification_status == "rejected":
+            return mark_safe(
+                '<span style="color: red; font-weight: bold;">✗ Отклонено</span>'
+            )
+        elif obj.verification_status == "pending":
+            return mark_safe(
+                '<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>'
+            )
         return mark_safe('<span style="color: gray;">—</span>')
+
     get_permissions_status.short_description = "Статус партнёра"
 
     def get_organizer_status(self, obj):
         """Показывает статус проверенного организатора"""
-        if obj.organizer_status == 'approved':
-            return mark_safe('<span style="color: green; font-weight: bold;">✓ Подтверждено</span>')
-        elif obj.organizer_status == 'rejected':
-            return mark_safe('<span style="color: red; font-weight: bold;">✗ Отклонено</span>')
-        elif obj.organizer_status == 'pending':
-            return mark_safe('<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>')
+        if obj.organizer_status == "approved":
+            return mark_safe(
+                '<span style="color: green; font-weight: bold;">✓ Подтверждено</span>'
+            )
+        elif obj.organizer_status == "rejected":
+            return mark_safe(
+                '<span style="color: red; font-weight: bold;">✗ Отклонено</span>'
+            )
+        elif obj.organizer_status == "pending":
+            return mark_safe(
+                '<span style="color: orange; font-weight: bold;">⏳ На рассмотрении</span>'
+            )
         return mark_safe('<span style="color: gray;">Нет отметки</span>')
+
     get_organizer_status.short_description = "Проверенный организатор"
 
     def get_queryset(self, request):
@@ -1562,17 +1905,15 @@ class PartnerAdmin(admin.ModelAdmin):
         там нужны все пользователи, включая админов и посетителей.
         """
         qs = super().get_queryset(request)
-        if request.path.endswith('/autocomplete/'):
-            return qs.order_by('email')
-        return qs.filter(user_type='partner').prefetch_related(
-            'userpackagesubscription_set',
-            'payoutrequest_set',
-            'partner_profile'
+        if request.path.endswith("/autocomplete/"):
+            return qs.order_by("email")
+        return qs.filter(user_type="partner").prefetch_related(
+            "userpackagesubscription_set", "payoutrequest_set", "partner_profile"
         )
 
     def get_inline_instances(self, request, obj=None):
         """Показываем инлайны только для партнёров"""
-        if obj and obj.user_type == 'partner':
+        if obj and obj.user_type == "partner":
             return super().get_inline_instances(request, obj)
         return []
 
@@ -1593,27 +1934,27 @@ class PartnerAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         """Обрабатываем кнопки одобрения/отклонения/выдачи пакета"""
-        if '_approve' in request.POST:
+        if "_approve" in request.POST:
             return self.approve_partner(request, obj)
-        elif '_reject' in request.POST:
+        elif "_reject" in request.POST:
             return self.reject_partner(request, obj)
-        elif '_assign_package' in request.POST:
+        elif "_assign_package" in request.POST:
             return self.assign_package_from_form(request, obj)
         return super().response_change(request, obj)
-    
+
     def assign_package_from_form(self, request, obj):
         """Выдаёт пакет из формы партнёра."""
         from django.forms import DateTimeField
         from django.shortcuts import redirect
 
-        user_id = request.POST.get('user_id')
-        package_id = request.POST.get('package_id')
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
+        user_id = request.POST.get("user_id")
+        package_id = request.POST.get("package_id")
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
 
         if not user_id or not package_id:
-            self.message_user(request, 'Выберите партнёра и пакет.', messages.ERROR)
-            return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
+            self.message_user(request, "Выберите партнёра и пакет.", messages.ERROR)
+            return redirect(request.META.get("HTTP_REFERER", "/admin/core/customuser/"))
 
         user = get_object_or_404(CustomUser, id=user_id)
         package = get_object_or_404(EventPackage, id=package_id)
@@ -1623,12 +1964,18 @@ class PartnerAdmin(admin.ModelAdmin):
         except Exception:
             start = timezone.now()
         try:
-            end = DateTimeField().clean(end_date) if end_date else start + timezone.timedelta(days=30)
+            end = (
+                DateTimeField().clean(end_date)
+                if end_date
+                else start + timezone.timedelta(days=30)
+            )
         except Exception:
             end = start + timezone.timedelta(days=30)
 
         # Деактивируем текущие активные подписки
-        UserPackageSubscription.objects.filter(user=user, is_active=True).update(is_active=False)
+        UserPackageSubscription.objects.filter(user=user, is_active=True).update(
+            is_active=False
+        )
 
         subscription = UserPackageSubscription.objects.create(
             user=user,
@@ -1636,7 +1983,7 @@ class PartnerAdmin(admin.ModelAdmin):
             start_date=start,
             end_date=end,
             is_active=True,
-            subscription_type='monthly' if package.is_monthly else 'one_time',
+            subscription_type="monthly" if package.is_monthly else "one_time",
         )
 
         self.message_user(
@@ -1644,59 +1991,76 @@ class PartnerAdmin(admin.ModelAdmin):
             f'Пакет "{package.name}" выдан {user.get_full_name()} ({user.email}) до {end.strftime("%d.%m.%Y %H:%M")}',
             messages.SUCCESS,
         )
-        return redirect(request.META.get('HTTP_REFERER', '/admin/core/customuser/'))
-    
+        return redirect(request.META.get("HTTP_REFERER", "/admin/core/customuser/"))
+
     def approve_partner(self, request, obj):
         """Одобряет партнёра"""
-        obj.verification_status = 'approved'
+        obj.verification_status = "approved"
         obj.is_verified = True
         obj.permissions = obj.permissions or {}  # Сохраняем текущие права
         obj.rejection_reason = None
-        obj.save(update_fields=['verification_status', 'is_verified', 'permissions', 'rejection_reason'])
-        
+        obj.save(
+            update_fields=[
+                "verification_status",
+                "is_verified",
+                "permissions",
+                "rejection_reason",
+            ]
+        )
+
         self.message_user(request, f"Партнёр {obj.get_full_name()} успешно одобрен.")
-        
+
         # Отправляем email
         from django.core.mail import send_mail
         from core.utils import get_from_email
+
         try:
             send_mail(
-                subject='Ваш аккаунт одобрен',
-                message=f'''Здравствуйте, {obj.get_full_name()}!
+                subject="Ваш аккаунт одобрен",
+                message=f"""Здравствуйте, {obj.get_full_name()}!
 
 Ваш аккаунт успешно одобрен. Теперь вы можете использовать все функции платформы.
 
 С уважением,
-Администрация платформы''',
+Администрация платформы""",
                 from_email=get_from_email("support"),
                 recipient_list=[obj.email],
                 fail_silently=False,
             )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Не удалось отправить email об одобрении: {e}")
-        
-        return redirect(request.META.get('HTTP_REFERER', '/admin/'))
+
+        return redirect(request.META.get("HTTP_REFERER", "/admin/"))
 
     def reject_partner(self, request, obj):
         """Отклоняет партнёра с причиной"""
-        rejection_reason = request.POST.get('rejection_reason', '')
-        obj.verification_status = 'rejected'
+        rejection_reason = request.POST.get("rejection_reason", "")
+        obj.verification_status = "rejected"
         obj.is_verified = False
         obj.permissions = {}  # Сбрасываем права
         obj.rejection_reason = rejection_reason
-        obj.save(update_fields=['verification_status', 'is_verified', 'permissions', 'rejection_reason'])
-        
+        obj.save(
+            update_fields=[
+                "verification_status",
+                "is_verified",
+                "permissions",
+                "rejection_reason",
+            ]
+        )
+
         self.message_user(request, f"Партнёр {obj.get_full_name()} отклонён.")
-        
+
         # Отправляем email с причиной
         from django.core.mail import send_mail
         from core.utils import get_from_email
-        try: 
+
+        try:
             send_mail(
-                subject='Ваш аккаунт отклонён',
-                message=f'''Здравствуйте, {obj.get_full_name()}!
+                subject="Ваш аккаунт отклонён",
+                message=f"""Здравствуйте, {obj.get_full_name()}!
 
 Ваш аккаунт был отклонён модератором.
 
@@ -1705,17 +2069,19 @@ class PartnerAdmin(admin.ModelAdmin):
 Вы можете исправить данные в настройках профиля и отправить заявку повторно.
 
 С уважением,
-Администрация платформы''',
+Администрация платформы""",
                 from_email=get_from_email("support"),
                 recipient_list=[obj.email],
                 fail_silently=False,
             )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Не удалось отправить email об отклонении: {e}")
-        
-        return redirect(request.META.get('HTTP_REFERER', '/admin/'))
+
+        return redirect(request.META.get("HTTP_REFERER", "/admin/"))
+
 
 # Регистрируем подписки на пакеты
 @admin.register(Category)
@@ -1723,9 +2089,10 @@ class CategoryAdmin(admin.ModelAdmin):
     """
     Админка для управления категориями мероприятий.
     """
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 @admin.register(Format)
@@ -1733,12 +2100,14 @@ class FormatAdmin(admin.ModelAdmin):
     """
     Админка для управления форматами мероприятий.
     """
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 # === Заявки на изменение мероприятия ===
+
 
 @admin.register(EventChangeRequest)
 class EventChangeRequestAdmin(admin.ModelAdmin):
@@ -1790,7 +2159,15 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         ("Заявка", {"fields": ("event", "partner", "status", "created_at")}),
         (
             "Предложенные изменения",
-            {"fields": ("diff_display", "tickets_diff_display", "new_image", "new_video_url", "new_program_file")},
+            {
+                "fields": (
+                    "diff_display",
+                    "tickets_diff_display",
+                    "new_image",
+                    "new_video_url",
+                    "new_program_file",
+                )
+            },
         ),
         (
             "Решение",
@@ -1802,11 +2179,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
     change_form_template = "admin/event_change_request_change_form.html"
 
     def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("event", "partner")
-        )
+        return super().get_queryset(request).select_related("event", "partner")
 
     def has_add_permission(self, request):
         return False
@@ -1837,6 +2210,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             f' padding:2px 10px; border-radius:10px; font-size:12px;">'
             f"{obj.get_status_display()}</span>"
         )
+
     status_badge.short_description = "Статус"
 
     def changes_summary(self, obj):
@@ -1858,6 +2232,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         if obj.delete_image_ids:
             parts.append(f"удалить фото: {len(obj.delete_image_ids)}")
         return ", ".join(parts) or "—"
+
     changes_summary.short_description = "Состав изменений"
 
     def diff_display(self, obj):
@@ -1876,19 +2251,21 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Поле</th>'
                 '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Текущее</th>'
                 '<th style="border:1px solid #ddd; padding:6px; text-align:left; color:#888;">Предложено</th>'
-                '</tr>'
+                "</tr>"
             )
             for label, current, proposed in rows:
                 html.append(
-                    f'<tr>'
+                    f"<tr>"
                     f'<td style="border:1px solid #ddd; padding:6px;">{conditional_escape(label)}</td>'
                     f'<td style="border:1px solid #ddd; padding:6px; color:#888;">{conditional_escape(current)}</td>'
                     f'<td style="border:1px solid #ddd; padding:6px; font-weight:bold; color:#b45309;">{conditional_escape(proposed)}</td>'
-                    f'</tr>'
+                    f"</tr>"
                 )
-            html.append('</table>')
+            html.append("</table>")
         else:
-            html.append('<p style="color:#888; margin: 4px 0;">Изменений обычных полей нет</p>')
+            html.append(
+                '<p style="color:#888; margin: 4px 0;">Изменений обычных полей нет</p>'
+            )
 
         # Медиафлаги (показываем всегда, даже если нет изменений обычных полей)
         flags = []
@@ -1899,17 +2276,25 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         if obj.clear_program_file:
             flags.append("удалить программу")
         if obj.delete_image_ids:
-            flags.append(f"удалить фото галереи: {', '.join(map(str, obj.delete_image_ids))}")
+            flags.append(
+                f"удалить фото галереи: {', '.join(map(str, obj.delete_image_ids))}"
+            )
         if obj.tag_ids:
-            tag_names = list(obj.event.tags.filter(id__in=obj.tag_ids).values_list("name", flat=True))
+            tag_names = list(
+                obj.event.tags.filter(id__in=obj.tag_ids).values_list("name", flat=True)
+            )
             flags.append(f"теги: {', '.join(tag_names) or obj.tag_ids}")
         if flags:
-            html.append('<p style="margin-top:8px; color:#b45309;">' + "; ".join(flags) + "</p>")
+            html.append(
+                '<p style="margin-top:8px; color:#b45309;">' + "; ".join(flags) + "</p>"
+            )
 
         # Новые фото галереи
         gallery = obj.new_gallery_images.all()
         if gallery:
-            html.append('<p style="margin-top:8px; font-weight:bold;">Новые фото галереи:</p>')
+            html.append(
+                '<p style="margin-top:8px; font-weight:bold;">Новые фото галереи:</p>'
+            )
             html.append('<div style="display:flex; flex-wrap:wrap; gap:5px;">')
             for img in gallery:
                 primary = " (основное)" if img.is_primary else ""
@@ -1921,6 +2306,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             html.append("</div>")
 
         return mark_safe("".join(html))
+
     diff_display.short_description = "Изменения полей"
 
     def tickets_diff_display(self, obj):
@@ -1936,12 +2322,13 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         current_by_name = {}
         for t in event.tickets.all():
             # Считаем реально проданные билеты: заказы с оплаченным статусом
-            sold = t.orders.filter(
-                payment_status__in=["succeeded", "reserved"]
-            ).aggregate(total=Sum("quantity"))["total"] or 0
-            has_paid = t.orders.filter(
-                payment_status__in=["succeeded"]
-            ).exists()
+            sold = (
+                t.orders.filter(payment_status__in=["succeeded", "reserved"]).aggregate(
+                    total=Sum("quantity")
+                )["total"]
+                or 0
+            )
+            has_paid = t.orders.filter(payment_status__in=["succeeded"]).exists()
             current_by_name[t.name.lower()] = {
                 "obj": t,
                 "price": str(t.price),
@@ -1965,25 +2352,26 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 "quantity": quantity,
             }
 
-        all_names = list(dict.fromkeys(
-            list(current_by_name.keys()) + list(proposed_by_name.keys())
-        ))
+        all_names = list(
+            dict.fromkeys(list(current_by_name.keys()) + list(proposed_by_name.keys()))
+        )
 
         html = []
 
         # Предупреждение о билетах, которые нельзя удалить
         blocked_tickets = [
-            name for name, cur in current_by_name.items()
+            name
+            for name, cur in current_by_name.items()
             if cur["has_paid"] and name not in proposed_by_name
         ]
         if blocked_tickets:
             html.append(
                 '<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:4px; '
                 'padding:10px 14px; margin-bottom:10px; font-size:13px; color:#856404;">'
-                '⚠️ <strong>Внимание:</strong> следующие билеты нельзя удалить, так как на них '
-                'уже есть оплаченные заказы. Билеты останутся без изменений: '
+                "⚠️ <strong>Внимание:</strong> следующие билеты нельзя удалить, так как на них "
+                "уже есть оплаченные заказы. Билеты останутся без изменений: "
                 f'{", ".join(blocked_tickets)}'
-                '</div>'
+                "</div>"
             )
 
         html.append(
@@ -2031,9 +2419,11 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             if cur and prop:
                 cur_price = f"{float(cur['price']):.2f} ₽"
                 prop_price = f"{prop['price']:.2f} ₽"
-                price_changed = abs(float(cur['price']) - prop['price']) > 0.01
-                price_style = f"color:#b45309; font-weight:bold;" if price_changed else ""
-                cur_sold = cur['sold']
+                price_changed = abs(float(cur["price"]) - prop["price"]) > 0.01
+                price_style = (
+                    f"color:#b45309; font-weight:bold;" if price_changed else ""
+                )
+                cur_sold = cur["sold"]
                 prop_sold = "—"
             elif prop:
                 cur_price = "—"
@@ -2046,33 +2436,35 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 cur_price = f"{float(cur['price']):.2f} ₽"
                 prop_price = "—"
                 price_style = ""
-                cur_sold = cur['sold']
+                cur_sold = cur["sold"]
                 prop_sold = "—"
             else:
                 cur_price = f"{float(cur['price']):.2f} ₽"
                 prop_price = "—"
                 price_style = ""
-                cur_sold = cur['sold']
+                cur_sold = cur["sold"]
                 prop_sold = "—"
 
-            cur_qty = cur['quantity'] if cur else "—"
-            prop_qty = prop['quantity'] if prop else "—"
+            cur_qty = cur["quantity"] if cur else "—"
+            prop_qty = prop["quantity"] if prop else "—"
 
             # Считаем доступные места
             if cur and prop:
-                avail_str = str(prop['quantity'] - cur['sold'])
+                avail_str = str(prop["quantity"] - cur["sold"])
             elif cur:
-                avail_str = str(cur['quantity'] - cur['sold'])
+                avail_str = str(cur["quantity"] - cur["sold"])
             else:
-                avail_str = str(prop['quantity'])
+                avail_str = str(prop["quantity"])
 
             # Цветовая ячейка
             color_cell = ""
             if cur:
-                color_cell = f'<td style="border:1px solid #dee2e6; padding:8px; text-align:center;">' \
-                             f'<span style="display:inline-block; width:24px; height:24px; ' \
-                             f'background:{cur["color"]}; border-radius:4px; vertical-align:middle;"></span>' \
-                             f"</td>"
+                color_cell = (
+                    f'<td style="border:1px solid #dee2e6; padding:8px; text-align:center;">'
+                    f'<span style="display:inline-block; width:24px; height:24px; '
+                    f'background:{cur["color"]}; border-radius:4px; vertical-align:middle;"></span>'
+                    f"</td>"
+                )
             elif prop:
                 color_cell = '<td style="border:1px solid #dee2e6; padding:8px; text-align:center; color:#aaa;">—</td>'
 
@@ -2080,7 +2472,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 f'<tr style="{action_class}">'
                 f'<td style="border:1px solid #dee2e6; padding:8px; font-size:12px;">{action_label}</td>'
                 f'<td style="border:1px solid #dee2e6; padding:8px; {name_style}">{conditional_escape(prop["name"] if prop else cur["obj"].name)}</td>'
-                f'{color_cell}'
+                f"{color_cell}"
                 f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right; {price_style}">{cur_price} → {prop_price}</td>'
                 f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{cur_qty} → {prop_qty}</td>'
                 f'<td style="border:1px solid #dee2e6; padding:8px; text-align:right;">{cur_sold}</td>'
@@ -2090,6 +2482,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
 
         html.append("</table></div>")
         return mark_safe("".join(html))
+
     tickets_diff_display.short_description = "Изменения билетов"
 
     # --- Действия ---
@@ -2104,7 +2497,10 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 approved += 1
             except Exception as e:
                 logger.error(
-                    "Ошибка применения заявки #%s: %s", change_request.pk, e, exc_info=True
+                    "Ошибка применения заявки #%s: %s",
+                    change_request.pk,
+                    e,
+                    exc_info=True,
                 )
                 self.message_user(
                     request,
@@ -2113,13 +2509,16 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
                 )
         if approved:
             self.message_user(request, f"Одобрено и применено заявок: {approved}.")
+
     approve_requests.short_description = "Одобрить и применить изменения"
 
     def reject_requests(self, request, queryset):
         """Отклонить выбранные заявки (с комментарием)."""
         pending = queryset.filter(status="pending")
         if not pending.exists():
-            self.message_user(request, "Нет заявок на рассмотрении.", level=messages.WARNING)
+            self.message_user(
+                request, "Нет заявок на рассмотрении.", level=messages.WARNING
+            )
             return None
         if "apply" in request.POST:
             comment = request.POST.get("admin_comment", "")
@@ -2146,6 +2545,7 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
         </form>
         """
         return mark_safe(form)
+
     reject_requests.short_description = "Отклонить заявки"
 
     def response_change(self, request, obj):
@@ -2154,20 +2554,34 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
             try:
                 # Если есть видео — логирование перед обработкой
                 if obj.new_video_url:
-                    logger.info(f"APPROVE: Заявка #{obj.pk} имеет видео {obj.new_video_url.name}, будет запущена обработка")
-                
+                    logger.info(
+                        f"APPROVE: Заявка #{obj.pk} имеет видео {obj.new_video_url.name}, будет запущена обработка"
+                    )
+
                 obj.apply_to_event(request.user)
                 obj.notify_partner()
-                
+
                 # Проверка статуса видео после применения
                 obj.event.refresh_from_db()
-                if obj.event.video_url and obj.event.video_processing_status == 'pending':
-                    logger.info(f"APPROVE: Видео для Event {obj.event.id} установлено в статус pending, Celery должен обработать")
-                
-                self.message_user(request, f"Заявка #{obj.pk} одобрена, изменения применены. Видео будет обработано.")
+                if (
+                    obj.event.video_url
+                    and obj.event.video_processing_status == "pending"
+                ):
+                    logger.info(
+                        f"APPROVE: Видео для Event {obj.event.id} установлено в статус pending, Celery должен обработать"
+                    )
+
+                self.message_user(
+                    request,
+                    f"Заявка #{obj.pk} одобрена, изменения применены. Видео будет обработано.",
+                )
             except Exception as e:
-                logger.error("Ошибка применения заявки #%s: %s", obj.pk, e, exc_info=True)
-                self.message_user(request, f"Не удалось применить заявку: {e}", level=messages.ERROR)
+                logger.error(
+                    "Ошибка применения заявки #%s: %s", obj.pk, e, exc_info=True
+                )
+                self.message_user(
+                    request, f"Не удалось применить заявку: {e}", level=messages.ERROR
+                )
             return redirect(request.path)
         if "_reject" in request.POST and obj.status == "pending":
             obj.reject(request.user, request.POST.get("admin_comment_review", ""))
@@ -2181,20 +2595,25 @@ class EventChangeRequestAdmin(admin.ModelAdmin):
 class LegalDocumentAdmin(admin.ModelAdmin):
     """Юридические страницы: текст правится прямо в админке, набор страниц фиксирован."""
 
-    list_display = ('title', 'slug', 'updated_at', 'open_page')
-    search_fields = ('title', 'slug')
-    readonly_fields = ('slug', 'updated_at')
+    list_display = ("title", "slug", "updated_at", "open_page")
+    search_fields = ("title", "slug")
+    readonly_fields = ("slug", "updated_at")
     formfield_overrides = {
-        models.TextField: {'widget': admin.widgets.AdminTextareaWidget(attrs={
-            'rows': 30, 'style': 'width: 100%; font-family: Consolas, monospace;',
-        })},
+        models.TextField: {
+            "widget": admin.widgets.AdminTextareaWidget(
+                attrs={
+                    "rows": 30,
+                    "style": "width: 100%; font-family: Consolas, monospace;",
+                }
+            )
+        },
     }
 
-    @admin.display(description='Страница')
+    @admin.display(description="Страница")
     def open_page(self, obj):
         url = obj.get_absolute_url()
         if not url:
-            return '—'
+            return "—"
         return format_html('<a href="{}" target="_blank">открыть</a>', url)
 
     def has_add_permission(self, request):
@@ -2209,9 +2628,9 @@ class LegalDocumentAdmin(admin.ModelAdmin):
 class PartnerAgreementAdmin(admin.ModelAdmin):
     """Договор для партнёров — загружается через админку."""
 
-    list_display = ('file_link', 'is_active', 'created_at', 'updated_at')
-    list_filter = ('is_active',)
-    readonly_fields = ('created_at', 'updated_at')
+    list_display = ("file_link", "is_active", "created_at", "updated_at")
+    list_filter = ("is_active",)
+    readonly_fields = ("created_at", "updated_at")
 
     def delete_queryset(self, request, queryset):
         for obj in queryset.iterator():
@@ -2219,24 +2638,27 @@ class PartnerAgreementAdmin(admin.ModelAdmin):
 
     def file_link(self, obj):
         if obj.file:
-            return format_html('<a href="{}" target="_blank">Открыть файл</a>', obj.file.url)
-        return '—'
-    file_link.short_description = 'Файл'
+            return format_html(
+                '<a href="{}" target="_blank">Открыть файл</a>', obj.file.url
+            )
+        return "—"
+
+    file_link.short_description = "Файл"
 
 
 class FAQItemInline(admin.TabularInline):
     model = FAQItem
     extra = 0
-    fields = ('question', 'answer', 'order', 'is_active')
-    ordering = ('order',)
+    fields = ("question", "answer", "order", "is_active")
+    ordering = ("order",)
 
 
 @admin.register(FAQCategory)
 class FAQCategoryAdmin(admin.ModelAdmin):
     """Категории FAQ."""
 
-    list_display = ('name', 'icon_preview', 'order', 'items_count')
-    list_editable = ('order',)
+    list_display = ("name", "icon_preview", "order", "items_count")
+    list_editable = ("order",)
     inlines = [FAQItemInline]
 
     def delete_queryset(self, request, queryset):
@@ -2254,14 +2676,15 @@ class FAQCategoryAdmin(admin.ModelAdmin):
 
     def items_count(self, obj):
         return obj.items.count()
-    items_count.short_description = 'Вопросов'
+
+    items_count.short_description = "Вопросов"
 
 
 @admin.register(FAQItem)
 class FAQItemAdmin(admin.ModelAdmin):
     """Вопросы FAQ."""
 
-    list_display = ('question', 'category', 'order', 'is_active')
-    list_filter = ('is_active', 'category')
-    list_editable = ('category', 'order', 'is_active')
-    search_fields = ('question', 'answer')
+    list_display = ("question", "category", "order", "is_active")
+    list_filter = ("is_active", "category")
+    list_editable = ("category", "order", "is_active")
+    search_fields = ("question", "answer")

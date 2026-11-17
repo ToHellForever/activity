@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{% static '/css/carousel.css' %}">
 <link rel="stylesheet" href="{% static 'css/pages/landing.css' %}">
 {% include "includes/modal_buy_ticket.html" %}
+{% include "includes/modal_event_booking.html" %}
 {% if event.allow_platform_requests %}
 {% include "includes/modal_question.html" %}
 {% endif %}
@@ -26,8 +27,8 @@
 <div class="event-detail-container">
     <div class='row'>
 <div class='col-12 col-md-6 event-detail-image'>
-    {% if event.image or event.images.exists %}
-        {% if event.image and event.images.count > 1 %}
+    {% if event.image or event_images %}
+        {% if event.image and event_images|length > 1 %}
             <!-- Карусель: основное фото + дополнительные -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
                 {% if event.badge_text_detail %}
@@ -43,7 +44,7 @@
                     <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="0"
                         class="active" aria-current="true" aria-label="Slide 1">
                     </button>
-                    {% for img in event.images.all %}
+                    {% for img in event_images %}
                     <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter }}" 
                         aria-label="Slide {{ forloop.counter|add:1 }}">
                     </button>
@@ -53,7 +54,7 @@
                     <div class="carousel-item photo-frame active" style="--photo-background: url('{{ event.primary_image_url }}')">
                         <img src="{{ event.primary_image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
-                    {% for img in event.images.all %}
+                    {% for img in event_images %}
                     {% if img.image_url %}
                     <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image_url }}')">
                         <img src="{{ img.image_url }}" class="d-block w-100" alt="{{ event.title }}">
@@ -70,7 +71,7 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
-        {% elif event.images.count > 1 %}
+        {% elif event_images|length > 1 %}
             <!-- Карусель только из дополнительных фото (без основного) -->
             <div id="eventCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
                 {% if event.badge_text_detail %}
@@ -83,7 +84,7 @@
                 </div>
                 {% endif %}
                 <div class="carousel-indicators">
-                    {% for img in event.images.all %}
+                    {% for img in event_images %}
                     <button type="button" data-bs-target="#eventCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
                         class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}"
                         aria-label="Slide {{ forloop.counter }}">
@@ -91,7 +92,7 @@
                     {% endfor %}
                 </div>
                 <div class="carousel-inner">
-                    {% for img in event.images.all %}
+                    {% for img in event_images %}
                     {% if img.image_url %}
                     <div class="carousel-item photo-frame {% if forloop.first %}active{% endif %}" style="--photo-background: url('{{ img.image_url }}')">
                         <img src="{{ img.image_url }}" class="d-block w-100" alt="{{ event.title }}">
@@ -124,11 +125,11 @@
             </div>
         {% else %}
             <!-- Одиночное дополнительное фото -->
-            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}')">
+            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event_images.0.image_url|default:"/media/icon/logo.svg" }}')">
                 {% if event.badge_text_detail %}
                 <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text_detail }}</span>
                 {% endif %}
-                <img src="{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}" alt="{{ event.title }}">
+                <img src="{{ event_images.0.image_url|default:"/media/icon/logo.svg" }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
                 <div class="verified-badge">
                     <img src="/media/icon/ok.png" alt="" class='arrow-card'>
@@ -225,7 +226,8 @@
                 </div>
                 {% endfor %}
         </div>
-        <div class="mt-2 d-flex flex-column">
+        <div class="mt-2 d-flex flex-column align-items-start">
+            <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#eventBookingModal">Оставить заявку на участие</a>
             {% if event.allow_platform_requests %}
             <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
             {% endif %}
@@ -237,7 +239,8 @@
     {% endwith %}
     {% else %}
     <div class="mt-2">
-        <div class="d-flex align-items-center">
+        <div class="d-flex flex-column align-items-start">
+        <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#eventBookingModal">Оставить заявку на участие</a>
         {% if event.allow_platform_requests %}
         <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
         {% endif %}

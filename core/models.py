@@ -11,6 +11,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from core.mixins import VideoWatermarkMixin, ImageWatermarkMixin
+
 try:
     from core.redis_utils import get_lock
 
@@ -32,22 +33,25 @@ def validate_faq_icon_size(uploaded_file):
     if uploaded_file.size > max_size:
         raise ValidationError("Размер иконки FAQ не должен превышать 2 МБ.")
 
- 
+
 class CustomUser(AbstractUser, VideoWatermarkMixin):
     USER_TYPE_CHOICES = (
         ("guest", "Гость"),
         ("visitor", "Посетитель"),
         ("partner", "Партнёр"),
     )
-    email = models.EmailField( 
-        max_length=254, verbose_name='Email', unique=True 
-    )
+    email = models.EmailField(max_length=254, verbose_name="Email", unique=True)
     user_type = models.CharField(
-        max_length=10, choices=USER_TYPE_CHOICES, default="guest", verbose_name='Тип пользователя'
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        default="guest",
+        verbose_name="Тип пользователя",
     )
     username = models.CharField(max_length=150, unique=True, verbose_name="Логин")
-    phone = models.CharField(max_length=30, blank=True, null=True, verbose_name="Телефон")
-    is_verified = models.BooleanField(default=False, verbose_name='Подтверждено')
+    phone = models.CharField(
+        max_length=30, blank=True, null=True, verbose_name="Телефон"
+    )
+    is_verified = models.BooleanField(default=False, verbose_name="Подтверждено")
     verification_status = models.CharField(
         max_length=20,
         choices=[
@@ -93,7 +97,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         verbose_name="Причина отказа",
         help_text="Причина, по которой заявка партнёра была отклонена",
     )
-    
+
     # Токен для восстановления пароля (временно, удаляется после использования)
     password_reset_token = models.CharField(
         max_length=64,
@@ -171,10 +175,14 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         expires_at = self.unverified_expires_at()
         return expires_at is not None and timezone.now() > expires_at
 
-    def set_marketing_consent(self, consent, *, changed_at=None, record_unchanged=False):
+    def set_marketing_consent(
+        self, consent, *, changed_at=None, record_unchanged=False
+    ):
         """Persist a consent change and append it to the audit history."""
         if not self.pk:
-            raise ValueError("Нельзя записать согласие для несохранённого пользователя.")
+            raise ValueError(
+                "Нельзя записать согласие для несохранённого пользователя."
+            )
 
         consent = bool(consent)
         changed_at = changed_at or timezone.now()
@@ -205,6 +213,7 @@ class CustomUser(AbstractUser, VideoWatermarkMixin):
         # Удаляем все подписки пользователя
         self.userpackagesubscription_set.all().delete()
         super().delete(*args, **kwargs)
+
 
 User = get_user_model()
 
@@ -239,7 +248,7 @@ class PartnerDocument(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Партнёр")
     document = models.FileField(
-        upload_to="partner_documents/", 
+        upload_to="partner_documents/",
         verbose_name="Документ",
         storage=None,  # Будет установлено в apps.py
     )
@@ -263,17 +272,22 @@ class PartnerDocument(models.Model):
     )
 
     def __str__(self):
-        status = "подтверждён" if self.is_approved else ("отклонён" if self.rejection_reason else "на проверке")
+        status = (
+            "подтверждён"
+            if self.is_approved
+            else ("отклонён" if self.rejection_reason else "на проверке")
+        )
         return f"Документ {self.user.get_full_name()} - {status}"
 
     def get_user_name(self):
         """Возвращает имя пользователя для админки."""
         return self.user.get_full_name() or self.user.email
-    
+
     class Meta:
         verbose_name = "Документ партнёра"
         verbose_name_plural = "Документы партнёров"
         ordering = ["-uploaded_at"]
+
 
 class Category(models.Model):
     """Модель для категорий мероприятий."""
@@ -290,10 +304,13 @@ class Category(models.Model):
         verbose_name_plural = "Категории"
         ordering = ["name"]
 
+
 class Format(models.Model):
     """Модель для форматов мероприятий."""
 
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название формата")
+    name = models.CharField(
+        max_length=100, unique=True, verbose_name="Название формата"
+    )
 
     def __str__(self):
         return self.name
@@ -302,42 +319,74 @@ class Format(models.Model):
         verbose_name = "Формат"
         verbose_name_plural = "Форматы"
         ordering = ["name"]
-        
+
+
 class EventPackage(models.Model):
     """Модель для пакетов мероприятий."""
 
     name = models.CharField(max_length=100, unique=True, verbose_name="Название пакета")
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Цена пакета")
-    max_active_events = models.PositiveIntegerField(default=1, verbose_name="Максимум активных мероприятий")
-    event_card_type = models.CharField(max_length=20, choices=[
-        ('basic', 'Базовая'),
-        ('extended', 'Расширенная'),
-        ('priority', 'Приоритетная'),
-    ], default='basic', verbose_name="Тип карточки события")
-    description_type = models.CharField(max_length=20, choices=[
-        ('short', 'Краткое'),
-        ('detailed', 'Подробное'),
-    ], default='short', verbose_name="Тип описания")
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, verbose_name="Цена пакета"
+    )
+    max_active_events = models.PositiveIntegerField(
+        default=1, verbose_name="Максимум активных мероприятий"
+    )
+    event_card_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("basic", "Базовая"),
+            ("extended", "Расширенная"),
+            ("priority", "Приоритетная"),
+        ],
+        default="basic",
+        verbose_name="Тип карточки события",
+    )
+    description_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("short", "Краткое"),
+            ("detailed", "Подробное"),
+        ],
+        default="short",
+        verbose_name="Тип описания",
+    )
     max_description_length = models.PositiveIntegerField(
         default=1500,
         validators=[MinValueValidator(1)],
         verbose_name="Максимум символов в описании мероприятия",
         help_text="Укажите максимальное количество символов в описании мероприятий этого пакета.",
     )
-    description = models.TextField(verbose_name="Описание", default="", blank=True, null=True)
-    priority_description = models.TextField(verbose_name="Описание приоритета", default="", blank=True, null=True)
-    has_program_and_speakers = models.BooleanField(default=True, verbose_name="Программа и спикеры")
+    description = models.TextField(
+        verbose_name="Описание", default="", blank=True, null=True
+    )
+    priority_description = models.TextField(
+        verbose_name="Описание приоритета", default="", blank=True, null=True
+    )
+    has_program_and_speakers = models.BooleanField(
+        default=True, verbose_name="Программа и спикеры"
+    )
     max_photos = models.PositiveIntegerField(default=1, verbose_name="Максимум фото")
     has_video = models.BooleanField(default=False, verbose_name="Видео")
-    has_platform_request = models.BooleanField(default=True, verbose_name="Заявка внутри платформы")
-    has_free_registration = models.BooleanField(default=True, verbose_name="Зарегистрироваться (бесплатное мероприятие)")
+    has_platform_request = models.BooleanField(
+        default=True, verbose_name="Заявка внутри платформы"
+    )
+    has_free_registration = models.BooleanField(
+        default=True, verbose_name="Зарегистрироваться (бесплатное мероприятие)"
+    )
     has_ticket_sales = models.BooleanField(default=True, verbose_name="Покупка билета")
-    visibility_level = models.CharField(max_length=20, choices=[
-        ('basic', 'Базовая'),
-        ('enhanced', 'Повышенная'),
-        ('priority', 'Приоритетная'),
-    ], default='basic', verbose_name="Видимость в каталоге")
-    has_collection_participation = models.BooleanField(default=False, verbose_name="Участие в подборках")
+    visibility_level = models.CharField(
+        max_length=20,
+        choices=[
+            ("basic", "Базовая"),
+            ("enhanced", "Повышенная"),
+            ("priority", "Приоритетная"),
+        ],
+        default="basic",
+        verbose_name="Видимость в каталоге",
+    )
+    has_collection_participation = models.BooleanField(
+        default=False, verbose_name="Участие в подборках"
+    )
     is_monthly = models.BooleanField(default=False, verbose_name="Ежемесячная подписка")
 
     class Meta:
@@ -363,47 +412,44 @@ class EventPackage(models.Model):
     def can_create_event(self, user):
         """Проверяет, может ли пользователь создать новое мероприятие с этим пакетом"""
         active_events_count = Event.objects.filter(
-            organizer=user,
-            status__in=["active", "on_moderation"],
-            package=self
+            organizer=user, status__in=["active", "on_moderation"], package=self
         ).count()
         return active_events_count < self.max_active_events
+
 
 class UserPackageSubscription(models.Model):
     """Модель для хранения информации о подписках пользователей на пакеты."""
 
     user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь"
+        CustomUser, on_delete=models.CASCADE, verbose_name="Пользователь"
     )
     package = models.ForeignKey(
         EventPackage,
         on_delete=models.CASCADE,
         verbose_name="Пакет",
-        related_name="active_subscriptions"
+        related_name="active_subscriptions",
     )
-    applicant_name = models.CharField(max_length=255, blank=True, default="", verbose_name="Имя заявителя")
-    applicant_phone = models.CharField(max_length=30, blank=True, default="", verbose_name="Телефон заявителя")
-    applicant_email = models.EmailField(blank=True, default="", verbose_name="Email заявителя")
+    applicant_name = models.CharField(
+        max_length=255, blank=True, default="", verbose_name="Имя заявителя"
+    )
+    applicant_phone = models.CharField(
+        max_length=30, blank=True, default="", verbose_name="Телефон заявителя"
+    )
+    applicant_email = models.EmailField(
+        blank=True, default="", verbose_name="Email заявителя"
+    )
     start_date = models.DateTimeField(
-        default=timezone.now,
-        verbose_name="Дата начала подписки"
+        default=timezone.now, verbose_name="Дата начала подписки"
     )
-    end_date = models.DateTimeField(
-        verbose_name="Дата окончания подписки"
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name="Активна"
-    )
+    end_date = models.DateTimeField(verbose_name="Дата окончания подписки")
+    is_active = models.BooleanField(default=True, verbose_name="Активна")
     subscription_type = models.CharField(
         max_length=20,
         choices=[
-            ('monthly', 'Ежемесячная подписка'),
+            ("monthly", "Ежемесячная подписка"),
         ],
-        default='monthly',
-        verbose_name="Тип подписки"
+        default="monthly",
+        verbose_name="Тип подписки",
     )
     scheduled_change_to = models.ForeignKey(
         EventPackage,
@@ -412,13 +458,13 @@ class UserPackageSubscription(models.Model):
         blank=True,
         verbose_name="Запланированный пакет",
         help_text="Пакет, на который будет переключена подписка после окончания текущей",
-        related_name="scheduled_subscriptions"
+        related_name="scheduled_subscriptions",
     )
     scheduled_change_date = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name="Дата запланированного изменения",
-        help_text="Дата, когда должен вступить в силу запланированный пакет"
+        help_text="Дата, когда должен вступить в силу запланированный пакет",
     )
 
     class Meta:
@@ -433,7 +479,7 @@ class UserPackageSubscription(models.Model):
         # Автоматический срок задаём только если дата не была передана явно.
         # Это важно для выдачи пакета администратором на произвольный срок.
         if not self.pk and not self.end_date:
-            if self.subscription_type == 'monthly':
+            if self.subscription_type == "monthly":
                 self.end_date = timezone.now() + timezone.timedelta(days=30)
             else:  # one_time
                 self.end_date = timezone.now() + timezone.timedelta(days=365)
@@ -441,7 +487,7 @@ class UserPackageSubscription(models.Model):
         # Обновляем is_active, если подписка просрочена
         if self.end_date and self.end_date < timezone.now():
             self.is_active = False
-            
+
         super().save(*args, **kwargs)
 
     def is_expired(self):
@@ -473,8 +519,10 @@ class UserPackageSubscription(models.Model):
             new_subscription = UserPackageSubscription.objects.create(
                 user=self.user,
                 package=self.scheduled_change_to,
-                subscription_type='monthly' if self.scheduled_change_to.is_monthly else 'one_time',
-                is_active=True
+                subscription_type=(
+                    "monthly" if self.scheduled_change_to.is_monthly else "one_time"
+                ),
+                is_active=True,
             )
 
             # Clear scheduled change
@@ -486,10 +534,13 @@ class UserPackageSubscription(models.Model):
             return new_subscription
         return None
 
+
 class MainTag(models.Model):
     """Модель для основных тегов (категорий тегов)."""
 
-    name = models.CharField(max_length=50, unique=True, verbose_name="Название основного тега")
+    name = models.CharField(
+        max_length=50, unique=True, verbose_name="Название основного тега"
+    )
 
     def __str__(self):
         return self.name
@@ -498,6 +549,7 @@ class MainTag(models.Model):
         verbose_name = "Основной тег"
         verbose_name_plural = "Основные теги"
         ordering = ["name"]
+
 
 class Tag(models.Model):
     """Модель для подтегов мероприятий."""
@@ -518,6 +570,7 @@ class Tag(models.Model):
         verbose_name = "Подтег"
         verbose_name_plural = "Подтеги"
         ordering = ["main_tag__name", "name"]
+
 
 class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     """Модель для мероприятия."""
@@ -587,10 +640,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         help_text="Укажите, за сколько часов до начала мероприятия можно вернуть билет",
     )
     image = models.ImageField(
-        upload_to="event_images/", 
-        verbose_name="Изображение", 
-        blank=True,
-        null=True
+        upload_to="event_images/", verbose_name="Изображение", blank=True, null=True
     )
 
     category = models.ForeignKey(
@@ -621,7 +671,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         help_text="Максимальная длительность видео: 5 минут.",
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "mov", "avi"]),
-        ]
+        ],
     )
     processed_video_url_hash = models.CharField(
         max_length=32,
@@ -708,6 +758,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         default=10.00,  # Ставим дефолтное значение
         verbose_name="Комиссия (%)",
     )
+
     @property
     def has_sold_tickets(self):
         """Проверяет, были ли когда-либо проданы билеты на мероприятии (включая возвращённые)."""
@@ -732,6 +783,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         if not tickets:
             return False
         return all(ticket.available_quantity == 0 for ticket in tickets)
+
     package = models.ForeignKey(
         EventPackage,
         on_delete=models.SET_NULL,
@@ -752,22 +804,45 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         null=True,
         help_text="Данные о местоположении в формате JSON (координаты, адрес, дополнительная информация)",
     )
-    additional_adress = models.CharField(max_length=255, verbose_name="Дополнение к адресу", blank=True, null=True, default='',)
-    address = models.CharField(max_length=255, verbose_name="Адрес", blank=True, null=True, default='',)
+    additional_adress = models.CharField(
+        max_length=255,
+        verbose_name="Дополнение к адресу",
+        blank=True,
+        null=True,
+        default="",
+    )
+    address = models.CharField(
+        max_length=255,
+        verbose_name="Адрес",
+        blank=True,
+        null=True,
+        default="",
+    )
     city = models.CharField(max_length=100, default="", verbose_name="Город")
     district = models.CharField(max_length=100, blank=True, verbose_name="Район")
     metro = models.CharField(max_length=100, blank=True, verbose_name="Ближайшее метро")
 
     latitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True, default=None,verbose_name="Широта",
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Широта",
     )
     longitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True, default=None,verbose_name="Широта",
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Широта",
     )
     requires_strict_moderation = models.BooleanField(
         default=False,
         verbose_name="Требует строгой модерации",
     )
+
     def __str__(self):
         return self.title
 
@@ -777,21 +852,37 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         old_video_url = None
         old_video_hash = None
         old_program_file = None
-        
+
         if self.pk:
-            old = Event.objects.only('image', 'video_url', 'processed_video_url_hash', 'program_file', 'status', 'date_time').get(pk=self.pk)
+            old = Event.objects.only(
+                "image",
+                "video_url",
+                "processed_video_url_hash",
+                "program_file",
+                "status",
+                "date_time",
+            ).get(pk=self.pk)
             old_image = old.image
             old_video_url = old.video_url
             old_video_hash = old.processed_video_url_hash
             old_program_file = old.program_file
 
             # Автоматически завершаем прошедшие мероприятия
-            if self.status == "active" and old.status == "active" and old.date_time < timezone.now():
+            if (
+                self.status == "active"
+                and old.status == "active"
+                and old.date_time < timezone.now()
+            ):
                 self.status = "completed"
-        
+
         # Проверяем, было ли заменено видео ДО сохранения
         if self.pk and old_video_url != self.video_url and self.video_url:
-            logger.info("Event %s: Video changed! old=%s, new=%s", self.pk, old_video_url, self.video_url)
+            logger.info(
+                "Event %s: Video changed! old=%s, new=%s",
+                self.pk,
+                old_video_url,
+                self.video_url,
+            )
             # Обнуляем хэш ДО сохранения, чтобы сигнал post_save увидел None и запустил задачу
             self.processed_video_url_hash = None
 
@@ -799,9 +890,11 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 
         # Удаляем старые файлы ПОСЛЕ сохранения (чтобы не удалить новые)
         # НО не удаляем, если это внутренняя синхронизация (флаг _avoid_file_deletion)
-        if self.pk and not getattr(self, '_avoid_file_deletion', False):
+        if self.pk and not getattr(self, "_avoid_file_deletion", False):
             # Удаляем старое видео, если оно заменено
-            if old_video_url and (not self.video_url or old_video_url != self.video_url):
+            if old_video_url and (
+                not self.video_url or old_video_url != self.video_url
+            ):
                 self.delete_old_video_file(old_video_url, old_video_hash)
 
             # Удаляем старое изображение, если оно заменено
@@ -821,6 +914,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
             if isinstance(self.place_data, str):
                 try:
                     import json
+
                     place_data = json.loads(self.place_data)
                 except json.JSONDecodeError:
                     place_data = {}
@@ -839,7 +933,6 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
 
             self.place_data = place_data
 
-
     def get_refund_deadline(self):
         """
         Возвращает крайний срок возврата билета.
@@ -851,13 +944,9 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         """
         Возвращает URL основного фото. Если нет — возвращает заглушку.
         """
-        if self.pk:
-            try:
-                primary = self.images.filter(is_primary=True).first()
-                if primary:
-                    return primary.image_url or "/media/icon/logo.svg"
-            except Exception:
-                pass
+        primary = self.primary_image
+        if primary:
+            return primary.image_url or "/media/icon/logo.svg"
         if self.image_url:
             return self.image_url
         return "/media/icon/logo.svg"
@@ -865,15 +954,9 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
     @property
     def has_real_image(self):
         """Возвращает True, если есть реальное фото (не заглушка)."""
-        if self.pk:
-            try:
-                if any(
-                    image.image_url
-                    for image in self.images.filter(is_primary=True)
-                ):
-                    return True
-            except Exception:
-                pass
+        primary = self.primary_image
+        if primary and primary.image_url:
+            return True
         return bool(self.image_url)
 
     @property
@@ -891,14 +974,26 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         """
         Возвращает EventImage с is_primary=True, если есть, иначе None.
         Также проверяет Event.image для обратной совместимости.
+
+        Если изображения были загружены через prefetch_related("images"),
+        используется кэш, чтобы не делать лишний запрос на каждое обращение.
         """
-        if self.pk:
-            try:
-                primary = self.images.filter(is_primary=True).first()
-                if primary:
-                    return primary
-            except Exception:
-                pass
+        if not self.pk:
+            return None
+
+        cached = getattr(self, "_prefetched_objects_cache", {}).get("images")
+        if cached is not None:
+            for image in cached:
+                if image.is_primary:
+                    return image
+            return None
+
+        try:
+            primary = self.images.filter(is_primary=True).first()
+            if primary:
+                return primary
+        except Exception:
+            pass
         return None
 
     def set_primary_from_event_images(self):
@@ -925,21 +1020,22 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         """
         import logging
         from django.conf import settings
+
         logger = logging.getLogger(__name__)
-        
+
         if not old_file:
             return
 
         logger.info(f"delete_old_file: удаляем старый файл {old_file}")
-        
+
         # Сначала пробуем удалить из S3 если включено облако
-        if getattr(settings, 'USE_YANDEX_CLOUD', False):
+        if getattr(settings, "USE_YANDEX_CLOUD", False):
             try:
                 from storages.backends.s3boto3 import S3Boto3Storage
-                
+
                 file_name = str(old_file)
                 logger.info(f"delete_old_file: удаляем из облака {file_name}")
-                
+
                 # Создаём экземпляр хранилища S3
                 s3_storage = S3Boto3Storage(
                     bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
@@ -948,26 +1044,37 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
                     secret_key=settings.AWS_SECRET_ACCESS_KEY,
                     region_name=settings.AWS_S3_REGION_NAME,
                 )
-                
+
                 if s3_storage.exists(file_name):
-                    logger.info(f"delete_old_file: файл {file_name} существует в облаке, удаляем")
+                    logger.info(
+                        f"delete_old_file: файл {file_name} существует в облаке, удаляем"
+                    )
                     s3_storage.delete(file_name)
                     logger.info(f"delete_old_file: файл {file_name} удалён из облака")
                 else:
-                    logger.warning(f"delete_old_file: файл {file_name} не найден в облаке")
+                    logger.warning(
+                        f"delete_old_file: файл {file_name} не найден в облаке"
+                    )
             except Exception as e:
-                logger.error(f"delete_old_file: ошибка удаления из облака: {e}", exc_info=True)
-        
+                logger.error(
+                    f"delete_old_file: ошибка удаления из облака: {e}", exc_info=True
+                )
+
         # Затем пробуем удалить локальный файл
         try:
-            file_path = old_file.path if hasattr(old_file, 'path') else str(old_file)
+            file_path = old_file.path if hasattr(old_file, "path") else str(old_file)
             if os.path.exists(file_path):
                 os.remove(file_path)
                 logger.info(f"delete_old_file: локальный файл {file_path} удалён")
         except NotImplementedError:
-            logger.info(f"delete_old_file: storage не поддерживает path (облачное хранилище)")
+            logger.info(
+                f"delete_old_file: storage не поддерживает path (облачное хранилище)"
+            )
         except Exception as e:
-            logger.error(f"delete_old_file: ошибка при работе с локальным файлом: {e}", exc_info=True)
+            logger.error(
+                f"delete_old_file: ошибка при работе с локальным файлом: {e}",
+                exc_info=True,
+            )
 
     def delete_old_video_file(self, old_video, old_hash):
         """
@@ -978,7 +1085,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         """
         self.delete_old_file(old_video)
         # Обнуляем хэш, если это поле текущей модели
-        if hasattr(self, 'processed_video_url_hash'):
+        if hasattr(self, "processed_video_url_hash"):
             self.processed_video_url_hash = None
             # Сохраняем только хэш, не затрагивая другие поля
             Event.objects.filter(pk=self.pk).update(processed_video_url_hash=None)
@@ -989,13 +1096,14 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         self.delete_file_field("image")
         self.delete_file_field("video_url")
         self.delete_file_field("program_file")
-        
+
         # Удаляем файлы дополнительных фотографий
         # Нужно сделать это ДО удаления мероприятия, так как CASCADE удалит записи из БД
         from .models import EventImage
+
         for event_image in EventImage.objects.filter(event=self):
             event_image.delete_file_field("image")
-        
+
         super().delete(*args, **kwargs)
 
     class Meta:
@@ -1009,6 +1117,7 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         if self.place_data and "address" in self.place_data:
             return self.place_data["address"]
         return "Не указано"
+
 
 class Ticket(models.Model):
     """Модель для типа билета (VIP, Стандарт)."""
@@ -1041,7 +1150,12 @@ class Ticket(models.Model):
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     available_quantity = models.PositiveIntegerField(verbose_name="Количество мест")
-    ticket_description = models.TextField(blank=False, verbose_name="Описание билета", default="", max_length=100,)
+    ticket_description = models.TextField(
+        blank=False,
+        verbose_name="Описание билета",
+        default="",
+        max_length=100,
+    )
     is_per_person = models.BooleanField(
         default=False,
         verbose_name="Цена за человека",
@@ -1052,12 +1166,14 @@ class Ticket(models.Model):
         verbose_name="Мин. количество для покупки",
         help_text="Минимальное количество билетов, которое можно купить за один раз (1 = без ограничений)",
     )
+
     def __str__(self):
         return f"{self.name} ({self.event.title})"
 
     def get_random_color(self):
         """Возвращает случайный цвет из палитры."""
         import random
+
         return random.choice(self.TICKET_COLORS)[0]
 
     def is_available(self, quantity=1):
@@ -1076,13 +1192,18 @@ class Ticket(models.Model):
             else:
                 # Локальная блокировка через транзакции и SELECT FOR UPDATE
                 with transaction.atomic():
-                    ticket = Ticket.objects.select_for_update().filter(pk=self.pk).first()
+                    ticket = (
+                        Ticket.objects.select_for_update().filter(pk=self.pk).first()
+                    )
                     if ticket is None:
                         return False
                     available = ticket._check_availability(quantity)
                     logger.debug(
                         "Checking availability for ticket %s: available_quantity=%s, quantity=%s, available=%s",
-                        ticket.id, ticket.available_quantity, quantity, available
+                        ticket.id,
+                        ticket.available_quantity,
+                        quantity,
+                        available,
                     )
                     return available
         except Ticket.DoesNotExist:
@@ -1098,7 +1219,8 @@ class Ticket(models.Model):
             if timezone.now() >= close_time:
                 logger.warning(
                     "Sales closed for event %s (auto_close_sales_hours=%s)",
-                    self.event.id, self.event.auto_close_sales_hours
+                    self.event.id,
+                    self.event.auto_close_sales_hours,
                 )
                 return False
 
@@ -1110,7 +1232,10 @@ class Ticket(models.Model):
         available = self.available_quantity >= quantity
         logger.debug(
             "Ticket %s: available_quantity=%s, quantity=%s, result=%s",
-            self.id, self.available_quantity, quantity, available
+            self.id,
+            self.available_quantity,
+            quantity,
+            available,
         )
         return available
 
@@ -1122,6 +1247,7 @@ class Ticket(models.Model):
     class Meta:
         verbose_name = "Билет"
         verbose_name_plural = "Билеты"
+
 
 class Order(models.Model):
     """Модель для заказа (покупки)."""
@@ -1146,14 +1272,15 @@ class Order(models.Model):
         max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа"
     )
     yookassa_payment_id = models.CharField(
-        max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа в ЮКассе"
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Идентификатор платежа в ЮКассе",
     )
     yookassa_payment_data = models.JSONField(
         null=True, blank=True, verbose_name="Данные платежа из ЮКассы"
     )
-    email_sent = models.BooleanField(
-        default=False, verbose_name="Письмо отправлено"
-    )
+    email_sent = models.BooleanField(default=False, verbose_name="Письмо отправлено")
     platform_commission = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -1267,13 +1394,15 @@ class Order(models.Model):
         # Логирование изменения статуса платежа
         if self.pk:
             try:
-                original = Order.objects.only('payment_status').get(pk=self.pk)
+                original = Order.objects.only("payment_status").get(pk=self.pk)
                 if original.payment_status != self.payment_status:
                     admin_users = CustomUser.objects.filter(is_superuser=True)
                     for admin in admin_users:
                         logger.warning(
-                            'Order #%s status changed: %s -> %s',
-                            self.id, original.payment_status, self.payment_status
+                            "Order #%s status changed: %s -> %s",
+                            self.id,
+                            original.payment_status,
+                            self.payment_status,
                         )
             except Order.DoesNotExist:
                 pass  # Новый заказ — пропускаем
@@ -1292,15 +1421,17 @@ class Order(models.Model):
 
         # Определяем базовый URL
         if not base_url:
-            base_url = getattr(settings, 'SITE_URL', 'https://bizafisha.ru')
-        
+            base_url = getattr(settings, "SITE_URL", "https://bizafisha.ru")
+
         # Убираем trailing slash если есть
-        base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip("/")
 
         qr_items = []
         for i in range(self.quantity):
             ticket_number = i + 1
-            qr_text_data = f"{base_url}/check-ticket/{self.id}/?ticket_number={ticket_number}"
+            qr_text_data = (
+                f"{base_url}/check-ticket/{self.id}/?ticket_number={ticket_number}"
+            )
 
             qr = qrcode.QRCode(
                 version=1,
@@ -1318,11 +1449,13 @@ class Order(models.Model):
             buffer.seek(0)
             qr_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
-            qr_items.append({
-                "ticket_number": ticket_number,
-                "qr_text": qr_text_data,
-                "qr_base64": qr_base64,
-            })
+            qr_items.append(
+                {
+                    "ticket_number": ticket_number,
+                    "qr_text": qr_text_data,
+                    "qr_base64": qr_base64,
+                }
+            )
 
         return qr_items
 
@@ -1390,7 +1523,9 @@ class PayoutDetails(models.Model):
     )
     account_number = models.CharField(max_length=50, verbose_name="Номер счёта/карты")
     account_holder = models.CharField(max_length=255, verbose_name="Владелец счёта")
-    bik = models.CharField(max_length=9, blank=True, null=True, verbose_name="БИК банка")
+    bik = models.CharField(
+        max_length=9, blank=True, null=True, verbose_name="БИК банка"
+    )
     is_default = models.BooleanField(default=False, verbose_name="Основные реквизиты")
 
     def __str__(self):
@@ -1401,6 +1536,7 @@ class PayoutDetails(models.Model):
     class Meta:
         verbose_name = "Реквизиты для выплаты"
         verbose_name_plural = "Реквизиты для выплат"
+
 
 class PayoutRequest(models.Model):
     """Модель для запроса выплаты партнером."""
@@ -1418,18 +1554,25 @@ class PayoutRequest(models.Model):
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Сумма к выплате"
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="processing")
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="processing"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     payment_details = models.ForeignKey(
         PayoutDetails, on_delete=models.SET_NULL, null=True, verbose_name="Реквизиты"
     )
-    comment = models.TextField(blank=True, null=True, verbose_name="Комментарий партнёра")
+    comment = models.TextField(
+        blank=True, null=True, verbose_name="Комментарий партнёра"
+    )
     rejection_comment = models.TextField(
         blank=True, null=True, verbose_name="Комментарий администратора при отклонении"
     )
     balance_at_request = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        verbose_name="Баланс партнёра на момент запроса"
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Баланс партнёра на момент запроса",
     )
 
     def __str__(self):
@@ -1438,6 +1581,7 @@ class PayoutRequest(models.Model):
     class Meta:
         verbose_name = "Запрос на выплату"
         verbose_name_plural = "Запросы на выплату"
+
 
 class SupportTicket(models.Model):
     TICKET_TYPE_CHOICES = [
@@ -1457,7 +1601,7 @@ class SupportTicket(models.Model):
         max_length=20,
         choices=TICKET_TYPE_CHOICES,
         default="support",
-        verbose_name="Тип тикета"
+        verbose_name="Тип тикета",
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1477,6 +1621,7 @@ class SupportTicket(models.Model):
     @property
     def messages(self):
         return self.supportmessage_set.all().order_by("created_at")
+
 
 class SupportAttachment(models.Model):
     """
@@ -1505,6 +1650,7 @@ class SupportAttachment(models.Model):
         """Показывать ли вложение как изображение в ленте чата."""
         return os.path.splitext(self.file.name)[1].lower() in self.IMAGE_EXTENSIONS
 
+
 class SupportMessage(models.Model):
     """
     Модель для одного сообщения в чате поддержки.
@@ -1531,12 +1677,15 @@ class SupportMessage(models.Model):
         verbose_name = "Сообщение поддержки"
         verbose_name_plural = "Сообщения поддержки"
 
+
 class EmailVerificationCode(models.Model):
     """
     Модель для хранения кодов подтверждения почты.
     """
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name="Пользователь"
+    )
     email = models.EmailField(verbose_name="Адрес электронной почты", default="")
     code = models.CharField(max_length=5, verbose_name="Код подтверждения")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
@@ -1585,7 +1734,6 @@ class EmailVerificationCode(models.Model):
         verbose_name_plural = "Коды подтверждения почты"
 
 
-
 class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     """
     Модель для хранения фотографий мероприятий.
@@ -1599,8 +1747,7 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     )
 
     image = models.ImageField(
-        upload_to="event_images/", 
-        verbose_name="Фото мероприятия"
+        upload_to="event_images/", verbose_name="Фото мероприятия"
     )
 
     is_primary = models.BooleanField(
@@ -1643,6 +1790,64 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
         verbose_name_plural = "Фото мероприятий"
 
 
+class EventBookingRequest(models.Model):
+    """Заявка на участие в мероприятии, отправленная с сайта.
+
+    Устроена так же, как заявка на площадку (venues.BookingRequest):
+    посетитель заполняет контакты, заявка сохраняется в БД и уходит
+    организатору мероприятия на e-mail.
+    """
+
+    STATUS_CHOICES = [
+        ("new", "Новая"),
+        ("in_work", "В работе"),
+        ("closed", "Закрыта"),
+    ]
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="booking_requests",
+        verbose_name="Мероприятие",
+    )
+
+    # Аккаунт, с которого отправлена заявка (если пользователь авторизован)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="event_booking_requests",
+        verbose_name="Пользователь",
+    )
+    # Ключ сессии — чтобы понимать, откуда пришла заявка у анонима
+    session_key = models.CharField(
+        max_length=40, blank=True, default="", verbose_name="Ключ сессии"
+    )
+
+    name = models.CharField(max_length=50, verbose_name="Имя")
+    phone = models.CharField(max_length=30, verbose_name="Телефон")
+    email = models.EmailField(verbose_name="E-mail")
+
+    participants_count = models.PositiveIntegerField(
+        default=1, verbose_name="Количество участников"
+    )
+    comment = models.TextField(blank=True, verbose_name="Комментарий")
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="new", verbose_name="Статус"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата заявки")
+
+    def __str__(self):
+        return f"Заявка на «{self.event.title}» от {self.name}"
+
+    class Meta:
+        verbose_name = "Заявка на мероприятие"
+        verbose_name_plural = "Заявки на мероприятия"
+        ordering = ["-created_at"]
+
+
 class LegalDocument(models.Model):
     """Текст юридической страницы сайта, редактируемый из админки.
 
@@ -1652,43 +1857,43 @@ class LegalDocument(models.Model):
     страницы — шаблон сам добавляет вёрстку, стили и заголовки документа.
     """
 
-    PRIVACY_POLICY = 'privacy-policy'
-    PERSONAL_DATA_CONSENT = 'personal-data-consent'
-    MAILING_CONSENT = 'mailing-consent'
-    OFFER_PARTICIPANT = 'offer-participant'
-    OFFER_ORGANIZER = 'offer-organizer'
-    OFFER_VENUE = 'offer-venue'
+    PRIVACY_POLICY = "privacy-policy"
+    PERSONAL_DATA_CONSENT = "personal-data-consent"
+    MAILING_CONSENT = "mailing-consent"
+    OFFER_PARTICIPANT = "offer-participant"
+    OFFER_ORGANIZER = "offer-organizer"
+    OFFER_VENUE = "offer-venue"
 
     # slug -> имя URL страницы, чтобы из админки можно было её открыть
     PAGE_URL_NAMES = {
-        PRIVACY_POLICY: 'privacy_policy',
-        PERSONAL_DATA_CONSENT: 'personal_data_consent_view',
-        MAILING_CONSENT: 'mailing_consent_view',
-        OFFER_PARTICIPANT: 'offer',
-        OFFER_ORGANIZER: 'offer',
-        OFFER_VENUE: 'offer',
+        PRIVACY_POLICY: "privacy_policy",
+        PERSONAL_DATA_CONSENT: "personal_data_consent_view",
+        MAILING_CONSENT: "mailing_consent_view",
+        OFFER_PARTICIPANT: "offer",
+        OFFER_ORGANIZER: "offer",
+        OFFER_VENUE: "offer",
     }
 
-    slug = models.SlugField('Код страницы', max_length=50, unique=True)
+    slug = models.SlugField("Код страницы", max_length=50, unique=True)
     title = models.CharField(
-        'Название',
+        "Название",
         max_length=200,
-        help_text='Видно только в админке — на сайте заголовок задаёт шаблон',
+        help_text="Видно только в админке — на сайте заголовок задаёт шаблон",
     )
-    content = models.TextField('Текст страницы (HTML)', blank=True)
-    updated_at = models.DateTimeField('Обновлён', auto_now=True)
+    content = models.TextField("Текст страницы (HTML)", blank=True)
+    updated_at = models.DateTimeField("Обновлён", auto_now=True)
 
     class Meta:
-        verbose_name = 'Юридическая страница'
-        verbose_name_plural = 'Юридические страницы'
-        ordering = ('title',)
+        verbose_name = "Юридическая страница"
+        verbose_name_plural = "Юридические страницы"
+        ordering = ("title",)
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
         url_name = self.PAGE_URL_NAMES.get(self.slug)
-        return reverse(url_name) if url_name else ''
+        return reverse(url_name) if url_name else ""
 
 
 class PartnerAgreement(models.Model):
@@ -1735,7 +1940,8 @@ class PartnerAgreement(models.Model):
         old_file_name = None
         if self.pk:
             old_file_name = (
-                type(self).objects.filter(pk=self.pk)
+                type(self)
+                .objects.filter(pk=self.pk)
                 .values_list("file", flat=True)
                 .first()
             )
@@ -1794,7 +2000,8 @@ class FAQCategory(models.Model):
         old_icon_name = None
         if self.pk:
             old_icon_name = (
-                type(self).objects.filter(pk=self.pk)
+                type(self)
+                .objects.filter(pk=self.pk)
                 .values_list("icon", flat=True)
                 .first()
             )

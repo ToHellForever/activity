@@ -1,0 +1,95 @@
+/* Модальное окно заявки на участие в мероприятии */
+.event-booking-modal {
+  font-family: "Montserrat", sans-serif;
+}
+
+.event-booking-modal .modal-content {
+  border-radius: 12px;
+  border: none;
+}
+
+.event-booking-modal .modal-header {
+  background-color: #f8f9fa;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.event-booking-modal .modal-title {
+  font-family: "Verdana";
+  color: #000;
+  font-weight: 400;
+  font-size: clamp(1rem, 1vw, 1.5rem);
+  line-height: 1.2;
+  margin-bottom: 15px;
+  
+}
+
+.event-booking-modal .modal-body {
+  padding: 0;
+  color: #333;
+}
+
+.event-booking-modal .form-label {
+  font-weight: 500;
+  color: #333;
+  font-size: clamp(0.9rem, 1vw, 1rem);
+  margin-bottom: 8px;
+  font-family: "Montserrat";
+}
+
+.event-booking-modal .form-control {
+  border-radius: 20px;
+  border: 1px solid #ced4da;
+  padding: 10px 12px;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  transition: border-color 0.3s ease;
+}
+
+.event-booking-modal .form-control:focus {
+  box-shadow: 0px -1px 5.2px 0px rgba(0, 0, 0, 0.29);
+}
+
+.event-booking-modal textarea.form-control {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.event-booking-modal .event-booking-consent {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.event-booking-modal .consent-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.event-booking-modal .consent-label input {
+  margin-top: 3px;
+}
+
+.event-booking-modal .btn-question {
+  width: 100%;
+  color: white;
+  background: rgba(255, 131, 72, 1);
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+  font-family: "Montserrat";
+  font-weight: 500;
+  font-size: 15.42px;
+}
+
+.event-booking-modal .btn-question:disabled {
+  opacity: 0.7;
+}
+
+.event-booking-modal .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  opacity: 1;
+}
