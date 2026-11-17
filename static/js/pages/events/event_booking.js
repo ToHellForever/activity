@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.success) {
                     form.classList.add('d-none');
                     successBlock.classList.remove('d-none');
+                    const header = modal.querySelector('.modal-header');
+                    if (header) header.classList.add('d-none');
                 } else {
                     const fieldErrors = data.errors || {};
                     const messages = [];
@@ -128,11 +130,10 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.addEventListener('hidden.bs.modal', function () {
             form.reset();
             form.classList.remove('d-none');
-            form.querySelectorAll('.is-invalid').forEach(function (el) {
-                el.classList.remove('is-invalid');
-            });
             successBlock.classList.add('d-none');
             errorsBlock.classList.add('d-none');
+            const header = modal.querySelector('.modal-header');
+            if (header) header.classList.remove('d-none');
             const consentCheckbox = form.querySelector('[name="personal_data_consent"]');
             if (consentCheckbox) {
                 consentCheckbox.checked = false;
