@@ -357,6 +357,16 @@ class PortfolioImage(models.Model):
     def __str__(self):
         return f"Фото для '{self.portfolio.title}'"
 
+    @property
+    def image_url(self):
+        """URL изображения или пустая строка, если файл отсутствует."""
+        if not self.image or not self.image.name:
+            return ""
+        try:
+            return self.image.url
+        except (ValueError, OSError):
+            return ""
+
     def save(self, *args, **kwargs):
         # Обработка (сжатие, водяной знак) выполняется на уровне хранилища
         super().save(*args, **kwargs)

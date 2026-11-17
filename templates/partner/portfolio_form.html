@@ -39,7 +39,7 @@
                             {% for photo in portfolio_item.images.all %}
                             <div class="existing-photo-item" data-image-id="{{ photo.id }}">
                                 <div class="photo-container">
-                                    <img src="{{ photo.image.url }}" alt="Фото портфолио" class="portfolio-photo">
+                                    <img src="{{ photo.image_url }}" alt="Фото портфолио" class="portfolio-photo">
                                 </div>
                                 <button type="button" class="photo-delete-btn photo-remove" onclick="markPhotoForDelete(this)" title="Удалить фото">
                                     ✕

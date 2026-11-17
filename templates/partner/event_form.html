@@ -282,7 +282,7 @@
                         <div class="photo-gallery" id="photo-gallery">
                         {% for image in form.instance.images.all %}
                         <div class="photo-gallery-item{% if image.is_primary %} is-primary{% endif %}" data-image-id="{{ image.id }}" data-is-new="" data-is-primary="{{ image.is_primary|lower }}">
-                            <img src="{{ image.image.url }}" alt="Фото">
+                            <img src="{{ image.image_url }}" alt="Фото">
                             <button type="button" class="remove-btn remove-gallery-photo" data-image-id="{{ image.id }}" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
                             {% if image.is_primary %}
                             <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
@@ -291,7 +291,7 @@
                         {% endfor %}
                         {% if form.instance.image and not form.instance.images.exists %}
                         <div class="photo-gallery-item is-primary" data-image-id="" data-is-new="" data-is-main="true">
-                            <img src="{{ form.instance.image.url }}" alt="Основное фото">
+                            <img src="{{ form.instance.image_url }}" alt="Основное фото">
                             <button type="button" class="remove-btn remove-main-photo" data-image-id="" title="Удалить"><img src="/media/icon/trash.svg" alt="Удалить" class="card-check-box"></button>
                             <div class="photo-gallery-caption">ОСНОВНОЕ ФОТО</div>
                         </div>

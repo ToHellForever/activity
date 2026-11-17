@@ -16,7 +16,7 @@
             <div class="portfolio-card" data-edit-url="{% url 'partner:portfolio_edit' item.id %}">
                 <div class="portfolio-card-image">
                     {% if item.images.exists %}
-                        <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}">
+                        <img src="{{ item.images.first.image_url|default:"/media/icon/logo.svg" }}" alt="{{ item.title }}">
                     {% else %}
                         <div class="portfolio-card-image-placeholder">
                             <i class="bi bi-image"></i>

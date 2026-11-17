@@ -17,7 +17,7 @@
     <div class="venue-detail-content">
         <!-- Фото площадки -->
         <div class="venue-image-wrapper">
-            {% if venue.images.count > 1 %}
+            {% if venue.photo_count > 1 %}
                 <!-- Карусель: если фото больше одного -->
                 <div id="venueCarousel" class="carousel slide image-wrapper" data-bs-ride="carousel">
                     {% if venue.badge_text %}
@@ -28,19 +28,23 @@
                             class="active" aria-current="true" aria-label="Фото 1">
                         </button>
                         {% for img in venue.images.all %}
+                        {% if img.image_url %}
                         <button type="button" data-bs-target="#venueCarousel" data-bs-slide-to="{{ forloop.counter }}" 
                             aria-label="Фото {{ forloop.counter|add:1 }}">
                         </button>
+                        {% endif %}
                         {% endfor %}
                     </div>
                     <div class="carousel-inner">
-                        <div class="carousel-item photo-frame active" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
-                            <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        <div class="carousel-item photo-frame active" style="--photo-background: url('{{ venue.primary_image_url }}')">
+                            <img src="{{ venue.primary_image_url }}" class="d-block w-100" alt="{{ venue.title }}">
                         </div>
                         {% for img in venue.images.all %}
-                        <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image.url }}')">
-                            <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                        {% if img.image_url %}
+                        <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image_url }}')">
+                            <img src="{{ img.image_url }}" class="d-block w-100" alt="{{ venue.title }}">
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
@@ -52,13 +56,13 @@
                     <span class="visually-hidden">Next</span>
                 </button>
                 </div>
-            {% elif venue.images.count == 1 %}
+            {% elif venue.has_real_image %}
                 <!-- Одиночное фото — без карусели -->
-                <div class="image-wrapper photo-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
+                <div class="image-wrapper photo-frame" style="--photo-background: url('{{ venue.primary_image_url }}')">
                     {% if venue.badge_text %}
                     <span class="venue-badge--detail {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
                     {% endif %}
-                    <img src="{{ venue.images.all.0.image.url }}" class="d-block w-100" alt="{{ venue.title }}">
+                    <img src="{{ venue.primary_image_url }}" class="d-block w-100" alt="{{ venue.title }}">
                 </div>
             {% else %}
                 <div class="image-wrapper no-image">
@@ -263,9 +267,9 @@
                     {% if other_venue.badge_text %}
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
-                    {% if other_venue.images.all %}
-                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
-                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% if other_venue.has_real_image %}
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.primary_image_url }}')">
+                        <img src="{{ other_venue.primary_image_url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
@@ -305,9 +309,9 @@
                     {% if other_venue.badge_text %}
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
-                    {% if other_venue.images.all %}
-                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
-                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% if other_venue.has_real_image %}
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.primary_image_url }}')">
+                        <img src="{{ other_venue.primary_image_url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
@@ -347,9 +351,9 @@
                     {% if other_venue.badge_text %}
                     <span class="venue-badge {% if other_venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ other_venue.badge_text }}</span>
                     {% endif %}
-                    {% if other_venue.images.all %}
-                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.images.all.0.image.url }}')">
-                        <img src="{{ other_venue.images.all.0.image.url }}" class="venue-card-image" alt="{{ other_venue.title }}">
+                    {% if other_venue.has_real_image %}
+                    <div class="photo-frame venue-card-image-frame" style="--photo-background: url('{{ other_venue.primary_image_url }}')">
+                        <img src="{{ other_venue.primary_image_url }}" class="venue-card-image" alt="{{ other_venue.title }}">
                     </div>
                     {% else %}
                     <img src="/media/icon/logo.svg" class="venue-card-image card-logo-placeholder" alt="">
@@ -391,7 +395,7 @@
   "@type": "Place",
   "name": "{{ venue.title|escapejs }}",
   {% if venue.description %}"description": "{{ venue.description|striptags|escapejs|truncatechars:300 }}",{% endif %}
-  "image": "{% if venue.images.all %}{% if 'http' in venue.images.all.0.image.url %}{{ venue.images.all.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ venue.images.all.0.image.url }}{% endif %}{% else %}{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg{% endif %}",
+  "image": "{% if venue.has_real_image %}{% if 'http' in venue.primary_image_url %}{{ venue.primary_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ venue.primary_image_url }}{% endif %}{% else %}{{ request.scheme }}://{{ request.get_host }}/media/icon/logo.svg{% endif %}",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "{{ venue.address|escapejs }}",

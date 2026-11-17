@@ -109,6 +109,23 @@ class VenueImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     def __str__(self):
         return f"Фото для площадки: {self.venue.title}"
 
+    @property
+    def image_url(self):
+        """
+        URL фото площадки или пустая строка, если файл отсутствует.
+
+        В БД могут остаться записи VenueImage без файла (файл удалён из
+        хранилища, не догружен в облако и т.п.). Обращение к image.url в таком
+        случае выбрасывает ValueError, поэтому шаблоны должны использовать
+        это свойство.
+        """
+        if not self.image or not self.image.name:
+            return ""
+        try:
+            return self.image.url
+        except (ValueError, OSError):
+            return ""
+
     def save(self, *args, **kwargs):
             # Обработка водяного знака теперь выполняется на уровне хранилища
             # (YandexImageProcessingStorage или локальная обработка)
@@ -339,7 +356,33 @@ class Venue(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
     def contacts_level(self):
         """Уровень доступности контактов по тарифу: only_request / request_or_show / direct."""
         return self.TARIFF_LIMITS.get(self.tariff, {}).get("contacts_level", "only_request")
-                
+
+    @property
+    def primary_image(self):
+        """Первое фото площадки, у которого реально есть файл (иначе None)."""
+        if not self.pk:
+            return None
+        for image in self.images.all():
+            if image.image_url:
+                return image
+        return None
+
+    @property
+    def primary_image_url(self):
+        """URL основного фото площадки. Если фото нет — заглушка."""
+        image = self.primary_image
+        return image.image_url if image else "/media/icon/logo.svg"
+
+    @property
+    def has_real_image(self):
+        """True, если у площадки есть хотя бы одно фото с файлом."""
+        return self.primary_image is not None
+
+    @property
+    def photo_count(self):
+        """Количество фото площадки, у которых есть файл."""
+        return sum(1 for image in self.images.all() if image.image_url)
+
     def __str__(self):
         return self.title
 

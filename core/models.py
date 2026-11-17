@@ -844,11 +844,11 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
             try:
                 primary = self.images.filter(is_primary=True).first()
                 if primary:
-                    return primary.image.url
+                    return primary.image_url or "/media/icon/logo.svg"
             except Exception:
                 pass
-        if self.image:
-            return self.image.url
+        if self.image_url:
+            return self.image_url
         return "/media/icon/logo.svg"
 
     @property
@@ -856,11 +856,24 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         """Возвращает True, если есть реальное фото (не заглушка)."""
         if self.pk:
             try:
-                if self.images.filter(is_primary=True).exists():
+                if any(
+                    image.image_url
+                    for image in self.images.filter(is_primary=True)
+                ):
                     return True
             except Exception:
                 pass
-        return bool(self.image)
+        return bool(self.image_url)
+
+    @property
+    def image_url(self):
+        """URL поля image или пустая строка, если файл отсутствует."""
+        if not self.image or not self.image.name:
+            return ""
+        try:
+            return self.image.url
+        except (ValueError, OSError):
+            return ""
 
     @property
     def primary_image(self):
@@ -1587,6 +1600,21 @@ class EventImage(VideoWatermarkMixin, ImageWatermarkMixin, models.Model):
 
     def __str__(self):
         return f"Фото для мероприятия: {self.event.title}"
+
+    @property
+    def image_url(self):
+        """
+        URL фото мероприятия или пустая строка, если файл отсутствует.
+
+        В БД могут остаться записи EventImage без файла, а обращение к
+        image.url в таком случае выбрасывает ValueError.
+        """
+        if not self.image or not self.image.name:
+            return ""
+        try:
+            return self.image.url
+        except (ValueError, OSError):
+            return ""
 
     def save(self, *args, **kwargs):
         # Обработка водяного знака теперь выполняется на уровне хранилища

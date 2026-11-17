@@ -384,7 +384,7 @@ class VenueListView(ListView):
             # Приоритет размещения (тариф)
             qs = qs.order_by("-tariff_priority")
 
-        return qs.distinct()
+        return qs.distinct().prefetch_related("images")
 
     def post(self, request, *args, **kwargs):
         venue_id = request.POST.get("venue_id")
@@ -628,7 +628,7 @@ class VenueDetailView(DetailView):
             status='published'
         ).exclude(
             id=venue.id
-        ).order_by('id')[:4])
+        ).prefetch_related('images').order_by('id')[:4])
         
         context["other_venues_mobile"] = all_other_venues[:2]   
         context["other_venues_tablet"] = all_other_venues[:3]   

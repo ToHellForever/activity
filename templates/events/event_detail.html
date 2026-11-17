@@ -54,9 +54,11 @@
                         <img src="{{ event.primary_image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
                     {% for img in event.images.all %}
-                    <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image.url }}')">
-                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                    {% if img.image_url %}
+                    <div class="carousel-item photo-frame" style="--photo-background: url('{{ img.image_url }}')">
+                        <img src="{{ img.image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
@@ -90,9 +92,11 @@
                 </div>
                 <div class="carousel-inner">
                     {% for img in event.images.all %}
-                    <div class="carousel-item photo-frame {% if forloop.first %}active{% endif %}" style="--photo-background: url('{{ img.image.url }}')">
-                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ event.title }}">
+                    {% if img.image_url %}
+                    <div class="carousel-item photo-frame {% if forloop.first %}active{% endif %}" style="--photo-background: url('{{ img.image_url }}')">
+                        <img src="{{ img.image_url }}" class="d-block w-100" alt="{{ event.title }}">
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
@@ -120,11 +124,11 @@
             </div>
         {% else %}
             <!-- Одиночное дополнительное фото -->
-            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image.url }}')">
+            <div class="image-wrapper photo-frame" style="--photo-background: url('{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}')">
                 {% if event.badge_text %}
                 <span class="event-badge event-badge--detail {{ event.badge_css_class }}{% if event.organizer.is_verified_organizer %} event-badge--below-verified{% endif %}">{{ event.badge_text }}</span>
                 {% endif %}
-                <img src="{{ event.images.first.image.url }}" alt="{{ event.title }}">
+                <img src="{{ event.images.first.image_url|default:"/media/icon/logo.svg" }}" alt="{{ event.title }}">
                 {% if event.organizer.is_verified_organizer %}
                 <div class="verified-badge">
                     <img src="/media/icon/ok.png" alt="" class='arrow-card'>
@@ -347,9 +351,9 @@
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
-                {% elif ev.images.all %}
-                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
-                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all.0.image_url %}
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image_url }}')">
+                    <img src="{{ ev.images.all.0.image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
@@ -391,9 +395,9 @@
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
-                {% elif ev.images.all %}
-                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
-                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all.0.image_url %}
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image_url }}')">
+                    <img src="{{ ev.images.all.0.image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}
@@ -434,9 +438,9 @@
                     <img src="{{ ev.primary_image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
-                {% elif ev.images.all %}
-                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image.url }}')">
-                    <img src="{{ ev.images.all.0.image.url }}" class="card-img-top" alt="{{ ev.title }}">
+                {% elif ev.images.all.0.image_url %}
+                <div class="photo-frame card-image-frame" style="--photo-background: url('{{ ev.images.all.0.image_url }}')">
+                    <img src="{{ ev.images.all.0.image_url }}" class="card-img-top" alt="{{ ev.title }}">
                     {% include 'events/_event_favorite_button.html' with favorite_event=ev %}
                 </div>
                 {% else %}

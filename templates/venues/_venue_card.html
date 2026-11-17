@@ -5,9 +5,9 @@
         {% if venue.badge_text %}
         <span class="venue-badge {% if venue.tariff == 3 %}venue-badge--premium{% else %}venue-badge--standard{% endif %}">{{ venue.badge_text }}</span>
         {% endif %}
-        {% if venue.images.all %}
-        <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.images.all.0.image.url }}')">
-            <img src="{{ venue.images.all.0.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+        {% if venue.has_real_image %}
+        <div class="photo-frame card-image-frame" style="--photo-background: url('{{ venue.primary_image_url }}')">
+            <img src="{{ venue.primary_image_url }}" class="card-img-top" alt="{{ venue.title }}">
         </div>
         {% else %}
         <img src="/media/icon/logo.svg" class="card-img-top card-logo-placeholder" alt="">
