@@ -497,6 +497,7 @@ class EventAdmin(admin.ModelAdmin):
                         "tags",
                         "allow_booking_without_payment",
                         "allow_platform_requests",
+                        "show_booking_button",
                         "commission_rate",
                         "auto_close_sales_hours",
                     )

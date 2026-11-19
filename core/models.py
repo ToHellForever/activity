@@ -693,6 +693,11 @@ class Event(models.Model, VideoWatermarkMixin, ImageWatermarkMixin):
         verbose_name="Разрешить заявки через платформу",
         help_text="Если включено, пользователи смогут оставить заявку с вопросами",
     )
+    show_booking_button = models.BooleanField(
+        default=True,
+        verbose_name="Показывать кнопку «Оставить заявку на участие»",
+        help_text="Если включено, на странице мероприятия будет отображаться кнопка подачи заявки на участие",
+    )
     # Автоматическое закрытие продаж (в часах)
     auto_close_sales_hours = models.PositiveIntegerField(
         default=0,

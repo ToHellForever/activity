@@ -227,6 +227,7 @@
                 {% endfor %}
         </div>
         <div class="mt-2 d-flex flex-column align-items-start">
+            {% if event.show_booking_button %}
             <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#eventBookingModal">Оставить заявку на участие</a>
             {% if event.allow_platform_requests %}
             <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
@@ -234,13 +235,22 @@
             <div class="d-flex align-items-center">
                 <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>{% if has_only_free_tickets %}ЗАРЕГИСТРИРОВАТЬСЯ{% else %}КУПИТЬ БИЛЕТ{% endif %}</button>
             </div>
-        </div>
+        {% else %}
+            {% if event.allow_platform_requests %}
+            <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
+            {% endif %}
+            <div class="d-flex align-items-center">
+                <button type="button" class="buy-button-detail{% if not has_available_tickets %} disabled{% endif %}" id="openBuyModal"{% if not has_available_tickets %} disabled title="Нет доступных билетов"{% endif %}>{% if has_only_free_tickets %}ЗАРЕГИСТРИРОВАТЬСЯ{% else %}КУПИТЬ БИЛЕТ{% endif %}</button>
+            </div>
+        {% endif %}
     </div>
     {% endwith %}
     {% else %}
     <div class="mt-2">
         <div class="d-flex flex-column align-items-start">
+        {% if event.show_booking_button %}
         <a class='question-organizator' data-bs-toggle="modal" data-bs-target="#eventBookingModal">Оставить заявку на участие</a>
+        {% endif %}
         {% if event.allow_platform_requests %}
         <a class='question-organizator' data-event-id="{{ event.id }}" data-bs-toggle="modal" data-bs-target="#questionModal">Задать вопрос организатору</a>
         {% endif %}
