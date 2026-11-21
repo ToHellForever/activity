@@ -9,24 +9,44 @@ from django.utils import timezone
 from django.core.mail import send_mail, EmailMultiAlternatives
 import logging
 from django.template.loader import render_to_string
-from core.models import Order, Ticket, Event, EventPackage, UserPackageSubscription, OrderTicket
+from core.models import (
+    Order,
+    Ticket,
+    Event,
+    EventPackage,
+    UserPackageSubscription,
+    OrderTicket,
+    RobokassaPayment,
+)
 from core.services import reserve_tickets, bulk_reserve_tickets, TicketReservationError
 from core.utils import get_from_email
 from django.db import transaction, models
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 import json
-import uuid
-import hmac
-import hashlib
-from yookassa import Configuration, Payment
+from .robokassa import build_payment_url, verify_result_signature
 from datetime import timedelta
-from decimal import Decimal
-# Настройка ЮКассы
-Configuration.account_id = settings.YOOKASSA_SHOP_ID
-Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+from decimal import Decimal, InvalidOperation
 
 logger = logging.getLogger(__name__)
+
+
+def _create_robokassa_payment(orders, amount, description, email):
+    amount = Decimal(str(amount)).quantize(Decimal("0.01"))
+    with transaction.atomic():
+        payment = RobokassaPayment.objects.create(amount=amount)
+        payment.orders.add(*orders)
+        for order in orders:
+            order.payment_id = str(payment.pk)
+            order.save(update_fields=["payment_id"])
+
+        payment_url = build_payment_url(
+            payment.pk,
+            amount,
+            description,
+            email=email,
+        )
+    return payment, payment_url
 
 
 def _send_orders_confirmation_email(orders, request=None):
@@ -590,7 +610,7 @@ def bulk_buy_tickets(request, event_id):
         
         # === БРОНИРОВАНИЕ БЕЗ ОПЛАТЫ ===
         if reserve_without_payment:
-            # Не создаём платёж в ЮКассе — просто отправляем письмо с бронью
+            # Не создаём платёж — просто отправляем письмо с бронью
             for order in paid_orders:
                 try:
                     send_reservation_email(order, request)
@@ -615,47 +635,24 @@ def bulk_buy_tickets(request, event_id):
             })
         
         # Платные билеты - создаём платёж
-        logger.info('[bulk_buy] Создание платежа ЮКасса', extra={'orders_count': len(paid_orders)})
+        logger.info('[bulk_buy] Создание платежа Робокасса', extra={'orders_count': len(paid_orders)})
         
         combined_total = sum(o.total_price for o in paid_orders)
-        
-        payment = Payment.create(
-            {
-                "amount": {"value": str(combined_total), "currency": "RUB"},
-                "confirmation": {
-                    "type": "redirect",
-                    "return_url": request.build_absolute_uri(
-                        f"/payment/success/{paid_orders[0].id}/"
-                    ),
-                },
-                "capture": True,
-                "description": f"Оплата заказа для мероприятия {event.title}",
-                "metadata": {
-                    "order_ids": json.dumps([o.id for o in paid_orders]),
-                    "event_id": event_id,
-                    "free_order_ids": json.dumps([o.id for o in free_orders]) if free_orders else None
-                },
-            },
-            uuid.uuid4(),
+        payment, payment_url = _create_robokassa_payment(
+            paid_orders,
+            combined_total,
+            f"Билеты на мероприятие {event.title}",
+            email,
         )
-
-        # Сохраняем ID платежей для каждого заказа
-        for order in paid_orders:
-            order.yookassa_payment_id = payment.id
-            order.save()
-            logger.info('[bulk_buy] Сохранён ID платежа для заказа', extra={
-                'order_id': order.id,
-                'yookassa_id': payment.id
-            })
         
         logger.info('[bulk_buy] Платёж создан успешно', extra={
-            'payment_id': payment.id,
+            'payment_id': payment.pk,
             'orders_count': len(paid_orders)
         })
         
         return JsonResponse({
             'success': True,
-            'payment_url': payment.confirmation.confirmation_url,
+            'payment_url': payment_url,
             'order_ids': [o.id for o in orders],
             'order_id': paid_orders[0].id if paid_orders else (free_orders[0].id if free_orders else None),
             'free_tickets_count': total_free if free_orders else 0
@@ -690,7 +687,7 @@ def _buy_ticket_error(request, ticket, message):
 
 def create_payment(request, ticket_id):
     """
-    Создание платежа в ЮКассе для покупки билета или бронирование без оплаты.
+    Создание платежа в Робокассе для покупки билета или бронирование без оплаты.
     Использует атомарное бронирование с двойной защитой от гонки (Redis + SELECT FOR UPDATE).
     """
     if request.method != "POST":
@@ -920,26 +917,13 @@ def create_payment(request, ticket_id):
             send_order_confirmation_email(order, request)
             return redirect(f"/payment/success/{order.id}/")
 
-        # Создание платежа в ЮКассе для платных билетов
-        payment = Payment.create(
-            {
-                "amount": {"value": str(total_price), "currency": "RUB"},
-                "confirmation": {
-                    "type": "redirect",
-                    "return_url": request.build_absolute_uri(
-                        f"/payment/success/{order.id}/"
-                    ),
-                },
-                "capture": True,
-                "description": f"Оплата заказа #{order.id} для мероприятия {ticket.event.title}",
-                "metadata": {"order_id": order.id},
-            },
-            uuid.uuid4(),
+        # Создание платежа в Робокассе для платных билетов
+        payment, payment_url = _create_robokassa_payment(
+            [order],
+            total_price,
+            f"Билет на мероприятие {ticket.event.title}",
+            participant_data["email"] or "",
         )
-
-        # Сохранение идентификатора платежа в ЮКассе для заказа
-        order.yookassa_payment_id = payment.id
-        order.save()
 
         # Отправка письма для забронированных билетов
         if reserve_without_payment:
@@ -948,7 +932,7 @@ def create_payment(request, ticket_id):
 
         return JsonResponse(
             {
-                "payment_url": payment.confirmation.confirmation_url,
+                "payment_url": payment_url,
                 "order_id": order.id,
             }
         )
@@ -958,171 +942,13 @@ def create_payment(request, ticket_id):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-@csrf_exempt
-def yookassa_webhook(request):
-    """Обработка уведомлений от ЮКассы (вебхуки)."""
-    # 12. Обработка ошибок парсинга JSON
-    try:
-        event_json = json.loads(request.body)
-    except (json.JSONDecodeError, ValueError) as e:
-        logger.error('[webhook] Ошибка парсинга JSON', exc_info=True)
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    # 9. Проверка подписи вебхука ЮКассы
-    # ЮКасса подписывает вебхуки отдельным «секретным ключом вебхуков»,
-    # а не секретным ключом магазина. Если отдельный ключ не задан —
-    # используем ключ магазина.
-    signature = request.META.get('HTTP_IDEMPOTENCE_SECURITY_SIGNATURE', '')
-    webhook_key = getattr(settings, 'YOOKASSA_WEBHOOK_KEY', None) or settings.YOOKASSA_SECRET_KEY
-    expected_signature = hmac.new(
-        webhook_key.encode('utf-8'),
-        request.body,
-        hashlib.sha256
-    ).hexdigest()
-    
-    if not hmac.compare_digest(signature, expected_signature):
-        logger.warning('[webhook] Неверная подпись вебхука')
-        return JsonResponse({"error": "Invalid signature"}, status=403)
-
-    try:
-        event_type = event_json.get("event")
-        payment_data = event_json.get("object", {})
-        payment_id = payment_data.get("id")
-
-        with transaction.atomic():
-            # 8. Защита от повторной обработки (дубликаты)
-            if event_type == "payment.succeeded":
-                already_processed = Order.objects.filter(
-                    yookassa_payment_id=payment_id,
-                    payment_status="succeeded"
-                ).exists()
-                if already_processed:
-                    logger.info('[webhook] Платёж уже обработан, пропускаем', extra={'payment_id': payment_id})
-                    return HttpResponse(status=200)
-
-            if event_type == "payment.succeeded":
-                metadata = payment_data.get("metadata", {})
-
-                # Обработка платежа за билет
-                logger.info('[webhook] payment.succeeded: поиск заказа', extra={'payment_id': payment_id})
-                orders = []
-                try:
-                    order = Order.objects.get(yookassa_payment_id=payment_id)
-                    orders = [order]
-                    logger.info('[webhook] Найден одиночный заказ', extra={'order_id': order.id})
-                except Order.DoesNotExist:
-                    logger.warning('[webhook] Одиночный заказ не найден, проверяем bulk-buy', extra={'payment_id': payment_id})
-                    metadata = payment_data.get("metadata", {})
-                    order_ids_raw = metadata.get("order_ids", [])
-                    order_ids = []
-                    if isinstance(order_ids_raw, str):
-                        try:
-                            order_ids = json.loads(order_ids_raw)
-                        except json.JSONDecodeError:
-                            order_ids = []
-                    elif isinstance(order_ids_raw, list):
-                        order_ids = order_ids_raw
-
-                    if order_ids:
-                        # Сначала пытаемся найти по payment_id
-                        orders = Order.objects.filter(yookassa_payment_id=payment_id, id__in=order_ids)
-                        if not orders.exists():
-                            logger.warning('[webhook] Не найдено по payment_id, ищу только по ID', extra={'order_ids': order_ids})
-                            orders = Order.objects.filter(id__in=order_ids)
-
-                        if orders.exists():
-                            for o in orders:
-                                o.yookassa_payment_id = payment_id
-                                o.save()
-                        else:
-                            logger.error('[webhook] Заказы не найдены в БД', extra={'order_ids': order_ids})
-                            raise Http404("Order with the specified Yookassa payment ID does not exist")
-                    else:
-                        logger.error('[webhook] order_ids пуст или отсутствует в метаданных')
-                        raise Http404("Order with the specified Yookassa payment ID does not exist")
-
-                if orders:
-                    for order in orders:
-                        try:
-                            order.payment_status = "succeeded"
-                            order.is_paid = True
-                            order.yookassa_payment_data = payment_data
-
-                            order.save()
-
-                            logger.info('[webhook] Заказ обновлен', extra={'order_id': order.id, 'status': 'succeeded'})
-                        except Exception as e:
-                            logger.error('[webhook] Ошибка обновления заказа', extra={'order_id': order.id, 'error': str(e)}, exc_info=True)
-
-                    # Одно письмо на все оплаченные заказы (несколько типов билетов = несколько заказов)
-                    orders_list = list(orders)
-                    try:
-                        _send_orders_confirmation_email(orders_list, request)
-                        logger.info('[webhook] Письмо отправлено', extra={'order_ids': [o.id for o in orders_list], 'email': orders_list[0].participant_data.get('email')})
-                    except Exception as e:
-                        logger.error('[webhook] Ошибка отправки письма', extra={'order_ids': [o.id for o in orders_list], 'error': str(e)}, exc_info=True)
-
-                    # Фискализация: чек в Атол по агентской схеме (ЮKassa = деньги, Атол = чеки).
-                    # Запускаем после коммита транзакции, чтобы чек не отправлялся раньше
-                    # записи заказа в БД. Ошибки фискализации не влияют на платёж.
-                    def _fiscalize():
-                        from .atol import register_receipt
-
-                        for o in orders_list:
-                            try:
-                                register_receipt(o)
-                            except Exception as e:
-                                logger.error('[atol] Ошибка фискализации заказа #%s: %s', o.id, e, exc_info=True)
-
-                    transaction.on_commit(_fiscalize)
-                else:
-                    logger.error('[webhook] orders не определен после поиска')
-
-            elif event_type == "payment.canceled":
-                order_id = payment_data.get("id")
-                if not order_id:
-                    raise Http404("Invalid Yookassa payment data")
-                order = Order.objects.get(yookassa_payment_id=order_id)
-                order.payment_status = "canceled"
-                order.save()
-
-            elif event_type == "refund.succeeded":
-                order_id = payment_data.get("payment_id")
-                if not order_id:
-                    raise Http404("Invalid Yookassa refund data")
-                order = Order.objects.get(yookassa_payment_id=order_id)
-                # Помечаем заказ как возвращённый только если возвращены ВСЕ билеты.
-                # При частичном возврате статус заказа не меняем,
-                # иначе оплаченные билеты исчезнут из кабинета посетителя.
-                if order.tickets.exists():
-                    all_refunded = (
-                        order.tickets.filter(is_refunded=True).count() >= order.quantity
-                    )
-                else:
-                    all_refunded = True
-                if all_refunded:
-                    order.payment_status = "refunded"
-                    order.save()
-                    logger.info('[webhook] Полный возврат заказа', extra={'order_id': order.id})
-                else:
-                    logger.info('[webhook] Частичный возврат — статус заказа не меняем', extra={'order_id': order.id})
-
-        return HttpResponse(status=200)
-
-    except Http404:
-        raise
-    except Exception as e:
-        logger.error('[webhook] Критическая ошибка: %s', e, exc_info=True)
-        return JsonResponse({"error": str(e)}, status=500)
-
-
 @login_required
 @require_POST
 def refund_ticket(request, order_id, order_ticket_id=None):
     """
     Возврат билета.
     Для бесплатных билетов — просто обновляем статус в БД.
-    Для платных — создаём возврат через ЮКассу.
+    Для платных билетов возврат оформляется через поддержку Робокассы.
     
     Если передан order_ticket_id — возвращаем только один билет из заказа.
     """
@@ -1133,8 +959,8 @@ def refund_ticket(request, order_id, order_ticket_id=None):
         if not participant_email or participant_email.casefold() != (request.user.email or "").casefold():
             return HttpResponseForbidden("Возврат этого заказа недоступен.")
         logger.info(
-            "[refund] Заказ найден: id=%s, status=%s, yookassa_payment_id=%s, price=%s, quantity=%s",
-            order.id, order.payment_status, order.yookassa_payment_id, order.total_price, order.quantity
+            "[refund] Заказ найден: id=%s, status=%s, payment_id=%s, price=%s, quantity=%s",
+            order.id, order.payment_status, order.payment_id, order.total_price, order.quantity
         )
 
         if order.payment_status != "succeeded" or not order.is_paid:
@@ -1156,7 +982,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
             single_ticket_refund = True
             logger.info("[refund] Возврат одного билета из заказа #%s: билет #%s", order.id, ticket_to_refund.ticket_number)
 
-        # === ДЛЯ БЕСПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ БЕЗ ЮКАССЫ ===
+        # === ДЛЯ БЕСПЛАТНЫХ БИЛЕТОВ — ВОЗВРАТ БЕЗ ПРОВАЙДЕРА ===
         if float(order.total_price) == 0:
             logger.info("[refund] Бесплатный билет: возврат в БД для order_id=%s", order.id)
             
@@ -1172,88 +998,25 @@ def refund_ticket(request, order_id, order_ticket_id=None):
             return render(request, "payment/refund_success_free.html")
 
         # === ДЛЯ ПЛАТНЫХ БИЛЕТОВ ===
-        if not order.yookassa_payment_id:
+        if not order.payment_id:
             return render(
                 request,
-                "/payment/refund_error.html",
-                {"error": "Отсутствует ID платежа в ЮКассе (невозможно выполнить возврат)"},
+                "payment/refund_error.html",
+                {"error": "У заказа отсутствует идентификатор платежа Робокассы."},
+                status=400,
             )
 
-        # --- Расчёт суммы возврата ---
-        # Цена одного билета в заказе
-        per_ticket_price = order.total_price / order.quantity
-
-        # Сколько билетов уже возвращено и сколько денег уже вернули через ЮКассу
-        refunded_count = order.tickets.filter(is_refunded=True).count()
-        already_refunded_amount = per_ticket_price * refunded_count
-        remaining_amount = order.total_price - already_refunded_amount
-
-        # Сумма текущего возврата:
-        #  - один билет → цена билета
-        #  - весь заказ → весь невозвращённый остаток
-        if single_ticket_refund:
-            amount_to_refund = per_ticket_price
-        else:
-            amount_to_refund = remaining_amount
-
-        # Возврат через ЮКассу: ЮКасса поддерживает несколько частичных
-        # возвратов по одному платежу, поэтому вызываем её всегда,
-        # пока есть невозвращённый остаток.
-        if amount_to_refund > 0:
-            # Округляем до копеек, чтобы не попасть на отказ ЮКассы из-за точности
-            amount_to_refund = amount_to_refund.quantize(Decimal("0.01"))
-            logger.info(
-                "[refund] Возврат через ЮКассу: payment_id=%s, amount=%s (уже возвращено %s из %s)",
-                order.yookassa_payment_id, amount_to_refund, already_refunded_amount, order.total_price
-            )
-            from yookassa import Refund
-
-            try:
-                refund = Refund.create(
-                    {
-                        "payment_id": order.yookassa_payment_id,
-                        "amount": {"value": str(amount_to_refund), "currency": "RUB"},
-                    },
-                    uuid.uuid4(),
+        return render(
+            request,
+            "payment/refund_error.html",
+            {
+                "error": (
+                    "Автоматический возврат через Робокассу не настроен. "
+                    "Обратитесь в поддержку."
                 )
-                logger.info("[refund] Возврат создан: %s", refund.id)
-            except Exception as refund_error:
-                logger.error("[refund] Ошибка возврата в ЮКассе: %s", refund_error, exc_info=True)
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {"error": "ЮКасса не подтвердила возврат. Билет не был изменён."},
-                    status=502,
-                )
-        else:
-            # Возвращать нечего (все билеты уже возвращены)
-            logger.warning("[refund] Невозвращённый остаток равен нулю для заказа #%s", order.id)
-
-        # Помечаем билет(ы) как возвращённые
-        if single_ticket_refund:
-            ticket_to_refund.is_refunded = True
-            ticket_to_refund.save()
-            logger.info("[refund] Билет #%s помечен как возвращённый", ticket_to_refund.ticket_number)
-
-            # Проверяем, все ли билеты возвращены
-            all_refunded = order.tickets.filter(is_refunded=True).count() == order.quantity
-
-            if all_refunded:
-                order.payment_status = "refunded"
-                order.save()
-                logger.info("[refund] Все билеты в заказе #%s возвращены, заказ помечен как возвращённый", order.id)
-            else:
-                logger.info("[refund] Частичный возврат: возвращено %s/%s билетов", order.tickets.filter(is_refunded=True).count(), order.quantity)
-        else:
-            # Полный возврат заказа — помечаем все оставшиеся билеты
-            order.tickets.filter(is_refunded=False).update(is_refunded=True)
-            order.payment_status = "refunded"
-            order.save()
-            logger.info("[refund] Заказ #%s полностью возвращён", order.id)
-
-        # Перенаправляем на историю заказов с сообщением об успехе
-        messages.success(request, 'Возврат успешно выполнен!')
-        return redirect('visitor:dashboard')
+            },
+            status=501,
+        )
 
     except Exception as e:
         logger.error("Ошибка при возврате заказа: %s", e, exc_info=True)
@@ -1263,55 +1026,19 @@ def refund_ticket(request, order_id, order_ticket_id=None):
 def payment_success(request, order_id):
     """
     Страница успешной оплаты.
-    Обновляет ВСЕ заказы, привязанные к тому же платежу ЮКассы.
+    Статус платежа подтверждается серверным уведомлением провайдера.
     """
-    from yookassa import Payment
-
     order = get_object_or_404(Order, id=order_id)
 
-    # Если есть yookassa_payment_id — ищем все заказы с этим ID
-    if order.yookassa_payment_id:
+    if order.payment_id:
         try:
-            yookassa_payment = Payment.find_one(order.yookassa_payment_id)
-            if yookassa_payment and yookassa_payment.status == "succeeded":
-                # Обновляем ВСЕ заказы с этим платежным ID в транзакции
-                with transaction.atomic():
-                    orders_to_update = Order.objects.filter(
-                        yookassa_payment_id=order.yookassa_payment_id
-                    )
-                    sent_emails = set()
-
-                for o in orders_to_update:
-                    if o.payment_status != "succeeded":
-                        o.payment_status = "succeeded"
-                        o.is_paid = True
-                        o.save()
-                        logger.info('[success] Заказ обновлён', extra={
-                            'order_id': o.id,
-                            'payment_id': order.yookassa_payment_id
-                        })
-
-                # Отправляем ОДНО письмо на все заказы этого платежа
-                pending_orders = [o for o in orders_to_update if not o.email_sent]
-                if pending_orders:
-                    try:
-                        _send_orders_confirmation_email(pending_orders, request)
-                        for o in pending_orders:
-                            o.email_sent = True
-                            o.save(update_fields=['email_sent'])
-                            sent_emails.add(o.id)
-                        logger.info('[success] Письмо отправлено для заказов %s', [o.id for o in pending_orders])
-                    except Exception as e:
-                        logger.error('[success] Ошибка отправки письма', extra={
-                            'order_ids': [o.id for o in pending_orders],
-                            'error': str(e)
-                        }, exc_info=True)
-        except Exception as e:
-            logger.error('[success] Ошибка проверки статуса ЮКассы', extra={
-                'order_id': order.id,
-                'error': str(e)
-            }, exc_info=True)
-
+            RobokassaPayment.objects.get(pk=int(order.payment_id))
+            order.refresh_from_db()
+        except (RobokassaPayment.DoesNotExist, ValueError):
+            logger.warning(
+                "[success] Не найдена попытка Робокассы для заказа #%s",
+                order.id,
+            )
     return render(request, "payment/payment_success.html", {"order": order})
 
 @login_required
@@ -1319,8 +1046,6 @@ def pay_reserved_order(request, order_id):
     """
     Оплата забронированного билета.
     """
-    from yookassa import Payment
-
     try:
         order = get_object_or_404(Order, id=order_id)
         participant_email = (order.participant_data or {}).get("email", "")
@@ -1334,39 +1059,146 @@ def pay_reserved_order(request, order_id):
                 {"error": "Этот заказ не может быть оплачен"},
             )
 
-        if order.payment_status == "pending" and order.yookassa_payment_id:
-            # Если платеж уже создан, перенаправляем на существующую ссылку для оплаты
+        if order.payment_status == "pending" and order.payment_id:
             try:
-                payment = Payment.find_one(order.yookassa_payment_id)
-                if payment and payment.status == "pending":
-                    return redirect(payment.confirmation.confirmation_url)
-            except Exception as e:
-                logger.warning("[pay_reserved] Не удалось найти существующий платёж: %s", e)
+                payment = RobokassaPayment.objects.get(pk=int(order.payment_id))
+                if payment.status == "pending":
+                    return redirect(
+                        build_payment_url(
+                            payment.pk,
+                            payment.amount,
+                            f"Билет на мероприятие {order.ticket.event.title}",
+                            email=(order.participant_data or {}).get("email", ""),
+                        )
+                    )
+            except (RobokassaPayment.DoesNotExist, ValueError):
+                logger.warning(
+                    "[pay_reserved] Попытка Робокассы не найдена для заказа #%s",
+                    order.id,
+                )
 
-        # Создание платежа в ЮКассе
-        payment = Payment.create(
-            {
-                "amount": {"value": str(order.total_price), "currency": "RUB"},
-                "confirmation": {
-                    "type": "redirect",
-                    "return_url": request.build_absolute_uri(
-                        f"/payment/success/{order.id}/"
-                    ),
-                },
-                "capture": True,
-                "description": f"Оплата заказа #{order.id} для мероприятия {order.ticket.event.title}",
-                "metadata": {"order_id": order.id},
-            },
-            uuid.uuid4(),
+        payment, payment_url = _create_robokassa_payment(
+            [order],
+            order.total_price,
+            f"Билет на мероприятие {order.ticket.event.title}",
+            (order.participant_data or {}).get("email", ""),
         )
 
-        # Сохранение идентификатора платежа в ЮКассе для заказа
-        order.yookassa_payment_id = payment.id
         order.payment_status = "pending"
-        order.save()
+        order.save(update_fields=["payment_status"])
 
-        return redirect(payment.confirmation.confirmation_url)
+        return redirect(payment_url)
 
     except Exception as e:
         logger.error("Ошибка при оплате забронированного заказа: %s", e, exc_info=True)
         return render(request, "payment/refund_error.html", {"error": str(e)})
+
+
+@csrf_exempt
+def robokassa_result(request):
+    """Проверяет подпись и регистрирует подтверждённый платёж Робокассы."""
+    if request.method not in ("GET", "POST"):
+        return HttpResponse("Method not allowed", status=405)
+
+    params = request.GET.copy()
+    params.update(request.POST)
+    inv_id = params.get("InvId") or params.get("InvoiceID")
+    out_sum = params.get("OutSum")
+    if not inv_id or not out_sum or not verify_result_signature(params):
+        logger.warning("[robokassa] Некорректная подпись или параметры callback")
+        return HttpResponse("Invalid signature or parameters", status=400)
+
+    try:
+        inv_id = int(inv_id)
+        received_amount = Decimal(out_sum).quantize(Decimal("0.01"))
+        with transaction.atomic():
+            payment = RobokassaPayment.objects.select_for_update().get(pk=inv_id)
+            if received_amount != payment.amount:
+                logger.error(
+                    "[robokassa] Сумма callback не совпала: InvId=%s, received=%s, expected=%s",
+                    inv_id,
+                    received_amount,
+                    payment.amount,
+                )
+                return HttpResponse("Invalid amount", status=400)
+            if payment.status == "succeeded":
+                return HttpResponse(f"OK{inv_id}", content_type="text/plain")
+
+            orders = list(
+                payment.orders.select_for_update()
+                .select_related("ticket__event")
+                .order_by("id")
+            )
+            if not orders:
+                logger.error("[robokassa] Для InvId=%s нет связанных заказов", inv_id)
+                return HttpResponse("Unknown invoice", status=404)
+
+            payment.status = "succeeded"
+            payment.notification_data = params.dict()
+            payment.save(update_fields=["status", "notification_data", "updated_at"])
+            for order in orders:
+                order.payment_status = "succeeded"
+                order.is_paid = True
+                order.save(update_fields=["payment_status", "is_paid"])
+
+            pending_email_orders = [order for order in orders if not order.email_sent]
+
+            def _after_payment():
+                if pending_email_orders:
+                    try:
+                        _send_orders_confirmation_email(pending_email_orders, request)
+                        Order.objects.filter(
+                            id__in=[order.id for order in pending_email_orders]
+                        ).update(email_sent=True)
+                    except Exception:
+                        logger.exception(
+                            "[robokassa] Ошибка отправки письма для InvId=%s",
+                            inv_id,
+                        )
+
+                from .atol import register_receipt
+
+                for order in orders:
+                    try:
+                        register_receipt(order)
+                    except Exception:
+                        logger.exception(
+                            "[atol] Ошибка фискализации заказа #%s",
+                            order.id,
+                        )
+
+            transaction.on_commit(_after_payment)
+
+        return HttpResponse(f"OK{inv_id}", content_type="text/plain")
+    except RobokassaPayment.DoesNotExist:
+        logger.error("[robokassa] Неизвестный InvId=%s", inv_id)
+        return HttpResponse("Unknown invoice", status=404)
+    except (InvalidOperation, ValueError, TypeError):
+        return HttpResponse("Invalid payment data", status=400)
+    except Exception:
+        logger.exception("[robokassa] Ошибка обработки callback InvId=%s", inv_id)
+        return HttpResponse("Payment processing failed", status=500)
+
+
+def _robokassa_return(request):
+    params = request.GET.copy()
+    params.update(request.POST)
+    inv_id = params.get("InvId") or params.get("InvoiceID")
+    try:
+        payment = RobokassaPayment.objects.get(pk=int(inv_id))
+        order = payment.orders.order_by("id").first()
+    except (RobokassaPayment.DoesNotExist, TypeError, ValueError):
+        raise Http404("Robokassa invoice not found")
+    if order is None:
+        raise Http404("Order for Robokassa invoice not found")
+    return redirect("payment:payment_success", order_id=order.id)
+
+
+def robokassa_success(request):
+    """Возвращает покупателя на страницу статуса заказа после оплаты."""
+    return _robokassa_return(request)
+
+
+def robokassa_fail(request):
+    """Возвращает покупателя на страницу статуса заказа после отказа от оплаты."""
+    return _robokassa_return(request)

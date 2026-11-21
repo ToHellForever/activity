@@ -1254,6 +1254,31 @@ class Ticket(models.Model):
         verbose_name_plural = "Билеты"
 
 
+class RobokassaPayment(models.Model):
+    """Payment attempt at Robokassa; its database ID is the Robokassa InvId."""
+
+    STATUS_CHOICES = [
+        ("pending", "Ожидает оплаты"),
+        ("succeeded", "Оплачено"),
+        ("canceled", "Отменено"),
+    ]
+
+    orders = models.ManyToManyField(
+        "Order",
+        related_name="robokassa_payments",
+        blank=True,
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+    notification_data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class Order(models.Model):
     """Модель для заказа (покупки)."""
 
@@ -1275,15 +1300,6 @@ class Order(models.Model):
     )
     payment_id = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа"
-    )
-    yookassa_payment_id = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        verbose_name="Идентификатор платежа в ЮКассе",
-    )
-    yookassa_payment_data = models.JSONField(
-        null=True, blank=True, verbose_name="Данные платежа из ЮКассы"
     )
     email_sent = models.BooleanField(default=False, verbose_name="Письмо отправлено")
     platform_commission = models.DecimalField(

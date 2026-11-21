@@ -2463,24 +2463,6 @@ cffi = ">=1.16.0"
 [package.extras]
 test = ["pytest"]
 
-[[package]]
-name = "yookassa"
-version = "3.10.1"
-description = "YooKassa API SDK Python Library"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "yookassa-3.10.1.tar.gz", hash = "sha256:6eddff428be5eb86c001c79c334ce8ad265b52b315baba70dc5f19bec0f25955"},
-]
-
-[package.dependencies]
-deprecated = "*"
-distro = "*"
-netaddr = "*"
-requests = "*"
-urllib3 = "*"
-
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"

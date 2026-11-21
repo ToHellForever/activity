@@ -28,6 +28,7 @@ ALLOWED_HOSTS = [
     # Punycode-версии кириллических доменов — браузер присылает Host в ASCII
     "xn--80aabyec7f7a.xn--p1ai",
     "xn--80aabqjfd1bzb5a9b.xn--p1ai",
+    "record-numeric-trailer-cuisine.trycloudflare.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
@@ -375,9 +376,16 @@ CELERY_BEAT_SCHEDULE = {
 # Сколько дней должно пройти после даты мероприятия, чтобы считать его
 # архивным и очистить второстепенные медиа (~полгода).
 ARCHIVED_EVENT_MEDIA_RETENTION_DAYS = 183
-YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
-YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-YOOKASSA_WEBHOOK_KEY = os.getenv("YOOKASSA_WEBHOOK_KEY")
+# === Robokassa ===
+ROBOKASSA_MERCHANT_LOGIN = os.getenv("ROBOKASSA_MERCHANT_LOGIN")
+ROBOKASSA_PASSWORD1 = os.getenv("ROBOKASSA_PASSWORD1")
+ROBOKASSA_PASSWORD2 = os.getenv("ROBOKASSA_PASSWORD2")
+ROBOKASSA_HASH_ALGORITHM = os.getenv("ROBOKASSA_HASH_ALGORITHM", "MD5").upper()
+ROBOKASSA_TEST_MODE = os.getenv(
+    "ROBOKASSA_TEST_MODE", "True" if DEBUG else "False"
+).lower() in (
+    "1", "true", "yes"
+)
 
 # === Атол Онлайн (облачная касса, агентская схема) ===
 # Фискализация включается флагом ATOL_ENABLED; остальные данные — из ЛК Атола.
@@ -414,14 +422,17 @@ LANGUAGE_CODE = "ru-ru"
 from django.core.exceptions import ImproperlyConfigured
 
 REQUIRED_ENV_VARS = {
-    "YOOKASSA_SHOP_ID": YOOKASSA_SHOP_ID,
-    "YOOKASSA_SECRET_KEY": YOOKASSA_SECRET_KEY,
-    "YOOKASSA_WEBHOOK_KEY": YOOKASSA_WEBHOOK_KEY,
     "EMAIL_HOST": EMAIL_HOST,
     "EMAIL_HOST_USER": EMAIL_HOST_USER,
     "EMAIL_HOST_PASSWORD": EMAIL_HOST_PASSWORD,
     "DEFAULT_FROM_EMAIL": DEFAULT_FROM_EMAIL,
 }
+if not DEBUG:
+    REQUIRED_ENV_VARS.update({
+        "ROBOKASSA_MERCHANT_LOGIN": ROBOKASSA_MERCHANT_LOGIN,
+        "ROBOKASSA_PASSWORD1": ROBOKASSA_PASSWORD1,
+        "ROBOKASSA_PASSWORD2": ROBOKASSA_PASSWORD2,
+    })
 
 for var, value in REQUIRED_ENV_VARS.items():
     if not value:

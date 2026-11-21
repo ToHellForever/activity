@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.db import transaction
 from django.core.management import call_command
 from core.utils import get_from_email
 
@@ -500,13 +501,14 @@ def close_event_sales():
 def check_unpaid_tickets():
     """
     Задача Celery для проверки неоплаченных билетов.
-    Возвращает билет в продажу, если он не был оплачен в течение 10 минут.
+    Возвращает билет в продажу после подтверждения провайдером отмены платежа.
     """
     from django.utils import timezone
-    from core.models import Order, Ticket
+    from core.models import Order, Ticket, RobokassaPayment
     from django.core.mail import send_mail
     from django.template.loader import render_to_string
     from django.utils.html import strip_tags
+    from django.conf import settings
 
     now = timezone.now()
     unpaid_orders = Order.objects.filter(
@@ -515,13 +517,43 @@ def check_unpaid_tickets():
         created_at__lte=now - timezone.timedelta(minutes=10)
     ).select_related("ticket__event")
 
+    checked_robokassa_payments = {}
     for order in unpaid_orders:
-        ticket = order.ticket
-        ticket.available_quantity += order.quantity
-        ticket.save()
+        if order.payment_id:
+            if settings.ROBOKASSA_TEST_MODE:
+                continue
+            try:
+                inv_id = int(order.payment_id)
+                if inv_id not in checked_robokassa_payments:
+                    from payment.robokassa import get_operation_state
 
-        order.payment_status = "canceled"
-        order.save()
+                    checked_robokassa_payments[inv_id] = get_operation_state(inv_id)
+                operation_state = checked_robokassa_payments[inv_id]
+            except Exception:
+                logger.exception(
+                    "Не удалось проверить платёж Робокассы для заказа #%s",
+                    order.id,
+                )
+                continue
+
+            if operation_state not in (10, 60):
+                if operation_state == 100:
+                    logger.warning(
+                        "Робокасса подтверждает оплату InvId=%s, ожидается ResultURL",
+                        inv_id,
+                    )
+                continue
+            RobokassaPayment.objects.filter(pk=inv_id).update(status="canceled")
+
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if order.payment_status != "pending" or order.is_paid:
+                continue
+            ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
+            ticket.available_quantity += order.quantity
+            ticket.save(update_fields=["available_quantity"])
+            order.payment_status = "canceled"
+            order.save(update_fields=["payment_status"])
 
         # Уведомляем пользователя
         email = order.participant_data.get("email")
