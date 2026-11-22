@@ -25,13 +25,10 @@
                             <div class="card ticket-card">
                                 <!-- Кнопка возврата в правом верхнем углу -->
                                 {% if order.is_paid and event.date_time > now and ot %}
-                                                     <form method="post" action="{% url 'visitor:refund_ticket' order.id ot.id %}"
-                                                             onsubmit="return confirm('Вы уверены, что хотите вернуть билет №{{ ot.ticket_number }}?');">
-                                                          {% csrf_token %}
-                                                          <button type="submit" class="refund-corner-btn"
-                                                                     title="Возврат билета №{{ ot.ticket_number }}">Вернуть</button>
-                                                     </form>
-                                    {% endif %}
+                                    <button type="button" class="refund-corner-btn js-refund-options"
+                                            data-ticket-url="{% url 'visitor:refund_ticket' order.id ot.id %}"
+                                            title="Возврат билета №{{ ot.ticket_number }}">Вернуть</button>
+                                {% endif %}
 
                                 {% if event.has_real_image %}
                                     <img src="{{ event.primary_image_url }}" class="card-img-top" alt="{{ event.title }}">
@@ -120,6 +117,22 @@
         </main>
     </div>
 </div>
+<dialog id="refundOptionsDialog" class="refund-options-dialog">
+    <form method="dialog" class="refund-options-close">
+        <button type="submit" aria-label="Закрыть">&times;</button>
+    </form>
+    <h3>Что вернуть?</h3>
+    <form method="post" id="refundOneTicketForm">
+        {% csrf_token %}
+        <button type="submit" class="buy-button">Вернуть только этот билет</button>
+    </form>
+    <form method="post" id="refundWholePaymentForm">
+        {% csrf_token %}
+        <input type="hidden" name="refund_scope" value="whole_payment">
+        <button type="submit" class="buy-button">Вернуть все билеты из этой оплаты</button>
+    </form>
+    <p>Если вернуть один билет, остальные билеты этой покупки нужно будет возвращать вручную, по одному.</p>
+</dialog>
 <!-- Модальное окно билета -->
 <div id="ticketModal" class="ticket-modal">
     <div class="ticket-modal-backdrop"></div>
@@ -133,4 +146,20 @@
 
 <script src="{% static 'js/pages/visitor/visitor_dashboard.js' %}"></script>
 <script src="{% static 'js/pages/visitor/ajax_pagination.js' %}"></script>
+<script>
+    (() => {
+        const refundOptionsDialog = document.getElementById("refundOptionsDialog");
+        const refundOneTicketForm = document.getElementById("refundOneTicketForm");
+        const refundWholePaymentForm = document.getElementById("refundWholePaymentForm");
+
+        document.querySelectorAll(".js-refund-options").forEach((button) => {
+            button.addEventListener("click", () => {
+                refundOneTicketForm.action = button.dataset.ticketUrl;
+                refundWholePaymentForm.action = button.dataset.ticketUrl;
+                refundOptionsDialog.showModal();
+            });
+        });
+
+    })();
+</script>
 {% endblock %}

@@ -8,9 +8,11 @@ from decimal import Decimal, InvalidOperation
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import timezone
 
 
 PAYMENT_URL = "https://auth.robokassa.ru/Merchant/Index.aspx"
@@ -54,7 +56,14 @@ def _amount_string(amount):
     return format(value, ".2f")
 
 
-def build_payment_url(inv_id, amount, description, email="", receipt=None):
+def build_payment_url(
+    inv_id,
+    amount,
+    description,
+    email="",
+    receipt=None,
+    expiration_date=None,
+):
     merchant_login = _setting("ROBOKASSA_MERCHANT_LOGIN")
     password1 = _setting("ROBOKASSA_PASSWORD1")
     amount_string = _amount_string(amount)
@@ -83,6 +92,12 @@ def build_payment_url(inv_id, amount, description, email="", receipt=None):
     }
     if receipt_string:
         params["Receipt"] = receipt_string
+    if expiration_date:
+        expiration_moscow = timezone.localtime(
+            expiration_date,
+            ZoneInfo("Europe/Moscow"),
+        )
+        params["ExpirationDate"] = expiration_moscow.strftime("%Y-%m-%dT%H:%M")
     if getattr(settings, "ROBOKASSA_TEST_MODE", False):
         params["IsTest"] = "1"
     return f"{PAYMENT_URL}?{urlencode(params)}"

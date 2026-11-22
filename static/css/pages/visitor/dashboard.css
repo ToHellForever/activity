@@ -80,6 +80,51 @@
   font-size: 14px;
 }
 
+.refund-options-dialog {
+  width: min(92vw, 460px);
+  border: 0;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+.refund-options-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.refund-options-dialog h3 {
+  margin: 0 32px 20px 0;
+  font-size: 1.2rem;
+}
+
+.refund-options-dialog form:not(.refund-options-close) {
+  margin-bottom: 12px;
+}
+
+.refund-options-dialog form:not(.refund-options-close) .buy-button {
+  width: 100%;
+}
+
+.refund-options-dialog p {
+  margin: 18px 0;
+  color: #5f6470;
+  font-size: 0.9rem;
+}
+
+.refund-options-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+}
+
+.refund-options-close button {
+  border: 0;
+  background: transparent;
+  color: #5f6470;
+  font-size: 1.6rem;
+}
+
 .ticket-photo {
   position: relative;
   height: 168px;

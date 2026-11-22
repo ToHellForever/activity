@@ -335,9 +335,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.check_race_conditions_task",
         "schedule": 3600.0,
     },
-    "check-unpaid-tickets-every-10-minutes": {
+    "check-unpaid-tickets-every-minute": {
         "task": "core.tasks.check_unpaid_tickets",
-        "schedule": 600.0,
+        "schedule": 60.0,
     },
     "check-robokassa-refunds-every-minute": {
         "task": "core.tasks.check_robokassa_refunds",

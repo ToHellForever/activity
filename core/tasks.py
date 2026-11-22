@@ -514,21 +514,33 @@ def check_unpaid_tickets():
     unpaid_orders = Order.objects.filter(
         payment_status__in=["pending"],
         is_paid=False,
-        created_at__lte=now - timezone.timedelta(minutes=10)
+        created_at__lte=now - timezone.timedelta(minutes=15)
     ).select_related("ticket__event")
 
     checked_robokassa_payments = {}
     for order in unpaid_orders:
         if order.payment_id:
             if settings.ROBOKASSA_TEST_MODE:
-                continue
+                payment = RobokassaPayment.objects.filter(
+                    pk=order.payment_id
+                ).first()
+                if payment and payment.status == "succeeded":
+                    continue
+                if payment and payment.status == "pending":
+                    if payment.created_at > now - timezone.timedelta(minutes=15):
+                        continue
+                    RobokassaPayment.objects.filter(
+                        pk=payment.pk,
+                        status="pending",
+                    ).update(status="canceled")
             try:
-                inv_id = int(order.payment_id)
-                if inv_id not in checked_robokassa_payments:
-                    from payment.robokassa import get_operation_state
+                if not settings.ROBOKASSA_TEST_MODE:
+                    inv_id = int(order.payment_id)
+                    if inv_id not in checked_robokassa_payments:
+                        from payment.robokassa import get_operation_state
 
-                    checked_robokassa_payments[inv_id] = get_operation_state(inv_id)
-                operation_state = checked_robokassa_payments[inv_id]
+                        checked_robokassa_payments[inv_id] = get_operation_state(inv_id)
+                    operation_state = checked_robokassa_payments[inv_id]
             except Exception:
                 logger.exception(
                     "Не удалось проверить платёж Робокассы для заказа #%s",
@@ -536,14 +548,15 @@ def check_unpaid_tickets():
                 )
                 continue
 
-            if operation_state not in (10, 60):
+            if not settings.ROBOKASSA_TEST_MODE and operation_state not in (10, 60):
                 if operation_state == 100:
                     logger.warning(
                         "Робокасса подтверждает оплату InvId=%s, ожидается ResultURL",
                         inv_id,
                     )
                 continue
-            RobokassaPayment.objects.filter(pk=inv_id).update(status="canceled")
+            if not settings.ROBOKASSA_TEST_MODE:
+                RobokassaPayment.objects.filter(pk=inv_id).update(status="canceled")
 
         with transaction.atomic():
             order = Order.objects.select_for_update().get(pk=order.pk)
@@ -652,9 +665,9 @@ def check_robokassa_refunds():
                 )
                 continue
 
-            order = Order.objects.select_for_update().get(pk=refund.order_id)
-            ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
             if refund.order_ticket_id:
+                order = Order.objects.select_for_update().get(pk=refund.order_id)
+                ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
                 order_ticket = OrderTicket.objects.select_for_update().get(
                     pk=refund.order_ticket_id
                 )
@@ -667,21 +680,30 @@ def check_robokassa_refunds():
                     order.payment_status = "refunded"
                     order.save(update_fields=["payment_status"])
             else:
-                order_tickets = list(
-                    OrderTicket.objects.select_for_update().filter(order=order)
-                )
-                active_tickets = [
-                    order_ticket
-                    for order_ticket in order_tickets
-                    if not order_ticket.is_refunded
+                orders = list(refund.orders.order_by("id")) or [refund.order]
+                locked_orders = [
+                    Order.objects.select_for_update().get(pk=order.pk)
+                    for order in orders
                 ]
-                for order_ticket in active_tickets:
-                    order_ticket.is_refunded = True
-                    order_ticket.save(update_fields=["is_refunded"])
-                ticket.available_quantity += len(active_tickets) or order.quantity
-                ticket.save(update_fields=["available_quantity"])
-                order.payment_status = "refunded"
-                order.save(update_fields=["payment_status"])
+                for order in locked_orders:
+                    ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
+                    order_tickets = list(
+                        OrderTicket.objects.select_for_update().filter(order=order)
+                    )
+                    active_tickets = [
+                        order_ticket
+                        for order_ticket in order_tickets
+                        if not order_ticket.is_refunded
+                    ]
+                    for order_ticket in active_tickets:
+                        order_ticket.is_refunded = True
+                        order_ticket.save(update_fields=["is_refunded"])
+                    ticket.available_quantity += (
+                        len(active_tickets) if order_tickets else order.quantity
+                    )
+                    ticket.save(update_fields=["available_quantity"])
+                    order.payment_status = "refunded"
+                    order.save(update_fields=["payment_status"])
 
             refund.status = "succeeded"
             refund.response_data = result

@@ -58,6 +58,7 @@ def _create_robokassa_payment(orders, amount, description, email):
             description,
             email=email,
             receipt=receipt,
+            expiration_date=payment.created_at + timedelta(minutes=15),
         )
     return payment, payment_url
 
@@ -968,6 +969,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
     try:
         logger.info("[refund] Начало возврата: order_id=%s, order_ticket_id=%s", order_id, order_ticket_id)
         order = get_object_or_404(Order, id=order_id)
+        refund_all_payment = request.POST.get("refund_scope") == "whole_payment"
         participant_email = (order.participant_data or {}).get("email", "")
         if not participant_email or participant_email.casefold() != (request.user.email or "").casefold():
             return HttpResponseForbidden("Возврат этого заказа недоступен.")
@@ -994,7 +996,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                     .filter(order=order)
                     .order_by("ticket_number")
                 )
-                if order_ticket_id:
+                if order_ticket_id and not refund_all_payment:
                     ticket_to_refund = next(
                         (item for item in tickets if item.pk == order_ticket_id),
                         None,
@@ -1033,7 +1035,7 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                     ticket.save(update_fields=["available_quantity"])
                     order.payment_status = "refunded"
                     order.save(update_fields=["payment_status"])
-            if order_ticket_id:
+            if order_ticket_id and not refund_all_payment:
                 logger.info(
                     "[refund] Бесплатный билет заказа #%s помечен как возвращённый",
                     order.id,
@@ -1066,15 +1068,61 @@ def refund_ticket(request, order_id, order_ticket_id=None):
             )
 
         with transaction.atomic():
-            order = Order.objects.select_for_update().select_related(
-                "ticket__event"
-            ).get(pk=order.pk)
-            tickets = list(
-                OrderTicket.objects.select_for_update()
-                .filter(order=order)
-                .order_by("ticket_number")
+            payment = RobokassaPayment.objects.select_for_update().get(
+                pk=int(order.payment_id)
             )
-            if order_ticket_id:
+            payment_orders = list(
+                payment.orders.select_for_update()
+                .select_related("ticket__event")
+                .order_by("id")
+            )
+            if not payment_orders:
+                return render(
+                    request,
+                    "payment/refund_error.html",
+                    {"error": "В платеже не найдены связанные заказы."},
+                    status=400,
+                )
+            order = next(
+                (payment_order for payment_order in payment_orders if payment_order.pk == order.pk),
+                None,
+            )
+            if order is None:
+                return render(
+                    request,
+                    "payment/refund_error.html",
+                    {"error": "Заказ не связан с этим платежом."},
+                    status=409,
+                )
+
+            all_payment_orders = payment_orders
+            if refund_all_payment:
+                for payment_order in payment_orders:
+                    email = (payment_order.participant_data or {}).get("email", "")
+                    if (email or "").casefold() != (request.user.email or "").casefold():
+                        return HttpResponseForbidden(
+                            "Возврат всей покупки недоступен."
+                        )
+                    if payment_order.payment_status != "succeeded" or not payment_order.is_paid:
+                        return render(
+                            request,
+                            "payment/refund_error.html",
+                            {"error": "Не все заказы этой покупки подтверждены как оплаченные."},
+                            status=409,
+                        )
+            else:
+                payment_orders = [order]
+
+            tickets_by_order = {
+                payment_order.pk: list(
+                    OrderTicket.objects.select_for_update()
+                    .filter(order=payment_order)
+                    .order_by("ticket_number")
+                )
+                for payment_order in payment_orders
+            }
+            tickets = tickets_by_order[order.pk]
+            if order_ticket_id and not refund_all_payment:
                 ticket_to_refund = next(
                     (ticket for ticket in tickets if ticket.pk == order_ticket_id),
                     None,
@@ -1088,7 +1136,9 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                         {"error": "Этот билет уже возвращён или использован."},
                         status=400,
                     )
-            elif any(ticket.is_refunded or ticket.attended for ticket in tickets):
+            elif not refund_all_payment and any(
+                ticket.is_refunded or ticket.attended for ticket in tickets
+            ):
                 return render(
                     request,
                     "payment/refund_error.html",
@@ -1101,115 +1151,184 @@ def refund_ticket(request, order_id, order_ticket_id=None):
                     status=400,
                 )
 
-            payment = RobokassaPayment.objects.select_for_update().get(
-                pk=int(order.payment_id)
-            )
             receipt_data = payment.receipt_data or {}
-            original_item = (receipt_data.get("order_items") or {}).get(
-                str(order.pk)
-            )
-            if not original_item:
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {
-                        "error": (
-                            "Для этого старого платежа нет сохранённых данных чека. "
-                            "Автоматический возврат недоступен; обратитесь в поддержку."
-                        )
-                    },
-                    status=400,
-                )
+            order_items = receipt_data.get("order_items") or {}
             if not settings.ROBOKASSA_PASSWORD3:
                 return render(
                     request,
                     "payment/refund_error.html",
-                    {
-                        "error": (
-                            "Для возвратов не настроен пароль Robokassa №3."
-                        )
-                    },
+                    {"error": "Для возвратов не настроен пароль Robokassa №3."},
                     status=503,
                 )
 
-            active_refunds = order.robokassa_refunds.exclude(
-                status__in=["failed", "canceled"]
-            )
-            if not order_ticket_id and active_refunds.exists():
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {"error": "По этому заказу уже есть незавершённый или выполненный возврат."},
-                    status=409,
-                )
-            if order_ticket_id and active_refunds.filter(
-                order_ticket_id=order_ticket_id
-            ).exists():
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {"error": "Возврат этого билета уже запрошен или выполнен."},
-                    status=409,
-                )
-
-            prior_amount = active_refunds.aggregate(total=Sum("amount"))["total"] or Decimal("0")
-            remaining_amount = order.total_price - prior_amount
             payment_refunds = RobokassaRefund.objects.filter(
-                order__in=payment.orders.all()
-            ).exclude(status__in=["failed", "canceled"])
+                models.Q(order__in=all_payment_orders)
+                | models.Q(orders__in=all_payment_orders)
+            ).exclude(status__in=["failed", "canceled"]).distinct()
             prior_payment_amount = (
                 payment_refunds.aggregate(total=Sum("amount"))["total"]
                 or Decimal("0")
             )
             payment_remaining_amount = payment.amount - prior_payment_amount
-            item_cost = Decimal(str(original_item["cost"])).quantize(Decimal("0.01"))
-            quantity_to_refund = (
-                1 if order_ticket_id else order.quantity - sum(t.is_refunded for t in tickets)
-            )
-            refund_amount = min(
-                item_cost * quantity_to_refund,
-                remaining_amount,
-                payment_remaining_amount,
-            ).quantize(Decimal("0.01"))
-            if refund_amount <= 0 or quantity_to_refund <= 0:
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {"error": "Для возврата не осталось оплаченной суммы."},
-                    status=400,
-                )
-            if refund_amount != item_cost * quantity_to_refund:
-                return render(
-                    request,
-                    "payment/refund_error.html",
-                    {
-                        "error": (
-                            "Сумма оставшегося платежа не совпадает с суммой билета. "
-                            "Обратитесь в поддержку."
-                        )
-                    },
-                    status=409,
-                )
 
-            refund_items = [{
-                "Name": original_item["name"],
-                "Quantity": quantity_to_refund,
-                "Cost": float(item_cost),
-                "Tax": original_item["tax"],
-                "PaymentMethod": original_item["payment_method"],
-                "PaymentObject": original_item["payment_object"],
-            }]
-            is_full_refund = (
-                refund_amount == payment.amount
-                and payment.orders.count() == 1
-                and quantity_to_refund == order.quantity
-            )
+            if refund_all_payment:
+                if payment_refunds.exclude(status="succeeded").exists():
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {"error": "По этой покупке уже есть возврат в обработке."},
+                        status=409,
+                    )
+                refund_items = []
+                refund_amount = Decimal("0.00")
+                for payment_order in payment_orders:
+                    original_item = order_items.get(str(payment_order.pk))
+                    if not original_item:
+                        return render(
+                            request,
+                            "payment/refund_error.html",
+                            {
+                                "error": (
+                                    "В сохранённом чеке отсутствуют данные одного из заказов. "
+                                    "Обратитесь в поддержку."
+                                )
+                            },
+                            status=400,
+                        )
+                    order_tickets = tickets_by_order[payment_order.pk]
+                    active_tickets = [
+                        ticket for ticket in order_tickets if not ticket.is_refunded
+                    ]
+                    if any(ticket.attended for ticket in active_tickets):
+                        return render(
+                            request,
+                            "payment/refund_error.html",
+                            {"error": "Нельзя вернуть уже использованный билет."},
+                            status=400,
+                        )
+                    quantity_to_refund = (
+                        len(active_tickets) if order_tickets else payment_order.quantity
+                    )
+                    if quantity_to_refund <= 0:
+                        continue
+                    item_cost = Decimal(str(original_item["cost"])).quantize(
+                        Decimal("0.01")
+                    )
+                    refund_amount += item_cost * quantity_to_refund
+                    refund_items.append({
+                        "Name": original_item["name"],
+                        "Quantity": quantity_to_refund,
+                        "Cost": float(item_cost),
+                        "Tax": original_item["tax"],
+                        "PaymentMethod": original_item["payment_method"],
+                        "PaymentObject": original_item["payment_object"],
+                    })
+                refund_amount = refund_amount.quantize(Decimal("0.01"))
+                if refund_amount <= 0 or refund_amount != payment_remaining_amount:
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {
+                            "error": (
+                                "Сумма оставшихся билетов не совпадает с остатком платежа. "
+                                "Обратитесь в поддержку."
+                            )
+                        },
+                        status=409,
+                    )
+                is_full_refund = refund_amount == payment.amount
+                refund_order_ticket_id = None
+            else:
+                original_item = order_items.get(str(order.pk))
+                if not original_item:
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {
+                            "error": (
+                                "Для этого старого платежа нет сохранённых данных чека. "
+                                "Автоматический возврат недоступен; обратитесь в поддержку."
+                            )
+                        },
+                        status=400,
+                    )
+                order_refunds = RobokassaRefund.objects.filter(
+                    models.Q(order=order) | models.Q(orders=order)
+                ).exclude(status__in=["failed", "canceled"]).distinct()
+                if not order_ticket_id and order_refunds.exists():
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {"error": "По этому заказу уже есть незавершённый или выполненный возврат."},
+                        status=409,
+                    )
+                if order_ticket_id and order_refunds.filter(
+                    order_ticket_id=order_ticket_id
+                ).exists():
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {"error": "Возврат этого билета уже запрошен или выполнен."},
+                        status=409,
+                    )
+                prior_amount = (
+                    order_refunds.aggregate(total=Sum("amount"))["total"]
+                    or Decimal("0")
+                )
+                remaining_amount = order.total_price - prior_amount
+                item_cost = Decimal(str(original_item["cost"])).quantize(
+                    Decimal("0.01")
+                )
+                quantity_to_refund = (
+                    1 if order_ticket_id
+                    else order.quantity - sum(ticket.is_refunded for ticket in tickets)
+                )
+                refund_amount = min(
+                    item_cost * quantity_to_refund,
+                    remaining_amount,
+                    payment_remaining_amount,
+                ).quantize(Decimal("0.01"))
+                if refund_amount <= 0 or quantity_to_refund <= 0:
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {"error": "Для возврата не осталось оплаченной суммы."},
+                        status=400,
+                    )
+                if refund_amount != item_cost * quantity_to_refund:
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {
+                            "error": (
+                                "Сумма оставшегося платежа не совпадает с суммой билета. "
+                                "Обратитесь в поддержку."
+                            )
+                        },
+                        status=409,
+                    )
+                refund_items = [{
+                    "Name": original_item["name"],
+                    "Quantity": quantity_to_refund,
+                    "Cost": float(item_cost),
+                    "Tax": original_item["tax"],
+                    "PaymentMethod": original_item["payment_method"],
+                    "PaymentObject": original_item["payment_object"],
+                }]
+                is_full_refund = (
+                    refund_amount == payment.amount
+                    and len(payment_orders) == 1
+                    and quantity_to_refund == order.quantity
+                )
+                refund_order_ticket_id = order_ticket_id
+
             refund = RobokassaRefund.objects.create(
                 order=order,
-                order_ticket_id=order_ticket_id,
+                order_ticket_id=refund_order_ticket_id,
                 amount=refund_amount,
                 status="requesting",
             )
+            refund.orders.set(payment_orders)
             operation_key = (
                 payment.operation_key
                 or (payment.notification_data or {}).get("OpKey")
@@ -1333,7 +1452,8 @@ def pay_reserved_order(request, order_id):
         if order.payment_status == "pending" and order.payment_id:
             try:
                 payment = RobokassaPayment.objects.get(pk=int(order.payment_id))
-                if payment.status == "pending":
+                payment_expiration = payment.created_at + timedelta(minutes=15)
+                if payment.status == "pending" and timezone.now() < payment_expiration:
                     return redirect(
                         build_payment_url(
                             payment.pk,
@@ -1341,7 +1461,15 @@ def pay_reserved_order(request, order_id):
                             f"Билет на мероприятие {order.ticket.event.title}",
                             email=(order.participant_data or {}).get("email", ""),
                             receipt=(payment.receipt_data or {}).get("receipt"),
+                            expiration_date=payment_expiration,
                         )
+                    )
+                if payment.status == "pending":
+                    return render(
+                        request,
+                        "payment/refund_error.html",
+                        {"error": "Срок оплаты истёк. Создайте новый заказ для покупки билета."},
+                        status=400,
                     )
             except (RobokassaPayment.DoesNotExist, ValueError):
                 logger.warning(
@@ -1395,6 +1523,12 @@ def robokassa_result(request):
                 return HttpResponse("Invalid amount", status=400)
             if payment.status == "succeeded":
                 return HttpResponse(f"OK{inv_id}", content_type="text/plain")
+            if payment.status == "canceled":
+                logger.warning(
+                    "[robokassa] Отклонён callback по отменённому счёту InvId=%s",
+                    inv_id,
+                )
+                return HttpResponse("Invoice canceled", status=409)
 
             orders = list(
                 payment.orders.select_for_update()

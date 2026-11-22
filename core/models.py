@@ -1296,6 +1296,11 @@ class RobokassaRefund(models.Model):
         on_delete=models.CASCADE,
         related_name="robokassa_refunds",
     )
+    orders = models.ManyToManyField(
+        "Order",
+        related_name="robokassa_refund_batches",
+        blank=True,
+    )
     order_ticket = models.ForeignKey(
         "OrderTicket",
         on_delete=models.CASCADE,
