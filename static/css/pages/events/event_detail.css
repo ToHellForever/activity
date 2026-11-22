@@ -280,6 +280,7 @@ a {
   cursor: pointer;
   display: block;
   width: fit-content;
+  margin-bottom: 5px;
 }
 
 .buy-button-detail {
