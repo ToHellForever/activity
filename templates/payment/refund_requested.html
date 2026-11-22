@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card mx-auto shadow-sm" style="max-width: 560px;">
+        <div class="card-body text-center p-4">
+            <h2>Запрос на возврат отправлен</h2>
+            <p>
+                Robokassa обрабатывает возврат на сумму {{ refund.amount }} ₽.
+                Статус заказа обновится после подтверждения возврата.
+            </p>
+            <a href="{% url 'visitor:dashboard' %}" class="btn btn-primary">
+                Личный кабинет
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

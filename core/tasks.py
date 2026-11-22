@@ -577,6 +577,120 @@ def check_unpaid_tickets():
 
         logger.info(f"Заказ {order.id} отменен из-за неоплаты. Билеты возвращены в продажу.")
 
+
+@shared_task
+def check_robokassa_refunds():
+    """Synchronize pending refund requests and release tickets after confirmation."""
+    from decimal import Decimal, InvalidOperation
+
+    from core.models import Order, OrderTicket, RobokassaRefund, Ticket
+    from payment.robokassa import get_refund_status
+
+    completed = 0
+    refunds = RobokassaRefund.objects.filter(
+        status="processing",
+        request_id__isnull=False,
+    )
+    for refund in refunds.iterator():
+        try:
+            result = get_refund_status(refund.request_id)
+        except Exception:
+            logger.exception(
+                "[robokassa-refund] Не удалось проверить возврат #%s",
+                refund.pk,
+            )
+            continue
+
+        with transaction.atomic():
+            refund = RobokassaRefund.objects.select_for_update().get(pk=refund.pk)
+            if refund.status != "processing":
+                continue
+
+            state = result["label"]
+            if state == "processing":
+                continue
+            if state == "canceled":
+                refund.status = "canceled"
+                refund.response_data = result
+                refund.save(
+                    update_fields=["status", "response_data", "updated_at"]
+                )
+                continue
+            if state != "finished":
+                logger.warning(
+                    "[robokassa-refund] Неизвестный статус возврата #%s: %s",
+                    refund.pk,
+                    state,
+                )
+                continue
+            try:
+                returned_amount = Decimal(str(result["amount"])).quantize(
+                    Decimal("0.01")
+                )
+            except (KeyError, InvalidOperation, TypeError, ValueError):
+                refund.status = "unknown"
+                refund.response_data = result
+                refund.save(
+                    update_fields=["status", "response_data", "updated_at"]
+                )
+                logger.error(
+                    "[robokassa-refund] В ответе возврата #%s отсутствует корректная сумма",
+                    refund.pk,
+                )
+                continue
+            if returned_amount != refund.amount:
+                refund.status = "unknown"
+                refund.response_data = result
+                refund.save(
+                    update_fields=["status", "response_data", "updated_at"]
+                )
+                logger.error(
+                    "[robokassa-refund] Сумма возврата #%s не совпала: expected=%s, received=%s",
+                    refund.pk,
+                    refund.amount,
+                    returned_amount,
+                )
+                continue
+
+            order = Order.objects.select_for_update().get(pk=refund.order_id)
+            ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
+            if refund.order_ticket_id:
+                order_ticket = OrderTicket.objects.select_for_update().get(
+                    pk=refund.order_ticket_id
+                )
+                if not order_ticket.is_refunded:
+                    order_ticket.is_refunded = True
+                    order_ticket.save(update_fields=["is_refunded"])
+                    ticket.available_quantity += 1
+                    ticket.save(update_fields=["available_quantity"])
+                if not order.tickets.filter(is_refunded=False).exists():
+                    order.payment_status = "refunded"
+                    order.save(update_fields=["payment_status"])
+            else:
+                order_tickets = list(
+                    OrderTicket.objects.select_for_update().filter(order=order)
+                )
+                active_tickets = [
+                    order_ticket
+                    for order_ticket in order_tickets
+                    if not order_ticket.is_refunded
+                ]
+                for order_ticket in active_tickets:
+                    order_ticket.is_refunded = True
+                    order_ticket.save(update_fields=["is_refunded"])
+                ticket.available_quantity += len(active_tickets) or order.quantity
+                ticket.save(update_fields=["available_quantity"])
+                order.payment_status = "refunded"
+                order.save(update_fields=["payment_status"])
+
+            refund.status = "succeeded"
+            refund.response_data = result
+            refund.save(update_fields=["status", "response_data", "updated_at"])
+            completed += 1
+
+    return f"Подтверждено возвратов Robokassa: {completed}"
+
+
 @shared_task
 def check_reserved_tickets():
     """

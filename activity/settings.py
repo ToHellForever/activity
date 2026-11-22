@@ -28,7 +28,7 @@ ALLOWED_HOSTS = [
     # Punycode-версии кириллических доменов — браузер присылает Host в ASCII
     "xn--80aabyec7f7a.xn--p1ai",
     "xn--80aabqjfd1bzb5a9b.xn--p1ai",
-    "record-numeric-trailer-cuisine.trycloudflare.com",
+    "smtp-separate-literacy-stevens.trycloudflare.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
@@ -339,6 +339,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.check_unpaid_tickets",
         "schedule": 600.0,
     },
+    "check-robokassa-refunds-every-minute": {
+        "task": "core.tasks.check_robokassa_refunds",
+        "schedule": 60.0,
+    },
     "check-reserved-tickets-every-10-minutes": {
         "task": "core.tasks.check_reserved_tickets",
         "schedule": 600.0,
@@ -380,6 +384,9 @@ ARCHIVED_EVENT_MEDIA_RETENTION_DAYS = 183
 ROBOKASSA_MERCHANT_LOGIN = os.getenv("ROBOKASSA_MERCHANT_LOGIN")
 ROBOKASSA_PASSWORD1 = os.getenv("ROBOKASSA_PASSWORD1")
 ROBOKASSA_PASSWORD2 = os.getenv("ROBOKASSA_PASSWORD2")
+ROBOKASSA_PASSWORD3 = os.getenv("ROBOKASSA_PASSWORD3")
+ROBOKASSA_SNO = os.getenv("ROBOKASSA_SNO", "usn_income")
+ROBOKASSA_TICKET_TAX = os.getenv("ROBOKASSA_TICKET_TAX", "vat10")
 ROBOKASSA_HASH_ALGORITHM = os.getenv("ROBOKASSA_HASH_ALGORITHM", "MD5").upper()
 ROBOKASSA_TEST_MODE = os.getenv(
     "ROBOKASSA_TEST_MODE", "True" if DEBUG else "False"

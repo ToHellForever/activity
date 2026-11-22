@@ -1275,6 +1275,38 @@ class RobokassaPayment(models.Model):
         default="pending",
     )
     notification_data = models.JSONField(null=True, blank=True)
+    receipt_data = models.JSONField(null=True, blank=True)
+    operation_key = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class RobokassaRefund(models.Model):
+    STATUS_CHOICES = [
+        ("requesting", "Отправляется"),
+        ("processing", "В обработке"),
+        ("succeeded", "Возвращён"),
+        ("canceled", "Отменён"),
+        ("failed", "Ошибка"),
+        ("unknown", "Статус неизвестен"),
+    ]
+
+    order = models.ForeignKey(
+        "Order",
+        on_delete=models.CASCADE,
+        related_name="robokassa_refunds",
+    )
+    order_ticket = models.ForeignKey(
+        "OrderTicket",
+        on_delete=models.CASCADE,
+        related_name="robokassa_refunds",
+        null=True,
+        blank=True,
+    )
+    request_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    response_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
