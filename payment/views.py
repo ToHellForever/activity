@@ -1419,17 +1419,36 @@ def payment_success(request, order_id):
     Статус платежа подтверждается серверным уведомлением провайдера.
     """
     order = get_object_or_404(Order, id=order_id)
+    orders = [order]
+    payment_amount = order.total_price
 
     if order.payment_id:
         try:
-            RobokassaPayment.objects.get(pk=int(order.payment_id))
-            order.refresh_from_db()
+            payment = RobokassaPayment.objects.get(pk=int(order.payment_id))
+            payment_orders = list(
+                payment.orders.select_related("ticket__event").order_by("id")
+            )
+            if payment_orders:
+                orders = payment_orders
+                order = next(
+                    (payment_order for payment_order in orders if payment_order.pk == order.pk),
+                    orders[0],
+                )
+                payment_amount = payment.amount
         except (RobokassaPayment.DoesNotExist, ValueError):
             logger.warning(
                 "[success] Не найдена попытка Робокассы для заказа #%s",
                 order.id,
             )
-    return render(request, "payment/payment_success.html", {"order": order})
+    return render(
+        request,
+        "payment/payment_success.html",
+        {
+            "order": order,
+            "orders": orders,
+            "payment_amount": payment_amount,
+        },
+    )
 
 @login_required
 def pay_reserved_order(request, order_id):

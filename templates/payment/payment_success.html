@@ -16,40 +16,51 @@
                 </svg>
             </div>
             <h2>Оплата успешна!</h2>
-            <p class="payment-success-order-id">Заказ №{{ order.id }}</p>
+            <p class="payment-success-order-id">
+                {% if orders|length > 1 %}Заказы{% else %}Заказ{% endif %}
+                {% for paid_order in orders %}№{{ paid_order.id }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </p>
         </div>
 
         <!-- Тело -->
         <div class="payment-success-body">
             <ul class="order-details-list">
+                {% for paid_order in orders %}
                 <li>
                     <span class="detail-label">Мероприятие:</span>
-                    <span class="detail-value">{{ order.ticket.event.title }}</span>
+                    <span class="detail-value">{{ paid_order.ticket.event.title }}</span>
                 </li>
                 <li>
                     <span class="detail-label">Билет:</span>
-                    <span class="detail-value">{{ order.ticket.name }}</span>
+                    <span class="detail-value">{{ paid_order.ticket.name }}</span>
                 </li>
                 <li>
                     <span class="detail-label">Количество:</span>
-                    <span class="detail-value">{{ order.quantity }}</span>
+                    <span class="detail-value">{{ paid_order.quantity }}</span>
                 </li>
                 <li>
                     <span class="detail-label">Стоимость:</span>
-                    <span class="detail-value price">{{ order.total_price }} ₽</span>
+                    <span class="detail-value price">{{ paid_order.total_price }} ₽</span>
                 </li>
                 <li>
                     <span class="detail-label">Статус:</span>
                     <span class="detail-value">
-                        {% if order.payment_status == 'succeeded' %}
+                        {% if paid_order.payment_status == 'succeeded' %}
                             <span class="status-badge status-badge--paid">Оплачен</span>
-                        {% elif order.payment_status == 'refunded' %}
+                        {% elif paid_order.payment_status == 'refunded' %}
                             <span class="status-badge" style="background:#fadada;color:#a83232;">Возвращён</span>
                         {% else %}
                             <span class="status-badge status-badge--pending">Ожидает оплаты</span>
                         {% endif %}
                     </span>
                 </li>
+                {% endfor %}
+                {% if orders|length > 1 %}
+                <li>
+                    <span class="detail-label">Итого по оплате:</span>
+                    <span class="detail-value price">{{ payment_amount }} ₽</span>
+                </li>
+                {% endif %}
             </ul>
 
             <div class="qr-alert">

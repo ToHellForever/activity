@@ -280,6 +280,17 @@ class RobokassaBulkRefundTests(TestCase):
         self.assertEqual(Ticket.objects.get(pk=self.ticket_a.pk).available_quantity, 1)
         self.assertEqual(Ticket.objects.get(pk=self.ticket_b.pk).available_quantity, 2)
 
+    def test_payment_success_page_displays_all_ticket_types(self):
+        response = self.client.get(
+            reverse("payment:payment_success", args=[self.order_a.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Стандарт")
+        self.assertContains(response, "VIP")
+        self.assertContains(response, "Итого по оплате")
+        self.assertEqual(response.context[0]["payment_amount"], Decimal("50.00"))
+
 
 @override_settings(
     ROBOKASSA_TEST_MODE=True,
