@@ -166,14 +166,28 @@ def create_refund(op_key, amount, items, full_refund=False):
     token = _make_refund_jwt(payload)
     request = Request(
         REFUND_CREATE_URL,
-        data=token.encode("ascii"),
-        headers={"Content-Type": "text/plain; charset=utf-8"},
+        data=json.dumps(token).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
         method="POST",
     )
     try:
         with urlopen(request, timeout=15) as response:
             result = json.loads(response.read().decode("utf-8"))
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except HTTPError as exc:
+        if 400 <= exc.code < 500:
+            response_body = exc.read().decode("utf-8", errors="replace")
+            try:
+                error_data = json.loads(response_body)
+            except json.JSONDecodeError:
+                error_data = {}
+            if not isinstance(error_data, dict):
+                error_data = {}
+            message = error_data.get("message") or response_body or exc.reason
+            raise RefundRejectedError(
+                f"Robokassa отклонила возврат (HTTP {exc.code}): {message}"
+            ) from exc
+        raise RuntimeError("Не удалось создать возврат в Robokassa") from exc
+    except (URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise RuntimeError("Не удалось создать возврат в Robokassa") from exc
     if not result.get("success") or not result.get("requestId"):
         raise RefundRejectedError(

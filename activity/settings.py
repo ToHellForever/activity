@@ -28,7 +28,7 @@ ALLOWED_HOSTS = [
     # Punycode-версии кириллических доменов — браузер присылает Host в ASCII
     "xn--80aabyec7f7a.xn--p1ai",
     "xn--80aabqjfd1bzb5a9b.xn--p1ai",
-    "smtp-separate-literacy-stevens.trycloudflare.com",
+    "loan-energy-illustrated-strip.trycloudflare.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",

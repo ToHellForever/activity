@@ -18,7 +18,7 @@ class TicketReservationError(Exception):
     pass
 
 
-def reserve_tickets(ticket_id, quantity, **order_fields):
+def reserve_tickets(ticket_id, quantity, pre_reservation_check=None, **order_fields):
     """
     Атомарное бронирование билетов.
     
@@ -37,7 +37,10 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
     Raises:
         TicketReservationError: Если билетов недостаточно
     """
-    from core.models import Ticket, Order
+    from core.models import Ticket, Order, Event
+
+    if quantity <= 0:
+        raise TicketReservationError("Количество билетов должно быть больше нуля.")
     
     # Пытаемся получить Redis-блокировку
     lock = None
@@ -50,8 +53,28 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
     
     try:
         with transaction.atomic():
+            event_id = Ticket.objects.values_list("event_id", flat=True).get(pk=ticket_id)
+            event = Event.objects.select_for_update().get(pk=event_id)
+            if event.status != "active" or event.date_time <= timezone.now():
+                raise TicketReservationError("Продажа билетов на это мероприятие закрыта.")
+            if pre_reservation_check:
+                pre_reservation_check()
+
             # Блокируем строку билета в БД (вторая линия защиты)
-            ticket = Ticket.objects.select_for_update().get(pk=ticket_id)
+            ticket = Ticket.objects.select_for_update().select_related("event").get(pk=ticket_id)
+            if ticket.event_id != event.pk:
+                raise TicketReservationError("Билет не относится к доступному мероприятию.")
+
+            if quantity < ticket.min_quantity:
+                raise TicketReservationError(
+                    f"Минимальное количество билетов этого типа: {ticket.min_quantity}."
+                )
+            if ticket.price < 0:
+                raise TicketReservationError("У билета указана некорректная цена.")
+            if (ticket.price == 0) != (order_fields.get("payment_status") == "succeeded"):
+                raise TicketReservationError(
+                    "Цена билета изменилась. Обновите страницу и попробуйте снова."
+                )
             
             # Проверяем доступность
             if not ticket._check_availability(quantity):
@@ -70,6 +93,7 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
                 )
             
             # Создаём заказ (quantity уже передан в order_fields, но переопределяем)
+            order_fields["total_price"] = ticket.price * quantity
             order = Order.objects.create(
                 ticket=ticket,
                 quantity=quantity,
@@ -128,7 +152,14 @@ def reserve_tickets(ticket_id, quantity, **order_fields):
                 logger.warning("[reserve_tickets] Ошибка освобождения блокировки: %s", e)
 
 
-def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_status, **extra_fields):
+def bulk_reserve_tickets(
+    event_id,
+    tickets_data,
+    participant_data,
+    payment_status,
+    pre_reservation_check=None,
+    **extra_fields
+):
     """
     Атомарное бронирование нескольких типов билетов за один заказ (bulk-buy).
     
@@ -151,7 +182,36 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
         raise TicketReservationError("Нет билетов для бронирования")
     
     # Извлекаем список ID билетов для блокировок
-    ticket_ids = [item['id'] for item in tickets_data if item.get('quantity', 0) > 0]
+    normalized_items = []
+    for item in tickets_data:
+        if not isinstance(item, dict):
+            raise TicketReservationError("Некорректные данные билетов.")
+        ticket_id = item.get("id")
+        quantity = item.get("quantity")
+        valid_ticket_id = (
+            type(ticket_id) is int
+            or isinstance(ticket_id, str)
+            and ticket_id.strip().isdecimal()
+        )
+        valid_quantity = (
+            type(quantity) is int
+            or isinstance(quantity, str)
+            and quantity.strip().isdecimal()
+        )
+        if not valid_ticket_id or not valid_quantity:
+            raise TicketReservationError("Некорректные данные билетов.")
+        normalized_items.append(
+            {"id": int(ticket_id), "quantity": int(quantity)}
+        )
+
+    if any(item["quantity"] <= 0 for item in normalized_items):
+        raise TicketReservationError("Количество билетов должно быть больше нуля.")
+
+    ticket_ids = [item["id"] for item in normalized_items]
+    if len(ticket_ids) != len(set(ticket_ids)):
+        raise TicketReservationError("Тип билета указан несколько раз.")
+    ticket_ids.sort()
+    normalized_items.sort(key=lambda item: item["id"])
     if not ticket_ids:
         raise TicketReservationError("Нет билетов для бронирования")
     
@@ -168,17 +228,37 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
     
     try:
         with transaction.atomic():
+            event = Event.objects.select_for_update().get(pk=event_id)
+            if event.status != "active" or event.date_time <= timezone.now():
+                raise TicketReservationError("Продажа билетов на это мероприятие закрыта.")
+            if pre_reservation_check:
+                pre_reservation_check()
+
             orders = []
             
-            for item in tickets_data:
+            for item in normalized_items:
                 ticket_id = item['id']
-                quantity = item.get('quantity', 0)
-                
-                if quantity <= 0:
-                    continue
+                quantity = item['quantity']
                 
                 # Блокируем и проверяем каждый билет
-                ticket = Ticket.objects.select_for_update().get(pk=ticket_id)
+                ticket = Ticket.objects.select_for_update().select_related("event").filter(
+                    pk=ticket_id,
+                    event_id=event_id,
+                ).first()
+                if ticket is None:
+                    raise TicketReservationError("Билет не относится к выбранному мероприятию.")
+
+                if quantity < ticket.min_quantity:
+                    raise TicketReservationError(
+                        f"Минимальное количество билетов типа «{ticket.name}»: "
+                        f"{ticket.min_quantity}."
+                    )
+                if ticket.price < 0:
+                    raise TicketReservationError("У билета указана некорректная цена.")
+                if (ticket.price == 0) != (payment_status == "succeeded"):
+                    raise TicketReservationError(
+                        f"Цена билета «{ticket.name}» изменилась. Обновите страницу и попробуйте снова."
+                    )
                 
                 if not ticket._check_availability(quantity):
                     available = ticket.get_available_count()
@@ -257,3 +337,48 @@ def bulk_reserve_tickets(event_id, tickets_data, participant_data, payment_statu
                 lock.__exit__(None, None, None)
             except Exception as e:
                 logger.warning("[bulk_reserve_tickets] Ошибка освобождения блокировки: %s", e)
+
+
+def cancel_unpaid_order(order_id):
+    """Atomically cancel an unpaid order and return its tickets to inventory."""
+    from core.models import Order, RobokassaPayment, Ticket
+
+    with transaction.atomic():
+        candidate = Order.objects.filter(pk=order_id).values("payment_id").first()
+        if candidate is None:
+            return False
+
+        payment_id = candidate["payment_id"]
+        payment = None
+        if payment_id:
+            try:
+                payment = RobokassaPayment.objects.select_for_update().filter(
+                    pk=int(payment_id)
+                ).first()
+            except (TypeError, ValueError):
+                logger.warning(
+                    "[cancel_unpaid_order] Некорректный payment_id у заказа %s",
+                    order_id,
+                )
+
+        order = Order.objects.select_for_update().filter(pk=order_id).first()
+        if (
+            order is None
+            or order.payment_status not in ("reserved", "pending")
+            or order.is_paid
+            or order.payment_id != payment_id
+        ):
+            return False
+        if payment and payment.status == "succeeded":
+            return False
+
+        ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
+        if payment and payment.status == "pending":
+            payment.status = "canceled"
+            payment.save(update_fields=["status", "updated_at"])
+        order.payment_status = "canceled"
+        order.is_paid = False
+        order.save(update_fields=["payment_status", "is_paid"])
+        ticket.available_quantity += order.quantity
+        ticket.save(update_fields=["available_quantity"])
+        return True

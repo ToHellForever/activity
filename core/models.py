@@ -1335,6 +1335,12 @@ class Order(models.Model):
     payment_deadline = models.DateTimeField(
         null=True, blank=True, verbose_name="Срок оплаты"
     )
+    reminder_48_sent = models.BooleanField(
+        default=False, verbose_name="Отправлено напоминание за 48 часов"
+    )
+    reminder_24_sent = models.BooleanField(
+        default=False, verbose_name="Отправлено напоминание за 24 часа"
+    )
     payment_id = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Идентификатор платежа"
     )

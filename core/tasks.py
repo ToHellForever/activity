@@ -1,6 +1,6 @@
 
 from celery import shared_task
-from core.models import Ticket, Order, Event
+from core.models import Ticket, Order, Event, RobokassaPayment
 import logging
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
@@ -719,47 +719,104 @@ def check_reserved_tickets():
     Задача Celery для проверки забронированных билетов.
     Отправляет напоминания об оплате за 48 и 24 часа до мероприятия.
     """
-    from django.core.mail import send_mail
-    from django.template.loader import render_to_string
-    from django.utils.html import strip_tags
-
     now = timezone.now()
 
     # Получаем все забронированные заказы, которые еще не оплачены
-    reserved_orders = Order.objects.filter(
+    reserved_order_ids = Order.objects.filter(
         payment_status="reserved", is_paid=False
-    ).select_related("ticket__event")
+    ).values_list("pk", flat=True)
 
-    for order in reserved_orders:
-        event = order.ticket.event
-        time_until_event = (event.date_time - now).total_seconds() / 3600  # в часах
+    for order_id in reserved_order_ids:
+        expired_order = None
+        reminder_hours = None
+        with transaction.atomic():
+            candidate = Order.objects.filter(pk=order_id).values("payment_id").first()
+            if candidate is None:
+                continue
+            payment_id = candidate["payment_id"]
+            payment = None
+            if payment_id:
+                try:
+                    payment = RobokassaPayment.objects.select_for_update().filter(
+                        pk=int(payment_id)
+                    ).first()
+                except (TypeError, ValueError):
+                    logger.warning(
+                        "Некорректный payment_id у брони %s: %s",
+                        order_id,
+                        payment_id,
+                    )
 
-        # Отправляем напоминание за 48 часов
-        if 48 >= time_until_event > 47:
-            send_reservation_reminder(order, 48)
-            logger.info(f"Отправлено напоминание за 48 часов для заказа {order.id}")
+            order = Order.objects.select_for_update().filter(pk=order_id).first()
+            if (
+                order is None
+                or order.payment_status != "reserved"
+                or order.is_paid
+                or order.payment_id != payment_id
+            ):
+                continue
 
-        # Отправляем напоминание за 24 часа
-        elif 24 >= time_until_event > 23:
-            send_reservation_reminder(order, 24)
-            logger.info(f"Отправлено напоминание за 24 часа для заказа {order.id}")
-        # Проверяем, не истек ли срок оплаты
-        if order.payment_deadline and now > order.payment_deadline:
-            # Отменяем заказ и освобождаем билеты
-            order.payment_status = "canceled"
-            order.is_paid = False
-            order.save()
+            if payment and payment.status == "succeeded":
+                order.payment_status = "succeeded"
+                order.is_paid = True
+                order.save(update_fields=["payment_status", "is_paid"])
+                continue
 
-            # Увеличиваем доступное количество билетов
-            ticket = order.ticket
-            ticket.available_quantity += order.quantity
-            ticket.save()
+            if order.payment_deadline and now >= order.payment_deadline:
+                ticket = Ticket.objects.select_for_update().get(pk=order.ticket_id)
+                if payment and payment.status == "pending":
+                    payment.status = "canceled"
+                    payment.save(update_fields=["status", "updated_at"])
+                order.payment_status = "canceled"
+                order.is_paid = False
+                order.save(update_fields=["payment_status", "is_paid"])
+                ticket.available_quantity += order.quantity
+                ticket.save(update_fields=["available_quantity"])
+                expired_order = order
+            else:
+                time_until_event = (
+                    order.ticket.event.date_time - now
+                ).total_seconds() / 3600
+                if 48 >= time_until_event > 47 and not order.reminder_48_sent:
+                    order.reminder_48_sent = True
+                    reminder_hours = 48
+                elif 24 >= time_until_event > 23 and not order.reminder_24_sent:
+                    order.reminder_24_sent = True
+                    reminder_hours = 24
+                if reminder_hours:
+                    order.save(
+                        update_fields=[
+                            "reminder_48_sent" if reminder_hours == 48
+                            else "reminder_24_sent"
+                        ]
+                    )
 
-            # Уведомляем пользователя об отмене
-            send_reservation_cancelation(order)
+        if expired_order:
+            try:
+                send_reservation_cancelation(expired_order)
+            except Exception:
+                logger.exception(
+                    "Не удалось отправить уведомление об отмене заказа %s",
+                    expired_order.pk,
+                )
             logger.info(
-                f"Заказ {order.id} отменен из-за просрочки оплаты. Билеты возвращены в продажу"
+                "Заказ %s отменен из-за просрочки оплаты. Билеты возвращены в продажу",
+                expired_order.pk,
             )
+        elif reminder_hours:
+            try:
+                send_reservation_reminder(order, reminder_hours)
+            except Exception:
+                logger.exception(
+                    "Не удалось отправить напоминание об оплате заказа %s",
+                    order.pk,
+                )
+            else:
+                logger.info(
+                    "Отправлено напоминание за %s часов для заказа %s",
+                    reminder_hours,
+                    order.pk,
+                )
 
     return f"Проверка забронированных билетов выполнена: {now}"
 

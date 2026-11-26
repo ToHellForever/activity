@@ -94,9 +94,12 @@ document.getElementById('request_to_organizer').addEventListener('change', funct
 
 document.getElementById('ticketForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    const submitButton = this.querySelector('button[type="submit"]');
+    if (submitButton.disabled) return;
 
     const formData = new FormData(this);
     const isRequestToOrganizer = formData.get('request_to_organizer') === 'on';
+    submitButton.disabled = true;
 
     fetch(this.action, {
         method: 'POST',
@@ -129,5 +132,8 @@ document.getElementById('ticketForm').addEventListener('submit', function(e) {
     .catch(error => {
         console.error('Error:', error);
         alert('Произошла ошибка при обработке платежа');
+    })
+    .finally(() => {
+        submitButton.disabled = false;
     });
 });

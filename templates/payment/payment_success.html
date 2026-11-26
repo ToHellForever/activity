@@ -15,7 +15,19 @@
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                 </svg>
             </div>
-            <h2>Оплата успешна!</h2>
+            <h2>
+                {% if payment_failed %}
+                    Оплата не завершена
+                {% elif all_refunded %}
+                    Билеты возвращены
+                {% elif all_paid %}
+                    Оплата успешна!
+                {% elif has_reserved %}
+                    Бронирование создано
+                {% else %}
+                    Ожидаем подтверждения оплаты
+                {% endif %}
+            </h2>
             <p class="payment-success-order-id">
                 {% if orders|length > 1 %}Заказы{% else %}Заказ{% endif %}
                 {% for paid_order in orders %}№{{ paid_order.id }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -70,7 +82,19 @@
                     </svg>
                 </div>
                 <div class="qr-alert-text">
-                    На вашу почту <strong>{{ order.participant_data.email }}</strong> отправлено письмо с QR-кодами.
+                    {% if payment_failed %}
+                        Оплата не прошла. Если деньги были списаны, не оплачивайте повторно и дождитесь подтверждения от Robokassa.
+                    {% elif all_refunded %}
+                        Возврат выполнен. Информация о билете сохранена в истории заказов.
+                    {% elif has_reserved %}
+                        Билет забронирован. Проверьте почту <strong>{{ order.participant_data.email }}</strong> — там ссылка для оплаты.
+                    {% elif all_paid and confirmation_email_sent %}
+                        На вашу почту <strong>{{ order.participant_data.email }}</strong> отправлено письмо с QR-кодами.
+                    {% elif all_paid %}
+                        Оплата подтверждена. Если письмо с QR-кодами не пришло, обратитесь в поддержку.
+                    {% else %}
+                        Статус платежа ещё не подтверждён Robokassa. QR-коды будут отправлены после подтверждения.
+                    {% endif %}
                 </div>
             </div>
 

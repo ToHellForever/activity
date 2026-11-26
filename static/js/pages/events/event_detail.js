@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('purchaseSpinner').style.display = 'block';
         document.getElementById('purchaseStatusText').textContent = 'Формирование заказа...';
         document.getElementById('purchaseStatusDetail').textContent = 'Пожалуйста, подождите';
+        buyBtn.disabled = true;
         
         // Отправляем запрос
         const payload = {
@@ -533,7 +534,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('purchaseStatusText').textContent = 'Получение ответа...';
             
             if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
+                return response.json().then(function(data) {
+                    throw new Error(data.error || 'HTTP ' + response.status);
+                }, function() {
+                    throw new Error('HTTP ' + response.status);
+                });
             }
             return response.json();
         })
@@ -569,8 +574,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('purchaseSpinner').style.display = 'none';
             document.getElementById('purchaseStatusText').textContent = 'Ошибка оформления';
             document.getElementById('purchaseStatusDetail').textContent = error.message;
-            
-            });
+        })
+        .finally(function() {
+            buyBtn.disabled = false;
+        });
         });
     }
             
